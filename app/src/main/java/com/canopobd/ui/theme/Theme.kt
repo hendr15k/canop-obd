@@ -28,7 +28,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun canop-obdTheme(
+fun CanopObdTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = DarkColorScheme

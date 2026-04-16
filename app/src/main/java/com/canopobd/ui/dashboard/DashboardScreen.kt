@@ -37,129 +37,97 @@ fun DashboardScreen(
     onToggleDevicePicker: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val permissions = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            listOf(
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        } else {
-            listOf(
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        }
-    }
-
-    var hasPermissions by remember { mutableStateOf(false) }
-
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(canopoDark)
-            .padding(16.dp)
     ) {
-        // Header with connection status
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Column {
-                Text(
-                    text = "canop-obd",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = canopoHighlight
-                )
-                Text(
-                    text = when (connectionState) {
-                        is OBDConnectionState.Connected -> "ELM327 Connected"
-                        is OBDConnectionState.Connecting -> "Connecting..."
-                        is OBDConnectionState.Disconnected -> "Not connected"
-                        is OBDConnectionState.Error -> "Error: ${connectionState.message}"
-                    },
-                    fontSize = 12.sp,
-                    color = when (connectionState) {
-                        is OBDConnectionState.Connected -> gaugeGreen
-                        is OBDConnectionState.Error -> gaugeRed
-                        else -> textSecondary
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "canop-obd",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = canopoHighlight
+                    )
+                    Text(
+                        text = when (connectionState) {
+                            is OBDConnectionState.Connected -> "ELM327 Connected"
+                            is OBDConnectionState.Connecting -> "Connecting..."
+                            is OBDConnectionState.Disconnected -> "Not connected"
+                            is OBDConnectionState.Error -> "Error: ${connectionState.message}"
+                        },
+                        fontSize = 12.sp,
+                        color = when (connectionState) {
+                            is OBDConnectionState.Connected -> gaugeGreen
+                            is OBDConnectionState.Error -> gaugeRed
+                            else -> textSecondary
+                        }
+                    )
+                }
+
+                Row {
+                    IconButton(onClick = onToggleDevicePicker) {
+                        Icon(Icons.Default.BluetoothSearching, tint = canopoAccent)
                     }
-                )
+                    if (connectionState is OBDConnectionState.Connected) {
+                        IconButton(onClick = onDisconnect) {
+                            Icon(Icons.Default.Close, tint = gaugeRed)
+                        }
+                    }
+                }
             }
 
-            Row {
-                IconButton(onClick = onToggleDevicePicker) {
-                    Icon(Icons.Default.BluetoothSearching, tint = canopoAccent)
-                }
-                if (connectionState is OBDConnectionState.Connected) {
-                    IconButton(onClick = onDisconnect) {
-                        Icon(Icons.Default.Close, tint = gaugeRed)
-                    }
-                }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Main gauges
+            GaugeRow(
+                rpm = obdData.rpm.toFloat(),
+                speed = obdData.speed.toFloat(),
+                temp = obdData.coolantTemp.toFloat()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Secondary gauges row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                SecondaryGauge(label = "Throttle", value = obdData.throttle, unit = "%", max = 100f)
+                SecondaryGauge(label = "Engine Load", value = obdData.engineLoad, unit = "%", max = 100f)
+                SecondaryGauge(label = "Fuel", value = obdData.fuelLevel, unit = "%", max = 100f)
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
-        // Main gauges
-        GaugeRow(
-            rpm = obdData.rpm.toFloat(),
-            speed = obdData.speed.toFloat(),
-            temp = obdData.coolantTemp.toFloat()
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Secondary gauges row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            SecondaryGauge(
-                label = "Throttle",
-                value = obdData.throttle,
-                unit = "%",
-                max = 100f
-            )
-            SecondaryGauge(
-                label = "Engine Load",
-                value = obdData.engineLoad,
-                unit = "%",
-                max = 100f
-            )
-            SecondaryGauge(
-                label = "Fuel",
-                value = obdData.fuelLevel,
-                unit = "%",
-                max = 100f
-            )
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Battery voltage footer
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
+            // Footer
             Text(
                 text = "Battery: %.1fV".format(obdData.batteryVoltage),
                 fontSize = 12.sp,
-                color = textSecondary
+                color = textSecondary,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
-    }
 
-    // Device picker bottom sheet
-    if (showDevicePicker) {
-        DevicePickerSheet(
-            devices = devices,
-            onSelect = onConnect,
-            onDismiss = onToggleDevicePicker
-        )
+        // Device picker as overlay dialog
+        if (showDevicePicker) {
+            DevicePickerDialog(
+                devices = devices,
+                onSelect = onConnect,
+                onDismiss = onToggleDevicePicker
+            )
+        }
     }
 }
 
@@ -192,29 +160,32 @@ private fun SecondaryGauge(
 }
 
 @Composable
-private fun DevicePickerSheet(
+private fun DevicePickerDialog(
     devices: List<BluetoothDeviceInfo>,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = canopoSurface,
         title = {
             Text("OBD Adapter wählen", color = textPrimary)
         },
         text = {
             if (devices.isEmpty()) {
-                Text("Keine gekoppelten Geräte gefunden.\nBitte koppele deinen ELM327 zuerst in den Android Bluetooth-Einstellungen.", color = textSecondary)
+                Text(
+                    "Keine gekoppelten Geräte.\nBitte kopple deinen ELM327 in den Android Bluetooth-Einstellungen.",
+                    color = textSecondary
+                )
             } else {
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 300.dp)
+                ) {
                     items(devices) { device ->
-                        ListItem(
-                            headlineContent = { Text(device.name, color = textPrimary) },
-                            supportingContent = { Text(device.address, color = textSecondary) },
-                            leadingContent = {
-                                Icon(Icons.Default.Bluetooth, tint = canopoAccent)
-                            },
-                            modifier = Modifier.clickable { onSelect(device.address) }
+                        DeviceListItem(
+                            name = device.name,
+                            address = device.address,
+                            onClick = { onSelect(device.address) }
                         )
                     }
                 }
@@ -222,8 +193,39 @@ private fun DevicePickerSheet(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
+                Text("Abbrechen", color = canopoAccent)
             }
         }
     )
+}
+
+@Composable
+private fun DeviceListItem(
+    name: String,
+    address: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Bluetooth,
+                contentDescription = null,
+                tint = canopoAccent,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(name, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = textPrimary)
+                Text(address, fontSize = 11.sp, color = textSecondary)
+            }
+        }
+    }
 }

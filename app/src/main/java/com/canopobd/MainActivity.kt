@@ -8,19 +8,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
 import com.canopobd.ui.dashboard.DashboardScreen
-import com.canopobd.ui.theme.canop-obdTheme
+import com.canopobd.ui.theme.CanopObdTheme
+import com.canopobd.viewmodel.DashboardViewModel
 
 class MainActivity : ComponentActivity() {
 
-    // Shared ViewModel instance — simple DI without Hilt
-    private val viewModel by lazy { com.canopobd.viewmodel.DashboardViewModel(application) }
+    private val viewModel: DashboardViewModel by lazy {
+        ViewModelProvider(this, DashboardViewModel.Factory(application))[DashboardViewModel::class.java]
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            canop-obdTheme {
+            CanopObdTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

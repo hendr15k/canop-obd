@@ -12,8 +12,8 @@ import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.flow.*
 
 @SuppressLint("MissingPermission")
-class DashboardViewModel(
-    context: Context
+class DashboardViewModel private constructor(
+    private val context: Context
 ) : ViewModel() {
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -55,12 +55,10 @@ class DashboardViewModel(
         repository.disconnect()
     }
 
-    companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return DashboardViewModel(context.applicationContext) as T
-            }
+    class Factory(private val context: Context) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return DashboardViewModel(context.applicationContext) as T
         }
     }
 }

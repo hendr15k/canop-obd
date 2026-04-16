@@ -4,30 +4,36 @@ package com.canopobd.data.model
  * OBD-II PID definitions
  * Standard PIDs from SAE J1979
  */
-enum class OBDPID(val code: String, val name: String, val unit: String, val bytes: Int, val formula: (ByteArray) -> Double) {
+enum class OBDPID(
+    val code: String,
+    val displayName: String,
+    val unit: String,
+    val byteCount: Int,
+    val formula: (ByteArray) -> Double
+) {
     RPM("010C", "Engine RPM", "rpm", 2, { b ->
-        if (b.size >= 2) ((b[0] * 256 + b[1]) / 4.0) else 0.0
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 4.0 else 0.0
     }),
     SPEED("010D", "Vehicle Speed", "km/h", 1, { b ->
-        if (b.isNotEmpty()) b[0].toDouble() else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
     COOLANT_TEMP("0105", "Coolant Temperature", "°C", 1, { b ->
-        if (b.isNotEmpty()) (b[0] - 40.0) else 0.0
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
     }),
     INTAKE_TEMP("010F", "Intake Air Temperature", "°C", 1, { b ->
-        if (b.isNotEmpty()) (b[0] - 40.0) else 0.0
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
     }),
     THROTTLE("0111", "Throttle Position", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0] * 100.0 / 255.0) else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     ENGINE_LOAD("0104", "Engine Load", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0] * 100.0 / 255.0) else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     FUEL_LEVEL("012F", "Fuel Tank Level", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0] * 100.0 / 255.0) else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     BATTERY_VOLTAGE("ATRV", "Battery Voltage", "V", 1, { b ->
-        if (b.isNotEmpty()) b[0].toDouble() / 10.0 else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 10.0 else 0.0
     });
 
     companion object {
