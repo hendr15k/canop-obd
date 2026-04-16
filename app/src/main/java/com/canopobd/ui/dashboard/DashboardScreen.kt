@@ -78,11 +78,11 @@ fun DashboardScreen(
 
                 Row {
                     IconButton(onClick = onToggleDevicePicker) {
-                        Icon(Icons.Default.Bluetooth, tint = canopoAccent)
+                        Icon(Icons.Filled.Search, contentDescription = null, tint = canopoAccent)
                     }
                     if (connectionState is OBDConnectionState.Connected) {
                         IconButton(onClick = onDisconnect) {
-                            Icon(Icons.Default.Close, tint = gaugeRed)
+                            Icon(Icons.Filled.Close, contentDescription = null, tint = gaugeRed)
                         }
                     }
                 }
@@ -216,7 +216,7 @@ private fun DeviceListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                Icons.Default.Bluetooth,
+                Icons.Filled.Search,
                 contentDescription = null,
                 tint = canopoAccent,
                 modifier = Modifier.size(32.dp)
