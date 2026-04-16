@@ -124,9 +124,9 @@ class ELM327BTConnection(
 
         // Strip the response code (41 for single PID)
         val dataHex = hex.drop(2)
-        if (dataHex.length < pid.bytes * 2) return null
+        if (dataHex.length < pid.byteCount * 2) return null
 
-        val bytes = ByteArray(pid.bytes) { i ->
+        val bytes = ByteArray(pid.byteCount) { i ->
             dataHex.substring(i * 2, i * 2 + 2).toInt(16).toByte()
         }
 

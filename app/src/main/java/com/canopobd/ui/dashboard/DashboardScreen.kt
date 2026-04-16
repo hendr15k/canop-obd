@@ -78,7 +78,7 @@ fun DashboardScreen(
 
                 Row {
                     IconButton(onClick = onToggleDevicePicker) {
-                        Icon(Icons.Default.BluetoothSearching, tint = canopoAccent)
+                        Icon(Icons.Default.Bluetooth, tint = canopoAccent)
                     }
                     if (connectionState is OBDConnectionState.Connected) {
                         IconButton(onClick = onDisconnect) {
