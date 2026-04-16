@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#0F4C75"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
+
+    <!-- OBD connector shape -->
+    <path
+        android:fillColor="#3282B8"
+        android:pathData="M34,42 L74,42 L74,66 L34,66 Z"/>
+
+    <!-- OBD pins row 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,46 L40,46 L40,50 L38,50 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M43,46 L45,46 L45,50 L43,50 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,46 L50,46 L50,50 L48,50 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M53,46 L55,46 L55,50 L53,50 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,46 L60,46 L60,50 L58,50 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,46 L65,46 L65,50 L63,50 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,46 L70,46 L70,50 L68,50 Z"/>
+
+    <!-- OBD pins row 2 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,54 L40,54 L40,58 L38,58 Z"/>
+    <path
+        android:fillColor="#00D9FF"
+        android:pathData="M43,54 L45,54 L45,58 L43,58 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,54 L50,54 L50,58 L48,58 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M53,54 L55,54 L55,58 L53,58 Z"/>
+    <path
+        android:fillColor="#00D9FF"
+        android:pathData="M58,54 L60,54 L60,58 L58,58 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,54 L65,54 L65,58 L63,58 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,54 L70,54 L70,58 L68,58 Z"/>
+
+    <!-- OBD bottom -->
+    <path
+        android:fillColor="#3282B8"
+        android:pathData="M38,62 L70,62 L70,64 L38,64 Z"/>
+</vector>
