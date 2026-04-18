@@ -59,16 +59,28 @@ class ELM327BTConnection(
 
     /**
      * Initialize ELM327 with standard AT commands
+     *
+     * Inter-command delays are required: ELM327 needs processing time after
+     * each command. After reset (ATZ) it may take up to 500ms to be ready.
+     * Adaptive timing (ATAT1) means the adapter handles flow control for PIDs,
+     * but AT commands still need small delays.
      */
     private suspend fun initELM327() {
-        sendCommand("ATZ")       // Reset
+        sendCommand("ATZ")       // Reset — wait 1s for full firmware boot
         delay(1000)
-        sendCommand("ATE0")     // Echo off
-        sendCommand("ATL0")     // Linefeeds off
-        sendCommand("ATS0")     // Spaces off
-        sendCommand("ATH0")     // Headers off
-        sendCommand("ATSP0")    // Auto protocol
-        sendCommand("ATAT1")    // Adaptive timing on
+        sendCommand("ATI")       // Query device ID — verify it responded
+        delay(200)
+        sendCommand("ATE0")      // Echo off
+        delay(100)
+        sendCommand("ATL0")      // Linefeeds off
+        delay(100)
+        sendCommand("ATS0")      // Spaces off
+        delay(100)
+        sendCommand("ATH0")      // Headers off
+        delay(100)
+        sendCommand("ATSP0")     // Auto protocol
+        delay(100)
+        sendCommand("ATAT1")     // Adaptive timing on
     }
 
     /**
