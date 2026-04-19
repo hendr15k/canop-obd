@@ -36,14 +36,18 @@ class ELM327BTConnection(
     }
 
     /**
-     * Connect to a Bluetooth device (ELM327 adapter)
+     * Connect to a Bluetooth device (ELM327 adapter) with timeout
      */
     suspend fun connect(device: BluetoothDevice): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             socket?.close()
             socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
             bluetoothAdapter.cancelDiscovery()
-            socket?.connect()
+
+            // Connect with timeout — don't hang forever
+            withTimeout(15_000L) {
+                socket?.connect()
+            }
             inputStream = socket?.inputStream
             outputStream = socket?.outputStream
             _isConnected.value = true
@@ -51,7 +55,7 @@ class ELM327BTConnection(
             // Initialize ELM327
             initELM327()
             Result.success(Unit)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             _isConnected.value = false
             Result.failure(e)
         }
@@ -84,15 +88,23 @@ class ELM327BTConnection(
     }
 
     /**
-     * Send an OBD-II PID request and return parsed response
+     * Send an OBD-II PID request with retry on failure
      */
     suspend fun requestPID(pid: OBDPID): Double? = withContext(Dispatchers.IO) {
-        try {
-            val response = sendCommand(pid.code)
-            parseResponse(response, pid)
-        } catch (e: Exception) {
-            null
+        repeat(MAX_RETRIES) { attempt ->
+            try {
+                val response = sendCommandWithTimeout(pid.code)
+                val result = parseResponse(response, pid)
+                if (result != null) return@withContext result
+            } catch (_: Exception) { /* fall through to retry */ }
+
+            if (attempt < MAX_RETRIES - 1) delay(100L)
         }
+        null
+    }
+
+    companion object {
+        private const val MAX_RETRIES = 3
     }
 
     /**
@@ -107,23 +119,44 @@ class ELM327BTConnection(
     }
 
     /**
-     * Send a raw command to ELM327
+     * Send a raw command to ELM327 with timeout
      */
     private suspend fun sendCommand(cmd: String): String = withContext(Dispatchers.IO) {
+        sendCommandWithTimeout(cmd)
+    }
+
+    private suspend fun sendCommandWithTimeout(cmd: String): String = withContext(Dispatchers.IO) {
         val output = outputStream ?: throw IOException("Not connected")
         val input = inputStream ?: throw IOException("Not connected")
+
+        // Drain any buffered input before sending
+        try { while (input.available() > 0) input.read(ByteArray(64)) } catch (_: Exception) { }
 
         // Send command with CR
         output.write("$cmd\r".toByteArray())
         output.flush()
 
-        // Read response (ELM327 sends back echo + response + prompt)
-        val buffer = ByteArray(256)
-        val bytesRead = input.read(buffer)
-        val response = String(buffer, 0, bytesRead, Charsets.US_ASCII)
+        // Read response with deadline — ELM327 may need multiple reads
+        val deadline = System.currentTimeMillis() + 3_000L
+        val responseBuilder = StringBuilder()
 
-        // Clean response: remove echo, spaces, and check for errors
-        cleanResponse(response)
+        while (System.currentTimeMillis() < deadline) {
+            if (input.available() > 0) {
+                val buffer = ByteArray(256)
+                val bytesRead = withContext(Dispatchers.IO) {
+                    input.read(buffer)
+                }
+                if (bytesRead > 0) {
+                    responseBuilder.append(String(buffer, 0, bytesRead, Charsets.US_ASCII))
+                    // Prompt (">") signals end of response
+                    if (responseBuilder.contains(">")) break
+                }
+            } else {
+                delay(50L)
+            }
+        }
+
+        cleanResponse(responseBuilder.toString())
     }
 
     /**
