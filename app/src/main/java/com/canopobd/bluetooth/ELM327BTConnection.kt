@@ -32,6 +32,7 @@ class ELM327BTConnection(
 
     companion object {
         // Standard Bluetooth SPP UUID for OBD-II adapters
+        private const val MAX_RETRIES = 3
         private val SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
     }
 
@@ -103,9 +104,6 @@ class ELM327BTConnection(
         null
     }
 
-    companion object {
-        private const val MAX_RETRIES = 3
-    }
 
     /**
      * Read multiple PIDs in one pass (faster)
