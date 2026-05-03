@@ -5,9 +5,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.canopobd.data.model.BluetoothDeviceInfo
-import com.canopobd.data.model.OBDConnectionState
-import com.canopobd.data.model.OBDData
+import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.flow.*
 
@@ -21,12 +19,29 @@ class DashboardViewModel private constructor(
 
     val connectionState: StateFlow<OBDConnectionState> = repository.connectionState
     val obdData: StateFlow<OBDData> = repository.obdData
+    val dtcResponse: StateFlow<DTCResponse?> = repository.dtcResponse
+    val recordingActive: StateFlow<Boolean> = repository.recordingActive
+    val recordedData: StateFlow<List<DataRecord>> = repository.recordedData
+    val pollRate: StateFlow<Long> = repository.pollRate
+    val measurementUnit: StateFlow<MeasurementUnit> = repository.measurementUnit
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
     private val _showDevicePicker = MutableStateFlow(false)
     val showDevicePicker: StateFlow<Boolean> = _showDevicePicker.asStateFlow()
+
+    private val _showDTCDialog = MutableStateFlow(false)
+    val showDTCDialog: StateFlow<Boolean> = _showDTCDialog.asStateFlow()
+
+    private val _showSettings = MutableStateFlow(false)
+    val showSettings: StateFlow<Boolean> = _showSettings.asStateFlow()
+
+    private val _showDataLog = MutableStateFlow(false)
+    val showDataLog: StateFlow<Boolean> = _showDataLog.asStateFlow()
+
+    private val _showPIDScreen = MutableStateFlow(false)
+    val showPIDScreen: StateFlow<Boolean> = _showPIDScreen.asStateFlow()
 
     init {
         refreshDevices()
@@ -48,6 +63,49 @@ class DashboardViewModel private constructor(
     fun toggleDevicePicker() {
         _showDevicePicker.value = !_showDevicePicker.value
         if (_showDevicePicker.value) refreshDevices()
+    }
+
+    fun toggleDTCDialog() {
+        _showDTCDialog.value = !_showDTCDialog.value
+        if (_showDTCDialog.value) repository.readDTCs()
+    }
+
+    fun clearDTCs() {
+        repository.clearDTCs()
+    }
+
+    fun toggleSettings() {
+        _showSettings.value = !_showSettings.value
+    }
+
+    fun toggleDataLog() {
+        _showDataLog.value = !_showDataLog.value
+    }
+
+    fun togglePIDScreen() {
+        _showPIDScreen.value = !_showPIDScreen.value
+    }
+
+    fun startRecording() {
+        repository.startRecording()
+    }
+
+    fun stopRecording() {
+        repository.stopRecording()
+    }
+
+    fun setPollRate(rate: Long) {
+        repository.setPollRate(rate)
+    }
+
+    fun setMeasurementUnit(unit: MeasurementUnit) {
+        repository.setMeasurementUnit(unit)
+    }
+
+    fun getExportData(): String = repository.exportToCsv()
+
+    fun clearRecordedData() {
+        repository.clearRecordedData()
     }
 
     override fun onCleared() {

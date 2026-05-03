@@ -19,10 +19,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.data.model.BluetoothDeviceInfo
+import com.canopobd.data.model.DTCResponse
+import com.canopobd.data.model.DataRecord
+import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.OBDConnectionState
 import com.canopobd.data.model.OBDData
 import com.canopobd.ui.components.CircularGauge
 import com.canopobd.ui.components.GaugeRow
+import com.canopobd.ui.datalog.DataLogDialog
+import com.canopobd.ui.dtc.DTCDialog
+import com.canopobd.ui.pid.PIDDialog
+import com.canopobd.ui.settings.SettingsDialog
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -31,9 +38,29 @@ fun DashboardScreen(
     obdData: OBDData,
     devices: List<BluetoothDeviceInfo>,
     showDevicePicker: Boolean,
+    dtcResponse: DTCResponse?,
+    recordingActive: Boolean,
+    recordedData: List<DataRecord>,
+    pollRate: Long,
+    measurementUnit: MeasurementUnit,
+    showDTCDialog: Boolean,
+    showSettings: Boolean,
+    showDataLog: Boolean,
+    showPIDScreen: Boolean,
     onConnect: (String) -> Unit,
     onDisconnect: () -> Unit,
     onToggleDevicePicker: () -> Unit,
+    onToggleDTCDialog: () -> Unit,
+    onClearDTCs: () -> Unit,
+    onToggleSettings: () -> Unit,
+    onToggleDataLog: () -> Unit,
+    onTogglePIDScreen: () -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    onSetPollRate: (Long) -> Unit,
+    onSetMeasurementUnit: (MeasurementUnit) -> Unit,
+    onGetExportData: () -> String,
+    onClearRecordedData: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -46,7 +73,6 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -76,12 +102,28 @@ fun DashboardScreen(
                 }
 
                 Row {
+                    IconButton(onClick = onToggleSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Einstellungen", tint = textSecondary)
+                    }
                     IconButton(onClick = onToggleDevicePicker) {
-                        Icon(Icons.Filled.Search, contentDescription = null, tint = canopoAccent)
+                        Icon(Icons.Filled.Bluetooth, contentDescription = "Bluetooth", tint = canopoAccent)
                     }
                     if (connectionState is OBDConnectionState.Connected) {
+                        IconButton(onClick = onToggleDataLog) {
+                            Icon(
+                                if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
+                                contentDescription = "Datenaufzeichnung",
+                                tint = if (recordingActive) gaugeRed else canopoAccent
+                            )
+                        }
+                        IconButton(onClick = onTogglePIDScreen) {
+                            Icon(Icons.Filled.Sensors, contentDescription = "Sensoren", tint = canopoAccent)
+                        }
+                        IconButton(onClick = onToggleDTCDialog) {
+                            Icon(Icons.Filled.Warning, contentDescription = "Fehlercodes", tint = gaugeYellow)
+                        }
                         IconButton(onClick = onDisconnect) {
-                            Icon(Icons.Filled.Close, contentDescription = null, tint = gaugeRed)
+                            Icon(Icons.Filled.Close, contentDescription = "Trennen", tint = gaugeRed)
                         }
                     }
                 }
@@ -89,7 +131,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Main gauges
             GaugeRow(
                 rpm = obdData.rpm.toFloat(),
                 speed = obdData.speed.toFloat(),
@@ -98,7 +139,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Secondary gauges row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -108,23 +148,69 @@ fun DashboardScreen(
                 SecondaryGauge(label = "Fuel", value = obdData.fuelLevel, unit = "%", max = 100f)
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                SecondaryGauge(label = "Timing", value = obdData.timingAdvance, unit = "°", max = 50f)
+                SecondaryGauge(label = "MAF", value = obdData.mafRate, unit = "g/s", max = 500f)
+                SecondaryGauge(label = "Intake", value = obdData.intakeTemp, unit = "°C", max = 150f)
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
-            // Footer
             Text(
-                text = "Battery: %.1fV".format(obdData.batteryVoltage),
+                text = "Battery: %.1fV | Poll: ${pollRate}ms".format(obdData.batteryVoltage),
                 fontSize = 12.sp,
                 color = textSecondary,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
 
-        // Device picker as overlay dialog
         if (showDevicePicker) {
             DevicePickerDialog(
                 devices = devices,
                 onSelect = onConnect,
                 onDismiss = onToggleDevicePicker
+            )
+        }
+
+        if (showDTCDialog) {
+            DTCDialog(
+                dtcResponse = dtcResponse,
+                onDismiss = onToggleDTCDialog,
+                onClearDTCs = onClearDTCs
+            )
+        }
+
+        if (showSettings) {
+            SettingsDialog(
+                pollRate = pollRate,
+                measurementUnit = measurementUnit,
+                onDismiss = onToggleSettings,
+                onPollRateChange = onSetPollRate,
+                onUnitChange = onSetMeasurementUnit
+            )
+        }
+
+        if (showDataLog) {
+            DataLogDialog(
+                recordedData = recordedData,
+                isRecording = recordingActive,
+                onDismiss = onToggleDataLog,
+                onStartRecording = onStartRecording,
+                onStopRecording = onStopRecording,
+                onClearData = onClearRecordedData,
+                onExportData = onGetExportData
+            )
+        }
+
+        if (showPIDScreen) {
+            PIDDialog(
+                obdData = obdData,
+                onDismiss = onTogglePIDScreen
             )
         }
     }
@@ -215,7 +301,7 @@ private fun DeviceListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                Icons.Filled.Search,
+                Icons.Filled.Bluetooth,
                 contentDescription = null,
                 tint = canopoAccent,
                 modifier = Modifier.size(32.dp)

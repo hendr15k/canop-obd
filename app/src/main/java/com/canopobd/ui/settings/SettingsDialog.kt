@@ -1,0 +1,194 @@
+package com.canopobd.ui.settings
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.canopobd.data.model.MeasurementUnit
+import com.canopobd.ui.theme.*
+
+@Composable
+fun SettingsDialog(
+    pollRate: Long,
+    measurementUnit: MeasurementUnit,
+    onDismiss: () -> Unit,
+    onPollRateChange: (Long) -> Unit,
+    onUnitChange: (MeasurementUnit) -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.6f),
+            shape = RoundedCornerShape(16.dp),
+            color = canopoSurface
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Einstellungen",
+                        fontSize = 20.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = canopoHighlight
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                LazyColumn {
+                    item {
+                        Text(
+                            text = "Pollrate",
+                            color = textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "${pollRate}ms",
+                            color = canopoAccent,
+                            fontSize = 12.sp
+                        )
+                        Slider(
+                            value = pollRate.toFloat(),
+                            onValueChange = { onPollRateChange(it.toLong()) },
+                            valueRange = 100f..2000f,
+                            steps = 18,
+                            colors = SliderDefaults.colors(
+                                thumbColor = canopoAccent,
+                                activeTrackColor = canopoAccent
+                            )
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("100ms (Schnell)", color = textDim, fontSize = 10.sp)
+                            Text("2000ms (Langsam)", color = textDim, fontSize = 10.sp)
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Divider(color = canopoDark)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Einheiten",
+                            color = textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    item {
+                        UnitSelector(
+                            selectedUnit = measurementUnit,
+                            onUnitSelected = onUnitChange
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Divider(color = canopoDark)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Über",
+                            color = textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        InfoRow(label = "App Version", value = "1.0.0")
+                        InfoRow(label = "OBD Protokoll", value = "ELM327")
+                        InfoRow(label = "Android", value = "API 26+")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnitSelector(
+    selectedUnit: MeasurementUnit,
+    onUnitSelected: (MeasurementUnit) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        MeasurementUnit.entries.forEach { unit ->
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onUnitSelected(unit) },
+                shape = RoundedCornerShape(8.dp),
+                color = if (selectedUnit == unit) canopoAccent.copy(alpha = 0.2f) else canopoDark,
+                border = if (selectedUnit == unit) {
+                    ButtonDefaults.outlinedButtonBorder(enabled = true).copy(width = 2.dp)
+                } else null
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        if (unit == MeasurementUnit.METRIC) Icons.Filled.Speed else Icons.Filled.Thermostat,
+                        contentDescription = null,
+                        tint = if (selectedUnit == unit) canopoAccent else textSecondary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = unit.label,
+                        color = if (selectedUnit == unit) canopoAccent else textSecondary,
+                        fontSize = 14.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (unit == MeasurementUnit.METRIC) "km/h, °C" else "mph, °F",
+                        color = textDim,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, color = textSecondary, fontSize = 12.sp)
+        Text(text = value, color = textPrimary, fontSize = 12.sp)
+    }
+}
