@@ -17,10 +17,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import com.canopobd.R
 import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
 import com.canopobd.viewmodel.DashboardViewModel
@@ -102,20 +104,20 @@ private fun PermissionRequiredScreen(onRequest: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Bluetooth-Berechtigungen benötigt",
+                text = stringResource(R.string.permissions_title),
                 fontSize = 18.sp,
                 color = canopoHighlight
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Bitte erlaube den Zugriff auf Bluetooth und Standort,\num OBD-II Adapter zu finden und zu verbinden.",
+                text = stringResource(R.string.permissions_message),
                 fontSize = 14.sp,
                 color = textSecondary,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
             TextButton(onClick = onRequest) {
-                Text("Berechtigungen erteilen", color = canopoAccent, fontSize = 16.sp)
+                Text(stringResource(R.string.permissions_grant), color = canopoAccent, fontSize = 16.sp)
             }
         }
     }

@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,13 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.R
 import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.ui.theme.*
 
@@ -73,21 +73,21 @@ fun RemoteServerDialog(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "Remote Server",
+                            text = stringResource(R.string.remote_title),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = canopoHighlight
                         )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Handy als ELM327 Bridge für PC",
+                    text = stringResource(R.string.remote_description),
                     fontSize = 12.sp,
                     color = textSecondary
                 )
@@ -150,7 +150,7 @@ private fun RunningServerCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Server aktiv",
+                    text = stringResource(R.string.remote_server_running),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = gaugeGreen
@@ -160,7 +160,7 @@ private fun RunningServerCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Verbindung:",
+                text = stringResource(R.string.remote_connection),
                 fontSize = 12.sp,
                 color = textSecondary
             )
@@ -178,7 +178,7 @@ private fun RunningServerCard(
                 IconButton(onClick = onCopyIp) {
                     Icon(
                         Icons.Filled.ContentCopy,
-                        contentDescription = "Kopieren",
+                        contentDescription = stringResource(R.string.remote_copy),
                         tint = canopoAccent,
                         modifier = Modifier.size(20.dp)
                     )
@@ -188,7 +188,7 @@ private fun RunningServerCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "$connectedClients PC(s) verbunden",
+                text = stringResource(R.string.remote_clients_connected, connectedClients),
                 fontSize = 12.sp,
                 color = if (connectedClients > 0) gaugeGreen else textSecondary
             )
@@ -202,7 +202,7 @@ private fun RunningServerCard(
             ) {
                 Icon(Icons.Filled.Stop, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Server stoppen")
+                Text(stringResource(R.string.remote_stop_server))
             }
         }
     }
@@ -233,7 +233,7 @@ private fun StartServerCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Port (Standard: ${RemoteBridge.DEFAULT_PORT})",
+                text = stringResource(R.string.remote_port_default, RemoteBridge.DEFAULT_PORT),
                 fontSize = 12.sp,
                 color = textSecondary
             )
@@ -263,7 +263,7 @@ private fun StartServerCard(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Server starten")
+                Text(stringResource(R.string.remote_start_server))
             }
         }
     }
@@ -280,7 +280,7 @@ private fun UsageInstructions() {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Verwendung mit PC-Software",
+                text = stringResource(R.string.remote_usage_pc),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = canopoAccent
@@ -312,24 +312,15 @@ private fun UsageInstructions() {
                 color = textPrimary
             )
 
-            Text(
-                text = "• OBD Auto Doctor",
-                fontSize = 11.sp,
-                color = textSecondary,
-                modifier = Modifier.padding(vertical = 2.dp)
-            )
-            Text(
-                text = "• ScanMaster",
-                fontSize = 11.sp,
-                color = textSecondary,
-                modifier = Modifier.padding(vertical = 2.dp)
-            )
-            Text(
-                text = "• Torque Pro (mit Adapter)",
-                fontSize = 11.sp,
-                color = textSecondary,
-                modifier = Modifier.padding(vertical = 2.dp)
-            )
+            val softwareExamples = listOf("OBD Auto Doctor", "ScanMaster", "Torque Pro (mit Adapter)")
+            softwareExamples.forEach { software ->
+                Text(
+                    text = "• $software",
+                    fontSize = 11.sp,
+                    color = textSecondary,
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
+            }
         }
     }
 }
@@ -338,5 +329,5 @@ private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText("OBD Server", text)
     clipboard.setPrimaryClip(clip)
-    Toast.makeText(context, "Kopiert: $text", Toast.LENGTH_SHORT).show()
+    Toast.makeText(context, context.getString(R.string.remote_export_success, text), Toast.LENGTH_SHORT).show()
 }

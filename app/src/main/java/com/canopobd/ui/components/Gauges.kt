@@ -123,7 +123,11 @@ fun CircularGauge(
  */
 @Composable
 fun GaugeRow(
-    rpm: Float, speed: Float, temp: Float,
+    rpm: Float,
+    speed: Float,
+    temp: Float,
+    speedUnit: String,
+    tempUnit: String,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -143,7 +147,7 @@ fun GaugeRow(
             minValue = 0f,
             maxValue = 260f,
             label = "Speed",
-            unit = "km/h",
+            unit = speedUnit,
             size = 130.dp
         )
         CircularGauge(
@@ -151,7 +155,7 @@ fun GaugeRow(
             minValue = -40f,
             maxValue = 215f,
             label = "Coolant",
-            unit = "°C",
+            unit = tempUnit,
             size = 130.dp
         )
     }

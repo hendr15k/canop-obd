@@ -11,16 +11,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.R
+import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.OBDData
 import com.canopobd.ui.theme.*
 
 @Composable
 fun PIDDialog(
     obdData: OBDData,
+    measurementUnit: MeasurementUnit,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -43,13 +47,13 @@ fun PIDDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Erweiterte Sensoren",
+                        text = stringResource(R.string.pid_title),
                         fontSize = 20.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = canopoHighlight
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
 
@@ -57,7 +61,7 @@ fun PIDDialog(
 
                 LazyColumn {
                     item {
-                        PIDSection(title = "Motor")
+                        PIDSection(title = stringResource(R.string.pid_section_motor))
                     }
                     items(
                         listOf(
@@ -73,12 +77,12 @@ fun PIDDialog(
 
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = "Emissionen")
+                        PIDSection(title = stringResource(R.string.pid_section_emissions))
                     }
                     items(
                         listOf(
                             Triple("Commanded EGR", "%.1f%%".format(obdData.commandedEGR), gaugeGreen),
-                            Triple("EGR Temperature", "%.0f°C".format(obdData.egrTemp), gaugeYellow),
+                            Triple("EGR Temperature", "%.0f%s".format(obdData.egrTemp, measurementUnit.tempUnit), gaugeYellow),
                             Triple("Evap Purge", "%.1f%%".format(obdData.commandedEvapPurge), gaugeGreen),
                             Triple("Barometric", "%.0f kPa".format(obdData.barometricPressure), gaugeGreen)
                         )
@@ -88,7 +92,7 @@ fun PIDDialog(
 
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = "Lambda / O2")
+                        PIDSection(title = stringResource(R.string.pid_section_lambda))
                     }
                     items(
                         listOf(
@@ -101,11 +105,11 @@ fun PIDDialog(
 
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = "Katalysator")
+                        PIDSection(title = stringResource(R.string.pid_section_catalyst))
                     }
                     items(
                         listOf(
-                            Triple("Catalyst Temp B1S1", "%.1f°C".format(obdData.catalystTemp), gaugeOrange)
+                            Triple("Catalyst Temp B1S1", "%.1f%s".format(obdData.catalystTemp, measurementUnit.tempUnit), gaugeOrange)
                         )
                     ) { (label, value, color) ->
                         PIDRow(label = label, value = value, color = color)

@@ -15,17 +15,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
+import com.canopobd.R
 import com.canopobd.data.model.DataRecord
 import com.canopobd.ui.theme.*
 import java.io.File
@@ -65,13 +65,13 @@ fun DataLogDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Datenaufzeichnung",
+                        text = stringResource(R.string.datalog_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
 
@@ -103,7 +103,7 @@ fun DataLogDialog(
                             if (csv.lines().size > 1) {
                                 exportCsv(context, csv)
                             } else {
-                                Toast.makeText(context, "Keine Daten zum Exportieren", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.datalog_no_data), Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.weight(1f)
@@ -119,7 +119,7 @@ fun DataLogDialog(
                 }
 
                 Text(
-                    text = if (isRecording) "Aufzeichnung läuft... (${recordedData.size} Einträge)" else "${recordedData.size} Einträge gespeichert",
+                    text = if (isRecording) stringResource(R.string.datalog_recording, recordedData.size) else stringResource(R.string.datalog_entries, recordedData.size),
                     fontSize = 12.sp,
                     color = if (isRecording) gaugeGreen else textSecondary,
                     modifier = Modifier.padding(vertical = 4.dp)
@@ -135,12 +135,12 @@ fun DataLogDialog(
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        text = { Text("Verlauf") }
+                        text = { Text("Verlauf", color = textPrimary) }
                     )
                     Tab(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
-                        text = { Text("Trend") }
+                        text = { Text("Trend", color = textPrimary) }
                     )
                 }
 
@@ -162,7 +162,7 @@ private fun DataList(recordedData: List<DataRecord>) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Keine Daten aufgezeichnet", color = textSecondary, fontSize = 14.sp)
+            Text(stringResource(R.string.datalog_no_data), color = textSecondary, fontSize = 14.sp)
         }
     } else {
         LazyColumn {
@@ -216,12 +216,12 @@ private fun TrendGraph(recordedData: List<DataRecord>) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Mindestens 2 Datenpunkte für Trend benötigt", color = textSecondary, fontSize = 14.sp)
+            Text(stringResource(R.string.datalog_need_2_points), color = textSecondary, fontSize = 14.sp)
         }
     } else {
         Column {
             Text(
-                text = "RPM Verlauf (letzte 100 Messungen)",
+                text = stringResource(R.string.datalog_rpm_trend),
                 fontSize = 12.sp,
                 color = textSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -262,7 +262,7 @@ private fun TrendGraph(recordedData: List<DataRecord>) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Geschwindigkeit Verlauf",
+                text = stringResource(R.string.datalog_speed_trend),
                 fontSize = 12.sp,
                 color = textSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -315,6 +315,6 @@ private fun exportCsv(context: Context, csv: String) {
         }
         context.startActivity(Intent.createChooser(intent, "Exportieren als..."))
     } catch (e: Exception) {
-        Toast.makeText(context, "Export fehlgeschlagen: ${e.message}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.datalog_export_failed, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
     }
 }

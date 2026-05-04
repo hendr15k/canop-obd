@@ -36,6 +36,7 @@ class RemoteBridge(
         const val DEFAULT_HOST = "192.168.4.1"
     }
 
+    @Suppress("DEPRECATION")
     fun getLocalIpAddress(): String {
         try {
             val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -65,7 +66,7 @@ class RemoteBridge(
                         val clientSocket = serverSocket?.accept()
                         if (clientSocket != null) {
                             val handler = ClientHandler(clientSocket)
-                            clients.add(handler)
+                            synchronized(clients) { clients.add(handler) }
                             _connectedClients.value = clients.size
                             handler.start()
                         }
@@ -142,8 +143,8 @@ class RemoteBridge(
                 cmd.equals("ATH0", ignoreCase = true) -> "OK"
                 cmd.equals("ATSP0", ignoreCase = true) -> "OK"
                 cmd.equals("ATAT1", ignoreCase = true) -> "OK"
-                cmd.startsWith("01") || cmd.startsWith("02") || cmd.startsWith("03") || 
-                cmd.startsWith("04") || cmd.startsWith("05") || cmd.startsWith("06") || 
+                cmd.startsWith("01") || cmd.startsWith("02") || cmd.startsWith("03") ||
+                cmd.startsWith("04") || cmd.startsWith("05") || cmd.startsWith("06") ||
                 cmd.startsWith("07") || cmd.startsWith("08") || cmd.startsWith("09") -> {
                     scope.launch {
                         val response = sendPIDCommand(cmd)
@@ -189,83 +190,8 @@ class RemoteBridge(
                 reader?.close()
                 socket.close()
             } catch (_: Exception) { }
-            clients.remove(this)
+            synchronized(clients) { clients.remove(this) }
             _connectedClients.value = clients.size
         }
     }
-
-    suspend fun sendRawCommand(cmd: String): String {
-        val output = elmConnection.getOutputStream() ?: throw IllegalStateException("Not connected")
-        val input = elmConnection.getInputStream() ?: throw IllegalStateException("Not connected")
-
-        try { while (input.available() > 0) input.read(ByteArray(64)) } catch (_: Exception) { }
-
-        output.write("$cmd\r".toByteArray())
-        output.flush()
-
-        val deadline = System.currentTimeMillis() + 3_000L
-        val responseBuilder = StringBuilder()
-
-        while (System.currentTimeMillis() < deadline) {
-            if (input.available() > 0) {
-                val buffer = ByteArray(256)
-                val bytesRead = input.read(buffer)
-                if (bytesRead > 0) {
-                    responseBuilder.append(String(buffer, 0, bytesRead, Charsets.US_ASCII))
-                    if (responseBuilder.contains(">")) break
-                }
-            } else {
-                delay(50L)
-            }
-        }
-
-        return responseBuilder.toString()
-    }
-}
-
-private fun ELM327BTConnection.getOutputStream() = try {
-    val field = ELM327BTConnection::class.java.getDeclaredField("outputStream")
-    field.isAccessible = true
-    field.get(this) as? java.io.OutputStream
-} catch (_: Exception) { null }
-
-private fun ELM327BTConnection.getInputStream() = try {
-    val field = ELM327BTConnection::class.java.getDeclaredField("inputStream")
-    field.isAccessible = true
-    field.get(this) as? java.io.InputStream
-} catch (_: Exception) { null }
-
-private fun ELM327BTConnection.sendRawCommand(cmd: String): String {
-    val output = getOutputStream() ?: throw IllegalStateException("Not connected")
-    val input = getInputStream() ?: throw IllegalStateException("Not connected")
-
-    try { while (input.available() > 0) input.read(ByteArray(64)) } catch (_: Exception) { }
-
-    output.write("$cmd\r".toByteArray())
-    output.flush()
-
-    val deadline = System.currentTimeMillis() + 3_000L
-    val responseBuilder = StringBuilder()
-
-    while (System.currentTimeMillis() < deadline) {
-        if (input.available() > 0) {
-            val buffer = ByteArray(256)
-            val bytesRead = input.read(buffer)
-            if (bytesRead > 0) {
-                responseBuilder.append(String(buffer, 0, bytesRead, Charsets.US_ASCII))
-                if (responseBuilder.contains(">")) break
-            }
-        } else {
-            Thread.sleep(50)
-        }
-    }
-
-    return responseBuilder.toString()
-        .replace("\r", " ")
-        .replace("\n", " ")
-        .replace(" ", "")
-        .replace(">", "")
-        .trim()
-        .filter { it.isDigit() || it.isLetter() || it == ' ' || it == ':' }
-        .trim()
 }

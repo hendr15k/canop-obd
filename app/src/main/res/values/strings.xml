@@ -1,4 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App -->
     <string name="app_name">canop-obd</string>
+
+    <!-- Connection states -->
+    <string name="status_connected">ELM327 Connected</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="status_disconnected">Not connected</string>
+    <string name="status_error">Error</string>
+    <string name="status_remote">Remote: %d</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Bluetooth Permissions Required</string>
+    <string name="permissions_message">Please grant Bluetooth and location access to find and connect to OBD-II adapters.</string>
+    <string name="permissions_grant">Grant Permissions</string>
+
+    <!-- Dashboard -->
+    <string name="settings">Settings</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="remote_server">Remote Server</string>
+    <string name="data_log">Data Log</string>
+    <string name="sensors">Sensors</string>
+    <string name="fault_codes">Fault Codes</string>
+    <string name="disconnect">Disconnect</string>
+
+    <!-- Device picker -->
+    <string name="choose_adapter">Choose OBD Adapter</string>
+    <string name="no_paired_devices">No paired devices.\nPlease pair your ELM327 in Android Bluetooth settings.</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Settings dialog -->
+    <string name="settings_title">Settings</string>
+    <string name="close">Close</string>
+    <string name="poll_rate">Poll Rate</string>
+    <string name="poll_rate_fast">100ms (Fast)</string>
+    <string name="poll_rate_slow">2000ms (Slow)</string>
+    <string name="units">Units</string>
+    <string name="about">About</string>
+    <string name="app_version">App Version</string>
+    <string name="obd_protocol">OBD Protocol</string>
+    <string name="android_version">Android</string>
+
+    <!-- DTC dialog -->
+    <string name="dtc_title">Diagnostic Trouble Codes</string>
+    <string name="dtc_none_found">No fault codes found</string>
+    <string name="dtc_stored">Stored Faults (%d)</string>
+    <string name="dtc_cyclic">Cyclic Faults (%d)</string>
+    <string name="dtc_clear">Clear Faults</string>
+
+    <!-- Data log dialog -->
+    <string name="datalog_title">Data Recording</string>
+    <string name="datalog_recording">Recording… (%d entries)</string>
+    <string name="datalog_entries">%d entries stored</string>
+    <string name="datalog_no_data">No data recorded</string>
+    <string name="datalog_need_2_points">At least 2 data points needed for trend</string>
+    <string name="datalog_rpm_trend">RPM Trend (last 100 samples)</string>
+    <string name="datalog_speed_trend">Speed Trend</string>
+    <string name="datalog_export_failed">Export failed: %s</string>
+
+    <!-- PID dialog -->
+    <string name="pid_title">Extended Sensors</string>
+
+    <!-- Remote server dialog -->
+    <string name="remote_title">Remote Server</string>
+    <string name="remote_description">Phone as ELM327 bridge for PC</string>
+    <string name="remote_server_running">Server active</string>
+    <string name="remote_connection">Connection:</string>
+    <string name="remote_copy">Copy</string>
+    <string name="remote_clients_connected">%d PC(s) connected</string>
+    <string name="remote_stop_server">Stop Server</string>
+    <string name="remote_port_default">Port (Default: %d)</string>
+    <string name="remote_start_server">Start Server</string>
+    <string name="remote_usage_pc">Usage with PC Software</string>
+    <string name="remote_export_success">Copied: %s</string>
+
+    <!-- PID section titles -->
+    <string name="pid_section_motor">Engine</string>
+    <string name="pid_section_emissions">Emissions</string>
+    <string name="pid_section_lambda">Lambda / O2</string>
+    <string name="pid_section_catalyst">Catalyst</string>
 </resources>

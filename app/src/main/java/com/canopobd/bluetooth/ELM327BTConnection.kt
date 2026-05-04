@@ -360,4 +360,8 @@ class ELM327BTConnection(
     fun getPairedDevices(): List<BluetoothDevice> {
         return bluetoothAdapter.bondedDevices?.toList() ?: emptyList()
     }
+
+    suspend fun sendRawCommand(cmd: String): String = withContext(Dispatchers.IO) {
+        sendCommandWithTimeout(cmd)
+    }
 }

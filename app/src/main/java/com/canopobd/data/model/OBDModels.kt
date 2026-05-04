@@ -37,9 +37,6 @@ enum class OBDPID(
     MAF_RATE("0110", "MAF Air Flow Rate", "g/s", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 100.0 else 0.0
     }),
-    THROTTLE_ENGINE_LOAD("0114", "Throttle Engine Load", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
     FUEL_PRESSURE("010A", "Fuel Pressure", "kPa", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 3.0 else 0.0
     }),
@@ -143,19 +140,6 @@ data class DataRecord(
     val batteryVoltage: Double
 )
 
-data class TripData(
-    val startTime: Long = 0L,
-    val duration: Long = 0L,
-    val distance: Double = 0.0,
-    val maxSpeed: Double = 0.0,
-    val avgSpeed: Double = 0.0,
-    val maxRpm: Double = 0.0,
-    val avgRpm: Double = 0.0,
-    val sampleCount: Long = 0,
-    val lastSpeed: Double = 0.0,
-    val lastTimestamp: Long = 0L
-)
-
 enum class MeasurementUnit(val label: String, val speedFactor: Double, val speedUnit: String, val tempFactor: Double, val tempOffset: Double, val tempUnit: String) {
     METRIC("Metric", 1.0, "km/h", 1.0, 0.0, "°C"),
     IMPERIAL("Imperial", 0.621371, "mph", 1.8, 32.0, "°F");
@@ -179,15 +163,3 @@ data class BluetoothDeviceInfo(
     val name: String,
     val address: String
 )
-
-enum class DashboardGauge(val label: String, val defaultVisible: Boolean) {
-    RPM("RPM", true),
-    SPEED("Speed", true),
-    COOLANT("Coolant", true),
-    THROTTLE("Throttle", true),
-    ENGINE_LOAD("Engine Load", true),
-    FUEL("Fuel", true),
-    TIMING("Timing", true),
-    MAF("MAF", true),
-    INTAKE_TEMP("Intake Temp", true)
-}

@@ -1,6 +1,5 @@
 package com.canopobd.ui.dashboard
 
-import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.canopobd.R
 import com.canopobd.data.model.BluetoothDeviceInfo
 import com.canopobd.data.model.DTCResponse
 import com.canopobd.data.model.DataRecord
@@ -89,7 +90,7 @@ fun DashboardScreen(
             ) {
                 Column {
                     Text(
-                        text = "canop-obd",
+                        text = stringResource(R.string.app_name),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
@@ -97,10 +98,10 @@ fun DashboardScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = when (connectionState) {
-                                is OBDConnectionState.Connected -> "ELM327 Connected"
-                                is OBDConnectionState.Connecting -> "Connecting..."
-                                is OBDConnectionState.Disconnected -> "Not connected"
-                                is OBDConnectionState.Error -> "Error"
+                                is OBDConnectionState.Connected -> stringResource(R.string.status_connected)
+                                is OBDConnectionState.Connecting -> stringResource(R.string.status_connecting)
+                                is OBDConnectionState.Disconnected -> stringResource(R.string.status_disconnected)
+                                is OBDConnectionState.Error -> stringResource(R.string.status_error)
                             },
                             fontSize = 12.sp,
                             color = when (connectionState) {
@@ -118,7 +119,7 @@ fun DashboardScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                text = "Remote: $remoteConnectedClients",
+                                text = stringResource(R.string.status_remote, remoteConnectedClients),
                                 fontSize = 11.sp,
                                 color = gaugeGreen
                             )
@@ -128,34 +129,34 @@ fun DashboardScreen(
 
                 Row {
                     IconButton(onClick = onToggleSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Einstellungen", tint = textSecondary)
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings), tint = textSecondary)
                     }
                     IconButton(onClick = onToggleDevicePicker) {
-                        Icon(Icons.Filled.Bluetooth, contentDescription = "Bluetooth", tint = canopoAccent)
+                        Icon(Icons.Filled.Bluetooth, contentDescription = stringResource(R.string.bluetooth), tint = canopoAccent)
                     }
                     if (connectionState is OBDConnectionState.Connected) {
                         IconButton(onClick = onToggleRemoteDialog) {
                             Icon(
                                 if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
-                                contentDescription = "Remote Server",
+                                contentDescription = stringResource(R.string.remote_server),
                                 tint = if (remoteServerRunning) gaugeGreen else canopoAccent
                             )
                         }
                         IconButton(onClick = onToggleDataLog) {
                             Icon(
                                 if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
-                                contentDescription = "Datenaufzeichnung",
+                                contentDescription = stringResource(R.string.data_log),
                                 tint = if (recordingActive) gaugeRed else canopoAccent
                             )
                         }
                         IconButton(onClick = onTogglePIDScreen) {
-                            Icon(Icons.Filled.Sensors, contentDescription = "Sensoren", tint = canopoAccent)
+                            Icon(Icons.Filled.Sensors, contentDescription = stringResource(R.string.sensors), tint = canopoAccent)
                         }
                         IconButton(onClick = onToggleDTCDialog) {
-                            Icon(Icons.Filled.Warning, contentDescription = "Fehlercodes", tint = gaugeYellow)
+                            Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.fault_codes), tint = gaugeYellow)
                         }
                         IconButton(onClick = onDisconnect) {
-                            Icon(Icons.Filled.Close, contentDescription = "Trennen", tint = gaugeRed)
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.disconnect), tint = gaugeRed)
                         }
                     }
                 }
@@ -165,8 +166,10 @@ fun DashboardScreen(
 
             GaugeRow(
                 rpm = obdData.rpm.toFloat(),
-                speed = obdData.speed.toFloat(),
-                temp = obdData.coolantTemp.toFloat()
+                speed = measurementUnit.convertSpeed(obdData.speed).toFloat(),
+                temp = measurementUnit.convertTemp(obdData.coolantTemp).toFloat(),
+                speedUnit = measurementUnit.speedUnit,
+                tempUnit = measurementUnit.tempUnit
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -188,7 +191,7 @@ fun DashboardScreen(
             ) {
                 SecondaryGauge(label = "Timing", value = obdData.timingAdvance, unit = "°", max = 50f)
                 SecondaryGauge(label = "MAF", value = obdData.mafRate, unit = "g/s", max = 500f)
-                SecondaryGauge(label = "Intake", value = obdData.intakeTemp, unit = "°C", max = 150f)
+                SecondaryGauge(label = "Intake", value = measurementUnit.convertTemp(obdData.intakeTemp), unit = measurementUnit.tempUnit, max = 300f)
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -242,6 +245,7 @@ fun DashboardScreen(
         if (showPIDScreen) {
             PIDDialog(
                 obdData = obdData,
+                measurementUnit = measurementUnit,
                 onDismiss = onTogglePIDScreen
             )
         }
@@ -298,12 +302,12 @@ private fun DevicePickerDialog(
         onDismissRequest = onDismiss,
         containerColor = canopoSurface,
         title = {
-            Text("OBD Adapter wählen", color = textPrimary)
+            Text(stringResource(R.string.choose_adapter), color = textPrimary)
         },
         text = {
             if (devices.isEmpty()) {
                 Text(
-                    "Keine gekoppelten Geräte.\nBitte kopple deinen ELM327 in den Android Bluetooth-Einstellungen.",
+                    stringResource(R.string.no_paired_devices),
                     color = textSecondary
                 )
             } else {
@@ -322,7 +326,7 @@ private fun DevicePickerDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Abbrechen", color = canopoAccent)
+                Text(stringResource(R.string.cancel), color = canopoAccent)
             }
         }
     )

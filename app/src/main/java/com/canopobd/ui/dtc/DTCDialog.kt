@@ -1,6 +1,5 @@
 package com.canopobd.ui.dtc
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.R
 import com.canopobd.data.model.DiagnosticTroubleCode
 import com.canopobd.data.model.DTCResponse
 import com.canopobd.ui.theme.*
@@ -45,13 +46,13 @@ fun DTCDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Diagnose Fehlerspeicher",
+                        text = stringResource(R.string.dtc_title),
                         fontSize = 20.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = canopoHighlight
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
 
@@ -66,7 +67,7 @@ fun DTCDialog(
                     }
                 } else {
                     val allCodes = dtcResponse.codes + dtcResponse.pendingCodes
-                    
+
                     if (allCodes.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -81,7 +82,7 @@ fun DTCDialog(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    "Keine Fehlercodes gefunden",
+                                    stringResource(R.string.dtc_none_found),
                                     color = gaugeGreen,
                                     fontSize = 16.sp
                                 )
@@ -94,7 +95,7 @@ fun DTCDialog(
                             if (dtcResponse.codes.isNotEmpty()) {
                                 item {
                                     Text(
-                                        "Gespeicherte Fehler (${dtcResponse.codes.size})",
+                                        stringResource(R.string.dtc_stored, dtcResponse.codes.size),
                                         color = gaugeRed,
                                         fontSize = 14.sp,
                                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -110,7 +111,7 @@ fun DTCDialog(
                                 item {
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        "Zyklische Fehler (${dtcResponse.pendingCodes.size})",
+                                        stringResource(R.string.dtc_cyclic, dtcResponse.pendingCodes.size),
                                         color = gaugeYellow,
                                         fontSize = 14.sp,
                                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -132,7 +133,7 @@ fun DTCDialog(
                         ) {
                             Icon(Icons.Filled.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Fehler löschen")
+                            Text(stringResource(R.string.dtc_clear))
                         }
                     }
                 }

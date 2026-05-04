@@ -1,6 +1,5 @@
 package com.canopobd.ui.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.R
 import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.ui.theme.*
 
@@ -46,13 +47,13 @@ fun SettingsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Einstellungen",
+                        text = stringResource(R.string.settings_title),
                         fontSize = 20.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = canopoHighlight
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
 
@@ -61,7 +62,7 @@ fun SettingsDialog(
                 LazyColumn {
                     item {
                         Text(
-                            text = "Pollrate",
+                            text = stringResource(R.string.poll_rate),
                             color = textPrimary,
                             fontSize = 14.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
@@ -86,17 +87,18 @@ fun SettingsDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("100ms (Schnell)", color = textDim, fontSize = 10.sp)
-                            Text("2000ms (Langsam)", color = textDim, fontSize = 10.sp)
+                            Text(stringResource(R.string.poll_rate_fast), color = textDim, fontSize = 10.sp)
+                            Text(stringResource(R.string.poll_rate_slow), color = textDim, fontSize = 10.sp)
                         }
                     }
 
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
+                        @Suppress("DEPRECATION")
                         Divider(color = canopoDark)
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "Einheiten",
+                            text = stringResource(R.string.units),
                             color = textPrimary,
                             fontSize = 14.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
@@ -113,18 +115,19 @@ fun SettingsDialog(
 
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
+                        @Suppress("DEPRECATION")
                         Divider(color = canopoDark)
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "Über",
+                            text = stringResource(R.string.about),
                             color = textPrimary,
                             fontSize = 14.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        InfoRow(label = "App Version", value = "1.0.0")
-                        InfoRow(label = "OBD Protokoll", value = "ELM327")
-                        InfoRow(label = "Android", value = "API 26+")
+                        InfoRow(label = stringResource(R.string.app_version), value = "1.0.0")
+                        InfoRow(label = stringResource(R.string.obd_protocol), value = "ELM327")
+                        InfoRow(label = stringResource(R.string.android_version), value = "API 26+")
                     }
                 }
             }
