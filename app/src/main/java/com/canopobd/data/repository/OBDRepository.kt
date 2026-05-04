@@ -2,7 +2,6 @@ package com.canopobd.data.repository
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
 import android.content.Context
 import com.canopobd.bluetooth.ELM327BTConnection
 import com.canopobd.bluetooth.RemoteBridge
@@ -15,7 +14,7 @@ class OBDRepository(
     private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?
 ) {
-    private val connection = ELM327BTConnection(bluetoothAdapter!!)
+    private val connection: ELM327BTConnection? = bluetoothAdapter?.let { ELM327BTConnection(it) }
     private var remoteBridge: RemoteBridge? = null
 
     private val _connectionState = MutableStateFlow<OBDConnectionState>(OBDConnectionState.Disconnected)
@@ -55,58 +54,43 @@ class OBDRepository(
     private var pollingJob: Job? = null
 
     private val pollPIDs = listOf(
-        OBDPID.RPM,
-        OBDPID.SPEED,
-        OBDPID.COOLANT_TEMP,
-        OBDPID.INTAKE_TEMP,
-        OBDPID.THROTTLE,
-        OBDPID.ENGINE_LOAD,
-        OBDPID.FUEL_LEVEL,
-        OBDPID.TIMING_ADVANCE,
-        OBDPID.MAF_RATE,
-        OBDPID.FUEL_PRESSURE,
-        OBDPID.INTAKE_PRESSURE,
-        OBDPID.RUN_TIME,
-        OBDPID.FUEL_RAIL_PRESSURE,
-        OBDPID.COMMANDED_EGR,
-        OBDPID.EGR_TEMP,
-        OBDPID.COMMANDED_EVAPORATIVE_PURGE,
-        OBDPID.BAROMETRIC_PRESSURE,
-        OBDPID.O2_VOLTAGE_B1S1,
-        OBDPID.O2_VOLTAGE_B1S2,
+        OBDPID.RPM, OBDPID.SPEED, OBDPID.COOLANT_TEMP, OBDPID.INTAKE_TEMP,
+        OBDPID.THROTTLE, OBDPID.ENGINE_LOAD, OBDPID.FUEL_LEVEL,
+        OBDPID.TIMING_ADVANCE, OBDPID.MAF_RATE, OBDPID.FUEL_PRESSURE,
+        OBDPID.INTAKE_PRESSURE, OBDPID.RUN_TIME, OBDPID.FUEL_RAIL_PRESSURE,
+        OBDPID.COMMANDED_EGR, OBDPID.EGR_TEMP, OBDPID.COMMANDED_EVAPORATIVE_PURGE,
+        OBDPID.BAROMETRIC_PRESSURE, OBDPID.O2_VOLTAGE_B1S1, OBDPID.O2_VOLTAGE_B1S2,
         OBDPID.CATALYST_TEMP_B1S1
     )
 
     fun getPairedDevices(): List<BluetoothDeviceInfo> {
         return bluetoothAdapter?.bondedDevices?.map { device ->
-            BluetoothDeviceInfo(
-                name = device.name ?: device.address,
-                address = device.address
-            )
+            BluetoothDeviceInfo(name = device.name ?: device.address, address = device.address)
         } ?: emptyList()
     }
 
     fun connect(address: String) {
+        val conn = connection
+        if (conn == null) {
+            _connectionState.value = OBDConnectionState.Error("Bluetooth not available")
+            return
+        }
         scope.launch {
             _connectionState.value = OBDConnectionState.Connecting
-
             val device = bluetoothAdapter?.getRemoteDevice(address)
             if (device == null) {
                 _connectionState.value = OBDConnectionState.Error("Device not found")
                 return@launch
             }
-
-            val result = connection.connect(device)
+            val result = conn.connect(device)
             if (result.isFailure) {
                 _connectionState.value = OBDConnectionState.Error(result.exceptionOrNull()?.message ?: "Connection failed")
                 return@launch
             }
-
             _connectionState.value = OBDConnectionState.Connected
-            startPolling()
-
+            startPolling(conn)
             if (remoteBridge == null) {
-                remoteBridge = RemoteBridge(context, connection)
+                remoteBridge = RemoteBridge(context, conn)
             }
         }
     }
@@ -114,19 +98,18 @@ class OBDRepository(
     fun disconnect() {
         stopRemoteServer()
         pollingJob?.cancel()
-        connection.disconnect()
+        connection?.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
         _dtcResponse.value = null
     }
 
-    private fun startPolling() {
+    private fun startPolling(conn: ELM327BTConnection) {
         pollingJob?.cancel()
         pollingJob = scope.launch {
             while (isActive) {
-                val results = connection.readMultiplePIDs(pollPIDs)
-                val batteryVoltage = connection.getBatteryVoltage() ?: _obdData.value.batteryVoltage
-                
+                val results = conn.readMultiplePIDs(pollPIDs)
+                val batteryVoltage = conn.getBatteryVoltage() ?: _obdData.value.batteryVoltage
                 _obdData.value = OBDData(
                     rpm = results[OBDPID.RPM] ?: _obdData.value.rpm,
                     speed = results[OBDPID.SPEED] ?: _obdData.value.speed,
@@ -151,11 +134,7 @@ class OBDRepository(
                     catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: 0.0,
                     timestamp = System.currentTimeMillis()
                 )
-
-                if (_recordingActive.value) {
-                    recordData()
-                }
-
+                if (_recordingActive.value) recordData()
                 delay(_pollRate.value)
             }
         }
@@ -179,17 +158,14 @@ class OBDRepository(
     }
 
     fun readDTCs() {
-        scope.launch {
-            _dtcResponse.value = connection.readDTCs()
-        }
+        val conn = connection ?: return
+        scope.launch { _dtcResponse.value = conn.readDTCs() }
     }
 
     fun clearDTCs() {
+        val conn = connection ?: return
         scope.launch {
-            val success = connection.clearDTCs()
-            if (success) {
-                _dtcResponse.value = DTCResponse(emptyList())
-            }
+            if (conn.clearDTCs()) _dtcResponse.value = DTCResponse(emptyList())
         }
     }
 
@@ -198,42 +174,26 @@ class OBDRepository(
         _recordedData.value = emptyList()
     }
 
-    fun stopRecording() {
-        _recordingActive.value = false
-    }
+    fun stopRecording() { _recordingActive.value = false }
 
     private fun recordData() {
-        val data = _obdData.value
-        val record = DataRecord(
-            timestamp = data.timestamp,
-            rpm = data.rpm,
-            speed = data.speed,
-            coolantTemp = data.coolantTemp,
-            throttle = data.throttle,
-            fuelLevel = data.fuelLevel,
-            batteryVoltage = data.batteryVoltage
+        val d = _obdData.value
+        _recordedData.value = _recordedData.value + DataRecord(
+            d.timestamp, d.rpm, d.speed, d.coolantTemp, d.throttle, d.fuelLevel, d.batteryVoltage
         )
-        _recordedData.value = _recordedData.value + record
     }
 
-    fun setPollRate(rate: Long) {
-        _pollRate.value = rate.coerceIn(100L, 2000L)
-    }
-
-    fun setMeasurementUnit(unit: MeasurementUnit) {
-        _measurementUnit.value = unit
-    }
+    fun setPollRate(rate: Long) { _pollRate.value = rate.coerceIn(100L, 2000L) }
+    fun setMeasurementUnit(unit: MeasurementUnit) { _measurementUnit.value = unit }
 
     fun exportToCsv(): String {
         val sb = StringBuilder()
-        sb.appendLine("Timestamp,RPM,Speed (km/h),Coolant Temp (°C),Throttle (%),Fuel Level (%),Battery Voltage (V)")
-        for (record in _recordedData.value) {
-            sb.appendLine("${record.timestamp},${record.rpm.toInt()},${record.speed.toInt()},${record.coolantTemp.toInt()},${record.throttle.toInt()},${record.fuelLevel.toInt()},${record.batteryVoltage}")
+        sb.appendLine("Timestamp,RPM,Speed,Coolant,Throttle,Fuel,Battery")
+        for (r in _recordedData.value) {
+            sb.appendLine("${r.timestamp},${r.rpm.toInt()},${r.speed.toInt()},${r.coolantTemp.toInt()},${r.throttle.toInt()},${r.fuelLevel.toInt()},${r.batteryVoltage}")
         }
         return sb.toString()
     }
 
-    fun clearRecordedData() {
-        _recordedData.value = emptyList()
-    }
+    fun clearRecordedData() { _recordedData.value = emptyList() }
 }
