@@ -204,4 +204,66 @@ class OBDModelsTest {
         assertEquals(1, response.codes.size)
         assertEquals(1, response.pendingCodes.size)
     }
+
+    @Test
+    fun `ControlModuleVoltage formula calculates correctly`() {
+        val bytes = byteArrayOf(0x35.toByte(), 0x84.toByte())
+        val result = OBDPID.CONTROL_MODULE_VOLTAGE.formula(bytes)
+        assertEquals(13.7, result, 0.01)
+    }
+
+    @Test
+    fun `AbsoluteLoadValue formula calculates correctly`() {
+        val bytes = byteArrayOf(0x00.toByte(), 0x80.toByte())
+        val result = OBDPID.ABSOLUTE_LOAD_VALUE.formula(bytes)
+        assertEquals(50.196, result, 0.1)
+    }
+
+    @Test
+    fun `EngineFuelRate formula calculates correctly`() {
+        val bytes = byteArrayOf(0x00.toByte(), 0x64.toByte())
+        val result = OBDPID.ENGINE_FUEL_RATE.formula(bytes)
+        assertEquals(5.0, result, 0.01)
+    }
+
+    @Test
+    fun `OBDData has new fields with defaults`() {
+        val data = OBDData()
+        assertEquals(0.0, data.controlModuleVoltage, 0.001)
+        assertEquals(0.0, data.absoluteLoadValue, 0.001)
+        assertEquals(0.0, data.engineFuelRate, 0.001)
+    }
+
+    @Test
+    fun `TripData has correct defaults`() {
+        val trip = TripData()
+        assertEquals(0L, trip.durationSeconds)
+        assertEquals(0.0, trip.distanceKm, 0.001)
+        assertEquals(0.0, trip.maxSpeedKmh, 0.001)
+        assertEquals(0.0, trip.avgSpeedKmh, 0.001)
+        assertEquals(0L, trip.sampleCount)
+        assertTrue(trip.startTime > 0)
+    }
+
+    @Test
+    fun `ConnectionQuality fromSuccessRate returns correct quality`() {
+        assertEquals(ConnectionQuality.EXCELLENT, ConnectionQuality.fromSuccessRate(0.95))
+        assertEquals(ConnectionQuality.GOOD, ConnectionQuality.fromSuccessRate(0.75))
+        assertEquals(ConnectionQuality.FAIR, ConnectionQuality.fromSuccessRate(0.55))
+        assertEquals(ConnectionQuality.POOR, ConnectionQuality.fromSuccessRate(0.3))
+    }
+
+    @Test
+    fun `ConnectionStats calculates success rate correctly`() {
+        val stats = ConnectionStats(successCount = 8, failureCount = 2, quality = ConnectionQuality.GOOD)
+        assertEquals(10, stats.totalCount)
+        assertEquals(0.8, stats.successRate, 0.01)
+    }
+
+    @Test
+    fun `ConnectionStats successRate is 1 when no requests`() {
+        val stats = ConnectionStats()
+        assertEquals(1.0, stats.successRate, 0.001)
+        assertEquals(ConnectionQuality.EXCELLENT, stats.quality)
+    }
 }

@@ -139,10 +139,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showDataLog by viewModel.showDataLog.collectAsState()
     val showPIDScreen by viewModel.showPIDScreen.collectAsState()
     val showRemoteDialog by viewModel.showRemoteDialog.collectAsState()
+    val showTripComputer by viewModel.showTripComputer.collectAsState()
     val remoteServerRunning by viewModel.remoteServerRunning.collectAsState()
     val remoteServerIp by viewModel.remoteServerIp.collectAsState()
     val remoteServerPort by viewModel.remoteServerPort.collectAsState()
     val remoteConnectedClients by viewModel.remoteConnectedClients.collectAsState()
+    val tripData by viewModel.tripData.collectAsState()
+    val connectionStats by viewModel.connectionStats.collectAsState()
+    val autoReconnect by viewModel.autoReconnect.collectAsState()
+    val lastError by viewModel.lastError.collectAsState()
 
     DashboardScreen(
         connectionState = connectionState,
@@ -159,10 +164,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showDataLog = showDataLog,
         showPIDScreen = showPIDScreen,
         showRemoteDialog = showRemoteDialog,
+        showTripComputer = showTripComputer,
         remoteServerRunning = remoteServerRunning,
         remoteServerIp = remoteServerIp,
         remoteServerPort = remoteServerPort,
         remoteConnectedClients = remoteConnectedClients,
+        tripData = tripData,
+        connectionStats = connectionStats,
+        autoReconnect = autoReconnect,
+        errorMessage = lastError,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onToggleDevicePicker = viewModel::toggleDevicePicker,
@@ -172,12 +182,16 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleDataLog = viewModel::toggleDataLog,
         onTogglePIDScreen = viewModel::togglePIDScreen,
         onToggleRemoteDialog = viewModel::toggleRemoteDialog,
+        onToggleTripComputer = viewModel::toggleTripComputer,
         onStartRemoteServer = viewModel::startRemoteServer,
         onStopRemoteServer = viewModel::stopRemoteServer,
         onStartRecording = viewModel::startRecording,
         onStopRecording = viewModel::stopRecording,
         onSetPollRate = viewModel::setPollRate,
         onSetMeasurementUnit = viewModel::setMeasurementUnit,
+        onSetAutoReconnect = viewModel::setAutoReconnect,
+        onResetTrip = viewModel::resetTrip,
+        onGetStoredVin = viewModel::getStoredVin,
         onGetExportData = viewModel::getExportData,
         onClearRecordedData = viewModel::clearRecordedData
     )

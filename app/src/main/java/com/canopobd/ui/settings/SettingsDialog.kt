@@ -1,5 +1,6 @@
 package com.canopobd.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,9 +24,11 @@ import com.canopobd.ui.theme.*
 fun SettingsDialog(
     pollRate: Long,
     measurementUnit: MeasurementUnit,
+    autoReconnect: Boolean,
     onDismiss: () -> Unit,
     onPollRateChange: (Long) -> Unit,
-    onUnitChange: (MeasurementUnit) -> Unit
+    onUnitChange: (MeasurementUnit) -> Unit,
+    onAutoReconnectChange: (Boolean) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -34,13 +37,11 @@ fun SettingsDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.6f),
+                .fillMaxHeight(0.7f),
             shape = RoundedCornerShape(16.dp),
             color = canopoSurface
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -119,13 +120,51 @@ fun SettingsDialog(
                         Divider(color = canopoDark)
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
+                            text = stringResource(R.string.connection),
+                            color = textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(canopoDark, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.auto_reconnect),
+                                color = textPrimary,
+                                fontSize = 14.sp
+                            )
+                            Switch(
+                                checked = autoReconnect,
+                                onCheckedChange = onAutoReconnectChange,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = gaugeGreen,
+                                    checkedTrackColor = gaugeGreen.copy(alpha = 0.3f),
+                                    uncheckedThumbColor = textSecondary,
+                                    uncheckedTrackColor = canopoDark
+                                )
+                            )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        @Suppress("DEPRECATION")
+                        Divider(color = canopoDark)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
                             text = stringResource(R.string.about),
                             color = textPrimary,
                             fontSize = 14.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        InfoRow(label = stringResource(R.string.app_version), value = "1.0.0")
+                        InfoRow(label = stringResource(R.string.app_version), value = "1.0.1")
                         InfoRow(label = stringResource(R.string.obd_protocol), value = "ELM327")
                         InfoRow(label = stringResource(R.string.android_version), value = "API 26+")
                     }

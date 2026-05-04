@@ -79,4 +79,35 @@
     <string name="pid_section_emissions">Emissions</string>
     <string name="pid_section_lambda">Lambda / O2</string>
     <string name="pid_section_catalyst">Catalyst</string>
+
+    <!-- Trip computer -->
+    <string name="trip_title">Trip Computer</string>
+    <string name="trip_duration">Duration</string>
+    <string name="trip_distance">Distance</string>
+    <string name="trip_avg_speed">Avg Speed</string>
+    <string name="trip_max_speed">Max Speed</string>
+    <string name="trip_avg_rpm">Avg RPM</string>
+    <string name="trip_max_rpm">Max RPM</string>
+    <string name="trip_fuel_used">Fuel Used</string>
+    <string name="trip_consumption">Avg Consumption</string>
+    <string name="trip_reset">Reset Trip</string>
+    <string name="trip_vin">Vehicle VIN</string>
+    <string name="trip_copy_vin">Copy VIN</string>
+    <string name="trip_vin_not_available">VIN not available</string>
+
+    <!-- Connection quality -->
+    <string name="conn_quality">Conn: %s</string>
+    <string name="conn_quality_excellent">Excellent</string>
+    <string name="conn_quality_good">Good</string>
+    <string name="conn_quality_fair">Fair</string>
+    <string name="conn_quality_poor">Poor</string>
+    <string name="conn_lost">Connection lost</string>
+    <string name="conn_reconnecting">Reconnecting…</string>
+    <string name="conn_auto_reconnect">Auto-reconnect: %s</string>
+    <string name="enabled">On</string>
+    <string name="disabled">Off</string>
+    <string name="auto_reconnect">Auto-reconnect</string>
+
+    <!-- Settings additions -->
+    <string name="connection">Connection</string>
 </resources>

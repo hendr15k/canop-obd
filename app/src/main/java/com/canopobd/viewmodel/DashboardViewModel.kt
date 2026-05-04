@@ -31,6 +31,11 @@ class DashboardViewModel private constructor(
     val remoteConnectedClients: StateFlow<Int> = repository.remoteConnectedClients
     val remoteServerIp: StateFlow<String> = repository.remoteServerIp
 
+    val tripData: StateFlow<TripData> = repository.tripData
+    val connectionStats: StateFlow<ConnectionStats> = repository.connectionStats
+    val autoReconnect: StateFlow<Boolean> = repository.autoReconnect
+    val lastError: StateFlow<String?> = repository.lastError
+
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
@@ -52,6 +57,9 @@ class DashboardViewModel private constructor(
     private val _showRemoteDialog = MutableStateFlow(false)
     val showRemoteDialog: StateFlow<Boolean> = _showRemoteDialog.asStateFlow()
 
+    private val _showTripComputer = MutableStateFlow(false)
+    val showTripComputer: StateFlow<Boolean> = _showTripComputer.asStateFlow()
+
     private val _permissionsGranted = MutableStateFlow(false)
     val permissionsGranted: StateFlow<Boolean> = _permissionsGranted.asStateFlow()
 
@@ -62,6 +70,9 @@ class DashboardViewModel private constructor(
     fun onPermissionsGranted() {
         _permissionsGranted.value = true
         refreshDevices()
+        repository.getLastDevice()?.let { addr ->
+            if (repository.autoReconnect.value) connect(addr)
+        }
     }
 
     fun refreshDevices() {
@@ -107,6 +118,10 @@ class DashboardViewModel private constructor(
         _showRemoteDialog.value = !_showRemoteDialog.value
     }
 
+    fun toggleTripComputer() {
+        _showTripComputer.value = !_showTripComputer.value
+    }
+
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT) {
         repository.startRemoteServer(port)
     }
@@ -130,6 +145,16 @@ class DashboardViewModel private constructor(
     fun setMeasurementUnit(unit: MeasurementUnit) {
         repository.setMeasurementUnit(unit)
     }
+
+    fun setAutoReconnect(enabled: Boolean) {
+        repository.setAutoReconnect(enabled)
+    }
+
+    fun resetTrip() {
+        repository.resetTrip()
+    }
+
+    fun getStoredVin(): String = repository.getStoredVin()
 
     fun getExportData(): String = repository.exportToCsv()
 

@@ -3,6 +3,7 @@ package com.canopobd.data.repository
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
+import android.content.SharedPreferences
 import com.canopobd.bluetooth.ELM327BTConnection
 import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.model.*
@@ -16,6 +17,7 @@ class OBDRepository(
 ) {
     private val connection: ELM327BTConnection? = bluetoothAdapter?.let { ELM327BTConnection(it) }
     private var remoteBridge: RemoteBridge? = null
+    private val prefs: SharedPreferences = context.getSharedPreferences("canop_obd_prefs", Context.MODE_PRIVATE)
 
     private val _connectionState = MutableStateFlow<OBDConnectionState>(OBDConnectionState.Disconnected)
     val connectionState: StateFlow<OBDConnectionState> = _connectionState.asStateFlow()
@@ -50,8 +52,32 @@ class OBDRepository(
     private val _remoteServerIp = MutableStateFlow("")
     val remoteServerIp: StateFlow<String> = _remoteServerIp.asStateFlow()
 
+    private val _tripData = MutableStateFlow(TripData())
+    val tripData: StateFlow<TripData> = _tripData.asStateFlow()
+
+    private val _connectionStats = MutableStateFlow(ConnectionStats())
+    val connectionStats: StateFlow<ConnectionStats> = _connectionStats.asStateFlow()
+
+    private val _autoReconnect = MutableStateFlow(false)
+    val autoReconnect: StateFlow<Boolean> = _autoReconnect.asStateFlow()
+
+    private val _lastError = MutableStateFlow<String?>(null)
+    val lastError: StateFlow<String?> = _lastError.asStateFlow()
+
+    private var lastConnectedAddress: String? = null
+    private var reconnectJob: Job? = null
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var pollingJob: Job? = null
+    private var tripStartTime: Long = 0L
+    private var tripSamples: Long = 0L
+    private var tripSpeedSum: Double = 0.0
+    private var tripRpmSum: Double = 0.0
+    private var tripFuelUsedSum: Double = 0.0
+    private var tripFuelStart: Double = 0.0
+    private var tripPrevSpeed: Double = 0.0
+    private var tripPrevTimestamp: Long = 0L
+    private var storedVin: String = ""
 
     private val pollPIDs = listOf(
         OBDPID.RPM, OBDPID.SPEED, OBDPID.COOLANT_TEMP, OBDPID.INTAKE_TEMP,
@@ -60,8 +86,15 @@ class OBDRepository(
         OBDPID.INTAKE_PRESSURE, OBDPID.RUN_TIME, OBDPID.FUEL_RAIL_PRESSURE,
         OBDPID.COMMANDED_EGR, OBDPID.EGR_TEMP, OBDPID.COMMANDED_EVAPORATIVE_PURGE,
         OBDPID.BAROMETRIC_PRESSURE, OBDPID.O2_VOLTAGE_B1S1, OBDPID.O2_VOLTAGE_B1S2,
-        OBDPID.CATALYST_TEMP_B1S1
+        OBDPID.CATALYST_TEMP_B1S1, OBDPID.CONTROL_MODULE_VOLTAGE,
+        OBDPID.ABSOLUTE_LOAD_VALUE, OBDPID.ENGINE_FUEL_RATE
     )
+
+    init {
+        _pollRate.value = prefs.getLong("poll_rate", 500L)
+        _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
+        storedVin = prefs.getString("vin", "") ?: ""
+    }
 
     fun getPairedDevices(): List<BluetoothDeviceInfo> {
         return try {
@@ -76,47 +109,150 @@ class OBDRepository(
     fun connect(address: String) {
         val conn = connection
         if (conn == null) {
-            _connectionState.value = OBDConnectionState.Error("Bluetooth not available")
+            val msg = "Bluetooth not available"
+            _connectionState.value = OBDConnectionState.Error(msg)
+            _lastError.value = msg
             return
         }
+        reconnectJob?.cancel()
+        lastConnectedAddress = address
+        prefs.edit().putString("last_device", address).apply()
+
         scope.launch {
             _connectionState.value = OBDConnectionState.Connecting
+            _lastError.value = null
+            resetConnectionStats()
+
             val device = bluetoothAdapter?.getRemoteDevice(address)
             if (device == null) {
-                _connectionState.value = OBDConnectionState.Error("Device not found")
+                val msg = "Device not found"
+                _connectionState.value = OBDConnectionState.Error(msg)
+                _lastError.value = msg
                 return@launch
             }
+
             val result = conn.connect(device)
             if (result.isFailure) {
-                _connectionState.value = OBDConnectionState.Error(result.exceptionOrNull()?.message ?: "Connection failed")
+                val msg = result.exceptionOrNull()?.message ?: "Connection failed"
+                _connectionState.value = OBDConnectionState.Error(msg)
+                _lastError.value = msg
+                if (_autoReconnect.value) scheduleReconnect(address)
                 return@launch
             }
+
             _connectionState.value = OBDConnectionState.Connected
+            _lastError.value = null
             startPolling(conn)
             if (remoteBridge == null) {
                 remoteBridge = RemoteBridge(context, conn)
+            }
+
+            scope.launch {
+                val vin = conn.readVIN()
+                if (vin.isNotBlank() && vin.length >= 10) {
+                    storedVin = vin
+                    prefs.edit().putString("vin", vin).apply()
+                }
+            }
+        }
+    }
+
+    private fun scheduleReconnect(address: String) {
+        reconnectJob?.cancel()
+        reconnectJob = scope.launch {
+            _connectionState.value = OBDConnectionState.Error("Reconnecting…")
+            delay(3000L)
+            if (_autoReconnect.value && lastConnectedAddress == address) {
+                connect(address)
             }
         }
     }
 
     fun disconnect() {
+        reconnectJob?.cancel()
+        reconnectJob = null
         stopRemoteServer()
         pollingJob?.cancel()
         connection?.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
         _dtcResponse.value = null
+        saveTripData()
+    }
+
+    private fun resetConnectionStats() {
+        _connectionStats.value = ConnectionStats()
+    }
+
+    private fun recordConnectionSuccess() {
+        val s = _connectionStats.value
+        _connectionStats.value = s.copy(
+            successCount = s.successCount + 1,
+            quality = ConnectionQuality.fromSuccessRate(
+                (s.successCount + 1).toDouble() / (s.totalCount + 1)
+            )
+        )
+    }
+
+    private fun recordConnectionFailure() {
+        val s = _connectionStats.value
+        _connectionStats.value = s.copy(
+            failureCount = s.failureCount + 1,
+            quality = ConnectionQuality.fromSuccessRate(
+                s.successCount.toDouble() / (s.totalCount + 1)
+            )
+        )
     }
 
     private fun startPolling(conn: ELM327BTConnection) {
         pollingJob?.cancel()
+        tripStartTime = System.currentTimeMillis()
+        tripSamples = 0
+        tripSpeedSum = 0.0
+        tripRpmSum = 0.0
+        tripFuelUsedSum = 0.0
+        tripPrevSpeed = 0.0
+        tripPrevTimestamp = tripStartTime
+        tripFuelStart = _obdData.value.fuelLevel
+
         pollingJob = scope.launch {
             while (isActive) {
                 val results = conn.readMultiplePIDs(pollPIDs)
                 val batteryVoltage = conn.getBatteryVoltage() ?: _obdData.value.batteryVoltage
+                val speed = results[OBDPID.SPEED] ?: _obdData.value.speed
+                val rpm = results[OBDPID.RPM] ?: _obdData.value.rpm
+                val fuelRate = results[OBDPID.ENGINE_FUEL_RATE] ?: 0.0
+
+                tripSamples++
+                tripSpeedSum += speed
+                tripRpmSum += rpm
+                tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
+
+                val now = System.currentTimeMillis()
+                val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
+                if (dtHours > 0) {
+                    val distanceKm = (tripPrevSpeed + speed) / 2.0 * dtHours
+                    _tripData.value = _tripData.value.copy(
+                        durationSeconds = (now - tripStartTime) / 1000L,
+                        distanceKm = _tripData.value.distanceKm + distanceKm,
+                        maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, speed),
+                        avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
+                        maxRpm = maxOf(_tripData.value.maxRpm, rpm),
+                        avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
+                        sampleCount = tripSamples,
+                        totalFuelUsed = tripFuelUsedSum,
+                        avgFuelRate = if (tripSamples > 0) tripFuelUsedSum / ((now - tripStartTime) / 3_600_000.0.coerceAtLeast(0.001)) else 0.0,
+                        fuelStartLevel = tripFuelStart,
+                        fuelEndLevel = results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel,
+                        vin = storedVin
+                    )
+                }
+                tripPrevSpeed = speed
+                tripPrevTimestamp = now
+
                 _obdData.value = OBDData(
                     rpm = results[OBDPID.RPM] ?: _obdData.value.rpm,
-                    speed = results[OBDPID.SPEED] ?: _obdData.value.speed,
+                    speed = speed,
                     coolantTemp = results[OBDPID.COOLANT_TEMP] ?: _obdData.value.coolantTemp,
                     intakeTemp = results[OBDPID.INTAKE_TEMP] ?: _obdData.value.intakeTemp,
                     throttle = results[OBDPID.THROTTLE] ?: _obdData.value.throttle,
@@ -136,13 +272,28 @@ class OBDRepository(
                     o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: 0.0,
                     o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: 0.0,
                     catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: 0.0,
-                    timestamp = System.currentTimeMillis()
+                    controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: 0.0,
+                    absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: 0.0,
+                    engineFuelRate = fuelRate,
+                    vin = storedVin,
+                    timestamp = now
                 )
+
+                recordConnectionSuccess()
                 if (_recordingActive.value) recordData()
                 delay(_pollRate.value)
             }
         }
     }
+
+    private fun saveTripData() {
+        prefs.edit()
+            .putLong("trip_distance", (_tripData.value.distanceKm * 1000).toLong())
+            .putLong("trip_duration", _tripData.value.durationSeconds)
+            .apply()
+    }
+
+    fun getStoredVin(): String = storedVin
 
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT): Result<Int> {
         val bridge = remoteBridge ?: return Result.failure(IllegalStateException("Not connected to ELM327"))
@@ -187,8 +338,30 @@ class OBDRepository(
         )
     }
 
-    fun setPollRate(rate: Long) { _pollRate.value = rate.coerceIn(100L, 2000L) }
+    fun setPollRate(rate: Long) {
+        val r = rate.coerceIn(100L, 2000L)
+        _pollRate.value = r
+        prefs.edit().putLong("poll_rate", r).apply()
+    }
+
     fun setMeasurementUnit(unit: MeasurementUnit) { _measurementUnit.value = unit }
+
+    fun setAutoReconnect(enabled: Boolean) {
+        _autoReconnect.value = enabled
+        prefs.edit().putBoolean("auto_reconnect", enabled).apply()
+    }
+
+    fun resetTrip() {
+        tripStartTime = System.currentTimeMillis()
+        tripSamples = 0
+        tripSpeedSum = 0.0
+        tripRpmSum = 0.0
+        tripFuelUsedSum = 0.0
+        tripFuelStart = _obdData.value.fuelLevel
+        _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+    }
+
+    fun getLastDevice(): String? = prefs.getString("last_device", null)
 
     fun exportToCsv(): String {
         val sb = StringBuilder()

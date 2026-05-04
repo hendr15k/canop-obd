@@ -81,6 +81,15 @@ enum class OBDPID(
     }),
     O2_VOLTAGE_B1S2("0115", "O2 Sensor B1S2 Voltage", "V", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 200.0 else 0.0
+    }),
+    CONTROL_MODULE_VOLTAGE("0142", "Control Module Voltage", "V", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 1000.0 else 0.0
+    }),
+    ABSOLUTE_LOAD_VALUE("0143", "Absolute Load Value", "%", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    }),
+    ENGINE_FUEL_RATE("015E", "Engine Fuel Rate", "L/h", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 20.0 else 0.0
     });
 
     companion object {
@@ -110,6 +119,9 @@ data class OBDData(
     val o2VoltageB1S1: Double = 0.0,
     val o2VoltageB1S2: Double = 0.0,
     val catalystTemp: Double = 0.0,
+    val controlModuleVoltage: Double = 0.0,
+    val absoluteLoadValue: Double = 0.0,
+    val engineFuelRate: Double = 0.0,
     val vin: String = "",
     val timestamp: Long = System.currentTimeMillis()
 )
@@ -139,6 +151,47 @@ data class DataRecord(
     val fuelLevel: Double,
     val batteryVoltage: Double
 )
+
+data class TripData(
+    val startTime: Long = System.currentTimeMillis(),
+    val durationSeconds: Long = 0L,
+    val distanceKm: Double = 0.0,
+    val maxSpeedKmh: Double = 0.0,
+    val avgSpeedKmh: Double = 0.0,
+    val maxRpm: Double = 0.0,
+    val avgRpm: Double = 0.0,
+    val sampleCount: Long = 0L,
+    val totalFuelUsed: Double = 0.0,
+    val avgFuelRate: Double = 0.0,
+    val fuelStartLevel: Double = 0.0,
+    val fuelEndLevel: Double = 0.0,
+    val vin: String = ""
+)
+
+enum class ConnectionQuality(val label: String) {
+    EXCELLENT("Excellent"),
+    GOOD("Good"),
+    FAIR("Fair"),
+    POOR("Poor");
+
+    companion object {
+        fun fromSuccessRate(rate: Double): ConnectionQuality = when {
+            rate >= 0.9 -> EXCELLENT
+            rate >= 0.7 -> GOOD
+            rate >= 0.5 -> FAIR
+            else -> POOR
+        }
+    }
+}
+
+data class ConnectionStats(
+    val successCount: Int = 0,
+    val failureCount: Int = 0,
+    val quality: ConnectionQuality = ConnectionQuality.EXCELLENT
+) {
+    val totalCount: Int get() = successCount + failureCount
+    val successRate: Double get() = if (totalCount == 0) 1.0 else successCount.toDouble() / totalCount
+}
 
 enum class MeasurementUnit(val label: String, val speedFactor: Double, val speedUnit: String, val tempFactor: Double, val tempOffset: Double, val tempUnit: String) {
     METRIC("Metric", 1.0, "km/h", 1.0, 0.0, "°C"),
