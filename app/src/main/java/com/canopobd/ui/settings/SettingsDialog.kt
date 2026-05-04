@@ -149,7 +149,7 @@ private fun UnitSelector(
                 shape = RoundedCornerShape(8.dp),
                 color = if (selectedUnit == unit) canopoAccent.copy(alpha = 0.2f) else canopoDark,
                 border = if (selectedUnit == unit) {
-                    ButtonDefaults.outlinedButtonBorder(enabled = true).copy(width = 2.dp)
+                    androidx.compose.foundation.BorderStroke(2.dp, canopoAccent)
                 } else null
             ) {
                 Column(

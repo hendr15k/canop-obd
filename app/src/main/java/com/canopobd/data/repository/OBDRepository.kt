@@ -3,16 +3,20 @@ package com.canopobd.data.repository
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.content.Context
 import com.canopobd.bluetooth.ELM327BTConnection
+import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.model.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 @SuppressLint("MissingPermission")
 class OBDRepository(
+    private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?
 ) {
     private val connection = ELM327BTConnection(bluetoothAdapter!!)
+    private var remoteBridge: RemoteBridge? = null
 
     private val _connectionState = MutableStateFlow<OBDConnectionState>(OBDConnectionState.Disconnected)
     val connectionState: StateFlow<OBDConnectionState> = _connectionState.asStateFlow()
@@ -34,6 +38,18 @@ class OBDRepository(
 
     private val _measurementUnit = MutableStateFlow(MeasurementUnit.METRIC)
     val measurementUnit: StateFlow<MeasurementUnit> = _measurementUnit.asStateFlow()
+
+    private val _remoteServerRunning = MutableStateFlow(false)
+    val remoteServerRunning: StateFlow<Boolean> = _remoteServerRunning.asStateFlow()
+
+    private val _remoteServerPort = MutableStateFlow(RemoteBridge.DEFAULT_PORT)
+    val remoteServerPort: StateFlow<Int> = _remoteServerPort.asStateFlow()
+
+    private val _remoteConnectedClients = MutableStateFlow(0)
+    val remoteConnectedClients: StateFlow<Int> = _remoteConnectedClients.asStateFlow()
+
+    private val _remoteServerIp = MutableStateFlow("")
+    val remoteServerIp: StateFlow<String> = _remoteServerIp.asStateFlow()
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var pollingJob: Job? = null
@@ -88,10 +104,15 @@ class OBDRepository(
 
             _connectionState.value = OBDConnectionState.Connected
             startPolling()
+
+            if (remoteBridge == null) {
+                remoteBridge = RemoteBridge(context, connection)
+            }
         }
     }
 
     fun disconnect() {
+        stopRemoteServer()
         pollingJob?.cancel()
         connection.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
@@ -138,6 +159,23 @@ class OBDRepository(
                 delay(_pollRate.value)
             }
         }
+    }
+
+    fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT): Result<Int> {
+        val bridge = remoteBridge ?: return Result.failure(IllegalStateException("Not connected to ELM327"))
+        val result = bridge.startServer(port)
+        if (result.isSuccess) {
+            _remoteServerIp.value = bridge.getLocalIpAddress()
+            _remoteServerPort.value = bridge.serverPort.value
+            _remoteServerRunning.value = true
+        }
+        return result
+    }
+
+    fun stopRemoteServer() {
+        remoteBridge?.stopServer()
+        _remoteServerRunning.value = false
+        _remoteConnectedClients.value = 0
     }
 
     fun readDTCs() {

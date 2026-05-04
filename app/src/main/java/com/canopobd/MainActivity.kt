@@ -43,6 +43,11 @@ class MainActivity : ComponentActivity() {
                     val showSettings by viewModel.showSettings.collectAsState()
                     val showDataLog by viewModel.showDataLog.collectAsState()
                     val showPIDScreen by viewModel.showPIDScreen.collectAsState()
+                    val showRemoteDialog by viewModel.showRemoteDialog.collectAsState()
+                    val remoteServerRunning by viewModel.remoteServerRunning.collectAsState()
+                    val remoteServerIp by viewModel.remoteServerIp.collectAsState()
+                    val remoteServerPort by viewModel.remoteServerPort.collectAsState()
+                    val remoteConnectedClients by viewModel.remoteConnectedClients.collectAsState()
 
                     DashboardScreen(
                         connectionState = connectionState,
@@ -58,6 +63,11 @@ class MainActivity : ComponentActivity() {
                         showSettings = showSettings,
                         showDataLog = showDataLog,
                         showPIDScreen = showPIDScreen,
+                        showRemoteDialog = showRemoteDialog,
+                        remoteServerRunning = remoteServerRunning,
+                        remoteServerIp = remoteServerIp,
+                        remoteServerPort = remoteServerPort,
+                        remoteConnectedClients = remoteConnectedClients,
                         onConnect = viewModel::connect,
                         onDisconnect = viewModel::disconnect,
                         onToggleDevicePicker = viewModel::toggleDevicePicker,
@@ -66,6 +76,9 @@ class MainActivity : ComponentActivity() {
                         onToggleSettings = viewModel::toggleSettings,
                         onToggleDataLog = viewModel::toggleDataLog,
                         onTogglePIDScreen = viewModel::togglePIDScreen,
+                        onToggleRemoteDialog = viewModel::toggleRemoteDialog,
+                        onStartRemoteServer = viewModel::startRemoteServer,
+                        onStopRemoteServer = viewModel::stopRemoteServer,
                         onStartRecording = viewModel::startRecording,
                         onStopRecording = viewModel::stopRecording,
                         onSetPollRate = viewModel::setPollRate,

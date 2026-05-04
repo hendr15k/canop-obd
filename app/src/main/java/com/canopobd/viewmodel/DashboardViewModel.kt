@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.flow.*
@@ -15,7 +16,7 @@ class DashboardViewModel private constructor(
 ) : ViewModel() {
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-    private val repository = OBDRepository(bluetoothManager?.adapter)
+    private val repository = OBDRepository(context, bluetoothManager?.adapter)
 
     val connectionState: StateFlow<OBDConnectionState> = repository.connectionState
     val obdData: StateFlow<OBDData> = repository.obdData
@@ -24,6 +25,11 @@ class DashboardViewModel private constructor(
     val recordedData: StateFlow<List<DataRecord>> = repository.recordedData
     val pollRate: StateFlow<Long> = repository.pollRate
     val measurementUnit: StateFlow<MeasurementUnit> = repository.measurementUnit
+
+    val remoteServerRunning: StateFlow<Boolean> = repository.remoteServerRunning
+    val remoteServerPort: StateFlow<Int> = repository.remoteServerPort
+    val remoteConnectedClients: StateFlow<Int> = repository.remoteConnectedClients
+    val remoteServerIp: StateFlow<String> = repository.remoteServerIp
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
@@ -42,6 +48,9 @@ class DashboardViewModel private constructor(
 
     private val _showPIDScreen = MutableStateFlow(false)
     val showPIDScreen: StateFlow<Boolean> = _showPIDScreen.asStateFlow()
+
+    private val _showRemoteDialog = MutableStateFlow(false)
+    val showRemoteDialog: StateFlow<Boolean> = _showRemoteDialog.asStateFlow()
 
     init {
         refreshDevices()
@@ -84,6 +93,18 @@ class DashboardViewModel private constructor(
 
     fun togglePIDScreen() {
         _showPIDScreen.value = !_showPIDScreen.value
+    }
+
+    fun toggleRemoteDialog() {
+        _showRemoteDialog.value = !_showRemoteDialog.value
+    }
+
+    fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT) {
+        repository.startRemoteServer(port)
+    }
+
+    fun stopRemoteServer() {
+        repository.stopRemoteServer()
     }
 
     fun startRecording() {

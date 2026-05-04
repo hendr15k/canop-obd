@@ -29,6 +29,7 @@ import com.canopobd.ui.components.GaugeRow
 import com.canopobd.ui.datalog.DataLogDialog
 import com.canopobd.ui.dtc.DTCDialog
 import com.canopobd.ui.pid.PIDDialog
+import com.canopobd.ui.remote.RemoteServerDialog
 import com.canopobd.ui.settings.SettingsDialog
 import com.canopobd.ui.theme.*
 
@@ -47,6 +48,11 @@ fun DashboardScreen(
     showSettings: Boolean,
     showDataLog: Boolean,
     showPIDScreen: Boolean,
+    showRemoteDialog: Boolean,
+    remoteServerRunning: Boolean,
+    remoteServerIp: String,
+    remoteServerPort: Int,
+    remoteConnectedClients: Int,
     onConnect: (String) -> Unit,
     onDisconnect: () -> Unit,
     onToggleDevicePicker: () -> Unit,
@@ -55,6 +61,9 @@ fun DashboardScreen(
     onToggleSettings: () -> Unit,
     onToggleDataLog: () -> Unit,
     onTogglePIDScreen: () -> Unit,
+    onToggleRemoteDialog: () -> Unit,
+    onStartRemoteServer: (Int) -> Unit,
+    onStopRemoteServer: () -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
     onSetPollRate: (Long) -> Unit,
@@ -85,20 +94,36 @@ fun DashboardScreen(
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
                     )
-                    Text(
-                        text = when (connectionState) {
-                            is OBDConnectionState.Connected -> "ELM327 Connected"
-                            is OBDConnectionState.Connecting -> "Connecting..."
-                            is OBDConnectionState.Disconnected -> "Not connected"
-                            is OBDConnectionState.Error -> "Error: ${connectionState.message}"
-                        },
-                        fontSize = 12.sp,
-                        color = when (connectionState) {
-                            is OBDConnectionState.Connected -> gaugeGreen
-                            is OBDConnectionState.Error -> gaugeRed
-                            else -> textSecondary
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = when (connectionState) {
+                                is OBDConnectionState.Connected -> "ELM327 Connected"
+                                is OBDConnectionState.Connecting -> "Connecting..."
+                                is OBDConnectionState.Disconnected -> "Not connected"
+                                is OBDConnectionState.Error -> "Error"
+                            },
+                            fontSize = 12.sp,
+                            color = when (connectionState) {
+                                is OBDConnectionState.Connected -> gaugeGreen
+                                is OBDConnectionState.Error -> gaugeRed
+                                else -> textSecondary
+                            }
+                        )
+                        if (remoteServerRunning) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                Icons.Filled.Wifi,
+                                contentDescription = null,
+                                tint = gaugeGreen,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Remote: $remoteConnectedClients",
+                                fontSize = 11.sp,
+                                color = gaugeGreen
+                            )
                         }
-                    )
+                    }
                 }
 
                 Row {
@@ -109,6 +134,13 @@ fun DashboardScreen(
                         Icon(Icons.Filled.Bluetooth, contentDescription = "Bluetooth", tint = canopoAccent)
                     }
                     if (connectionState is OBDConnectionState.Connected) {
+                        IconButton(onClick = onToggleRemoteDialog) {
+                            Icon(
+                                if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
+                                contentDescription = "Remote Server",
+                                tint = if (remoteServerRunning) gaugeGreen else canopoAccent
+                            )
+                        }
                         IconButton(onClick = onToggleDataLog) {
                             Icon(
                                 if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
@@ -211,6 +243,18 @@ fun DashboardScreen(
             PIDDialog(
                 obdData = obdData,
                 onDismiss = onTogglePIDScreen
+            )
+        }
+
+        if (showRemoteDialog) {
+            RemoteServerDialog(
+                isRunning = remoteServerRunning,
+                serverIp = remoteServerIp,
+                serverPort = remoteServerPort,
+                connectedClients = remoteConnectedClients,
+                onDismiss = onToggleRemoteDialog,
+                onStartServer = onStartRemoteServer,
+                onStopServer = onStopRemoteServer
             )
         }
     }
