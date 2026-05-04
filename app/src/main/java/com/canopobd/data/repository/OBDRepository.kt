@@ -64,9 +64,13 @@ class OBDRepository(
     )
 
     fun getPairedDevices(): List<BluetoothDeviceInfo> {
-        return bluetoothAdapter?.bondedDevices?.map { device ->
-            BluetoothDeviceInfo(name = device.name ?: device.address, address = device.address)
-        } ?: emptyList()
+        return try {
+            bluetoothAdapter?.bondedDevices?.map { device ->
+                BluetoothDeviceInfo(name = device.name ?: device.address, address = device.address)
+            } ?: emptyList()
+        } catch (_: SecurityException) {
+            emptyList()
+        }
     }
 
     fun connect(address: String) {

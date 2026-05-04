@@ -52,7 +52,15 @@ class DashboardViewModel private constructor(
     private val _showRemoteDialog = MutableStateFlow(false)
     val showRemoteDialog: StateFlow<Boolean> = _showRemoteDialog.asStateFlow()
 
+    private val _permissionsGranted = MutableStateFlow(false)
+    val permissionsGranted: StateFlow<Boolean> = _permissionsGranted.asStateFlow()
+
     init {
+        if (_permissionsGranted.value) refreshDevices()
+    }
+
+    fun onPermissionsGranted() {
+        _permissionsGranted.value = true
         refreshDevices()
     }
 

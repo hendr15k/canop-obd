@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <!-- Declare Bluetooth feature (not required, but recommended) -->
-    <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 
     <application
         android:allowBackup="true"
