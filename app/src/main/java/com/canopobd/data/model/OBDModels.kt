@@ -91,9 +91,6 @@ enum class OBDPID(
     }
 }
 
-/**
- * Live OBD data snapshot
- */
 data class OBDData(
     val rpm: Double = 0.0,
     val speed: Double = 0.0,
@@ -116,6 +113,7 @@ data class OBDData(
     val o2VoltageB1S1: Double = 0.0,
     val o2VoltageB1S2: Double = 0.0,
     val catalystTemp: Double = 0.0,
+    val vin: String = "",
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -130,6 +128,11 @@ data class DTCResponse(
     val pendingCodes: List<DiagnosticTroubleCode> = emptyList()
 )
 
+data class FreezeFrame(
+    val dtc: DiagnosticTroubleCode,
+    val data: Map<String, Double>
+)
+
 data class DataRecord(
     val timestamp: Long,
     val rpm: Double,
@@ -140,14 +143,31 @@ data class DataRecord(
     val batteryVoltage: Double
 )
 
-enum class MeasurementUnit(val label: String, val speedFactor: Double, val tempOffset: Double) {
-    METRIC("Metric", 1.0, 0.0),
-    IMPERIAL("Imperial", 0.621371, 32.0)
+data class TripData(
+    val startTime: Long = 0L,
+    val duration: Long = 0L,
+    val distance: Double = 0.0,
+    val maxSpeed: Double = 0.0,
+    val avgSpeed: Double = 0.0,
+    val maxRpm: Double = 0.0,
+    val avgRpm: Double = 0.0,
+    val sampleCount: Long = 0,
+    val lastSpeed: Double = 0.0,
+    val lastTimestamp: Long = 0L
+)
+
+enum class MeasurementUnit(val label: String, val speedFactor: Double, val speedUnit: String, val tempFactor: Double, val tempOffset: Double, val tempUnit: String) {
+    METRIC("Metric", 1.0, "km/h", 1.0, 0.0, "°C"),
+    IMPERIAL("Imperial", 0.621371, "mph", 1.8, 32.0, "°F");
+
+    fun convertSpeed(kmh: Double): Double = kmh * speedFactor
+    fun convertTemp(celsius: Double): Double = celsius * tempFactor + tempOffset
+    fun convertDistance(km: Double): Double = km * speedFactor
+    fun speedLabel(): String = speedUnit
+    fun tempLabel(): String = tempUnit
+    fun distanceUnit(): String = if (this == METRIC) "km" else "mi"
 }
 
-/**
- * Connection state for OBD adapter
- */
 sealed class OBDConnectionState {
     object Disconnected : OBDConnectionState()
     object Connecting : OBDConnectionState()
@@ -155,10 +175,19 @@ sealed class OBDConnectionState {
     data class Error(val message: String) : OBDConnectionState()
 }
 
-/**
- * Bluetooth device info
- */
 data class BluetoothDeviceInfo(
     val name: String,
     val address: String
 )
+
+enum class DashboardGauge(val label: String, val defaultVisible: Boolean) {
+    RPM("RPM", true),
+    SPEED("Speed", true),
+    COOLANT("Coolant", true),
+    THROTTLE("Throttle", true),
+    ENGINE_LOAD("Engine Load", true),
+    FUEL("Fuel", true),
+    TIMING("Timing", true),
+    MAF("MAF", true),
+    INTAKE_TEMP("Intake Temp", true)
+}

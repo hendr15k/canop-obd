@@ -269,6 +269,82 @@ class ELM327BTConnection(
             .trim()
     }
 
+    suspend fun readVIN(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommand("0902")
+            delay(200)
+            val response = sendCommandWithTimeout("0902")
+            parseVIN(response)
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    private fun parseVIN(response: String): String {
+        val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+        if (hex.contains("ERROR") || hex.isEmpty()) return ""
+        val cleanHex = hex.drop(6)
+        if (cleanHex.isEmpty()) return ""
+        val chars = cleanHex.chunked(2).mapNotNull { byteStr ->
+            if (byteStr.length == 2) {
+                val intValue = byteStr.toInt(16)
+                if (intValue in 0x20..0x7E) intValue.toChar() else null
+            } else null
+        }
+        return chars.joinToString("")
+    }
+
+    suspend fun readFreezeFrames(): List<FreezeFrame> = withContext(Dispatchers.IO) {
+        try {
+            val response = sendCommandWithTimeout("02")
+            if (response.contains("ERROR") || response.isBlank()) return@withContext emptyList()
+            val dtcHex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+            val dtcChars = dtcHex.drop(4).chunked(4)
+            val frames = mutableListOf<FreezeFrame>()
+            for (chunk in dtcChars) {
+                if (chunk.length == 4) {
+                    val firstChar = when (chunk[0]) {
+                        '0' -> "P0"; '1' -> "P1"; '2' -> "P2"; '3' -> "P3"
+                        '4' -> "C0"; '5' -> "C1"; '6' -> "C2"; '7' -> "C3"
+                        '8' -> "B0"; '9' -> "B1"; 'A', 'a' -> "B2"; 'B', 'b' -> "B3"
+                        'C', 'c' -> "U0"; 'D', 'd' -> "U1"; 'E', 'e' -> "U2"; 'F', 'f' -> "U3"
+                        else -> "P0"
+                    }
+                    val code = "$firstChar${chunk.substring(1)}"
+                    val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
+                    val data = mutableMapOf<String, Double>()
+                    try {
+                        val rpmResp = sendCommandWithTimeout("020C")
+                        if (!rpmResp.contains("ERROR")) {
+                            val rpmHex = rpmResp.replace(" ", "").drop(6)
+                            if (rpmHex.length >= 4) {
+                                data["RPM"] = ((rpmHex.substring(0, 2).toInt(16) * 256 + rpmHex.substring(2, 4).toInt(16)) / 4.0)
+                            }
+                        }
+                        val speedResp = sendCommandWithTimeout("020D")
+                        if (!speedResp.contains("ERROR")) {
+                            val speedHex = speedResp.replace(" ", "").drop(4)
+                            if (speedHex.length >= 2) {
+                                data["Speed"] = speedHex.substring(0, 2).toInt(16).toDouble()
+                            }
+                        }
+                        val coolResp = sendCommandWithTimeout("0205")
+                        if (!coolResp.contains("ERROR")) {
+                            val coolHex = coolResp.replace(" ", "").drop(4)
+                            if (coolHex.length >= 2) {
+                                data["Coolant"] = (coolHex.substring(0, 2).toInt(16) - 40).toDouble()
+                            }
+                        }
+                    } catch (_: Exception) {}
+                    frames.add(FreezeFrame(DiagnosticTroubleCode(code, description), data))
+                }
+            }
+            frames
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     fun disconnect() {
         scope.cancel()
         try {
