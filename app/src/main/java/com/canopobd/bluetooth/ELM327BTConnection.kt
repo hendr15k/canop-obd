@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import com.canopobd.data.model.DTCResponse
 import com.canopobd.data.model.DiagnosticTroubleCode
+import com.canopobd.data.model.FreezeFrame
 import com.canopobd.data.model.OBDPID
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
