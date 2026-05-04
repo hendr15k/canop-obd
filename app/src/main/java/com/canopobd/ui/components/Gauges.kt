@@ -32,15 +32,16 @@ fun CircularGauge(
     modifier: Modifier = Modifier,
     size: Dp = 140.dp,
     startAngle: Float = 135f,
-    sweepAngle: Float = 270f
+    sweepAngle: Float = 270f,
+    accentColor: Color = gaugeGreen
 ) {
     val clampedValue = value.coerceIn(minValue, maxValue)
     val fraction = (clampedValue - minValue) / (maxValue - minValue)
 
     val arcColor = when {
-        fraction < 0.5f -> gaugeGreen
-        fraction < 0.75f -> gaugeYellow
-        fraction < 0.9f -> gaugeOrange
+        fraction < 0.5f -> accentColor.copy(alpha = 0.7f)
+        fraction < 0.75f -> accentColor.copy(alpha = 0.85f)
+        fraction < 0.9f -> accentColor
         else -> gaugeRed
     }
 

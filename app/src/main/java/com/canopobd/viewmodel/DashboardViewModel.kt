@@ -35,6 +35,12 @@ class DashboardViewModel private constructor(
     val connectionStats: StateFlow<ConnectionStats> = repository.connectionStats
     val autoReconnect: StateFlow<Boolean> = repository.autoReconnect
     val lastError: StateFlow<String?> = repository.lastError
+    val colorTheme: StateFlow<ColorTheme> = repository.colorTheme
+    val primaryGaugeIds: StateFlow<Set<String>> = repository.primaryGaugeIds
+    val pollMode: StateFlow<PollMode> = repository.pollMode
+
+    private val _showCustomization = MutableStateFlow(false)
+    val showCustomization: StateFlow<Boolean> = _showCustomization.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
@@ -122,6 +128,10 @@ class DashboardViewModel private constructor(
         _showTripComputer.value = !_showTripComputer.value
     }
 
+    fun toggleCustomization() {
+        _showCustomization.value = !_showCustomization.value
+    }
+
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT) {
         repository.startRemoteServer(port)
     }
@@ -148,6 +158,18 @@ class DashboardViewModel private constructor(
 
     fun setAutoReconnect(enabled: Boolean) {
         repository.setAutoReconnect(enabled)
+    }
+
+    fun setColorTheme(theme: ColorTheme) {
+        repository.setColorTheme(theme)
+    }
+
+    fun setPrimaryGauges(ids: Set<String>) {
+        repository.setPrimaryGauges(ids)
+    }
+
+    fun setPollMode(mode: PollMode) {
+        repository.setPollMode(mode)
     }
 
     fun resetTrip() {

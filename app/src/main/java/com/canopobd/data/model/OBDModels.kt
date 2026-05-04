@@ -90,6 +90,27 @@ enum class OBDPID(
     }),
     ENGINE_FUEL_RATE("015E", "Engine Fuel Rate", "L/h", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 20.0 else 0.0
+    }),
+    SHORT_TERM_FUEL_TRIM_BANK1("0161", "STFT Bank 1", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
+    }),
+    LONG_TERM_FUEL_TRIM_BANK1("0162", "LTFT Bank 1", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
+    }),
+    SHORT_TERM_FUEL_TRIM_BANK2("0163", "STFT Bank 2", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
+    }),
+    LONG_TERM_FUEL_TRIM_BANK2("0164", "LTFT Bank 2", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
+    }),
+    FUEL_AIR_EQUIV_RATIO("0144", "Fuel Air Equiv Ratio", "", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 32768.0 else 0.0
+    }),
+    ABSOLUTE_THROTTLE_B("014D", "Throttle B", "%", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    }),
+    TIME_RUN_WITH_MIL("014E", "Time Run MIL On", "min", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     });
 
     companion object {
@@ -122,8 +143,42 @@ data class OBDData(
     val controlModuleVoltage: Double = 0.0,
     val absoluteLoadValue: Double = 0.0,
     val engineFuelRate: Double = 0.0,
+    val shortTermFuelTrimB1: Double = 0.0,
+    val longTermFuelTrimB1: Double = 0.0,
+    val shortTermFuelTrimB2: Double = 0.0,
+    val longTermFuelTrimB2: Double = 0.0,
+    val fuelAirRatio: Double = 0.0,
     val vin: String = "",
     val timestamp: Long = System.currentTimeMillis()
+)
+
+data class GaugeConfig(
+    val id: String,
+    val label: String,
+    val unit: String,
+    val minValue: Float = 0f,
+    val maxValue: Float = 100f,
+    val color: Long = 0xFF00FF88,
+    val visible: Boolean = true,
+    val position: Int = 0,
+    val isPrimary: Boolean = false
+)
+
+enum class ColorTheme(val displayName: String, val primaryColor: Long, val accentColor: Long, val surfaceColor: Long, val gaugeGreen: Long, val gaugeYellow: Long, val gaugeOrange: Long, val gaugeRed: Long) {
+    CANOPO("Canopo Dark", 0xFF7B2FFF, 0xFF7B2FFF, 0xFF16213E, 0xFF00FF88, 0xFFFFE066, 0xFFFF8C00, 0xFFFF4444),
+    BLUE_STEEL("Blue Steel", 0xFF1E88E5, 0xFF42A5F5, 0xFF0D1B2A, 0xFF4CAF50, 0xFFFFEB3B, 0xFFFF9800, 0xFFF44336),
+    AMBER("Amber", 0xFFFFB300, 0xFFFFD54F, 0xFF1A1A1A, 0xFF69F0AE, 0xFFFFE082, 0xFFFFAB40, 0xFFFF5252),
+    NEON("Neon", 0xFF00E5FF, 0xFF18FFFF, 0xFF0A0A0A, 0xFF00E676, 0xFFFFEA00, 0xFFFF9100, 0xFFFF1744);
+
+    companion object {
+        fun fromName(name: String): ColorTheme = entries.find { it.name == name } ?: CANOPO
+    }
+}
+
+data class DashboardLayout(
+    val name: String,
+    val theme: ColorTheme,
+    val gauges: List<GaugeConfig>
 )
 
 data class DiagnosticTroubleCode(
@@ -169,6 +224,7 @@ data class TripData(
 )
 
 enum class ConnectionQuality(val label: String) {
+    UNKNOWN("Unknown"),
     EXCELLENT("Excellent"),
     GOOD("Good"),
     FAIR("Fair"),
@@ -191,6 +247,12 @@ data class ConnectionStats(
 ) {
     val totalCount: Int get() = successCount + failureCount
     val successRate: Double get() = if (totalCount == 0) 1.0 else successCount.toDouble() / totalCount
+}
+
+enum class PollMode(val label: String, val pollInterval: Long) {
+    FAST("Fast (50ms)", 50L),
+    NORMAL("Normal (500ms)", 500L),
+    ECO("Eco (2000ms)", 2000L)
 }
 
 enum class MeasurementUnit(val label: String, val speedFactor: Double, val speedUnit: String, val tempFactor: Double, val tempOffset: Double, val tempUnit: String) {

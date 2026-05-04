@@ -110,4 +110,16 @@
 
     <!-- Settings additions -->
     <string name="connection">Connection</string>
+
+    <!-- Dashboard customization -->
+    <string name="customize_dashboard">Customize Dashboard</string>
+    <string name="color_themes">Color Themes</string>
+    <string name="select_primary_gauges">Select Primary Gauges</string>
+    <string name="layout_preview">Layout Preview</string>
+
+    <!-- Poll modes -->
+    <string name="poll_mode">Poll Mode</string>
+    <string name="poll_fast">Fast</string>
+    <string name="poll_normal">Normal</string>
+    <string name="poll_eco">Eco</string>
 </resources>

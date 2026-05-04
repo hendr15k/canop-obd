@@ -10,10 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.canopobd.R
+import com.canopobd.data.model.ColorTheme
 import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
 import com.canopobd.viewmodel.DashboardViewModel
@@ -37,10 +35,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            CanopObdTheme {
+            val colorTheme by viewModel.colorTheme.collectAsState()
+            val appColors = remember(colorTheme) { colorTheme.toAppColors() }
+
+            CanopObdTheme(appColors = appColors) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = appColors.dark
                 ) {
                     MainContent(viewModel = viewModel)
                 }
@@ -98,6 +99,7 @@ private fun MainContent(viewModel: DashboardViewModel) {
 
 @Composable
 private fun PermissionRequiredScreen(onRequest: () -> Unit) {
+    val colors = LocalAppColors.current
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -106,18 +108,18 @@ private fun PermissionRequiredScreen(onRequest: () -> Unit) {
             Text(
                 text = stringResource(R.string.permissions_title),
                 fontSize = 18.sp,
-                color = canopoHighlight
+                color = colors.highlight
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = stringResource(R.string.permissions_message),
                 fontSize = 14.sp,
-                color = textSecondary,
+                color = colors.textSecondary,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
             TextButton(onClick = onRequest) {
-                Text(stringResource(R.string.permissions_grant), color = canopoAccent, fontSize = 16.sp)
+                Text(stringResource(R.string.permissions_grant), color = colors.accent, fontSize = 16.sp)
             }
         }
     }
@@ -140,6 +142,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showPIDScreen by viewModel.showPIDScreen.collectAsState()
     val showRemoteDialog by viewModel.showRemoteDialog.collectAsState()
     val showTripComputer by viewModel.showTripComputer.collectAsState()
+    val showCustomization by viewModel.showCustomization.collectAsState()
     val remoteServerRunning by viewModel.remoteServerRunning.collectAsState()
     val remoteServerIp by viewModel.remoteServerIp.collectAsState()
     val remoteServerPort by viewModel.remoteServerPort.collectAsState()
@@ -148,6 +151,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val connectionStats by viewModel.connectionStats.collectAsState()
     val autoReconnect by viewModel.autoReconnect.collectAsState()
     val lastError by viewModel.lastError.collectAsState()
+    val colorTheme by viewModel.colorTheme.collectAsState()
+    val primaryGaugeIds by viewModel.primaryGaugeIds.collectAsState()
+    val pollMode by viewModel.pollMode.collectAsState()
 
     DashboardScreen(
         connectionState = connectionState,
@@ -165,6 +171,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showPIDScreen = showPIDScreen,
         showRemoteDialog = showRemoteDialog,
         showTripComputer = showTripComputer,
+        showCustomization = showCustomization,
         remoteServerRunning = remoteServerRunning,
         remoteServerIp = remoteServerIp,
         remoteServerPort = remoteServerPort,
@@ -173,6 +180,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         connectionStats = connectionStats,
         autoReconnect = autoReconnect,
         errorMessage = lastError,
+        colorTheme = colorTheme,
+        primaryGaugeIds = primaryGaugeIds,
+        pollMode = pollMode,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onToggleDevicePicker = viewModel::toggleDevicePicker,
@@ -183,6 +193,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onTogglePIDScreen = viewModel::togglePIDScreen,
         onToggleRemoteDialog = viewModel::toggleRemoteDialog,
         onToggleTripComputer = viewModel::toggleTripComputer,
+        onToggleCustomization = viewModel::toggleCustomization,
         onStartRemoteServer = viewModel::startRemoteServer,
         onStopRemoteServer = viewModel::stopRemoteServer,
         onStartRecording = viewModel::startRecording,
@@ -190,9 +201,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onSetPollRate = viewModel::setPollRate,
         onSetMeasurementUnit = viewModel::setMeasurementUnit,
         onSetAutoReconnect = viewModel::setAutoReconnect,
+        onSetPollMode = viewModel::setPollMode,
         onResetTrip = viewModel::resetTrip,
         onGetStoredVin = viewModel::getStoredVin,
         onGetExportData = viewModel::getExportData,
-        onClearRecordedData = viewModel::clearRecordedData
+        onClearRecordedData = viewModel::clearRecordedData,
+        onSetColorTheme = viewModel::setColorTheme,
+        onSetPrimaryGauges = viewModel::setPrimaryGauges
     )
 }

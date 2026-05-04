@@ -18,6 +18,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.MeasurementUnit
+import com.canopobd.data.model.PollMode
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -25,10 +26,12 @@ fun SettingsDialog(
     pollRate: Long,
     measurementUnit: MeasurementUnit,
     autoReconnect: Boolean,
+    pollMode: PollMode,
     onDismiss: () -> Unit,
     onPollRateChange: (Long) -> Unit,
     onUnitChange: (MeasurementUnit) -> Unit,
-    onAutoReconnectChange: (Boolean) -> Unit
+    onAutoReconnectChange: (Boolean) -> Unit,
+    onPollModeChange: (PollMode) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -69,27 +72,28 @@ fun SettingsDialog(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "${pollRate}ms",
-                            color = canopoAccent,
-                            fontSize = 12.sp
-                        )
-                        Slider(
-                            value = pollRate.toFloat(),
-                            onValueChange = { onPollRateChange(it.toLong()) },
-                            valueRange = 100f..2000f,
-                            steps = 18,
-                            colors = SliderDefaults.colors(
-                                thumbColor = canopoAccent,
-                                activeTrackColor = canopoAccent
-                            )
-                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(stringResource(R.string.poll_rate_fast), color = textDim, fontSize = 10.sp)
-                            Text(stringResource(R.string.poll_rate_slow), color = textDim, fontSize = 10.sp)
+                            PollMode.entries.forEach { mode ->
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { onPollModeChange(mode) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (pollMode == mode) canopoAccent.copy(alpha = 0.2f) else canopoDark,
+                                    border = if (pollMode == mode) androidx.compose.foundation.BorderStroke(2.dp, canopoAccent) else null
+                                ) {
+                                    Text(
+                                        text = mode.label,
+                                        fontSize = 12.sp,
+                                        color = if (pollMode == mode) canopoAccent else textSecondary,
+                                        modifier = Modifier.padding(vertical = 10.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -164,7 +168,7 @@ fun SettingsDialog(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        InfoRow(label = stringResource(R.string.app_version), value = "1.0.1")
+                        InfoRow(label = stringResource(R.string.app_version), value = "1.1.0")
                         InfoRow(label = stringResource(R.string.obd_protocol), value = "ELM327")
                         InfoRow(label = stringResource(R.string.android_version), value = "API 26+")
                     }

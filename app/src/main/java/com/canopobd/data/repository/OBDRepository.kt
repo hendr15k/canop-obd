@@ -64,6 +64,15 @@ class OBDRepository(
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
+    private val _colorTheme = MutableStateFlow(ColorTheme.CANOPO)
+    val colorTheme: StateFlow<ColorTheme> = _colorTheme.asStateFlow()
+
+    private val _primaryGaugeIds = MutableStateFlow(setOf("rpm", "speed", "coolant"))
+    val primaryGaugeIds: StateFlow<Set<String>> = _primaryGaugeIds.asStateFlow()
+
+    private val _pollMode = MutableStateFlow(PollMode.NORMAL)
+    val pollMode: StateFlow<PollMode> = _pollMode.asStateFlow()
+
     private var lastConnectedAddress: String? = null
     private var reconnectJob: Job? = null
 
@@ -87,13 +96,23 @@ class OBDRepository(
         OBDPID.COMMANDED_EGR, OBDPID.EGR_TEMP, OBDPID.COMMANDED_EVAPORATIVE_PURGE,
         OBDPID.BAROMETRIC_PRESSURE, OBDPID.O2_VOLTAGE_B1S1, OBDPID.O2_VOLTAGE_B1S2,
         OBDPID.CATALYST_TEMP_B1S1, OBDPID.CONTROL_MODULE_VOLTAGE,
-        OBDPID.ABSOLUTE_LOAD_VALUE, OBDPID.ENGINE_FUEL_RATE
+        OBDPID.ABSOLUTE_LOAD_VALUE, OBDPID.ENGINE_FUEL_RATE,
+        OBDPID.SHORT_TERM_FUEL_TRIM_BANK1, OBDPID.LONG_TERM_FUEL_TRIM_BANK1,
+        OBDPID.SHORT_TERM_FUEL_TRIM_BANK2, OBDPID.LONG_TERM_FUEL_TRIM_BANK2,
+        OBDPID.FUEL_AIR_EQUIV_RATIO
     )
 
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
         storedVin = prefs.getString("vin", "") ?: ""
+        prefs.getString("color_theme", null)?.let {
+            _colorTheme.value = ColorTheme.fromName(it)
+        }
+        prefs.getStringSet("primary_gauges", null)?.let { ids ->
+            _primaryGaugeIds.value = ids
+        }
+        _pollMode.value = PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
     }
 
     fun getPairedDevices(): List<BluetoothDeviceInfo> {
@@ -275,6 +294,11 @@ class OBDRepository(
                     controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: 0.0,
                     absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: 0.0,
                     engineFuelRate = fuelRate,
+                    shortTermFuelTrimB1 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK1] ?: 0.0,
+                    longTermFuelTrimB1 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK1] ?: 0.0,
+                    shortTermFuelTrimB2 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK2] ?: 0.0,
+                    longTermFuelTrimB2 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK2] ?: 0.0,
+                    fuelAirRatio = results[OBDPID.FUEL_AIR_EQUIV_RATIO] ?: 0.0,
                     vin = storedVin,
                     timestamp = now
                 )
@@ -349,6 +373,30 @@ class OBDRepository(
     fun setAutoReconnect(enabled: Boolean) {
         _autoReconnect.value = enabled
         prefs.edit().putBoolean("auto_reconnect", enabled).apply()
+    }
+
+    fun setColorTheme(theme: ColorTheme) {
+        _colorTheme.value = theme
+        prefs.edit().putString("color_theme", theme.name).apply()
+    }
+
+    fun setPrimaryGauges(ids: Set<String>) {
+        _primaryGaugeIds.value = ids
+        prefs.edit().putStringSet("primary_gauges", ids).apply()
+    }
+
+    fun setPollMode(mode: PollMode) {
+        _pollMode.value = mode
+        val effectiveRate = when (mode) {
+            PollMode.FAST -> 50L
+            PollMode.NORMAL -> 500L
+            PollMode.ECO -> 2000L
+        }
+        _pollRate.value = effectiveRate
+        prefs.edit()
+            .putString("poll_mode", mode.name)
+            .putLong("poll_rate", effectiveRate)
+            .apply()
     }
 
     fun resetTrip() {
