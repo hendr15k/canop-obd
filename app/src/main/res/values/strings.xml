@@ -643,4 +643,12 @@
     <string name="issue_coolant_sensor">Kuhlmittel-Sensor</string>
     <string name="issue_turbo_boost">Ladedruck</string>
     <string name="issue_spark_plugs">Zundkerzen</string>
+    <!-- TurboHealthCard Warnings -->
+    <string name="overboost_warning">Überladung erkannt — Ladedruck zu hoch</string>
+    <string name="underboost_warning">Unterladung — Ladedruck nicht erreicht</string>
+    <string name="oil_temp_high_warning">Öltemperatur kritisch hoch!</string>
+    <string name="oil_temp_warm_warning">Öltemperatur über optimaler Grenze</string>
+    <string name="charge_air_high_warning">Ladelufttemperatur zu hoch — Ladeluftkühler prüfen</string>
+    <string name="wastegate">Wastegate</string>
+    <string name="temperatures">Temperaturen</string>
 </resources>

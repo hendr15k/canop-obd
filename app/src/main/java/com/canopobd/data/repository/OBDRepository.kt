@@ -142,7 +142,16 @@ class OBDRepository(
         OBDPID.ETHANOL_FUEL_PERCENT,
         OBDPID.FUEL_TANK_LEVEL_INPUT,
         OBDPID.DISTANCE_MIL,
-        OBDPID.ABSOLUTE_THROTTLE_B
+        OBDPID.ABSOLUTE_THROTTLE_B,
+        OBDPID.TURBO_OIL_PRESSURE,
+        OBDPID.TURBO_WASTEGATE_B,
+        OBDPID.TURBO_BOOST_B,
+        OBDPID.TURBO_VARIABLE_GEOM,
+        OBDPID.TURBO_WATER_COOL,
+        OBDPID.TURBO_COMP_INLET_TEMP,
+        OBDPID.TURBO_COMP_OUTLET_TEMP,
+        OBDPID.TURBO_TURBINE_INLET_TEMP,
+        OBDPID.TURBO_TURBINE_OUTLET_TEMP
     )
 
     private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
@@ -437,6 +446,15 @@ class OBDRepository(
                     throttleC = results[OBDPID.THROTTLE_C] ?: 0.0,
                     throttleActuator = results[OBDPID.THROTTLE_ACTUATOR] ?: 0.0,
                     hybridBatteryRemaining = results[OBDPID.HYBRID_BATTERY_REMAINING] ?: 0.0,
+                    turboOilPressure = results[OBDPID.TURBO_OIL_PRESSURE],
+                    turboWastegateB = results[OBDPID.TURBO_WASTEGATE_B],
+                    turboBoostB = results[OBDPID.TURBO_BOOST_B],
+                    turboVgtPosition = results[OBDPID.TURBO_VARIABLE_GEOM],
+                    turboWaterCoolFlow = results[OBDPID.TURBO_WATER_COOL],
+                    turboCompInletTemp = results[OBDPID.TURBO_COMP_INLET_TEMP],
+                    turboCompOutletTemp = results[OBDPID.TURBO_COMP_OUTLET_TEMP],
+                    turboTurbineInletTemp = results[OBDPID.TURBO_TURBINE_INLET_TEMP],
+                    turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
                     vin = storedVin,
                     timestamp = now
                 )

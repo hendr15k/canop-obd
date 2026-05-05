@@ -797,6 +797,8 @@ class ELM327BTConnection(
         sendCommandWithTimeout(cmd)
     }
 
+    suspend fun sendRawCommand(cmd: String): String = sendCommand(cmd)
+
     private suspend fun sendCommandWithTimeout(cmd: String): String = withContext(Dispatchers.IO) {
         val output = outputStream ?: throw IOException("Not connected")
         val input = inputStream ?: throw IOException("Not connected")
@@ -1039,7 +1041,281 @@ class ELM327BTConnection(
         return bluetoothAdapter.bondedDevices?.toList() ?: emptyList()
     }
 
-    suspend fun sendRawCommand(cmd: String): String = withContext(Dispatchers.IO) {
-        sendCommandWithTimeout(cmd)
+
+    // =========================================================================
+    // MODE 22 EXTENDED PID SUPPORT (GM/Opel Bosch ME17)
+    // =========================================================================
+    
+    /**
+     * Send a Mode 22 command to the ECU.
+     * 
+     * Mode 22 is a manufacturer-specific diagnostic mode (SAE J2190) that provides
+     * enhanced data not available through standard Mode 01 PIDs.
+     * 
+     * Command Format: 22XXXX
+     *   - 22: Mode 22 (Read Data By Identifier)
+     *   - XXXX: 4-digit hex PID code
+     * 
+     * Response Format: 62XXXX + data bytes
+     *   - 62: Mode 22 positive response (0x22 + 0x40)
+     *   - XXXX: Echo of the requested PID
+     *   - data bytes: Response data
+     * 
+     * @param pidCode The 4-digit hex PID code (e.g., "F190" for VIN)
+     * @return Raw response string from ELM327, or null if error
+     */
+    suspend fun sendMode22Command(pidCode: String): String? = withContext(Dispatchers.IO) {
+        val command = "22$pidCode"
+        try {
+            Log.d(TAG, "Sending Mode 22 command: $command")
+            val response = sendCommandWithTimeout(command)
+            Log.d(TAG, "Mode 22 response for $pidCode: $response")
+            
+            if (response.contains("ERROR") || response.isEmpty()) {
+                Log.w(TAG, "Mode 22 command $pidCode failed: $response")
+                null
+            } else {
+                response
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Mode 22 command $pidCode exception: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Request a specific Mode 22 PID and return the parsed value.
+     * 
+     * @param pidCode The 4-digit hex PID code (e.g., "0002" for Turbo Boost Actual)
+     * @return Parsed value from the response, or null if failed
+     */
+    suspend fun requestMode22PID(pidCode: String): Double? = withContext(Dispatchers.IO) {
+        val response = sendMode22Command(pidCode) ?: return@withContext null
+        parseMode22Response(response, pidCode)
+    }
+    
+    /**
+     * Read multiple Mode 22 PIDs in parallel.
+     * 
+     * @param pidCodes List of 4-digit hex PID codes to read
+     * @return Map of PID code to parsed value (only successful reads)
+     */
+    suspend fun readMultipleMode22PIDs(pidCodes: List<String>): Map<String, Double> = withContext(Dispatchers.IO) {
+        val results = mutableMapOf<String, Double>()
+        
+        // Process in batches of 4 to avoid overwhelming the ECU
+        pidCodes.chunked(4).forEach { batch ->
+            val deferreds = batch.map { pidCode ->
+                async { pidCode to requestMode22PID(pidCode) }
+            }
+            deferreds.awaitAll().forEach { (pidCode, value) ->
+                value?.let { results[pidCode] = it }
+            }
+        }
+        
+        Log.d(TAG, "Mode 22 read: ${results.size}/${pidCodes.size} PIDs successful")
+        results
+    }
+    
+    /**
+     * Read all turbo monitoring PIDs via Mode 22.
+     * Returns a comprehensive set of turbo-related data.
+     */
+    suspend fun readTurboMonitoringData(): Mode22TurboData = withContext(Dispatchers.IO) {
+        val results = readMultipleMode22PIDs(Mode22PIDs.TURBO_MONITORING_PIDS)
+        
+        Mode22TurboData(
+            turboBoostActual = results[Mode22PIDs.TURBO_BOOST_ACTUAL] ?: 0.0,
+            turboBoostTarget = results[Mode22PIDs.TURBO_BOOST_TARGET] ?: 0.0,
+            wastegateDuty = results[Mode22PIDs.WASTEGATE_DUTY] ?: 0.0,
+            turboSpeed = results[Mode22PIDs.TURBO_SPEED] ?: 0.0,
+            chargeAirTemp = results[Mode22PIDs.CHARGE_AIR_TEMP] ?: 0.0,
+            turboInletTemp = results[Mode22PIDs.TURBO_INLET_TEMP] ?: 0.0,
+            turboOutletTemp = results[Mode22PIDs.TURBO_OUTLET_TEMP] ?: 0.0,
+            engineTorque = results[Mode22PIDs.ENGINE_TORQUE] ?: 0.0,
+            vgtPosition = results[Mode22PIDs.VGT_POSITION] ?: 0.0,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+    
+    /**
+     * Parse a Mode 22 response and extract the value.
+     * 
+     * Response Format: 62XXXX YYYY...
+     *   - 62: Positive response for Mode 22
+     *   - XXXX: PID echo (4 chars)
+     *   - YYYY: Data bytes (variable length)
+     * 
+     * @param response Raw response string
+     * @param pidCode Requested PID code
+     * @return Parsed value, or null if parsing fails
+     */
+    private fun parseMode22Response(response: String, pidCode: String): Double? {
+        val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+        
+        if (hex.contains("ERROR") || hex.isEmpty()) {
+            Log.w(TAG, "Mode 22 parse error - invalid response: $response")
+            return null
+        }
+        
+        // Check for positive response (0x62 = 0x22 + 0x40)
+        if (!hex.startsWith("62")) {
+            Log.w(TAG, "Mode 22 parse error - not positive response: $hex")
+            return null
+        }
+        
+        // Skip mode echo (2 chars: "62") + PID echo (4 chars: "XXXX")
+        // Total: 6 hex chars
+        if (hex.length < 8) {
+            Log.w(TAG, "Mode 22 parse error - response too short: $hex")
+            return null
+        }
+        
+        val pidDef = Mode22PIDs.PID_DEFINITIONS["22$pidCode"]
+        if (pidDef == null) {
+            Log.w(TAG, "Mode 22 parse error - unknown PID: $pidCode")
+            return null
+        }
+        
+        // Extract data bytes (skip first 6 hex chars: "62" + PID)
+        val dataHex = hex.substring(6)
+        val expectedByteCount = pidDef.byteCount
+        val data = ByteArray(expectedByteCount)
+        
+        for (i in 0 until expectedByteCount) {
+            val start = i * 2
+            if (start + 2 <= dataHex.length) {
+                try {
+                    data[i] = dataHex.substring(start, start + 2).toInt(16).toByte()
+                } catch (e: NumberFormatException) {
+                    Log.w(TAG, "Mode 22 parse error - invalid hex at position $start: ${dataHex.substring(start, start + 2)}")
+                    return null
+                }
+            } else {
+                Log.w(TAG, "Mode 22 parse error - insufficient data bytes: need $expectedByteCount, got ${dataHex.length / 2}")
+                return null
+            }
+        }
+        
+        return try {
+            val value = pidDef.formula(data)
+            Log.v(TAG, "Mode 22 PID $pidCode = $value ${pidDef.unit}")
+            value
+        } catch (e: Exception) {
+            Log.e(TAG, "Mode 22 formula error for $pidCode: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Read VIN using Mode 22 (alternative to Mode 09).
+     * Some GM/Opel vehicles require Mode 22 for VIN retrieval.
+     * 
+     * @return VIN string (17 characters), or empty string if failed
+     */
+    suspend fun readVINMode22(): String = withContext(Dispatchers.IO) {
+        try {
+            val response = sendMode22Command("F190") ?: return@withContext ""
+            parseVINMode22(response)
+        } catch (e: Exception) {
+            Log.w(TAG, "Mode 22 VIN read failed: ${e.message}")
+            ""
+        }
+    }
+    
+    /**
+     * Parse VIN from Mode 22 response.
+     * Response: 62F190 + 17 bytes of VIN data
+     */
+    private fun parseVINMode22(response: String): String {
+        val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+        if (hex.contains("ERROR") || hex.isEmpty()) return ""
+        
+        // Skip "62F190" (6 hex chars)
+        val dataHex = hex.drop(6)
+        if (dataHex.isEmpty()) return ""
+        
+        // Convert hex bytes to ASCII characters
+        return dataHex.chunked(2).mapNotNull { byteStr ->
+            if (byteStr.length == 2) {
+                val intValue = byteStr.toInt(16)
+                if (intValue in 0x20..0x7E) intValue.toChar() else null
+            } else null
+        }.joinToString("")
+    }
+    
+    /**
+     * Read ECU Calibration ID using Mode 22.
+     * 
+     * @return Calibration ID string, or empty string if failed
+     */
+    suspend fun readCalibrationIdMode22(): String = withContext(Dispatchers.IO) {
+        try {
+            val response = sendMode22Command("F191") ?: return@withContext ""
+            parseVINMode22(response) // Same parsing logic for ASCII data
+        } catch (e: Exception) {
+            Log.w(TAG, "Mode 22 Calibration ID read failed: ${e.message}")
+            ""
+        }
+    }
+    
+    /**
+     * Read ECU Calibration Verification Number (CVN) using Mode 22.
+     * 
+     * @return CVN string, or empty string if failed
+     */
+    suspend fun readCVNMode22(): String = withContext(Dispatchers.IO) {
+        try {
+            val response = sendMode22Command("F192") ?: return@withContext ""
+            val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+            if (hex.contains("ERROR") || hex.isEmpty()) return@withContext ""
+            
+            // CVN is typically 4 bytes (8 hex chars) after "62F192"
+            val dataHex = hex.drop(6)
+            dataHex.take(8) // Return first 8 hex chars as CVN
+        } catch (e: Exception) {
+            Log.w(TAG, "Mode 22 CVN read failed: ${e.message}")
+            ""
+        }
+    }
+    
+    /**
+     * Discover which Mode 22 PIDs are supported by the ECU.
+     * Sends a subset of common PIDs and checks which ones respond successfully.
+     * 
+     * @return List of supported 4-digit hex PID codes
+     */
+    suspend fun discoverMode22PIDs(): List<String> = withContext(Dispatchers.IO) {
+        val discovered = mutableListOf<String>()
+        
+        // Test a representative set of Mode 22 PIDs
+        val testPids = listOf(
+            "0001",  // Engine Torque
+            "0002",  // Turbo Boost Actual
+            "0003",  // Turbo Boost Target
+            "0004",  // Wastegate Duty
+            "0005",  // Turbo Speed
+            "0006",  // Turbo Inlet Temp
+            "0007",  // Turbo Outlet Temp
+            "0008",  // Charge Air Temp
+            "0009",  // VGT Position
+            "F190",  // VIN
+            "F191",  // Calibration ID
+            "1001",  // Fuel Rail Pressure
+            "2001",  // Cat Temp B1S1
+            "3002",  // Engine Oil Temp
+            "5001",  // Wideband Lambda B1
+        )
+        
+        for (pid in testPids) {
+            val response = sendMode22Command(pid)
+            if (response != null && !response.contains("ERROR")) {
+                discovered.add(pid)
+                Log.d(TAG, "Mode 22 PID $pid supported")
+            }
+        }
+        
+        Log.i(TAG, "Mode 22 discovery complete: ${discovered.size} PIDs supported")
+        discovered
     }
 }
