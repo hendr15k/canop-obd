@@ -43,7 +43,9 @@ private val availableGauges = listOf(
     GaugeOption("intake_temp", "Intake Temp", "°C", "Ansaugluft"),
     GaugeOption("fuel_trim", "Fuel Trim B1", "%", "Kraftstoffkorrektur"),
     GaugeOption("load", "Absolute Load", "%", "Motorlast absolut"),
-    GaugeOption("fuel_rate", "Fuel Rate", "L/h", "Kraftstoffverbrauch")
+    GaugeOption("fuel_rate", "Fuel Rate", "L/h", "Kraftstoffverbrauch"),
+    GaugeOption("accel_pedal", "Accel Pedal", "%", "Gaspedal"),
+    GaugeOption("hybrid_battery", "Hybrid Batt", "%", "Hybrid-Batterie")
 )
 
 @Composable
@@ -74,7 +76,7 @@ fun DashboardCustomizationDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Dashboard Anpassen",
+                        text = stringResource(R.string.customize_dashboard_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
@@ -94,17 +96,17 @@ fun DashboardCustomizationDialog(
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        text = { Text("Farben", color = if (selectedTab == 0) textPrimary else textSecondary) }
+                        text = { Text(stringResource(R.string.tab_colors), color = if (selectedTab == 0) textPrimary else textSecondary) }
                     )
                     Tab(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
-                        text = { Text("Gauges", color = if (selectedTab == 1) textPrimary else textSecondary) }
+                        text = { Text(stringResource(R.string.tab_gauges), color = if (selectedTab == 1) textPrimary else textSecondary) }
                     )
                     Tab(
                         selected = selectedTab == 2,
                         onClick = { selectedTab = 2 },
-                        text = { Text("Layout", color = if (selectedTab == 2) textPrimary else textSecondary) }
+                        text = { Text(stringResource(R.string.tab_layout), color = if (selectedTab == 2) textPrimary else textSecondary) }
                     )
                 }
 
@@ -136,7 +138,7 @@ private fun ThemeSelector(
     LazyColumn {
         item {
             Text(
-                text = "Farbschema wählen",
+                text = stringResource(R.string.color_themes_title),
                 fontSize = 14.sp,
                 color = textSecondary,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -208,7 +210,7 @@ private fun GaugeSelector(
     LazyColumn {
         item {
             Text(
-                text = "Haupt-Gauges auswählen (3 für große Anzeige)",
+                text = stringResource(R.string.select_gauges_title),
                 fontSize = 14.sp,
                 color = textSecondary,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -291,7 +293,7 @@ private fun GaugeSelector(
 private fun LayoutPreview(primaryGaugeIds: Set<String>) {
     Column {
         Text(
-            text = "Vorschau",
+            text = stringResource(R.string.layout_preview_title),
             fontSize = 14.sp,
             color = textSecondary,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -358,7 +360,7 @@ private fun LayoutPreview(primaryGaugeIds: Set<String>) {
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Leer",
+                                text = stringResource(R.string.empty_slot),
                                 fontSize = 9.sp,
                                 color = textDim
                             )
@@ -377,7 +379,7 @@ private fun LayoutPreview(primaryGaugeIds: Set<String>) {
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = "Sekundär-Gauges (6 Stück):",
+                    text = stringResource(R.string.secondary_gauges_label),
                     fontSize = 12.sp,
                     color = textSecondary
                 )
@@ -411,6 +413,7 @@ private fun LayoutPreview(primaryGaugeIds: Set<String>) {
 private fun gaugeColor(id: String): Color = when (id) {
     "rpm", "speed", "coolant" -> gaugeGreen
     "throttle", "engine_load" -> gaugeYellow
-    "fuel", "fuel_trim" -> gaugeOrange
+    "fuel", "fuel_trim", "hybrid_battery" -> gaugeOrange
+    "maf", "accel_pedal" -> gaugeCyan
     else -> gaugeRed
 }

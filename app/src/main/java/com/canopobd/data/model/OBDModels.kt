@@ -111,6 +111,18 @@ enum class OBDPID(
     }),
     TIME_RUN_WITH_MIL("014E", "Time Run MIL On", "min", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    ACCELERATOR_POS_D("0151", "Accelerator Pedal D", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    THROTTLE_C("015D", "Throttle C", "%", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    }),
+    THROTTLE_ACTUATOR("015C", "Throttle Actuator", "%", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    }),
+    HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
     });
 
     companion object {
@@ -148,6 +160,10 @@ data class OBDData(
     val shortTermFuelTrimB2: Double = 0.0,
     val longTermFuelTrimB2: Double = 0.0,
     val fuelAirRatio: Double = 0.0,
+    val acceleratorPosD: Double = 0.0,
+    val throttleC: Double = 0.0,
+    val throttleActuator: Double = 0.0,
+    val hybridBatteryRemaining: Double = 0.0,
     val vin: String = "",
     val timestamp: Long = System.currentTimeMillis()
 )
@@ -419,3 +435,87 @@ data class FuelTrimAnalysis(
         else -> "OK"
     }
 }
+
+data class FuelEconomyData(
+    val currentL100km: Double = 0.0,
+    val avgL100km: Double = 0.0,
+    val currentKmL: Double = 0.0,
+    val avgKmL: Double = 0.0,
+    val currentMpgUs: Double = 0.0,
+    val avgMpgUs: Double = 0.0,
+    val currentMpgUk: Double = 0.0,
+    val avgMpgUk: Double = 0.0,
+    val estimatedFromMaf: Boolean = false
+) {
+    companion object {
+        fun fromL100km(l100km: Double): FuelEconomyData {
+            if (l100km <= 0.0 || l100km.isNaN() || l100km.isInfinite() || l100km < 0.5 || l100km > 100.0) {
+                return FuelEconomyData()
+            }
+            val kmL = 100.0 / l100km
+            val mpgUs = 235.214583 / l100km
+            val mpgUk = 282.4809363 / l100km
+            return FuelEconomyData(
+                currentL100km = l100km,
+                avgL100km = l100km,
+                currentKmL = kmL,
+                avgKmL = kmL,
+                currentMpgUs = mpgUs,
+                avgMpgUs = mpgUs,
+                currentMpgUk = mpgUk,
+                avgMpgUk = mpgUk,
+                estimatedFromMaf = true
+            )
+        }
+    }
+}
+
+data class MaintenanceItem(
+    val type: MaintenanceType,
+    val lastServiceKm: Int = 0,
+    val intervalKm: Int = 15000,
+    val lastServiceDate: Long = 0L,
+    val currentKm: Int = 0
+) {
+    val kmRemaining: Int get() = (lastServiceKm + intervalKm) - currentKm
+    val status: MaintenanceStatus get() = when {
+        kmRemaining < 0 -> MaintenanceStatus.OVERDUE
+        kmRemaining < intervalKm * 0.1 -> MaintenanceStatus.DUE_SOON
+        else -> MaintenanceStatus.OK
+    }
+}
+
+enum class MaintenanceType(val label: String, val defaultInterval: Int) {
+    OIL_CHANGE("Ölwechsel", 15000),
+    TIRES("Reifen", 30000),
+    INSPECTION("TÜV / AU", 60000),
+    BRAKE_PADS("Bremsbeläge", 20000),
+    AIR_FILTER("Luftfilter", 30000),
+    TRANSMISSION_FLUID("Getriebeöl", 60000)
+}
+
+enum class MaintenanceStatus {
+    OK, DUE_SOON, OVERDUE
+}
+
+data class PerformanceResult(
+    val timestamp: Long = System.currentTimeMillis(),
+    val testType: PerformanceTestType,
+    val timeSeconds: Double = 0.0,
+    val valid: Boolean = false
+)
+
+enum class PerformanceTestType(val label: String, val startSpeedKmh: Double, val endSpeedKmh: Double) {
+    ZERO_100("0–100 km/h", 0.0, 100.0),
+    ZERO_200("0–200 km/h", 0.0, 200.0),
+    HUNDRED_200("100–200 km/h", 100.0, 200.0)
+}
+
+data class PerformanceTestState(
+    val isRunning: Boolean = false,
+    val currentTestType: PerformanceTestType = PerformanceTestType.ZERO_100,
+    val startTimeNanos: Long = 0L,
+    val lastResult: PerformanceResult? = null,
+    val history: List<PerformanceResult> = emptyList(),
+    val statusMessage: String = ""
+)

@@ -165,4 +165,104 @@
     <string name="analysis_no_data">Keine Daten</string>
     <string name="analysis_total_trim">Gesamtkorrektur</string>
     <string name="analysis_status">Status</string>
+
+    <!-- Dashboard Customization -->
+    <string name="customize_dashboard_title">Dashboard Anpassen</string>
+    <string name="color_themes_title">Farbschema wählen</string>
+    <string name="select_gauges_title">Haupt-Gauges auswählen (3 für große Anzeige)</string>
+    <string name="layout_preview_title">Vorschau</string>
+    <string name="tab_colors">Farben</string>
+    <string name="tab_gauges">Gauges</string>
+    <string name="tab_layout">Layout</string>
+    <string name="secondary_gauges_label">Sekundär-Gauges (6 Stück):</string>
+    <string name="empty_slot">Leer</string>
+
+    <!-- Gauge Options -->
+    <string name="gauge_rpm">Engine RPM</string>
+    <string name="gauge_speed">Vehicle Speed</string>
+    <string name="gauge_coolant">Coolant Temp</string>
+    <string name="gauge_throttle">Throttle Position</string>
+    <string name="gauge_engine_load">Engine Load</string>
+    <string name="gauge_fuel">Fuel Level</string>
+    <string name="gauge_timing">Timing Advance</string>
+    <string name="gauge_maf">MAF Rate</string>
+    <string name="gauge_intake_temp">Intake Temp</string>
+    <string name="gauge_fuel_trim">Fuel Trim B1</string>
+    <string name="gauge_absolute_load">Absolute Load</string>
+    <string name="gauge_fuel_rate">Fuel Rate</string>
+
+    <!-- Fuel Economy -->
+    <string name="fuel_economy_title">Kraftstoffverbrauch</string>
+    <string name="fuel_economy_current">Aktueller Verbrauch</string>
+    <string name="fuel_economy_avg">Durchschnitt</string>
+    <string name="fuel_economy_l100km">L/100km</string>
+    <string name="fuel_economy_kml">km/L</string>
+    <string name="fuel_economy_mpg_us">MPG (US)</string>
+    <string name="fuel_economy_mpg_uk">MPG (UK)</string>
+    <string name="fuel_economy_no_data">Keine Daten verfügbar</string>
+    <string name="fuel_economy_estimated">Geschätzt</string>
+    <string name="fuel_economy_from_maf">Aus Lufftmassen-Durchfluss</string>
+
+    <!-- Maintenance -->
+    <string name="maintenance_title">Wartung</string>
+    <string name="maintenance_oil">Ölwechsel</string>
+    <string name="maintenance_tires">Reifen</string>
+    <string name="maintenance_inspection">TÜV / AU</string>
+    <string name="maintenance_next_service">Nächster Service</string>
+    <string name="maintenance_last_service">Letzter Service</string>
+    <string name="maintenance_km_remaining">%s km verbleibend</string>
+    <string name="maintenance_overdue">Überfällig</string>
+    <string name="maintenance_due_soon">Bald fällig</string>
+    <string name="maintenance_ok">OK</string>
+    <string name="maintenance_set_km">Kilometerstand setzen</string>
+    <string name="maintenance_reset">Zurücksetzen</string>
+    <string name="maintenance_set_interval">Intervall einstellen</string>
+    <string name="maintenance_km">km</string>
+
+    <!-- Performance Test -->
+    <string name="perf_test_title">Beschleunigungstest</string>
+    <string name="perf_test_0_100">0–100 km/h</string>
+    <string name="perf_test_0_200">0–200 km/h</string>
+    <string name="perf_test_100_200">100–200 km/h</string>
+    <string name="perf_test_start">Start</string>
+    <string name="perf_test_stop">Stopp</string>
+    <string name="perf_test_ready">Bereit — Start drücken</string>
+    <string name="perf_test_running">Messung läuft…</string>
+    <string name="perf_test_result">Ergebnis: %.1f s</string>
+    <string name="perf_test_best">Bestzeit: %.1f s</string>
+    <string name="perf_test_no_result">Kein Ergebnis</string>
+    <string name="perf_test_history">Letzte Ergebnisse</string>
+
+    <!-- Trip History -->
+    <string name="trip_history_title">Fahrthistorie</string>
+    <string name="trip_history_no_trips">Keine Fahrten aufgezeichnet</string>
+    <string name="trip_history_clear">Verlauf löschen</string>
+
+    <!-- Dashboard bottom bar -->
+    <string name="battery_label">Batt: %.1fV</string>
+    <string name="load_label">Load: %.0f%%</string>
+    <string name="gps_tracked">GPS: %.1f km tracked</string>
+
+    <!-- Misc -->
+    <string name="add_gauge">Add gauge</string>
+    <string name="trend">Trend</string>
+    <string name="gps_track">GPS Track</string>
+    <string name="hud_mode">HUD Mode</string>
+    <string name="readiness">Readiness</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="analysis">Analysis</string>
+    <string name="alerts">Alerts</string>
+    <string name="fuel_trim_analysis_title">Kraftstoff-Trimm-Analyse</string>
+    <string name="stft_bank1">STFT Bank 1</string>
+    <string name="ltft_bank1">LTFT Bank 1</string>
+    <string name="stft_bank2">STFT Bank 2</string>
+    <string name="ltft_bank2">LTFT Bank 2</string>
+    <string name="total_trim_bank1">Gesamtkorrektur Bank 1</string>
+    <string name="total_trim_bank2">Gesamtkorrektur Bank 2</string>
+    <string name="status_ok">OK</string>
+    <string name="status_lean">Mager (Lean)</string>
+    <string name="status_rich">Fett (Rich)</string>
+    <string name="stft_label">STFT</string>
+    <string name="ltft_label">LTFT</string>
+    <string name="trim_percent">%.1f%%</string>
 </resources>

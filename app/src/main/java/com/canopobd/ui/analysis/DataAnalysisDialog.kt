@@ -86,9 +86,9 @@ fun DataAnalysisDialog(
                     contentColor = canopoAccent
                 ) {
                     Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 },
-                        text = { Text("Import", color = if (selectedTab == 0) textPrimary else textSecondary) })
+                        text = { Text(stringResource(R.string.analysis_import_csv), color = if (selectedTab == 0) textPrimary else textSecondary) })
                     Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 },
-                        text = { Text("Kraftstoff", color = if (selectedTab == 1) textPrimary else textSecondary) })
+                        text = { Text(stringResource(R.string.analysis_fuel_trim), color = if (selectedTab == 1) textPrimary else textSecondary) })
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -130,7 +130,7 @@ private fun CsvImportTab(
             }
             if (importedData.isNotEmpty()) {
                 IconButton(onClick = onClear) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Löschen", tint = gaugeRed)
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.maintenance_reset), tint = gaugeRed)
                 }
             }
         }
@@ -224,8 +224,8 @@ private fun FuelTrimTab(analysis: FuelTrimAnalysis) {
         }
 
         item {
-            TrimRow("STFT", analysis.stftB1)
-            TrimRow("LTFT", analysis.ltftB1)
+            TrimRow(stringResource(R.string.stft_label), analysis.stftB1)
+            TrimRow(stringResource(R.string.ltft_label), analysis.ltftB1)
             TrimRow(stringResource(R.string.analysis_total_trim), analysis.totalTrimB1)
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -265,8 +265,8 @@ private fun FuelTrimTab(analysis: FuelTrimAnalysis) {
         }
 
         item {
-            TrimRow("STFT", analysis.stftB2)
-            TrimRow("LTFT", analysis.ltftB2)
+            TrimRow(stringResource(R.string.stft_label), analysis.stftB2)
+            TrimRow(stringResource(R.string.ltft_label), analysis.ltftB2)
             TrimRow(stringResource(R.string.analysis_total_trim), analysis.totalTrimB2)
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),

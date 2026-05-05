@@ -422,4 +422,146 @@ class OBDModelsTest {
         assertEquals(2000.0, entry.rpm, 0.001)
         assertEquals(60.0, entry.speed, 0.001)
     }
+
+    @Test
+    fun `FuelEconomyData fromL100km calculates all units`() {
+        val data = FuelEconomyData.fromL100km(8.0)
+        assertEquals(8.0, data.currentL100km, 0.001)
+        assertEquals(12.5, data.currentKmL, 0.01)
+        assertEquals(29.4, data.currentMpgUs, 0.1)
+        assertEquals(35.3, data.currentMpgUk, 0.1)
+        assertEquals(8.0, data.avgL100km, 0.001)
+    }
+
+    @Test
+    fun `FuelEconomyData fromL100km returns empty for invalid input`() {
+        val zero = FuelEconomyData.fromL100km(0.0)
+        assertEquals(0.0, zero.currentL100km, 0.001)
+        val negative = FuelEconomyData.fromL100km(-5.0)
+        assertEquals(0.0, negative.currentL100km, 0.001)
+        val extreme = FuelEconomyData.fromL100km(500.0)
+        assertEquals(0.0, extreme.currentL100km, 0.001)
+    }
+
+    @Test
+    fun `OBDPID ACCELERATOR_POS_D formula returns percentage`() {
+        val bytes = byteArrayOf(0xFF.toByte())
+        val result = OBDPID.ACCELERATOR_POS_D.formula(bytes)
+        assertEquals(100.0, result, 0.001)
+    }
+
+    @Test
+    fun `OBDPID THROTTLE_C formula returns percentage`() {
+        val bytes = byteArrayOf(0x80.toByte(), 0x00.toByte())
+        val result = OBDPID.THROTTLE_C.formula(bytes)
+        assertEquals(12850.2, result, 1.0)
+    }
+
+    @Test
+    fun `OBDPID THROTTLE_ACTUATOR formula returns percentage`() {
+        val bytes = byteArrayOf(0x80.toByte(), 0x00.toByte())
+        val result = OBDPID.THROTTLE_ACTUATOR.formula(bytes)
+        assertEquals(12850.2, result, 1.0)
+    }
+
+    @Test
+    fun `OBDPID HYBRID_BATTERY_REMAINING formula returns byte value`() {
+        val bytes = byteArrayOf(0x64.toByte())
+        val result = OBDPID.HYBRID_BATTERY_REMAINING.formula(bytes)
+        assertEquals(100.0, result, 0.001)
+    }
+
+    @Test
+    fun `MaintenanceItem kmRemaining calculates correctly`() {
+        val item = MaintenanceItem(
+            type = MaintenanceType.OIL_CHANGE,
+            lastServiceKm = 50000,
+            intervalKm = 15000,
+            currentKm = 65000
+        )
+        assertEquals(0, item.kmRemaining)
+    }
+
+    @Test
+    fun `MaintenanceItem status is OVERDUE when kmRemaining negative`() {
+        val item = MaintenanceItem(
+            type = MaintenanceType.OIL_CHANGE,
+            lastServiceKm = 50000,
+            intervalKm = 15000,
+            currentKm = 70000
+        )
+        assertEquals(MaintenanceStatus.OVERDUE, item.status)
+    }
+
+    @Test
+    fun `MaintenanceItem status is DUE_SOON when within 10 percent`() {
+        val item = MaintenanceItem(
+            type = MaintenanceType.OIL_CHANGE,
+            lastServiceKm = 50000,
+            intervalKm = 15000,
+            currentKm = 63501
+        )
+        assertEquals(MaintenanceStatus.DUE_SOON, item.status)
+    }
+
+    @Test
+    fun `MaintenanceItem status is OK when plenty remaining`() {
+        val item = MaintenanceItem(
+            type = MaintenanceType.OIL_CHANGE,
+            lastServiceKm = 50000,
+            intervalKm = 15000,
+            currentKm = 60000
+        )
+        assertEquals(MaintenanceStatus.OK, item.status)
+    }
+
+    @Test
+    fun `MaintenanceType has correct default intervals`() {
+        assertEquals(15000, MaintenanceType.OIL_CHANGE.defaultInterval)
+        assertEquals(30000, MaintenanceType.TIRES.defaultInterval)
+        assertEquals(60000, MaintenanceType.INSPECTION.defaultInterval)
+        assertEquals(6, MaintenanceType.entries.size)
+    }
+
+    @Test
+    fun `PerformanceResult stores test data`() {
+        val result = PerformanceResult(
+            testType = PerformanceTestType.ZERO_100,
+            timeSeconds = 8.5,
+            valid = true
+        )
+        assertEquals(PerformanceTestType.ZERO_100, result.testType)
+        assertEquals(8.5, result.timeSeconds, 0.001)
+        assertTrue(result.valid)
+    }
+
+    @Test
+    fun `PerformanceTestState tracks running state`() {
+        val state = PerformanceTestState(
+            isRunning = true,
+            currentTestType = PerformanceTestType.ZERO_200
+        )
+        assertTrue(state.isRunning)
+        assertEquals(PerformanceTestType.ZERO_200, state.currentTestType)
+        assertFalse(state.lastResult?.valid ?: false)
+    }
+
+    @Test
+    fun `PerformanceTestType has correct speed ranges`() {
+        assertEquals(0.0, PerformanceTestType.ZERO_100.startSpeedKmh, 0.001)
+        assertEquals(100.0, PerformanceTestType.ZERO_100.endSpeedKmh, 0.001)
+        assertEquals(0.0, PerformanceTestType.ZERO_200.startSpeedKmh, 0.001)
+        assertEquals(200.0, PerformanceTestType.ZERO_200.endSpeedKmh, 0.001)
+        assertEquals(100.0, PerformanceTestType.HUNDRED_200.startSpeedKmh, 0.001)
+        assertEquals(200.0, PerformanceTestType.HUNDRED_200.endSpeedKmh, 0.001)
+    }
+
+    @Test
+    fun `OBDData has extended OBD fields with defaults`() {
+        val data = OBDData()
+        assertEquals(0.0, data.acceleratorPosD, 0.001)
+        assertEquals(0.0, data.throttleC, 0.001)
+        assertEquals(0.0, data.throttleActuator, 0.001)
+        assertEquals(0.0, data.hybridBatteryRemaining, 0.001)
+    }
 }

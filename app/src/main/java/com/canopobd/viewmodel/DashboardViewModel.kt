@@ -74,6 +74,30 @@ class DashboardViewModel private constructor(
     private val _showDataAnalysis = MutableStateFlow(false)
     val showDataAnalysis: StateFlow<Boolean> = _showDataAnalysis.asStateFlow()
 
+    private val _showFuelEconomy = MutableStateFlow(false)
+    val showFuelEconomy: StateFlow<Boolean> = _showFuelEconomy.asStateFlow()
+
+    private val _showMaintenance = MutableStateFlow(false)
+    val showMaintenance: StateFlow<Boolean> = _showMaintenance.asStateFlow()
+
+    private val _showPerformanceTest = MutableStateFlow(false)
+    val showPerformanceTest: StateFlow<Boolean> = _showPerformanceTest.asStateFlow()
+
+    private val _showTripHistory = MutableStateFlow(false)
+    val showTripHistory: StateFlow<Boolean> = _showTripHistory.asStateFlow()
+
+    private val _maintenanceItems = MutableStateFlow<List<com.canopobd.data.model.MaintenanceItem>>(emptyList())
+    val maintenanceItems: StateFlow<List<com.canopobd.data.model.MaintenanceItem>> = _maintenanceItems.asStateFlow()
+
+    private val _currentKm = MutableStateFlow(0)
+    val currentKm: StateFlow<Int> = _currentKm.asStateFlow()
+
+    private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
+    val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
+
+    private val _performanceTestState = MutableStateFlow(com.canopobd.data.model.PerformanceTestState())
+    val performanceTestState: StateFlow<com.canopobd.data.model.PerformanceTestState> = _performanceTestState.asStateFlow()
+
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
@@ -103,6 +127,7 @@ class DashboardViewModel private constructor(
 
     init {
         if (_permissionsGranted.value) refreshDevices()
+        _maintenanceItems.value = repository.loadMaintenanceItems()
     }
 
     fun onPermissionsGranted() {
@@ -192,6 +217,97 @@ class DashboardViewModel private constructor(
 
     fun toggleDataAnalysis() {
         _showDataAnalysis.value = !_showDataAnalysis.value
+    }
+
+    fun toggleFuelEconomy() {
+        _showFuelEconomy.value = !_showFuelEconomy.value
+        if (_showFuelEconomy.value) {
+            _fuelEconomyData.value = repository.getFuelEconomyData()
+        }
+    }
+
+    fun toggleMaintenance() {
+        _showMaintenance.value = !_showMaintenance.value
+    }
+
+    fun togglePerformanceTest() {
+        _showPerformanceTest.value = !_showPerformanceTest.value
+    }
+
+    fun toggleTripHistory() {
+        _showTripHistory.value = !_showTripHistory.value
+    }
+
+    fun setMaintenanceItem(type: com.canopobd.data.model.MaintenanceType, lastKm: Int, interval: Int) {
+        val item = com.canopobd.data.model.MaintenanceItem(
+            type = type,
+            lastServiceKm = lastKm,
+            intervalKm = interval,
+            currentKm = _currentKm.value
+        )
+        val current = _maintenanceItems.value.toMutableList()
+        val index = current.indexOfFirst { it.type == type }
+        if (index >= 0) {
+            current[index] = item
+        } else {
+            current.add(item)
+        }
+        _maintenanceItems.value = current
+        repository.saveMaintenanceItem(item)
+    }
+
+    fun resetMaintenanceItem(type: com.canopobd.data.model.MaintenanceType) {
+        val km = _currentKm.value
+        val item = com.canopobd.data.model.MaintenanceItem(
+            type = type,
+            lastServiceKm = km,
+            intervalKm = type.defaultInterval,
+            currentKm = km
+        )
+        val current = _maintenanceItems.value.toMutableList()
+        val index = current.indexOfFirst { it.type == type }
+        if (index >= 0) {
+            current[index] = item
+        } else {
+            current.add(item)
+        }
+        _maintenanceItems.value = current
+        repository.saveMaintenanceItem(item)
+    }
+
+    fun startPerformanceTest(testType: com.canopobd.data.model.PerformanceTestType) {
+        _performanceTestState.value = _performanceTestState.value.copy(
+            isRunning = true,
+            currentTestType = testType,
+            startTimeNanos = System.nanoTime(),
+            statusMessage = "Warte auf Start…"
+        )
+    }
+
+    fun stopPerformanceTest() {
+        val state = _performanceTestState.value
+        if (state.isRunning) {
+            val elapsedNanos = System.nanoTime() - state.startTimeNanos
+            val elapsedSeconds = elapsedNanos / 1_000_000_000.0
+            val result = com.canopobd.data.model.PerformanceResult(
+                testType = state.currentTestType,
+                timeSeconds = elapsedSeconds,
+                valid = elapsedSeconds > 0.5 && elapsedSeconds < 300.0
+            )
+            val history = listOf(result) + state.history.take(9)
+            _performanceTestState.value = state.copy(
+                isRunning = false,
+                lastResult = result,
+                history = history,
+                statusMessage = ""
+            )
+        } else {
+            _performanceTestState.value = state.copy(isRunning = false, statusMessage = "")
+        }
+    }
+
+    fun updatePerformanceTestStatus(message: String) {
+        _performanceTestState.value = _performanceTestState.value.copy(statusMessage = message)
     }
 
     fun setAlertConfig(config: com.canopobd.data.model.AlertConfig) {

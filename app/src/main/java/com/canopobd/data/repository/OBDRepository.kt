@@ -109,7 +109,9 @@ class OBDRepository(
         OBDPID.ABSOLUTE_LOAD_VALUE, OBDPID.ENGINE_FUEL_RATE,
         OBDPID.SHORT_TERM_FUEL_TRIM_BANK1, OBDPID.LONG_TERM_FUEL_TRIM_BANK1,
         OBDPID.SHORT_TERM_FUEL_TRIM_BANK2, OBDPID.LONG_TERM_FUEL_TRIM_BANK2,
-        OBDPID.FUEL_AIR_EQUIV_RATIO
+        OBDPID.FUEL_AIR_EQUIV_RATIO,
+        OBDPID.ACCELERATOR_POS_D, OBDPID.THROTTLE_C, OBDPID.THROTTLE_ACTUATOR,
+        OBDPID.HYBRID_BATTERY_REMAINING
     )
 
     private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
@@ -347,6 +349,10 @@ class OBDRepository(
                     shortTermFuelTrimB2 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK2] ?: 0.0,
                     longTermFuelTrimB2 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK2] ?: 0.0,
                     fuelAirRatio = results[OBDPID.FUEL_AIR_EQUIV_RATIO] ?: 0.0,
+                    acceleratorPosD = results[OBDPID.ACCELERATOR_POS_D] ?: 0.0,
+                    throttleC = results[OBDPID.THROTTLE_C] ?: 0.0,
+                    throttleActuator = results[OBDPID.THROTTLE_ACTUATOR] ?: 0.0,
+                    hybridBatteryRemaining = results[OBDPID.HYBRID_BATTERY_REMAINING] ?: 0.0,
                     vin = storedVin,
                     timestamp = now
                 )
@@ -602,6 +608,38 @@ class OBDRepository(
 
     fun clearImportedData() { _importedData.value = emptyList() }
 
+    fun saveMaintenanceItem(item: MaintenanceItem) {
+        prefs.edit()
+            .putInt("maint_${item.type.name}_km", item.lastServiceKm)
+            .putInt("maint_${item.type.name}_interval", item.intervalKm)
+            .putLong("maint_${item.type.name}_date", System.currentTimeMillis())
+            .apply()
+    }
+
+    fun loadMaintenanceItems(): List<MaintenanceItem> {
+        return MaintenanceType.entries.mapNotNull { type ->
+            val km = prefs.getInt("maint_${type.name}_km", -1)
+            if (km >= 0) {
+                MaintenanceItem(
+                    type = type,
+                    lastServiceKm = km,
+                    intervalKm = prefs.getInt("maint_${type.name}_interval", type.defaultInterval),
+                    lastServiceDate = prefs.getLong("maint_${type.name}_date", 0L)
+                )
+            } else null
+        }
+    }
+
+    fun clearMaintenanceHistory() {
+        val edit = prefs.edit()
+        MaintenanceType.entries.forEach { type ->
+            edit.remove("maint_${type.name}_km")
+            edit.remove("maint_${type.name}_interval")
+            edit.remove("maint_${type.name}_date")
+        }
+        edit.apply()
+    }
+
     fun getFuelTrimAnalysis(): FuelTrimAnalysis {
         val d = _obdData.value
         val stftB1 = d.shortTermFuelTrimB1
@@ -616,5 +654,47 @@ class OBDRepository(
             totalTrimB1 = stftB1 + ltftB1,
             totalTrimB2 = stftB2 + ltftB2
         )
+    }
+
+    fun getFuelEconomyData(): FuelEconomyData {
+        val d = _obdData.value
+        val td = _tripData.value
+
+        val fuelRateLh = d.engineFuelRate
+        val speedKmh = d.speed
+
+        if (fuelRateLh > 0.01 && speedKmh > 0.5) {
+            val l100km = (fuelRateLh / speedKmh) * 100.0
+            if (l100km > 0.5 && l100km < 100.0) {
+                return FuelEconomyData.fromL100km(l100km)
+            }
+        }
+
+        if (d.mafRate > 0.1 && speedKmh > 0.5) {
+            val lps = d.mafRate * 0.0014
+            val lph = lps * 3600.0
+            val l100km = (lph / speedKmh) * 100.0
+            if (l100km > 0.5 && l100km < 100.0) {
+                val kmL = 100.0 / l100km
+                val mpgUs = 235.214583 / l100km
+                val mpgUk = 282.4809363 / l100km
+                val avgL100km = if (td.avgFuelRate > 0.0 && td.avgSpeedKmh > 0.5) {
+                    (td.avgFuelRate / td.avgSpeedKmh) * 100.0
+                } else l100km
+                return FuelEconomyData(
+                    currentL100km = l100km,
+                    avgL100km = avgL100km,
+                    currentKmL = kmL,
+                    avgKmL = 100.0 / avgL100km,
+                    currentMpgUs = mpgUs,
+                    avgMpgUs = 235.214583 / avgL100km,
+                    currentMpgUk = mpgUk,
+                    avgMpgUk = 282.4809363 / avgL100km,
+                    estimatedFromMaf = true
+                )
+            }
+        }
+
+        return FuelEconomyData()
     }
 }

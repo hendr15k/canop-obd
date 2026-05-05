@@ -70,6 +70,14 @@ fun DashboardScreen(
     showDiagnostics: Boolean,
     showAlertSettings: Boolean,
     showDataAnalysis: Boolean,
+    showFuelEconomy: Boolean,
+    showMaintenance: Boolean,
+    showPerformanceTest: Boolean,
+    showTripHistory: Boolean,
+    maintenanceItems: List<com.canopobd.data.model.MaintenanceItem>,
+    currentKm: Int,
+    fuelEconomyData: com.canopobd.data.model.FuelEconomyData,
+    performanceTestState: com.canopobd.data.model.PerformanceTestState,
     remoteServerRunning: Boolean,
     remoteServerIp: String,
     remoteServerPort: Int,
@@ -84,6 +92,7 @@ fun DashboardScreen(
     isGPSTracking: Boolean,
     currentTrip: GPSTrip?,
     trendHistory: TrendHistory,
+    tripHistory: List<GPSTrip>,
     readinessMonitor: ReadinessMonitor,
     detectedProtocol: String,
     supportedPIDs: List<String>,
@@ -131,6 +140,15 @@ fun DashboardScreen(
     onImportCsv: (String) -> Unit,
     onClearImported: () -> Unit,
     onGetFuelTrimAnalysis: () -> FuelTrimAnalysis,
+    onToggleFuelEconomy: () -> Unit,
+    onToggleMaintenance: () -> Unit,
+    onTogglePerformanceTest: () -> Unit,
+    onToggleTripHistory: () -> Unit,
+    onSetMaintenanceItem: (com.canopobd.data.model.MaintenanceType, Int, Int) -> Unit,
+    onResetMaintenanceItem: (com.canopobd.data.model.MaintenanceType) -> Unit,
+    onStartPerfTest: (com.canopobd.data.model.PerformanceTestType) -> Unit,
+    onStopPerfTest: () -> Unit,
+    onClearTripHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -179,6 +197,10 @@ fun DashboardScreen(
                     onToggleDiagnostics = onToggleDiagnostics,
                     onToggleAlertSettings = onToggleAlertSettings,
                     onToggleDataAnalysis = onToggleDataAnalysis,
+                    onToggleFuelEconomy = onToggleFuelEconomy,
+                    onToggleMaintenance = onToggleMaintenance,
+                    onTogglePerformanceTest = onTogglePerformanceTest,
+                    onToggleTripHistory = onToggleTripHistory,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
@@ -389,6 +411,40 @@ fun DashboardScreen(
                 onClearImported = onClearImported
             )
         }
+
+        if (showFuelEconomy) {
+            com.canopobd.ui.fuel.FuelEconomyDialog(
+                fuelEconomyData = fuelEconomyData,
+                onDismiss = onToggleFuelEconomy
+            )
+        }
+
+        if (showMaintenance) {
+            com.canopobd.ui.maintenance.MaintenanceDialog(
+                maintenanceItems = maintenanceItems,
+                currentKm = currentKm,
+                onDismiss = onToggleMaintenance,
+                onUpdateItem = onSetMaintenanceItem,
+                onResetItem = onResetMaintenanceItem
+            )
+        }
+
+        if (showPerformanceTest) {
+            com.canopobd.ui.performance.PerformanceTestDialog(
+                testState = performanceTestState,
+                onDismiss = onTogglePerformanceTest,
+                onStartTest = onStartPerfTest,
+                onStopTest = onStopPerfTest
+            )
+        }
+
+        if (showTripHistory) {
+            com.canopobd.ui.triphistory.TripHistoryDialog(
+                trips = tripHistory,
+                onDismiss = onToggleTripHistory,
+                onClearHistory = onClearTripHistory
+            )
+        }
     }
 }
 
@@ -415,7 +471,9 @@ private fun buildGaugeMap(data: OBDData, unit: MeasurementUnit): Map<String, Gau
     "intake_temp" to GaugeItem("intake_temp", "Intake", unit.convertTemp(data.intakeTemp).toFloat(), unit.tempUnit, -40f, 215f, Color(0xFFFF5722)),
     "fuel_trim" to GaugeItem("fuel_trim", "Fuel Trim", abs(data.shortTermFuelTrimB1 + data.longTermFuelTrimB1).toFloat(), "%", 0f, 50f, Color(0xFFFFAB40), isPercentage = true),
     "load" to GaugeItem("load", "Abs Load", data.absoluteLoadValue.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE)),
-    "fuel_rate" to GaugeItem("fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF5252))
+    "fuel_rate" to GaugeItem("fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF5252)),
+    "accel_pedal" to GaugeItem("accel_pedal", "Accel Pedal", data.acceleratorPosD.toFloat(), "%", 0f, 100f, Color(0xFF00E5FF)),
+    "hybrid_battery" to GaugeItem("hybrid_battery", "Hybrid Batt", data.hybridBatteryRemaining.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE))
 )
 
 @Composable
@@ -513,6 +571,10 @@ private fun DashboardHeader(
     onToggleDiagnostics: () -> Unit,
     onToggleAlertSettings: () -> Unit,
     onToggleDataAnalysis: () -> Unit,
+    onToggleFuelEconomy: () -> Unit,
+    onToggleMaintenance: () -> Unit,
+    onTogglePerformanceTest: () -> Unit,
+    onToggleTripHistory: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -564,13 +626,25 @@ private fun DashboardHeader(
             IconButton(onClick = onToggleTripComputer) {
                 Icon(Icons.Filled.DirectionsCar, contentDescription = stringResource(R.string.trip_title), tint = colors.textSecondary)
             }
+            IconButton(onClick = onToggleFuelEconomy) {
+                Icon(Icons.Filled.LocalGasStation, contentDescription = stringResource(R.string.fuel_economy_title), tint = colors.textSecondary)
+            }
+            IconButton(onClick = onToggleMaintenance) {
+                Icon(Icons.Filled.Build, contentDescription = stringResource(R.string.maintenance_title), tint = colors.textSecondary)
+            }
+            IconButton(onClick = onTogglePerformanceTest) {
+                Icon(Icons.Filled.Speed, contentDescription = stringResource(R.string.perf_test_title), tint = colors.textSecondary)
+            }
             IconButton(onClick = onToggleTrendGraph) {
-                Icon(Icons.Filled.ShowChart, contentDescription = "Trend", tint = colors.textSecondary)
+                Icon(Icons.Filled.ShowChart, contentDescription = stringResource(R.string.trend), tint = colors.textSecondary)
+            }
+            IconButton(onClick = onToggleTripHistory) {
+                Icon(Icons.Filled.Route, contentDescription = stringResource(R.string.trip_history_title), tint = colors.textSecondary)
             }
             IconButton(onClick = if (isGPSTracking) onStopGPSTrack else onStartGPSTrack) {
                 Icon(
                     if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
-                    contentDescription = "GPS Track",
+                    contentDescription = stringResource(R.string.gps_track),
                     tint = if (isGPSTracking) colors.gaugeGreen else colors.textSecondary
                 )
             }
@@ -585,21 +659,21 @@ private fun DashboardHeader(
             }
             if (connectionState is OBDConnectionState.Connected) {
                 IconButton(onClick = onToggleHUDMode) {
-                    Icon(Icons.Filled.Tv, contentDescription = "HUD Mode", tint = colors.gaugeCyan)
+                    Icon(Icons.Filled.Tv, contentDescription = stringResource(R.string.hud_mode), tint = colors.gaugeCyan)
                 }
                 IconButton(onClick = onToggleReadiness) {
-                    Icon(Icons.Filled.Verified, contentDescription = "Readiness", tint = colors.gaugeGreen)
+                    Icon(Icons.Filled.Verified, contentDescription = stringResource(R.string.readiness), tint = colors.gaugeGreen)
                 }
                 IconButton(onClick = onToggleDiagnostics) {
-                    Icon(Icons.Filled.Biotech, contentDescription = "Diagnostics", tint = colors.accent)
+                    Icon(Icons.Filled.Biotech, contentDescription = stringResource(R.string.diagnostics), tint = colors.accent)
                 }
                 IconButton(onClick = onToggleDataAnalysis) {
-                    Icon(Icons.Filled.Analytics, contentDescription = "Analysis", tint = colors.accent)
+                    Icon(Icons.Filled.Analytics, contentDescription = stringResource(R.string.analysis), tint = colors.accent)
                 }
                 IconButton(onClick = onToggleAlertSettings) {
                     Icon(
                         if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
-                        contentDescription = "Alerts",
+                        contentDescription = stringResource(R.string.alerts),
                         tint = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary
                     )
                 }

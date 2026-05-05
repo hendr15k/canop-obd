@@ -163,8 +163,17 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val isGPSTracking by viewModel.isGPSTracking.collectAsState()
     val currentTrip by viewModel.currentTrip.collectAsState()
     val trendHistory by viewModel.trendHistory.collectAsState()
+    val tripHistory by viewModel.tripHistory.collectAsState()
     val readinessMonitor by viewModel.readinessMonitor.collectAsState()
     val detectedProtocol by viewModel.detectedProtocol.collectAsState()
+    val showFuelEconomy by viewModel.showFuelEconomy.collectAsState()
+    val showMaintenance by viewModel.showMaintenance.collectAsState()
+    val showPerformanceTest by viewModel.showPerformanceTest.collectAsState()
+    val showTripHistory by viewModel.showTripHistory.collectAsState()
+    val maintenanceItems by viewModel.maintenanceItems.collectAsState()
+    val currentKm by viewModel.currentKm.collectAsState()
+    val fuelEconomyData by viewModel.fuelEconomyData.collectAsState()
+    val performanceTestState by viewModel.performanceTestState.collectAsState()
     val supportedPIDs by viewModel.supportedPIDs.collectAsState()
     val freezeFrames by viewModel.freezeFrames.collectAsState()
     val alertConfig by viewModel.alertConfig.collectAsState()
@@ -194,6 +203,14 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showDiagnostics = showDiagnostics,
         showAlertSettings = showAlertSettings,
         showDataAnalysis = showDataAnalysis,
+        showFuelEconomy = showFuelEconomy,
+        showMaintenance = showMaintenance,
+        showPerformanceTest = showPerformanceTest,
+        showTripHistory = showTripHistory,
+        maintenanceItems = maintenanceItems,
+        currentKm = currentKm,
+        fuelEconomyData = fuelEconomyData,
+        performanceTestState = performanceTestState,
         remoteServerRunning = remoteServerRunning,
         remoteServerIp = remoteServerIp,
         remoteServerPort = remoteServerPort,
@@ -208,6 +225,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         isGPSTracking = isGPSTracking,
         currentTrip = currentTrip,
         trendHistory = trendHistory,
+        tripHistory = tripHistory,
         readinessMonitor = readinessMonitor,
         detectedProtocol = detectedProtocol,
         supportedPIDs = supportedPIDs,
@@ -254,6 +272,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onSetAlertConfig = viewModel::setAlertConfig,
         onImportCsv = viewModel::importCsvData,
         onClearImported = viewModel::clearImportedData,
-        onGetFuelTrimAnalysis = viewModel::getFuelTrimAnalysis
+        onGetFuelTrimAnalysis = viewModel::getFuelTrimAnalysis,
+        onToggleFuelEconomy = viewModel::toggleFuelEconomy,
+        onToggleMaintenance = viewModel::toggleMaintenance,
+        onTogglePerformanceTest = viewModel::togglePerformanceTest,
+        onToggleTripHistory = viewModel::toggleTripHistory,
+        onSetMaintenanceItem = viewModel::setMaintenanceItem,
+        onResetMaintenanceItem = viewModel::resetMaintenanceItem,
+        onStartPerfTest = viewModel::startPerformanceTest,
+        onStopPerfTest = viewModel::stopPerformanceTest,
+        onClearTripHistory = viewModel::clearGPSTripHistory
     )
 }
