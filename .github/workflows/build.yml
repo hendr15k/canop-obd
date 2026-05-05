@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,9 +33,42 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload debug APK
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: canop-obd-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
+
+      - name: Get short SHA
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: sha
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Get timestamp
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: time
+        run: echo "TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
+
+      - name: Upload APK to Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "canop-obd Latest Build"
+          body: |
+            ## canop-obd Latest Build
+
+            **Commit:** ${{ steps.sha.outputs.SHORT_SHA }}
+            **Build:** ${{ steps.time.outputs.TIMESTAMP }}
+
+            ### Installation
+            1. Download `app-debug.apk` below
+            2. Open the APK on your Android device
+            3. Allow installation from unknown sources if prompted
+          files: app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
