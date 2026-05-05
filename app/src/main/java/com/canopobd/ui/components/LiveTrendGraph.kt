@@ -13,11 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.R
 import com.canopobd.data.model.TrendHistory
 import com.canopobd.data.model.TrendPoint
 import com.canopobd.ui.theme.*
@@ -45,13 +47,13 @@ fun LiveTrendGraphDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Live Trend",
+                        text = stringResource(R.string.live_trend),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
 

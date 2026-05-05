@@ -110,11 +110,11 @@ fun DataLogDialog(
                     ) {
                         Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Export")
+                        Text(stringResource(R.string.datalog_export))
                     }
 
                     IconButton(onClick = onClearData) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Löschen", tint = gaugeRed)
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.datalog_delete), tint = gaugeRed)
                     }
                 }
 
@@ -191,7 +191,7 @@ private fun DataRecordItem(record: DataRecord) {
             color = textDim
         )
         Text(
-            text = "RPM ${record.rpm.toInt()}",
+            text = stringResource(R.string.datalog_rpm_format, record.rpm.toInt().toString()),
             fontSize = 12.sp,
             color = gaugeGreen,
             fontWeight = FontWeight.Medium
@@ -313,7 +313,7 @@ private fun exportCsv(context: Context, csv: String) {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Exportieren als..."))
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.datalog_export_as)))
     } catch (e: Exception) {
         Toast.makeText(context, context.getString(R.string.datalog_export_failed, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
     }

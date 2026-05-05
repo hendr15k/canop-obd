@@ -306,7 +306,7 @@ private fun UsageInstructions() {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "PC Software-Beispiele:",
+                text = stringResource(R.string.remote_pc_software_examples),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = textPrimary

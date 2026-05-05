@@ -363,7 +363,7 @@ fun DashboardScreen(
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
                         Text(
-                            text = "Verbindungsqualität schlecht — OBD-Adapter prüfen",
+                            text = stringResource(R.string.conn_quality_poor_message),
                             fontSize = 10.sp,
                             color = colors.gaugeRed,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -982,7 +982,7 @@ private fun AlertBanner(alerts: List<ActiveAlert>, colors: AppColors) {
         ) {
             Icon(
                 Icons.Filled.NotificationImportant,
-                contentDescription = "Alert",
+                contentDescription = stringResource(R.string.alert),
                 tint = colors.gaugeRed,
                 modifier = Modifier.size(16.dp)
             )

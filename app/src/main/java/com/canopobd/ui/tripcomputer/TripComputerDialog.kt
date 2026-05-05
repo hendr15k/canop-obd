@@ -88,7 +88,7 @@ fun TripComputerDialog(
 
                 LazyColumn {
                     item {
-                        SectionTitle("Zeit & Strecke")
+                        SectionTitle(stringResource(R.string.trip_time_distance))
                     }
                     item {
                         Row(
@@ -109,7 +109,7 @@ fun TripComputerDialog(
                     }
 
                     item { Spacer(modifier = Modifier.height(16.dp)) }
-                    item { SectionTitle("Geschwindigkeit") }
+                    item { SectionTitle(stringResource(R.string.trip_speed)) }
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -160,7 +160,7 @@ fun TripComputerDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             StatCard(
-                                label = "Verbrauch",
+                                label = stringResource(R.string.trip_consumption_label),
                                 value = if (tripData.distanceKm > 0.5) {
                                     "%.1f L/100km".format(tripData.totalFuelUsed / (tripData.distanceKm / 100.0))
                                 } else {
@@ -170,7 +170,7 @@ fun TripComputerDialog(
                                 modifier = Modifier.weight(1f)
                             )
                             StatCard(
-                                label = "Total",
+                                label = stringResource(R.string.trip_total),
                                 value = "%.1f L".format(tripData.totalFuelUsed),
                                 modifier = Modifier.weight(1f)
                             )
@@ -191,7 +191,7 @@ fun TripComputerDialog(
                     }
 
                     item { Spacer(modifier = Modifier.height(16.dp)) }
-                    item { SectionTitle("GPS Track") }
+                    item { SectionTitle(stringResource(R.string.trip_gps_track)) }
 
                     item {
                         if (isGPSTracking && currentTrip != null) {
@@ -376,10 +376,10 @@ private fun GPSStatusCard(trip: GPSTrip, onStop: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.LocationOn, contentDescription = null, tint = gaugeGreen, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("GPS Tracking", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = gaugeGreen)
+                    Text(stringResource(R.string.trip_gps_tracking), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = gaugeGreen)
                 }
                 IconButton(onClick = onStop) {
-                    Icon(Icons.Filled.Stop, contentDescription = "Stop", tint = gaugeRed, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Filled.Stop, contentDescription = stringResource(R.string.trip_stop), tint = gaugeRed, modifier = Modifier.size(24.dp))
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))

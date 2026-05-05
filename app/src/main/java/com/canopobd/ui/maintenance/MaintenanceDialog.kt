@@ -73,7 +73,7 @@ fun MaintenanceDialog(
                         Icon(Icons.Filled.Speed, contentDescription = null, tint = canopoAccent, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Kilometerstand: $currentKm ${stringResource(R.string.maintenance_km)}",
+                            text = stringResource(R.string.maintenance_odometer, currentKm.toString()),
                             fontSize = 14.sp,
                             color = textPrimary
                         )

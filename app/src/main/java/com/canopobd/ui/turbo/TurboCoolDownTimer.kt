@@ -169,7 +169,7 @@ fun TurboCoolDownDialog(
                             color = colors.gaugeOrange
                         )
                         Text(
-                            text = "Sekunden",
+                            text = stringResource(R.string.turbo_seconds),
                             fontSize = 12.sp,
                             color = colors.textSecondary
                         )

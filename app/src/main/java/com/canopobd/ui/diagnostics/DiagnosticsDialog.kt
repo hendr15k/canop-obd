@@ -71,7 +71,7 @@ fun DiagnosticsDialog(
                                 Icon(Icons.Filled.Memory, contentDescription = null, tint = canopoAccent, modifier = Modifier.size(24.dp))
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = protocol.ifBlank { "Wird ermittelt..." },
+                                    text = protocol.ifBlank { stringResource(R.string.detecting_protocol) },
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = textPrimary
@@ -84,7 +84,7 @@ fun DiagnosticsDialog(
                         SectionHeader("${stringResource(R.string.diagnostics_supported_pids)} (${supportedPIDs.size})")
                         if (supportedPIDs.isEmpty()) {
                             Text(
-                                text = "Scanning...",
+                                text = stringResource(R.string.scanning_pids),
                                 fontSize = 12.sp,
                                 color = textSecondary,
                                 modifier = Modifier.padding(vertical = 8.dp)

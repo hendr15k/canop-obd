@@ -143,9 +143,9 @@ private fun TripCard(trip: GPSTrip, dateFormat: SimpleDateFormat) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatChip(icon = Icons.Filled.Speed, label = "Max", value = "%.0f km/h".format(trip.maxSpeedKmh))
+                StatChip(icon = Icons.Filled.Speed, label = stringResource(R.string.trip_max), value = "%.0f km/h".format(trip.maxSpeedKmh))
                 StatChip(icon = Icons.Filled.Speed, label = "Ø", value = "%.0f km/h".format(trip.avgSpeedKmh))
-                StatChip(icon = Icons.Filled.LocationOn, label = "Punkte", value = "${trip.locations.size}")
+                StatChip(icon = Icons.Filled.LocationOn, label = stringResource(R.string.trip_points), value = "${trip.locations.size}")
             }
         }
     }

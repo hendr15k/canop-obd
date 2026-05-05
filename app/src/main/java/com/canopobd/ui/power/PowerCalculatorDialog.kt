@@ -45,7 +45,7 @@ fun PowerCalculatorDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Leistung",
+                        text = stringResource(R.string.power_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
@@ -82,13 +82,13 @@ fun PowerCalculatorDialog(
                             Icon(Icons.Filled.Speed, contentDescription = null, tint = textDim, modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Motor starten für Leistungsdaten",
+                                text = stringResource(R.string.power_start_engine),
                                 fontSize = 16.sp,
                                 color = textDim
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "RPM > 1000, MAF > 1 g/s erforderlich",
+                                text = stringResource(R.string.power_rpm_maf_required),
                                 fontSize = 12.sp,
                                 color = textSecondary
                             )
@@ -103,14 +103,14 @@ fun PowerCalculatorDialog(
                             modifier = Modifier.weight(1f),
                             label = "PS",
                             value = "%.0f".format(calculation.horsepowerMetric),
-                            subtitle = "(metrisch)",
+                            subtitle = stringResource(R.string.power_metric),
                             color = gaugeGreen
                         )
                         PowerCard(
                             modifier = Modifier.weight(1f),
                             label = "HP",
                             value = "%.0f".format(calculation.horsepower),
-                            subtitle = "(US)",
+                            subtitle = stringResource(R.string.power_us),
                             color = gaugeCyan
                         )
                     }
@@ -125,7 +125,7 @@ fun PowerCalculatorDialog(
                             modifier = Modifier.weight(1f),
                             label = "Nm",
                             value = "%.0f".format(calculation.torqueNm),
-                            subtitle = "Drehmoment",
+                            subtitle = stringResource(R.string.power_torque),
                             color = gaugeOrange
                         )
                         PowerCard(
@@ -151,7 +151,7 @@ fun PowerCalculatorDialog(
                             Icon(Icons.Filled.Info, contentDescription = null, tint = gaugeGreen, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Geschätzte Werte basierend auf Lufftmassen-Durchfluss. Für exakte Werte ist ein Leistungsprüfstand erforderlich.",
+                                text = stringResource(R.string.power_estimated_maf),
                                 fontSize = 11.sp,
                                 color = textSecondary
                             )

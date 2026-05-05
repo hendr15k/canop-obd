@@ -48,7 +48,7 @@ fun ShiftLightDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Schaltblitz",
+                        text = stringResource(R.string.shift_light_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
@@ -65,7 +65,7 @@ fun ShiftLightDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Aktiviert", fontSize = 14.sp, color = textPrimary)
+                    Text(text = stringResource(R.string.shift_light_enabled), fontSize = 14.sp, color = textPrimary)
                     Switch(
                         checked = localConfig.enabled,
                         onCheckedChange = {
@@ -120,8 +120,8 @@ fun ShiftLightDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(text = "0", fontSize = 10.sp, color = textDim)
-                            Text(text = "Warnung: ${warningRpm.toInt()} rpm", fontSize = 10.sp, color = gaugeYellow)
-                            Text(text = "Rot: ${redlineRpm.toInt()} rpm", fontSize = 10.sp, color = gaugeRed)
+                            Text(text = stringResource(R.string.shift_light_warning_rpm, warningRpm.toInt()), fontSize = 10.sp, color = gaugeYellow)
+                            Text(text = stringResource(R.string.shift_light_redline_rpm, redlineRpm.toInt()), fontSize = 10.sp, color = gaugeRed)
                             Text(text = "8000", fontSize = 10.sp, color = textDim)
                         }
                     }
@@ -129,7 +129,7 @@ fun ShiftLightDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Text(text = "Warn-Drehzahl", fontSize = 14.sp, color = textSecondary)
+                Text(text = stringResource(R.string.shift_light_warning_threshold), fontSize = 14.sp, color = textSecondary)
                 Slider(
                     value = warningRpm,
                     onValueChange = {
@@ -146,7 +146,7 @@ fun ShiftLightDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(text = "Rot-Drehzahl", fontSize = 14.sp, color = textSecondary)
+                Text(text = stringResource(R.string.shift_light_redline_threshold), fontSize = 14.sp, color = textSecondary)
                 Slider(
                     value = redlineRpm,
                     onValueChange = {
@@ -168,7 +168,7 @@ fun ShiftLightDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Blinken", fontSize = 14.sp, color = textPrimary)
+                    Text(text = stringResource(R.string.shift_light_flash), fontSize = 14.sp, color = textPrimary)
                     Switch(
                         checked = localConfig.flashEnabled,
                         onCheckedChange = {
@@ -191,7 +191,7 @@ fun ShiftLightDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = canopoAccent)
                 ) {
-                    Text("Speichern")
+                    Text(stringResource(R.string.shift_light_save))
                 }
             }
         }

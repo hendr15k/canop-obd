@@ -11,11 +11,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.R
 import com.canopobd.data.model.AstraJ14TurboCalibration
 import com.canopobd.data.model.KnownIssue
 import com.canopobd.ui.theme.*
@@ -44,19 +46,19 @@ fun KnownIssuesDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Typische Probleme Astra J 1.4T",
+                        text = stringResource(R.string.known_issues_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = "Schließen", tint = textSecondary)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.known_issues_close), tint = textSecondary)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Bekannte Schwachstellen des A14NET Motors",
+                    text = stringResource(R.string.known_issues_subtitle),
                     fontSize = 11.sp,
                     color = textDim
                 )
@@ -88,7 +90,7 @@ fun KnownIssuesDialog(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Tipp: Regelmäßige Ölwechsel mit Dexos2 5W-30 und hochwertigem Benzin (98 RON) beugen vielen Problemen vor.",
+                                    text = stringResource(R.string.known_issues_tip),
                                     fontSize = 11.sp,
                                     color = gaugeGreen
                                 )
@@ -171,7 +173,7 @@ private fun KnownIssueCard(issue: KnownIssue) {
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
-                    text = if (expanded) "Weniger ▲" else "Details ▼",
+                    text = if (expanded) stringResource(R.string.known_issues_less) else stringResource(R.string.known_issues_details),
                     fontSize = 10.sp,
                     color = canopoAccent
                 )
