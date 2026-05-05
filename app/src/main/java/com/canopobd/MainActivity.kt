@@ -1,4 +1,4 @@
-﻿package com.canopobd
+package com.canopobd
 
 import android.Manifest
 import android.content.pm.PackageManager

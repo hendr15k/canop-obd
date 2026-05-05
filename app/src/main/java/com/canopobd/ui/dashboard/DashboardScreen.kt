@@ -1,4 +1,4 @@
-﻿package com.canopobd.ui.dashboard
+package com.canopobd.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.canopobd.R
 import com.canopobd.data.model.*
 import com.canopobd.ui.components.CircularGauge
-import com.canopobd.ui.components.GaugeRow
 import com.canopobd.ui.components.LiveTrendGraphDialog
 import com.canopobd.ui.customization.DashboardCustomizationDialog
 import com.canopobd.ui.datalog.DataLogDialog
@@ -44,6 +44,17 @@ import com.canopobd.data.model.FreezeFrame
 import com.canopobd.data.model.FuelTrimAnalysis
 import com.canopobd.data.model.ReadinessMonitor
 import com.canopobd.data.model.CsvImportEntry
+import com.canopobd.data.model.CarProfile
+import com.canopobd.data.model.TurboData
+import com.canopobd.data.model.OilData
+import com.canopobd.data.model.TimingChainState
+import com.canopobd.ui.carprofile.CarProfileDialog
+import com.canopobd.ui.turbo.TurboMonitorDialog
+import com.canopobd.ui.timingchain.TimingChainMonitorDialog
+import com.canopobd.ui.turbo.TurboCoolDownBanner
+import com.canopobd.data.model.TurboCoolDownState
+import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
+import com.canopobd.ui.knownissues.KnownIssuesDialog
 import kotlin.math.abs
 
 @Composable
@@ -79,6 +90,15 @@ fun DashboardScreen(
     showShiftLight: Boolean,
     showVehicleInfo: Boolean,
     showKnownIssues: Boolean,
+    carProfile: CarProfile,
+    turboData: TurboData,
+    oilData: OilData,
+    timingChainState: TimingChainState,
+    showTurboMonitor: Boolean,
+    showTimingChainMonitor: Boolean,
+    showCarProfile: Boolean,
+    showTurboCooldown: Boolean,
+    turboCooldownState: TurboCoolDownState,
     maintenanceItems: List<com.canopobd.data.model.MaintenanceItem>,
     currentKm: Int,
     fuelEconomyData: com.canopobd.data.model.FuelEconomyData,
@@ -165,6 +185,11 @@ fun DashboardScreen(
     onToggleKnownIssues: () -> Unit,
     onUpdateShiftLightConfig: (com.canopobd.data.model.ShiftLightConfig) -> Unit,
     onResetDriveScore: () -> Unit,
+    onToggleTurboMonitor: () -> Unit,
+    onToggleTimingChainMonitor: () -> Unit,
+    onToggleCarProfile: () -> Unit,
+    onToggleTurboCooldown: () -> Unit,
+    onSelectCarProfile: (CarProfile) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -182,7 +207,16 @@ fun DashboardScreen(
 
     val gaugeMap = remember(obdData) { buildGaugeMap(obdData, measurementUnit) }
 
-    Box(modifier = modifier.fillMaxSize().background(colors.dark)) {
+    val isCoolantCritical = obdData.coolantTemp > 105
+    val isRpmCritical = obdData.rpm > 6000
+
+    val backgroundColor = when {
+        isCoolantCritical -> colors.gaugeRed.copy(alpha = 0.15f)
+        isRpmCritical -> colors.gaugeOrange.copy(alpha = 0.1f)
+        else -> colors.dark
+    }
+
+    Box(modifier = modifier.fillMaxSize().background(backgroundColor)) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -222,6 +256,10 @@ fun DashboardScreen(
                     onToggleShiftLight = onToggleShiftLight,
                     onToggleVehicleInfo = onToggleVehicleInfo,
                     onToggleKnownIssues = onToggleKnownIssues,
+                    onToggleTurboMonitor = onToggleTurboMonitor,
+                    onToggleTimingChainMonitor = onToggleTimingChainMonitor,
+                    onToggleCarProfile = onToggleCarProfile,
+                    onToggleTurboCooldown = onToggleTurboCooldown,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
@@ -233,6 +271,14 @@ fun DashboardScreen(
                 if (activeAlerts.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     AlertBanner(alerts = activeAlerts, colors = colors)
+                }
+
+                if (turboCooldownState.isActive) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TurboCoolDownBanner(
+                        coolDownState = turboCooldownState,
+                        onDismiss = onToggleTurboCooldown
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -263,12 +309,20 @@ fun DashboardScreen(
                     Text(
                         text = "Batt: %.1fV".format(obdData.batteryVoltage),
                         fontSize = 12.sp,
-                        color = colors.textSecondary
+                        color = when {
+                            obdData.batteryVoltage > 0 && obdData.batteryVoltage < 11.5f -> colors.gaugeRed
+                            obdData.batteryVoltage > 0 && obdData.batteryVoltage < 12f -> colors.gaugeOrange
+                            else -> colors.textSecondary
+                        }
                     )
                     Text(
                         text = "${pollMode.label} | Load: %.0f%%".format(obdData.absoluteLoadValue),
                         fontSize = 12.sp,
-                        color = colors.textSecondary
+                        color = when {
+                            obdData.absoluteLoadValue > 90 -> colors.gaugeOrange
+                            obdData.absoluteLoadValue > 80 -> colors.gaugeYellow
+                            else -> colors.textSecondary
+                        }
                     )
                     Text(
                         text = if (connectionStats.quality != ConnectionQuality.UNKNOWN) connectionStats.quality.label else "",
@@ -290,6 +344,22 @@ fun DashboardScreen(
                         color = colors.gaugeGreen,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
+                }
+
+                if (connectionStats.quality == ConnectionQuality.POOR) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = colors.gaugeRed.copy(alpha = 0.2f),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Text(
+                            text = "Verbindungsqualität schlecht — OBD-Adapter prüfen",
+                            fontSize = 10.sp,
+                            color = colors.gaugeRed,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
@@ -501,15 +571,40 @@ fun DashboardScreen(
         }
 
         if (showVehicleInfo) {
-            com.canopobd.ui.vehicleinfo.VehicleInfoDialog(
+            VehicleInfoDialog(
                 vin = onGetStoredVin(),
                 onDismiss = onToggleVehicleInfo
             )
         }
 
         if (showKnownIssues) {
-            com.canopobd.ui.knownissues.KnownIssuesDialog(
+            KnownIssuesDialog(
                 onDismiss = onToggleKnownIssues
+            )
+        }
+
+        if (showTurboMonitor) {
+            TurboMonitorDialog(
+                turboData = turboData,
+                oilData = oilData,
+                carProfile = carProfile,
+                onDismiss = onToggleTurboMonitor
+            )
+        }
+
+        if (showTimingChainMonitor) {
+            TimingChainMonitorDialog(
+                chainState = timingChainState,
+                carProfile = carProfile,
+                onDismiss = onToggleTimingChainMonitor
+            )
+        }
+
+        if (showCarProfile) {
+            CarProfileDialog(
+                currentProfile = carProfile,
+                onSelectProfile = onSelectCarProfile,
+                onDismiss = onToggleCarProfile
             )
         }
     }
@@ -527,9 +622,21 @@ data class GaugeItem(
 )
 
 private fun buildGaugeMap(data: OBDData, unit: MeasurementUnit): Map<String, GaugeItem> = mapOf(
-    "rpm" to GaugeItem("rpm", "RPM", data.rpm.toFloat(), "rpm", 0f, 8000f, Color(0xFF44FF88)),
+    "rpm" to GaugeItem("rpm", "RPM", data.rpm.toFloat(), "rpm", 0f, 8000f,
+        when {
+            data.rpm > 6000 -> Color(0xFFFF4444)
+            data.rpm > 5500 -> Color(0xFFFF8800)
+            else -> Color(0xFF44FF88)
+        }),
     "speed" to GaugeItem("speed", "Speed", unit.convertSpeed(data.speed).toFloat(), unit.speedUnit, 0f, 260f, Color(0xFF42A5F5)),
-    "coolant" to GaugeItem("coolant", "Coolant", unit.convertTemp(data.coolantTemp).toFloat(), unit.tempUnit, -40f, 215f, Color(0xFFFF8C00)),
+    "coolant" to GaugeItem("coolant", "Coolant", unit.convertTemp(data.coolantTemp).toFloat(), unit.tempUnit, -40f, 215f,
+        when {
+            data.coolantTemp > 110 -> Color(0xFFFF4444)
+            data.coolantTemp > 100 -> Color(0xFFFF8800)
+            data.coolantTemp > 80 -> Color(0xFF44FF88)
+            data.coolantTemp < 40 -> Color(0xFF42A5F5)
+            else -> Color(0xFFFF8C00)
+        }),
     "throttle" to GaugeItem("throttle", "Throttle", data.throttle.toFloat(), "%", 0f, 100f, Color(0xFFFFE066)),
     "engine_load" to GaugeItem("engine_load", "Eng Load", data.engineLoad.toFloat(), "%", 0f, 100f, Color(0xFFFFD54F)),
     "fuel" to GaugeItem("fuel", "Fuel", data.fuelLevel.toFloat(), "%", 0f, 100f, Color(0xFFFF9800)),
@@ -540,7 +647,12 @@ private fun buildGaugeMap(data: OBDData, unit: MeasurementUnit): Map<String, Gau
     "load" to GaugeItem("load", "Abs Load", data.absoluteLoadValue.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE)),
     "fuel_rate" to GaugeItem("fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF5252)),
     "accel_pedal" to GaugeItem("accel_pedal", "Accel Pedal", data.acceleratorPosD.toFloat(), "%", 0f, 100f, Color(0xFF00E5FF)),
-    "hybrid_battery" to GaugeItem("hybrid_battery", "Hybrid Batt", data.hybridBatteryRemaining.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE))
+    "hybrid_battery" to GaugeItem("hybrid_battery", "Hybrid Batt", data.hybridBatteryRemaining.toFloat(), "%", 0f, 100f,
+        when {
+            data.hybridBatteryRemaining < 20 -> Color(0xFFFF4444)
+            data.hybridBatteryRemaining < 40 -> Color(0xFFFF8800)
+            else -> Color(0xFF69F0AE)
+        })
 )
 
 @Composable
@@ -647,6 +759,10 @@ private fun DashboardHeader(
     onToggleShiftLight: () -> Unit,
     onToggleVehicleInfo: () -> Unit,
     onToggleKnownIssues: () -> Unit,
+    onToggleTurboMonitor: () -> Unit,
+    onToggleTimingChainMonitor: () -> Unit,
+    onToggleCarProfile: () -> Unit,
+    onToggleTurboCooldown: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -708,7 +824,7 @@ private fun DashboardHeader(
                 Icon(Icons.Filled.Speed, contentDescription = stringResource(R.string.perf_test_title), tint = colors.textSecondary)
             }
             IconButton(onClick = onToggleTrendGraph) {
-                Icon(Icons.Filled.ShowChart, contentDescription = stringResource(R.string.trend), tint = colors.textSecondary)
+                Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = stringResource(R.string.trend), tint = colors.textSecondary)
             }
             IconButton(onClick = onToggleTripHistory) {
                 Icon(Icons.Filled.Route, contentDescription = stringResource(R.string.trip_history_title), tint = colors.textSecondary)
@@ -738,6 +854,24 @@ private fun DashboardHeader(
                 }
                 IconButton(onClick = onToggleShiftLight) {
                     Icon(Icons.Filled.LightMode, contentDescription = "Schaltblitz", tint = colors.gaugeOrange)
+                }
+                IconButton(onClick = onToggleVehicleInfo) {
+                    Icon(Icons.Filled.Info, contentDescription = "Fahrzeugprofil", tint = colors.highlight)
+                }
+                IconButton(onClick = onToggleKnownIssues) {
+                    Icon(Icons.Filled.BugReport, contentDescription = "Bekannte Probleme", tint = colors.gaugeYellow)
+                }
+                IconButton(onClick = onToggleTurboMonitor) {
+                    Icon(Icons.Filled.Air, contentDescription = "Turbo", tint = colors.accent)
+                }
+                IconButton(onClick = onToggleTimingChainMonitor) {
+                    Icon(Icons.Filled.SettingsApplications, contentDescription = "Steuerkette", tint = colors.accent)
+                }
+                IconButton(onClick = onToggleCarProfile) {
+                    Icon(Icons.Filled.DirectionsCar, contentDescription = "Fahrzeugprofil", tint = colors.highlight)
+                }
+                IconButton(onClick = onToggleTurboCooldown) {
+                    Icon(Icons.Filled.Timer, contentDescription = "Turbo-Rücklauf", tint = colors.gaugeCyan)
                 }
                 IconButton(onClick = onToggleHUDMode) {
                     Icon(Icons.Filled.Tv, contentDescription = stringResource(R.string.hud_mode), tint = colors.gaugeCyan)
@@ -778,15 +912,9 @@ private fun DashboardHeader(
                 IconButton(onClick = onToggleDTCDialog) {
                     Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.fault_codes), tint = colors.gaugeYellow)
                 }
-                    IconButton(onClick = onToggleVehicleInfo) {
-                        Icon(Icons.Filled.Info, contentDescription = "Fahrzeugprofil", tint = colors.accent)
-                    }
-                    IconButton(onClick = onToggleKnownIssues) {
-                        Icon(Icons.Filled.BugReport, contentDescription = "Typische Probleme", tint = colors.gaugeOrange)
-                    }
-                    IconButton(onClick = onDisconnect) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.disconnect), tint = colors.gaugeRed)
-                    }
+                IconButton(onClick = onDisconnect) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.disconnect), tint = colors.gaugeRed)
+                }
             }
         }
     }

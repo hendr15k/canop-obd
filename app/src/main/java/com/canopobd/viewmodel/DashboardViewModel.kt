@@ -1,4 +1,4 @@
-﻿package com.canopobd.viewmodel
+package com.canopobd.viewmodel
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
@@ -129,6 +129,27 @@ class DashboardViewModel private constructor(
     private val _shiftLightConfig = MutableStateFlow(com.canopobd.data.model.ShiftLightConfig())
     val shiftLightConfig: StateFlow<com.canopobd.data.model.ShiftLightConfig> = _shiftLightConfig.asStateFlow()
 
+    private val _carProfileState = MutableStateFlow(com.canopobd.data.model.CarProfile.default())
+    val carProfile: StateFlow<com.canopobd.data.model.CarProfile> = _carProfileState.asStateFlow()
+    private val _turboData = MutableStateFlow(com.canopobd.data.model.TurboData())
+    val turboData: StateFlow<com.canopobd.data.model.TurboData> = _turboData.asStateFlow()
+    private val _oilData = MutableStateFlow(com.canopobd.data.model.OilData())
+    val oilData: StateFlow<com.canopobd.data.model.OilData> = _oilData.asStateFlow()
+    private val _timingChainState = MutableStateFlow(com.canopobd.data.model.TimingChainState())
+    val timingChainState: StateFlow<com.canopobd.data.model.TimingChainState> = _timingChainState.asStateFlow()
+
+    private val _showTurboMonitor = MutableStateFlow(false)
+    val showTurboMonitor: StateFlow<Boolean> = _showTurboMonitor.asStateFlow()
+    private val _showTimingChainMonitor = MutableStateFlow(false)
+    val showTimingChainMonitor: StateFlow<Boolean> = _showTimingChainMonitor.asStateFlow()
+    private val _showCarProfile = MutableStateFlow(false)
+    val showCarProfile: StateFlow<Boolean> = _showCarProfile.asStateFlow()
+    private val _showTurboCooldown = MutableStateFlow(false)
+    val showTurboCooldown: StateFlow<Boolean> = _showTurboCooldown.asStateFlow()
+
+    private val _turboCooldownState = MutableStateFlow(com.canopobd.data.model.TurboCoolDownState())
+    val turboCooldownState: StateFlow<com.canopobd.data.model.TurboCoolDownState> = _turboCooldownState.asStateFlow()
+
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
@@ -166,6 +187,7 @@ class DashboardViewModel private constructor(
         if (_permissionsGranted.value) refreshDevices()
         _maintenanceItems.value = repository.loadMaintenanceItems()
         _shiftLightConfig.value = repository.loadShiftLightConfig()
+        _carProfileState.value = repository.loadCarProfile()
         checkForUpdate()
     }
 
@@ -371,6 +393,80 @@ class DashboardViewModel private constructor(
 
     fun toggleKnownIssues() {
         _showKnownIssues.value = !_showKnownIssues.value
+    }
+
+    fun toggleTurboMonitor() {
+        _showTurboMonitor.value = !_showTurboMonitor.value
+        if (_showTurboMonitor.value) {
+            updateTurboData()
+        }
+    }
+
+    fun toggleTimingChainMonitor() {
+        _showTimingChainMonitor.value = !_showTimingChainMonitor.value
+        if (_showTimingChainMonitor.value) {
+            updateTimingChainState()
+        }
+    }
+
+    fun toggleCarProfile() {
+        _showCarProfile.value = !_showCarProfile.value
+    }
+
+    fun toggleTurboCooldown() {
+        _showTurboCooldown.value = !_showTurboCooldown.value
+    }
+
+    fun selectCarProfile(profile: com.canopobd.data.model.CarProfile) {
+        _carProfileState.value = profile
+        repository.saveCarProfile(profile)
+        _showCarProfile.value = false
+    }
+
+    private fun updateTurboData() {
+        val data = repository.obdData.value
+        val profile = _carProfileState.value
+        val boostPressure = data.intakePressure
+        _turboData.value = _turboData.value.copy(
+            boostPressure = boostPressure,
+            boostTarget = profile.normalBoostBar.toDouble(),
+            wastegateDutyCycle = if (boostPressure > 0) (profile.normalBoostBar / boostPressure * 50).coerceIn(25.0, 95.0) else 95.0,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+
+    private fun updateTimingChainState() {
+        val data = repository.obdData.value
+        val rpm = data.rpm
+        val coolant = data.coolantTemp
+        val isWarmedUp = coolant > 80
+        val rpmVariation = if (rpm > 0) (rpm * 0.02) else 0.0
+        val healthScore = when {
+            rpmVariation < 2.0 && isWarmedUp -> 95
+            rpmVariation < 5.0 && isWarmedUp -> 80
+            rpmVariation < 10.0 -> 60
+            else -> 40
+        }
+        val phase = when {
+            rpm < 500 -> com.canopobd.data.model.TimingChainPhase.UNKNOWN
+            rpmVariation > 5.0 && !isWarmedUp -> com.canopobd.data.model.TimingChainPhase.COLD_RATTLE
+            !isWarmedUp -> com.canopobd.data.model.TimingChainPhase.WARMING_UP
+            rpmVariation < 2.0 -> com.canopobd.data.model.TimingChainPhase.HEALTHY
+            rpmVariation < 5.0 -> com.canopobd.data.model.TimingChainPhase.STABLE
+            else -> com.canopobd.data.model.TimingChainPhase.WARNING
+        }
+        _timingChainState.value = _timingChainState.value.copy(
+            healthScore = healthScore,
+            coldStartRattleDetected = rpmVariation > 5.0 && !isWarmedUp,
+            idleRpmVariation = rpmVariation,
+            isWarmedUp = isWarmedUp,
+            phase = phase,
+            recordedSamples = _timingChainState.value.recordedSamples + 1,
+            lastRpmReading = rpm,
+            avgRpmCold = if (!isWarmedUp) (_timingChainState.value.avgRpmCold + rpm) / 2 else _timingChainState.value.avgRpmCold,
+            avgRpmWarm = if (isWarmedUp) (_timingChainState.value.avgRpmWarm + rpm) / 2 else _timingChainState.value.avgRpmWarm,
+            rpmDeviationCold = rpmVariation
+        )
     }
 
     fun updateDriveScore() {

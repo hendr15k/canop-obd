@@ -1,4 +1,4 @@
-﻿package com.canopobd.data.model
+package com.canopobd.data.model
 
 enum class OBDPID(
     val code: String,
@@ -91,16 +91,16 @@ enum class OBDPID(
     ENGINE_FUEL_RATE("015E", "Engine Fuel Rate", "L/h", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 20.0 else 0.0
     }),
-    SHORT_TERM_FUEL_TRIM_BANK1("0106", "STFT Bank 1", "%", 1, { b ->
+    SHORT_TERM_FUEL_TRIM_BANK1("0161", "STFT Bank 1", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
-    LONG_TERM_FUEL_TRIM_BANK1("0107", "LTFT Bank 1", "%", 1, { b ->
+    LONG_TERM_FUEL_TRIM_BANK1("0162", "LTFT Bank 1", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
-    SHORT_TERM_FUEL_TRIM_BANK2("0108", "STFT Bank 2", "%", 1, { b ->
+    SHORT_TERM_FUEL_TRIM_BANK2("0163", "STFT Bank 2", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
-    LONG_TERM_FUEL_TRIM_BANK2("0109", "LTFT Bank 2", "%", 1, { b ->
+    LONG_TERM_FUEL_TRIM_BANK2("0164", "LTFT Bank 2", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
     FUEL_AIR_EQUIV_RATIO("0144", "Fuel Air Equiv Ratio", "", 2, { b ->
@@ -112,26 +112,14 @@ enum class OBDPID(
     TIME_RUN_WITH_MIL("014E", "Time Run MIL On", "min", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
-    ACCELERATOR_POS_D("0149", "Accelerator Pedal D", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
-    ACCELERATOR_POS_E("014A", "Accelerator Pedal E", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
-    ACCELERATOR_POS_F("014B", "Accelerator Pedal F", "%", 1, { b ->
+    ACCELERATOR_POS_D("0151", "Accelerator Pedal D", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     THROTTLE_C("015D", "Throttle C", "%", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
     }),
-    THROTTLE_ACTUATOR("014C", "Throttle Actuator", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
-    FUEL_INJECTION_TIMING("220F01", "Fuel Injection Timing", "°", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 128.0 - 210.0 else 0.0
-    }),
-    FUEL_INJECTION_QUANTITY("220F02", "Fuel Injection Quantity", "mm³", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    THROTTLE_ACTUATOR("005C", "Throttle Actuator", "%", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
@@ -163,13 +151,13 @@ enum class OBDPID(
     FUEL_SYSTEM_STATUS("0103", "Fuel System Status", "", 2, { b ->
         if (b.size >= 2) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
-    ACTUAL_TORQUE("226200", "Actual Torque", "%", 1, { b ->
+    DEMAND_TORQUE("0061", "Driver Demand Torque", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    DEMAND_TORQUE("226100", "Driver Demand Torque", "%", 1, { b ->
+    ACTUAL_TORQUE("0062", "Actual Torque", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    REFERENCE_TORQUE("226300", "Reference Torque", "Nm", 2, { b ->
+    REFERENCE_TORQUE("0063", "Reference Torque", "Nm", 2, { b ->
         if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
     ETHANOL_FUEL_PERCENT("0152", "Ethanol Fuel %", "%", 1, { b ->
@@ -177,59 +165,6 @@ enum class OBDPID(
     }),
     OIL_TEMP("015C", "Engine Oil Temperature", "°C", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
-    }),
-    OIL_TEMP_EXTENDED("22014D", "Oil Temperature (UDS)", "°C", 1, { b ->
-        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
-    }),
-    FUEL_RAIL_PRESSURE_ABS("220F00", "Fuel Rail Pressure (Abs)", "bar", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 else 0.0
-    }),
-    ACCELERATOR_PEDAL_POSITION("220D01", "Accelerator Pedal Position", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
-    BRAKE_PEDAL_STATUS("220D02", "Brake Pedal Status", "", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
-    }),
-    CLUTCH_PEDAL_STATUS("220D03", "Clutch Pedal Status", "", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
-    }),
-    ENGINE_TORQUE_REQUESTED("226101", "Engine Torque Requested", "%", 1, { b ->
-        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
-    }),
-    ENGINE_TORQUE_ACTUAL("226201", "Engine Torque Actual", "%", 1, { b ->
-        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
-    }),
-    REFERENCE_TORQUE_NM("226301", "Reference Torque", "Nm", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
-    }),
-    O2_SENSOR_VOLTAGE_B1S1("221001", "O2 Sensor B1S1 Voltage", "mV", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
-    }),
-    O2_SENSOR_VOLTAGE_B1S2("221102", "O2 Sensor B1S2 Voltage", "mV", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
-    }),
-    ECU_PART_NUMBER("220302", "ECU Part Number", "", 0, { _ -> 0.0 }),
-    ECU_SOFTWARE_VERSION("220303", "ECU Software Version", "", 0, { _ -> 0.0 }),
-    CATALYST_TEMP_EGT_B1("221101", "Catalyst Temperature (EGT)", "°C", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
-    }),
-    INTAKE_AIR_TEMP_POST_COOLER("221401", "Intake Air Temp (Post Cooler)", "°C", 1, { b ->
-        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
-    }),
-    BOOST_PRESSURE_TARGET("220A00", "Boost Pressure Target", "kPa", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
-    }),
-    WASTEGATE_POSITION("220C00", "Wastegate Position", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
-    TURBO_RPM_SENSOR("220500", "Turbo RPM Sensor", "rpm", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
-    }),
-    ENGINE_COOLANT_TEMP_2("221500", "Engine Coolant Temp 2", "°C", 1, { b ->
-        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
-    }),
-    OIL_PRESSURE("220100", "Oil Pressure", "kPa", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
     TURBO_BOOST_VACUUM("0175", "Turbo Boost Vacuum", "kPa", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
@@ -777,7 +712,7 @@ data class AstraJ14TurboCalibration(
     val ecuType: String = "Bosch ME17.9.22 / Delco E78",
     val compressionRatio: String = "9.5:1",
     val displacement: String = "1364cc (1.4L)",
-    val boreStroke: String = "72.5mm × 82.6mm",
+    val boreStroke: String = "72.5mm x 82.6mm",
     val valveConfig: String = "DOHC 16V, DCVCP Nockenwellen",
     val emissionStandard: String = "Euro 5",
     val fuelConsumptionCombined: Double = 6.0,
@@ -876,25 +811,16 @@ data class AstraJ14TurboCalibration(
             MaintenanceItem(type = MaintenanceType.TURBO_BOOST_CHECK, intervalKm = 45000)
         )
         val KNOWN_ISSUES = listOf(
-            KnownIssue("Timing Chain", "Rattle auf Kaltstart, P0340/P1345", "80.000-150.000 km", "Ölqualität und regelmäßige Ölwechsel"),
-            KnownIssue("MAF Sensor", "Rauer Leerlauf, Leistungsverlust, P0100-P0103", "60.000-120.000 km", "MAF-Reiniger verwenden, Luftfilter prüfen"),
-            KnownIssue("Wastegate", "Rasseln bei niedriger Drehzahl, P0234", "80.000-150.000 km", "Wastegate-Stellglied prüfen"),
-            KnownIssue("PCV Ventil", "Ölverbrauch, blauer Rauch, P1100", "60.000-100.000 km", "Zylinderkopfhaube ersetzen"),
-            KnownIssue("Kühlmittel", "Überhitzung, Kühlmittelverlust", "80.000-150.000 km", "Wasserpumpe und Kühlmittelkreislauf prüfen"),
-            KnownIssue("Ölverbrauch", "Ölstand zwischen Wechseln, P0298", "100.000+ km", "Kolbenringe und Ventilschaftdichtungen prüfen"),
+            KnownIssue("Timing Chain", "Rattle auf Kaltstart, P0340/P1345", "80.000-150.000 km", "Olqualitat und regelmaige Olwechsel"),
+            KnownIssue("MAF Sensor", "Rauer Leerlauf, Leistungsverlust, P0100-P0103", "60.000-120.000 km", "MAF-Reiniger verwenden, Luftfilter prufen"),
+            KnownIssue("Wastegate", "Rasseln bei niedriger Drehzahl, P0234", "80.000-150.000 km", "Wastegate-Stellglied prufen"),
+            KnownIssue("PCV Ventil", "Olverbrauch, blauer Rauch, P1100", "60.000-100.000 km", "Zylinderkopfhaube ersetzen"),
+            KnownIssue("Kuhlmittel", "Uberhitzung, Kuhlmittelverlust", "80.000-150.000 km", "Wasserpumpe und Kuhlmittelkreislauf prufen"),
+            KnownIssue("Olverbrauch", "Olstand zwischen Wechseln, P0298", "100.000+ km", "Kolbenringe und Ventilschaftdichtungen prufen"),
             KnownIssue("Drosselklappe", "Rauer Leerlauf, P2100/P2101", "60.000-120.000 km", "Drosselklappe reinigen und anlernen")
         )
     }
 }
-
-enum class FuelTrimStatus { NORMAL, WARNING, LEAN, RICH }
-
-data class KnownIssue(
-    val name: String,
-    val symptoms: String,
-    val typicalMileage: String,
-    val prevention: String
-)
 
 data class ColdStartState(
     val phase: ColdStartPhase = ColdStartPhase.NOT_STARTED,
@@ -928,6 +854,15 @@ data class ColdStartState(
         else -> (oilTempCurrent / 90.0).toFloat().coerceIn(0f, 1f)
     }
 }
+
+enum class FuelTrimStatus { NORMAL, WARNING, LEAN, RICH }
+
+data class KnownIssue(
+    val name: String,
+    val symptoms: String,
+    val typicalMileage: String,
+    val prevention: String
+)
 
 enum class FuelSystemState(val label: String) {
     UNKNOWN("Unbekannt"),
@@ -986,10 +921,10 @@ enum class WastegateHealth(val label: String, val severity: Int) {
 
 enum class TurboHealthStatus(val label: String, val colorHex: Long) {
     HEALTHY("Turbo OK", 0xFF44FF88),
-    OVERBOOST("Überladung!", 0xFFFF4444),
+    OVERBOOST("Uberladung!", 0xFFFF4444),
     UNDERBOOST("Unterladung!", 0xFFFF8C00),
     WASTEGATE_ISSUE("Wastegate-Problem", 0xFFFFE066),
-    INTERCOOLER_EFFICIENCY("Ladeluftkühler-Problem", 0xFFFFAB40)
+    INTERCOOLER_EFFICIENCY("Ladeluftkuhler-Problem", 0xFFFFAB40)
 }
 
 data class DTCDetails(
