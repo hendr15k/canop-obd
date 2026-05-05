@@ -387,7 +387,7 @@
     <string name="chain_good">Steuerkette in gutem Zustand</string>
     <string name="chain_slight_wear">Leichte Verschleißerscheinungen — weiter beobachten</string>
     <string name="chain_wear_detected">Verschleiß erkannt — Inspektion bei nächster Wartung</string>
-    <string name="chain_warning">Steuerkette warnung —尽早 prüfen lassen</string>
+    <string name="chain_warning">Steuerkette warnung — bald prüfen lassen</string>
     <string name="chain_critical">Steuerkette kritisch — sofort prüfen!</string>
     <string name="chain_defect">Steuerkette defekt — nicht weiterfahren!</string>
 
@@ -510,12 +510,12 @@
     <string name="vehicle_info_g_per_km">g/km</string>
     <string name="vehicle_info_acceleration_time">%s s</string>
     <string name="vehicle_info_battery_agm">%s Ah AGM</string>
-    <string name="vehicle_info_alternator_format">%sV / 120-140A</string>
+    <string name="vehicle_info_alternator_format">%sV / 120–140A</string>
     <string name="vehicle_info_boost_bar">%s bar</string>
     <string name="vehicle_info_oil_capacity_filter">%s L (mit Filter)</string>
     <string name="vehicle_info_coolant_dexcool">%s L (Dex-Cool 50/50)</string>
     <string name="vehicle_info_spark_plug_gap_mm">%s mm</string>
-    <string name="vehicle_info_can_protocol">ISO 15765-4 CAN (500 kbit/s)</string>
+    <string name="vehicle_info_can_protocol">ISO 15765–4 CAN (500 kbit/s)</string>
     <string name="vehicle_info_connector_location">OBD-II 16-Pin, unter dem Lenkrad links</string>
     <string name="vehicle_info_ecu_address_engine">0x7E0 (Motor)</string>
     <string name="vehicle_info_extended_pids_uds">Service $22 (UDS)</string>
@@ -625,7 +625,7 @@
     <string name="boost_target_reached">Ziel-Ladedruck erreicht</string>
     
     <!-- Eco Driving -->
-    <string name="eco_optimal_rpm">Optimaler Drehzahlbereich: 1500-3000</string>
+    <string name="eco_optimal_rpm">Optimaler Drehzahlbereich: 1500–3000</string>
     <string name="eco_coasting">Segeln im Gang</string>
     <string name="eco_turbo_score">Turbo-Effizienz-Score</string>
     
@@ -781,7 +781,7 @@
     <string name="dtc_count_warning">%d gespeicherte Fehler</string>
     <string name="inspection_hint">Alle Monitore bestanden — bereit für Abgasuntersuchung</string>
     <string name="driving_cycle_required">Fahrtzyklus erforderlich</string>
-    <string name="incomplete_monitors_hint">%d Monitor(e) noch nicht abgeschlossen</string>
+    <string name="incomplete_monitors_hint">%d Monitore noch nicht abgeschlossen</string>
     <string name="monitor_overview">Monitor-Übersicht</string>
     <string name="incomplete">Offen</string>
     <string name="not_supported">Nicht unterstützt</string>

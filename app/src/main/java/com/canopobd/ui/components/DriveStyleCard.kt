@@ -46,8 +46,8 @@ fun DriveStyleCard(
     overboostUsageCount: Int = 0,
     brakeUsagePercent: Double = 0.0,
     avgRpm: Double = 0.0,
-    rpmDistribution: Map<String, Double> = emptyMap(),
     modifier: Modifier = Modifier,
+    rpmDistribution: Map<String, Double> = emptyMap(),
     colors: AppColors = LocalAppColors.current
 ) {
     val balanceIndicator = remember(ecoScore, sportScore) {
@@ -402,13 +402,13 @@ private fun DriveStyleStatItem(
             Text(
                 text = label,
                 fontSize = 9.sp,
-                color = colors.textDim
+                color = appColors.textDim
             )
         }
     }
 }
 
-private val colors: AppColors
+private val appColors: AppColors
     @Composable
     get() = LocalAppColors.current
 

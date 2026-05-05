@@ -869,10 +869,11 @@ private fun getHealthDescription(score: Int, turboData: TurboData): String {
 fun TurboHealthCardCompact(
     turboData: TurboData,
     oilData: OilData,
+    carProfile: CarProfile,
     modifier: Modifier = Modifier,
     colors: AppColors = LocalAppColors.current
 ) {
-    val healthScore = calculateTurboHealthScore(turboData, oilData, CarProfile.ASTRA_J_2012_14T)
+    val healthScore = calculateTurboHealthScore(turboData, oilData, carProfile)
     val healthColor = getHealthColor(healthScore)
     
     val isCritical = healthScore < 50

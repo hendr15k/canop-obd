@@ -58,6 +58,7 @@ import com.canopobd.ui.carprofile.CarProfileDialog
 import com.canopobd.ui.turbo.TurboMonitorDialog
 import com.canopobd.ui.timingchain.TimingChainMonitorDialog
 import com.canopobd.ui.turbo.TurboCoolDownBanner
+import com.canopobd.ui.turbo.TurboCoolDownDialog
 import com.canopobd.data.model.TurboCoolDownState
 import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
 import com.canopobd.ui.knownissues.KnownIssuesDialog
@@ -498,6 +499,14 @@ fun DashboardScreen(
             composable("timing_chain_monitor") {
                 if (showTimingChainMonitor) {
                     TimingChainMonitorDialog(chainState = timingChainState, carProfile = carProfile, onDismiss = { onToggleTimingChainMonitor(); navController.popBackStack() })
+                }
+            }
+            composable("turbo_cooldown") {
+                if (_showTurboCooldown) {
+                    TurboCoolDownDialog(
+                        coolDownState = turboCooldownState,
+                        onDismiss = { onToggleTurboCooldown(); navController.popBackStack() }
+                    )
                 }
             }
             composable("car_profile") {
@@ -970,7 +979,7 @@ private fun ConnectionQualityBadge(stats: ConnectionStats, colors: AppColors) {
 
 @Composable
 private fun AlertBanner(alerts: List<ActiveAlert>, colors: AppColors) {
-    val alert = alerts.first()
+    val alert = alerts.firstOrNull() ?: return
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -988,7 +997,7 @@ private fun AlertBanner(alerts: List<ActiveAlert>, colors: AppColors) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = alert.message,
+                text = if (alerts.size > 1) "${alert.message} (+${alerts.size - 1})" else alert.message,
                 fontSize = 11.sp,
                 color = colors.gaugeRed
             )

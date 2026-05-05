@@ -43,8 +43,7 @@ fun HUDModeActivity(
         window?.setFlags(
             WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS or
             WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS or
-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION
+            0
         )
         onDispose {
             window?.clearFlags(

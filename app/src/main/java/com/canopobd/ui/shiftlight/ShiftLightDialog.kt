@@ -26,9 +26,9 @@ fun ShiftLightDialog(
     onDismiss: () -> Unit,
     onUpdateConfig: (ShiftLightConfig) -> Unit
 ) {
-    var localConfig by remember { mutableStateOf(config) }
-    var redlineRpm by remember { mutableFloatStateOf(config.redlineRpm.toFloat()) }
-    var warningRpm by remember { mutableFloatStateOf(config.warningRpm.toFloat()) }
+    var localConfig by remember(config) { mutableStateOf(config) }
+    var redlineRpm by remember(config) { mutableFloatStateOf(config.redlineRpm.toFloat()) }
+    var warningRpm by remember(config) { mutableFloatStateOf(config.warningRpm.toFloat()) }
 
     Dialog(
         onDismissRequest = onDismiss,

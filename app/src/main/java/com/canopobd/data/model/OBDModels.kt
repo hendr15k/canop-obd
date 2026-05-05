@@ -747,6 +747,7 @@ data class DriveSession(
     val harshAccels: Int = 0,
     val harshBrakes: Int = 0,
     val rpmSamples: Double = 0.0,
+    val rpmSampleCount: Int = 0,
     val throttleSamples: Double = 0.0,
     val speedSamples: Double = 0.0,
     val avgBoostBar: Double = 0.0,

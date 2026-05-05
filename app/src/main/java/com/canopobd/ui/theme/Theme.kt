@@ -9,29 +9,27 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = canopoAccent,
-    secondary = canopoHighlight,
-    tertiary = canopoSecondary,
-    background = canopoDark,
-    surface = canopoSurface,
-    surfaceVariant = canopoSurfaceVariant,
-    onPrimary = textPrimary,
-    onSecondary = textPrimary,
-    onTertiary = textPrimary,
-    onBackground = textPrimary,
-    onSurface = textPrimary,
-    onSurfaceVariant = textSecondary,
-    error = gaugeRed,
-    onError = textPrimary
-)
-
 @Composable
 fun CanopObdTheme(
     appColors: AppColors = DefaultAppColors,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = DarkColorScheme
+    val colorScheme = darkColorScheme(
+        primary = appColors.accent,
+        secondary = appColors.highlight,
+        tertiary = appColors.secondary,
+        background = appColors.dark,
+        surface = appColors.surface,
+        surfaceVariant = appColors.surfaceVariant,
+        onPrimary = appColors.textPrimary,
+        onSecondary = appColors.textPrimary,
+        onTertiary = appColors.textPrimary,
+        onBackground = appColors.textPrimary,
+        onSurface = appColors.textPrimary,
+        onSurfaceVariant = appColors.textSecondary,
+        error = appColors.gaugeRed,
+        onError = appColors.textPrimary
+    )
     val view = LocalView.current
 
     if (!view.isInEditMode) {

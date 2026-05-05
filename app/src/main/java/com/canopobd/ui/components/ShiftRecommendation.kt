@@ -237,7 +237,7 @@ object ShiftRecommendationEngine {
 
         // Generate recommendation text
         val recommendation = when (mode) {
-            ShiftMode.REDLINE -> "HOCHSCHALTEN! Drehzahlgrenze!"
+            ShiftMode.REDLINE -> if (shouldShift) "HOCHSCHALTEN! Drehzahlgrenze!" else "Drehzahlgrenze erreicht"
             ShiftMode.POWER -> if (shouldShift) "Leistungsgrenze - Schalten!" else "Naehe Leistungsmaximum"
             ShiftMode.TORQUE -> if (shouldShift) "Optimaler Drehmoment-Bereich" else "Drehmoment-Bereich"
             ShiftMode.EFFICIENCY -> if (shouldShift) "Effizienter Schaltpunkt" else "Im Wirkungsgrad-Optimum"
@@ -751,7 +751,7 @@ private fun RpmProgressBar(
             )
             if (showTargetMarker) {
                 Text(
-                    text = "Ziel: $targetRpm.toInt() RPM",
+                    text = "Ziel: ${targetRpm.toInt()} RPM",
                     fontSize = 12.sp,
                     color = accentColor
                 )

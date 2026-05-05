@@ -576,8 +576,9 @@ class DashboardViewModel private constructor(
             isWarmedUp = isWarmedUp,
             phase = phase,
             recordedSamples = _timingChainState.value.recordedSamples + 1,
+            coldSampleCount = if (!isWarmedUp) _timingChainState.value.coldSampleCount + 1 else _timingChainState.value.coldSampleCount,
             lastRpmReading = rpm,
-            avgRpmCold = if (!isWarmedUp) (_timingChainState.value.avgRpmCold + rpm) / 2 else _timingChainState.value.avgRpmCold,
+            avgRpmCold = if (!isWarmedUp) (_timingChainState.value.avgRpmCold + rpm) / (_timingChainState.value.coldSampleCount + 1.0) else _timingChainState.value.avgRpmCold,
             avgRpmWarm = if (isWarmedUp) (_timingChainState.value.avgRpmWarm + rpm) / 2 else _timingChainState.value.avgRpmWarm,
             rpmDeviationCold = rpmVariation
         )
@@ -602,12 +603,14 @@ class DashboardViewModel private constructor(
         val newBoostSum = session.boostSamples + boostBar
         val newBoostCount = session.boostSampleCount + 1
         val newAvgBoost = newBoostSum / newBoostCount
+        val newRpmSampleCount = session.rpmSampleCount + 1
 
         val newSession = session.copy(
             rpmSamples = session.rpmSamples + rpm,
+            rpmSampleCount = newRpmSampleCount,
             throttleSamples = session.throttleSamples + throttle,
             speedSamples = session.speedSamples + speed,
-            avgRpm = if (session.rpmSamples + rpm > 0) (session.rpmSamples + rpm) / 2.0 else rpm,
+            avgRpm = if (newRpmSampleCount > 0) (session.rpmSamples + rpm) / newRpmSampleCount.toDouble() else rpm,
             avgThrottle = if (session.throttleSamples + throttle > 0) (session.throttleSamples + throttle) / 2.0 else throttle,
             avgSpeed = if (session.speedSamples + speed > 0) (session.speedSamples + speed) / 2.0 else speed,
             maxRpm = maxOf(session.maxRpm, rpm),

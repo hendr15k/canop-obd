@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.canopobd.BuildConfig
 import com.canopobd.R
 import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.PollMode
@@ -168,7 +169,7 @@ fun SettingsDialog(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        InfoRow(label = stringResource(R.string.app_version), value = "1.6.0")
+                        InfoRow(label = stringResource(R.string.app_version), value = BuildConfig.VERSION_NAME)
                         InfoRow(label = stringResource(R.string.obd_protocol), value = "ELM327")
                         InfoRow(label = stringResource(R.string.android_version), value = "API 26+")
                     }

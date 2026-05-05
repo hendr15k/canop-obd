@@ -93,6 +93,7 @@ data class TimingChainState(
     val statusMessage: String = "Prüfung läuft…",
     val phase: TimingChainPhase = TimingChainPhase.UNKNOWN,
     val recordedSamples: Int = 0,
+    val coldSampleCount: Int = 0,
     val avgRpmCold: Double = 0.0,
     val avgRpmWarm: Double = 0.0,
     val rpmDeviationCold: Double = 0.0,

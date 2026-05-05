@@ -303,7 +303,7 @@ fun CANMonitorDialog(
                             state = listState,
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(filteredMessages, key = { "${it.timestamp}_${it.canId}_${it.hexData}" }) { msg ->
+                            items(filteredMessages, key = { "${it.timestamp}_${it.canId}_${filteredMessages.indexOf(it)}" }) { msg ->
                                 CANMessageRow(
                                     message = msg,
                                     showHex = showHex,

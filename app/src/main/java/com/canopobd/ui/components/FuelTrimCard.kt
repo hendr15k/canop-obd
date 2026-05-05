@@ -254,7 +254,7 @@ private fun TrimGauge(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Mager +${"%.0f".format(maxOf(trim, 0.0))}%",
+                text = "Mager ${"%.0f".format(minOf(trim, 0.0))}%",
                 fontSize = 9.sp,
                 color = colors.gaugeRed.copy(alpha = 0.7f)
             )
