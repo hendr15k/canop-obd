@@ -92,6 +92,92 @@ class OBDModelsTest {
     }
 
     @Test
+    fun `OBDPID returns 0 for empty byte array`() {
+        val empty = byteArrayOf()
+        assertEquals(0.0, OBDPID.RPM.formula(empty), 0.001)
+        assertEquals(0.0, OBDPID.SPEED.formula(empty), 0.001)
+        assertEquals(0.0, OBDPID.COOLANT_TEMP.formula(empty), 0.001)
+        assertEquals(0.0, OBDPID.MAF_RATE.formula(empty), 0.001)
+    }
+
+    @Test
+    fun `OBDPID INTAKE_TEMP formula subtracts 40`() {
+        val bytes = byteArrayOf(0x50.toByte())
+        val result = OBDPID.INTAKE_TEMP.formula(bytes)
+        assertEquals(40.0, result, 0.001)
+    }
+
+    @Test
+    fun `OBDPID FUEL_PRESSURE formula multiplies by 3`() {
+        val bytes = byteArrayOf(0x30.toByte())
+        val result = OBDPID.FUEL_PRESSURE.formula(bytes)
+        assertEquals(144.0, result, 0.001)
+    }
+
+    @Test
+    fun `OBDPID FUEL_RAIL_PRESSURE formula calculates correctly`() {
+        val bytes = byteArrayOf(0xFF.toByte(), 0xFF.toByte())
+        val result = OBDPID.FUEL_RAIL_PRESSURE.formula(bytes)
+        assertTrue(result > 0)
+    }
+
+    @Test
+    fun `OBDPID TIMING_ADVANCE handles zero byte`() {
+        val bytes = byteArrayOf(0x00.toByte())
+        val result = OBDPID.TIMING_ADVANCE.formula(bytes)
+        assertEquals(-64.0, result, 0.001)
+    }
+
+    @Test
+    fun `OBDPID ENGINE_FUEL_RATE calculates correctly`() {
+        val bytes = byteArrayOf(0x0A.toByte(), 0x00.toByte())
+        val result = OBDPID.ENGINE_FUEL_RATE.formula(bytes)
+        assertEquals(2.56, result, 0.01)
+    }
+
+    @Test
+    fun `OBDPID SHORT_TERM_FUEL_TRIM handles lean condition`() {
+        val bytes = byteArrayOf(0x80.toByte())
+        val result = OBDPID.SHORT_TERM_FUEL_TRIM_BANK1.formula(bytes)
+        assertEquals(0.0, result, 0.001)
+    }
+
+    @Test
+    fun `OBDPID SHORT_TERM_FUEL_TRIM handles rich condition`() {
+        val bytes = byteArrayOf(0x90.toByte())
+        val result = OBDPID.SHORT_TERM_FUEL_TRIM_BANK1.formula(bytes)
+        assertTrue(result > 0)
+    }
+
+    @Test
+    fun `OBDPID SHORT_TERM_FUEL_TRIM handles lean condition`() {
+        val bytes = byteArrayOf(0x70.toByte())
+        val result = OBDPID.SHORT_TERM_FUEL_TRIM_BANK1.formula(bytes)
+        assertTrue(result < 0)
+    }
+
+    @Test
+    fun `OBDPID CONTROL_MODULE_VOLTAGE calculates correctly`() {
+        val bytes = byteArrayOf(0x0F.toByte(), 0xA0.toByte())
+        val result = OBDPID.CONTROL_MODULE_VOLTAGE.formula(bytes)
+        assertEquals(14.0, result, 0.1)
+    }
+
+    @Test
+    fun `OBDPID CATALYST_TEMP calculates correctly`() {
+        val bytes = byteArrayOf(0x0A.toByte(), 0x00.toByte())
+        val result = OBDPID.CATALYST_TEMP_B1S1.formula(bytes)
+        assertEquals(620.0, result, 0.1)
+    }
+
+    @Test
+    fun `OBDPID O2_VOLTAGE calculates correctly`() {
+        val bytes = byteArrayOf(0x80.toByte())
+        val result = OBDPID.O2_VOLTAGE_B1S1.formula(bytes)
+        assertEquals(0.5, result, 0.01)
+    }
+
+    @Test
     fun `MeasurementUnit METRIC converts speed correctly`() {
         assertEquals(100.0, MeasurementUnit.METRIC.convertSpeed(100.0), 0.001)
     }
