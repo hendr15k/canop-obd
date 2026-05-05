@@ -5,10 +5,14 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @SuppressLint("MissingPermission")
 class DashboardViewModel private constructor(
@@ -146,10 +150,17 @@ class DashboardViewModel private constructor(
     private val _permissionsGranted = MutableStateFlow(false)
     val permissionsGranted: StateFlow<Boolean> = _permissionsGranted.asStateFlow()
 
+    private val _availableUpdate = MutableStateFlow<AppUpdate?>(null)
+    val availableUpdate: StateFlow<AppUpdate?> = _availableUpdate.asStateFlow()
+
+    private val _showUpdateDialog = MutableStateFlow(false)
+    val showUpdateDialog: StateFlow<Boolean> = _showUpdateDialog.asStateFlow()
+
     init {
         if (_permissionsGranted.value) refreshDevices()
         _maintenanceItems.value = repository.loadMaintenanceItems()
         _shiftLightConfig.value = repository.loadShiftLightConfig()
+        checkForUpdate()
     }
 
     fun onPermissionsGranted() {
@@ -509,6 +520,30 @@ class DashboardViewModel private constructor(
 
     fun clearRecordedData() {
         repository.clearRecordedData()
+    }
+
+    fun checkForUpdate() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val update = UpdateChecker.checkForUpdate(context)
+            if (update != null) {
+                _availableUpdate.value = update
+                withContext(Dispatchers.Main) {
+                    _showUpdateDialog.value = true
+                }
+            }
+            UpdateChecker.markChecked(context)
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _showUpdateDialog.value = false
+    }
+
+    fun skipUpdateVersion() {
+        _availableUpdate.value?.let {
+            UpdateChecker.skipVersion(context, it.versionName)
+        }
+        _showUpdateDialog.value = false
     }
 
     override fun onCleared() {

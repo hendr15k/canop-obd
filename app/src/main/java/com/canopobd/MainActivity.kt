@@ -23,6 +23,7 @@ import com.canopobd.R
 import com.canopobd.data.model.ColorTheme
 import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
+import com.canopobd.ui.update.UpdateDialog
 import com.canopobd.viewmodel.DashboardViewModel
 
 class MainActivity : ComponentActivity() {
@@ -186,6 +187,16 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val alertConfig by viewModel.alertConfig.collectAsState()
     val activeAlerts by viewModel.activeAlerts.collectAsState()
     val importedData by viewModel.importedData.collectAsState()
+    val showUpdateDialog by viewModel.showUpdateDialog.collectAsState()
+    val availableUpdate by viewModel.availableUpdate.collectAsState()
+
+    if (showUpdateDialog && availableUpdate != null) {
+        UpdateDialog(
+            update = availableUpdate!!,
+            onDismiss = viewModel::dismissUpdateDialog,
+            onSkipVersion = viewModel::skipUpdateVersion
+        )
+    }
 
     DashboardScreen(
         connectionState = connectionState,

@@ -265,4 +265,15 @@
     <string name="stft_label">STFT</string>
     <string name="ltft_label">LTFT</string>
     <string name="trim_percent">%.1f%%</string>
+
+    <!-- Update -->
+    <string name="update_available">Update verf\u00FCgbar</string>
+    <string name="update_release_notes">\u00C4nderungen:</string>
+    <string name="update_new_version_hint">Eine neue Version (v%s) ist verf\u00FCgbar. Lade sie herunter, um die neuesten Funktionen und Fehlerbehebungen zu erhalten.</string>
+    <string name="update_downloading">Download… %d%%</string>
+    <string name="update_download">Herunterladen</string>
+    <string name="update_skip">\u00DCberspringen</string>
+    <string name="update_install">Jetzt installieren</string>
+    <string name="update_ready_to_install">Download abgeschlossen. Tippe auf \u201EJetzt installieren\u201C, um die App zu aktualisieren.</string>
+    <string name="update_download_error">Download fehlgeschlagen: %s</string>
 </resources>
