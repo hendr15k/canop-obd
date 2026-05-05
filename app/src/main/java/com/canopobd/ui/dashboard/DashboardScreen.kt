@@ -9,6 +9,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -188,6 +193,9 @@ fun DashboardScreen(
 ) {
     val colors = LocalAppColors.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
@@ -223,6 +231,7 @@ fun DashboardScreen(
                     .padding(16.dp)
             ) {
                 DashboardHeader(
+                    navController = navController,
                     connectionState = connectionState,
                     connectionStats = connectionStats,
                     remoteServerRunning = remoteServerRunning,
@@ -356,235 +365,266 @@ fun DashboardScreen(
             }
         }
 
-        if (showDevicePicker) {
-            DevicePickerDialog(
-                devices = devices,
-                onSelect = onConnect,
-                onDismiss = onToggleDevicePicker
-            )
-        }
-
-        if (showDTCDialog) {
-            DTCDialog(
-                dtcResponse = dtcResponse,
-                onDismiss = onToggleDTCDialog,
-                onClearDTCs = onClearDTCs
-            )
-        }
-
-        if (showSettings) {
-            SettingsDialog(
-                pollRate = pollRate,
-                measurementUnit = measurementUnit,
-                autoReconnect = autoReconnect,
-                pollMode = pollMode,
-                onDismiss = onToggleSettings,
-                onPollRateChange = onSetPollRate,
-                onUnitChange = onSetMeasurementUnit,
-                onAutoReconnectChange = onSetAutoReconnect,
-                onPollModeChange = onSetPollMode
-            )
-        }
-
-        if (showDataLog) {
-            DataLogDialog(
-                recordedData = recordedData,
-                isRecording = recordingActive,
-                onDismiss = onToggleDataLog,
-                onStartRecording = onStartRecording,
-                onStopRecording = onStopRecording,
-                onClearData = onClearRecordedData,
-                onExportData = onGetExportData
-            )
-        }
-
-        if (showPIDScreen) {
-            PIDDialog(
-                obdData = obdData,
-                measurementUnit = measurementUnit,
-                onDismiss = onTogglePIDScreen
-            )
-        }
-
-        if (showRemoteDialog) {
-            RemoteServerDialog(
-                isRunning = remoteServerRunning,
-                serverIp = remoteServerIp,
-                serverPort = remoteServerPort,
-                connectedClients = remoteConnectedClients,
-                onDismiss = onToggleRemoteDialog,
-                onStartServer = onStartRemoteServer,
-                onStopServer = onStopRemoteServer
-            )
-        }
-
-        if (showTripComputer) {
-            TripComputerDialog(
-                tripData = tripData,
-                measurementUnit = measurementUnit,
-                vin = onGetStoredVin(),
-                isGPSTracking = isGPSTracking,
-                currentTrip = currentTrip,
-                onDismiss = onToggleTripComputer,
-                onResetTrip = onResetTrip,
-                onStartGPSTrack = onStartGPSTracking,
-                onStopGPSTrack = onStopGPSTracking,
-                onExportGPX = onExportGPX,
-                onExportKML = onExportKML,
-                onClearGPS = onClearGPSTrips
-            )
-        }
-
-        if (showCustomization) {
-            DashboardCustomizationDialog(
-                currentTheme = colorTheme,
-                primaryGaugeIds = primaryGaugeIds,
-                onDismiss = onToggleCustomization,
-                onThemeChange = onSetColorTheme,
-                onPrimaryGaugesChange = onSetPrimaryGauges
-            )
-        }
-
-        if (showHUDMode) {
-            HUDModeActivity(
-                obdData = obdData,
-                measurementUnit = measurementUnit,
-                onDismiss = onToggleHUDMode
-            )
-        }
-
-        if (showTrendGraph) {
-            LiveTrendGraphDialog(
-                trendHistory = trendHistory,
-                onDismiss = onToggleTrendGraph
-            )
-        }
-
-        if (showReadiness) {
-            ReadinessMonitorDialog(
-                readiness = readinessMonitor,
-                onDismiss = onToggleReadiness
-            )
-        }
-
-        if (showDiagnostics) {
-            DiagnosticsDialog(
-                protocol = detectedProtocol,
-                supportedPIDs = supportedPIDs,
-                freezeFrames = freezeFrames,
-                onDismiss = onToggleDiagnostics
-            )
-        }
-
-        if (showAlertSettings) {
-            AlertSettingsDialog(
-                alertConfig = alertConfig,
-                activeAlerts = activeAlerts,
-                onDismiss = onToggleAlertSettings,
-                onUpdateConfig = onSetAlertConfig
-            )
-        }
-
-        if (showDataAnalysis) {
-            DataAnalysisDialog(
-                importedData = importedData,
-                fuelTrimAnalysis = onGetFuelTrimAnalysis(),
-                onDismiss = onToggleDataAnalysis,
-                onImportCsv = onImportCsv,
-                onClearImported = onClearImported
-            )
-        }
-
-        if (showFuelEconomy) {
-            com.canopobd.ui.fuel.FuelEconomyDialog(
-                fuelEconomyData = fuelEconomyData,
-                onDismiss = onToggleFuelEconomy
-            )
-        }
-
-        if (showMaintenance) {
-            com.canopobd.ui.maintenance.MaintenanceDialog(
-                maintenanceItems = maintenanceItems,
-                currentKm = currentKm,
-                onDismiss = onToggleMaintenance,
-                onUpdateItem = onSetMaintenanceItem,
-                onResetItem = onResetMaintenanceItem
-            )
-        }
-
-        if (showPerformanceTest) {
-            com.canopobd.ui.performance.PerformanceTestDialog(
-                testState = performanceTestState,
-                onDismiss = onTogglePerformanceTest,
-                onStartTest = onStartPerfTest,
-                onStopTest = onStopPerfTest
-            )
-        }
-
-        if (showTripHistory) {
-            com.canopobd.ui.triphistory.TripHistoryDialog(
-                trips = tripHistory,
-                onDismiss = onToggleTripHistory,
-                onClearHistory = onClearTripHistory
-            )
-        }
-
-        if (showPowerCalculator) {
-            com.canopobd.ui.power.PowerCalculatorDialog(
-                calculation = powerCalculation,
-                rpm = obdData.rpm,
-                maf = obdData.mafRate,
-                onDismiss = onTogglePowerCalculator
-            )
-        }
-
-        if (showDriveScore) {
-            com.canopobd.ui.drivescore.DriveScoreDialog(
-                score = driveScore,
-                sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000,
-                harshAccels = driveSession.harshAccels,
-                harshBrakes = driveSession.harshBrakes,
-                idleTimeSeconds = driveSession.idleTimeSeconds,
-                avgRpm = driveSession.avgRpm,
-                avgThrottle = driveSession.avgThrottle,
-                avgSpeed = driveSession.avgSpeed,
-                onDismiss = onToggleDriveScore,
-                onResetScore = onResetDriveScore
-            )
-        }
-
-        if (showShiftLight) {
-            com.canopobd.ui.shiftlight.ShiftLightDialog(
-                config = shiftLightConfig,
-                currentRpm = obdData.rpm,
-                onDismiss = onToggleShiftLight,
-                onUpdateConfig = onUpdateShiftLightConfig
-            )
-        }
-
-        if (showTurboMonitor) {
-            TurboMonitorDialog(
-                turboData = turboData,
-                oilData = oilData,
-                carProfile = carProfile,
-                onDismiss = onToggleTurboMonitor
-            )
-        }
-
-        if (showTimingChainMonitor) {
-            TimingChainMonitorDialog(
-                chainState = timingChainState,
-                carProfile = carProfile,
-                onDismiss = onToggleTimingChainMonitor
-            )
-        }
-
-        if (showCarProfile) {
-            CarProfileDialog(
-                currentProfile = carProfile,
-                onSelectProfile = onSelectCarProfile,
-                onDismiss = onToggleCarProfile
-            )
+        NavHost(
+            navController = navController,
+            startDestination = "dashboard"
+        ) {
+            composable("dashboard") {}
+            composable("device_picker") {
+                if (showDevicePicker) {
+                    DevicePickerDialog(
+                        devices = devices,
+                        onSelect = onConnect,
+                        onDismiss = { onToggleDevicePicker(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("dtc") {
+                if (showDTCDialog) {
+                    DTCDialog(
+                        dtcResponse = dtcResponse,
+                        onDismiss = { onToggleDTCDialog(); navController.popBackStack() },
+                        onClearDTCs = onClearDTCs
+                    )
+                }
+            }
+            composable("settings") {
+                if (showSettings) {
+                    SettingsDialog(
+                        pollRate = pollRate,
+                        measurementUnit = measurementUnit,
+                        autoReconnect = autoReconnect,
+                        pollMode = pollMode,
+                        onDismiss = { onToggleSettings(); navController.popBackStack() },
+                        onPollRateChange = onSetPollRate,
+                        onUnitChange = onSetMeasurementUnit,
+                        onAutoReconnectChange = onSetAutoReconnect,
+                        onPollModeChange = onSetPollMode
+                    )
+                }
+            }
+            composable("data_log") {
+                if (showDataLog) {
+                    DataLogDialog(
+                        recordedData = recordedData,
+                        isRecording = recordingActive,
+                        onDismiss = { onToggleDataLog(); navController.popBackStack() },
+                        onStartRecording = onStartRecording,
+                        onStopRecording = onStopRecording,
+                        onClearData = onClearRecordedData,
+                        onExportData = onGetExportData
+                    )
+                }
+            }
+            composable("pids") {
+                if (showPIDScreen) {
+                    PIDDialog(
+                        obdData = obdData,
+                        measurementUnit = measurementUnit,
+                        onDismiss = { onTogglePIDScreen(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("remote_server") {
+                if (showRemoteDialog) {
+                    RemoteServerDialog(
+                        isRunning = remoteServerRunning,
+                        serverIp = remoteServerIp,
+                        serverPort = remoteServerPort,
+                        connectedClients = remoteConnectedClients,
+                        onDismiss = { onToggleRemoteDialog(); navController.popBackStack() },
+                        onStartServer = onStartRemoteServer,
+                        onStopServer = onStopRemoteServer
+                    )
+                }
+            }
+            composable("trip_computer") {
+                if (showTripComputer) {
+                    TripComputerDialog(
+                        tripData = tripData,
+                        measurementUnit = measurementUnit,
+                        vin = onGetStoredVin(),
+                        isGPSTracking = isGPSTracking,
+                        currentTrip = currentTrip,
+                        onDismiss = { onToggleTripComputer(); navController.popBackStack() },
+                        onResetTrip = onResetTrip,
+                        onStartGPSTrack = onStartGPSTracking,
+                        onStopGPSTrack = onStopGPSTracking,
+                        onExportGPX = onExportGPX,
+                        onExportKML = onExportKML,
+                        onClearGPS = onClearGPSTrips
+                    )
+                }
+            }
+            composable("customization") {
+                if (showCustomization) {
+                    DashboardCustomizationDialog(
+                        currentTheme = colorTheme,
+                        primaryGaugeIds = primaryGaugeIds,
+                        onDismiss = { onToggleCustomization(); navController.popBackStack() },
+                        onThemeChange = onSetColorTheme,
+                        onPrimaryGaugesChange = onSetPrimaryGauges
+                    )
+                }
+            }
+            composable("hud") {
+                if (showHUDMode) {
+                    HUDModeActivity(
+                        obdData = obdData,
+                        measurementUnit = measurementUnit,
+                        onDismiss = { onToggleHUDMode(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("trend_graph") {
+                if (showTrendGraph) {
+                    LiveTrendGraphDialog(
+                        trendHistory = trendHistory,
+                        onDismiss = { onToggleTrendGraph(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("readiness") {
+                if (showReadiness) {
+                    ReadinessMonitorDialog(
+                        readiness = readinessMonitor,
+                        onDismiss = { onToggleReadiness(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("diagnostics") {
+                if (showDiagnostics) {
+                    DiagnosticsDialog(
+                        protocol = detectedProtocol,
+                        supportedPIDs = supportedPIDs,
+                        freezeFrames = freezeFrames,
+                        onDismiss = { onToggleDiagnostics(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("alerts") {
+                if (showAlertSettings) {
+                    AlertSettingsDialog(
+                        alertConfig = alertConfig,
+                        activeAlerts = activeAlerts,
+                        onDismiss = { onToggleAlertSettings(); navController.popBackStack() },
+                        onUpdateConfig = onSetAlertConfig
+                    )
+                }
+            }
+            composable("data_analysis") {
+                if (showDataAnalysis) {
+                    DataAnalysisDialog(
+                        importedData = importedData,
+                        fuelTrimAnalysis = onGetFuelTrimAnalysis(),
+                        onDismiss = { onToggleDataAnalysis(); navController.popBackStack() },
+                        onImportCsv = onImportCsv,
+                        onClearImported = onClearImported
+                    )
+                }
+            }
+            composable("fuel_economy") {
+                if (showFuelEconomy) {
+                    com.canopobd.ui.fuel.FuelEconomyDialog(
+                        fuelEconomyData = fuelEconomyData,
+                        onDismiss = { onToggleFuelEconomy(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("maintenance") {
+                if (showMaintenance) {
+                    com.canopobd.ui.maintenance.MaintenanceDialog(
+                        maintenanceItems = maintenanceItems,
+                        currentKm = currentKm,
+                        onDismiss = { onToggleMaintenance(); navController.popBackStack() },
+                        onUpdateItem = onSetMaintenanceItem,
+                        onResetItem = onResetMaintenanceItem
+                    )
+                }
+            }
+            composable("performance_test") {
+                if (showPerformanceTest) {
+                    com.canopobd.ui.performance.PerformanceTestDialog(
+                        testState = performanceTestState,
+                        onDismiss = { onTogglePerformanceTest(); navController.popBackStack() },
+                        onStartTest = onStartPerfTest,
+                        onStopTest = onStopPerfTest
+                    )
+                }
+            }
+            composable("trip_history") {
+                if (showTripHistory) {
+                    com.canopobd.ui.triphistory.TripHistoryDialog(
+                        trips = tripHistory,
+                        onDismiss = { onToggleTripHistory(); navController.popBackStack() },
+                        onClearHistory = onClearTripHistory
+                    )
+                }
+            }
+            composable("power_calculator") {
+                if (showPowerCalculator) {
+                    com.canopobd.ui.power.PowerCalculatorDialog(
+                        calculation = powerCalculation,
+                        rpm = obdData.rpm,
+                        maf = obdData.mafRate,
+                        onDismiss = { onTogglePowerCalculator(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("drive_score") {
+                if (showDriveScore) {
+                    com.canopobd.ui.drivescore.DriveScoreDialog(
+                        score = driveScore,
+                        sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000,
+                        harshAccels = driveSession.harshAccels,
+                        harshBrakes = driveSession.harshBrakes,
+                        idleTimeSeconds = driveSession.idleTimeSeconds,
+                        avgRpm = driveSession.avgRpm,
+                        avgThrottle = driveSession.avgThrottle,
+                        avgSpeed = driveSession.avgSpeed,
+                        onDismiss = { onToggleDriveScore(); navController.popBackStack() },
+                        onResetScore = onResetDriveScore
+                    )
+                }
+            }
+            composable("shift_light") {
+                if (showShiftLight) {
+                    com.canopobd.ui.shiftlight.ShiftLightDialog(
+                        config = shiftLightConfig,
+                        currentRpm = obdData.rpm,
+                        onDismiss = { onToggleShiftLight(); navController.popBackStack() },
+                        onUpdateConfig = onUpdateShiftLightConfig
+                    )
+                }
+            }
+            composable("turbo_monitor") {
+                if (showTurboMonitor) {
+                    TurboMonitorDialog(
+                        turboData = turboData,
+                        oilData = oilData,
+                        carProfile = carProfile,
+                        onDismiss = { onToggleTurboMonitor(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("timing_chain_monitor") {
+                if (showTimingChainMonitor) {
+                    TimingChainMonitorDialog(
+                        chainState = timingChainState,
+                        carProfile = carProfile,
+                        onDismiss = { onToggleTimingChainMonitor(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("car_profile") {
+                if (showCarProfile) {
+                    CarProfileDialog(
+                        currentProfile = carProfile,
+                        onSelectProfile = onSelectCarProfile,
+                        onDismiss = { onToggleCarProfile(); navController.popBackStack() }
+                    )
+                }
+            }
         }
     }
 }
@@ -711,6 +751,7 @@ private fun SecondaryGaugeGrid(
 
 @Composable
 private fun DashboardHeader(
+    navController: NavHostController,
     connectionState: OBDConnectionState,
     connectionStats: ConnectionStats,
     remoteServerRunning: Boolean,
@@ -788,99 +829,99 @@ private fun DashboardHeader(
         }
 
                 Row {
-            IconButton(onClick = onToggleTripComputer) {
+            IconButton(onClick = { onToggleTripComputer(); navController.navigate("trip_computer") }) {
                 Icon(Icons.Filled.DirectionsCar, contentDescription = stringResource(R.string.trip_title), tint = colors.textSecondary)
             }
-            IconButton(onClick = onToggleFuelEconomy) {
+            IconButton(onClick = { onToggleFuelEconomy(); navController.navigate("fuel_economy") }) {
                 Icon(Icons.Filled.LocalGasStation, contentDescription = stringResource(R.string.fuel_economy_title), tint = colors.textSecondary)
             }
-            IconButton(onClick = onToggleMaintenance) {
+            IconButton(onClick = { onToggleMaintenance(); navController.navigate("maintenance") }) {
                 Icon(Icons.Filled.Build, contentDescription = stringResource(R.string.maintenance_title), tint = colors.textSecondary)
             }
-            IconButton(onClick = onTogglePerformanceTest) {
+            IconButton(onClick = { onTogglePerformanceTest(); navController.navigate("performance_test") }) {
                 Icon(Icons.Filled.Speed, contentDescription = stringResource(R.string.perf_test_title), tint = colors.textSecondary)
             }
-            IconButton(onClick = onToggleTrendGraph) {
+            IconButton(onClick = { onToggleTrendGraph(); navController.navigate("trend_graph") }) {
                 Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = stringResource(R.string.trend), tint = colors.textSecondary)
             }
-            IconButton(onClick = onToggleTripHistory) {
+            IconButton(onClick = { onToggleTripHistory(); navController.navigate("trip_history") }) {
                 Icon(Icons.Filled.Route, contentDescription = stringResource(R.string.trip_history_title), tint = colors.textSecondary)
             }
-            IconButton(onClick = if (isGPSTracking) onStopGPSTrack else onStartGPSTrack) {
+            IconButton(onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() }) {
                 Icon(
                     if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
                     contentDescription = stringResource(R.string.gps_track),
                     tint = if (isGPSTracking) colors.gaugeGreen else colors.textSecondary
                 )
             }
-            IconButton(onClick = onToggleCustomization) {
+            IconButton(onClick = { onToggleCustomization(); navController.navigate("customization") }) {
                 Icon(Icons.Filled.Dashboard, contentDescription = stringResource(R.string.customize_dashboard), tint = colors.accent)
             }
-            IconButton(onClick = onToggleSettings) {
+            IconButton(onClick = { onToggleSettings(); navController.navigate("settings") }) {
                 Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings), tint = colors.textSecondary)
             }
-            IconButton(onClick = onToggleDevicePicker) {
+            IconButton(onClick = { onToggleDevicePicker(); navController.navigate("device_picker") }) {
                 Icon(Icons.Filled.Bluetooth, contentDescription = stringResource(R.string.bluetooth), tint = colors.accent)
             }
             if (connectionState is OBDConnectionState.Connected) {
-                IconButton(onClick = onTogglePowerCalculator) {
+                IconButton(onClick = { onTogglePowerCalculator(); navController.navigate("power_calculator") }) {
                     Icon(Icons.Filled.ElectricBolt, contentDescription = "Leistung", tint = colors.gaugeYellow)
                 }
-                IconButton(onClick = onToggleDriveScore) {
+                IconButton(onClick = { onToggleDriveScore(); navController.navigate("drive_score") }) {
                     Icon(Icons.Filled.DirectionsCar, contentDescription = "Fahrstil", tint = colors.gaugeGreen)
                 }
-                IconButton(onClick = onToggleShiftLight) {
+                IconButton(onClick = { onToggleShiftLight(); navController.navigate("shift_light") }) {
                     Icon(Icons.Filled.LightMode, contentDescription = "Schaltblitz", tint = colors.gaugeOrange)
                 }
-                IconButton(onClick = onToggleTurboMonitor) {
+                IconButton(onClick = { onToggleTurboMonitor(); navController.navigate("turbo_monitor") }) {
                     Icon(Icons.Filled.Air, contentDescription = "Turbo", tint = colors.accent)
                 }
-                IconButton(onClick = onToggleTimingChainMonitor) {
+                IconButton(onClick = { onToggleTimingChainMonitor(); navController.navigate("timing_chain_monitor") }) {
                     Icon(Icons.Filled.SettingsApplications, contentDescription = "Steuerkette", tint = colors.accent)
                 }
-                IconButton(onClick = onToggleCarProfile) {
+                IconButton(onClick = { onToggleCarProfile(); navController.navigate("car_profile") }) {
                     Icon(Icons.Filled.DirectionsCar, contentDescription = "Fahrzeugprofil", tint = colors.highlight)
                 }
-                IconButton(onClick = onToggleTurboCooldown) {
+                IconButton(onClick = { onToggleTurboCooldown(); navController.navigate("turbo_cooldown") }) {
                     Icon(Icons.Filled.Timer, contentDescription = "Turbo-Rücklauf", tint = colors.gaugeCyan)
                 }
-                IconButton(onClick = onToggleHUDMode) {
+                IconButton(onClick = { onToggleHUDMode(); navController.navigate("hud") }) {
                     Icon(Icons.Filled.Tv, contentDescription = stringResource(R.string.hud_mode), tint = colors.gaugeCyan)
                 }
-                IconButton(onClick = onToggleReadiness) {
+                IconButton(onClick = { onToggleReadiness(); navController.navigate("readiness") }) {
                     Icon(Icons.Filled.Verified, contentDescription = stringResource(R.string.readiness), tint = colors.gaugeGreen)
                 }
-                IconButton(onClick = onToggleDiagnostics) {
+                IconButton(onClick = { onToggleDiagnostics(); navController.navigate("diagnostics") }) {
                     Icon(Icons.Filled.Biotech, contentDescription = stringResource(R.string.diagnostics), tint = colors.accent)
                 }
-                IconButton(onClick = onToggleDataAnalysis) {
+                IconButton(onClick = { onToggleDataAnalysis(); navController.navigate("data_analysis") }) {
                     Icon(Icons.Filled.Analytics, contentDescription = stringResource(R.string.analysis), tint = colors.accent)
                 }
-                IconButton(onClick = onToggleAlertSettings) {
+                IconButton(onClick = { onToggleAlertSettings(); navController.navigate("alerts") }) {
                     Icon(
                         if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
                         contentDescription = stringResource(R.string.alerts),
                         tint = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary
                     )
                 }
-                IconButton(onClick = onToggleRemoteDialog) {
+                IconButton(onClick = { onToggleRemoteDialog(); navController.navigate("remote_server") }) {
                     Icon(
                         if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
                         contentDescription = stringResource(R.string.remote_server),
                         tint = if (remoteServerRunning) colors.gaugeGreen else colors.accent
                     )
                 }
-                IconButton(onClick = onToggleDataLog) {
+                IconButton(onClick = { onToggleDataLog(); navController.navigate("data_log") }) {
                     Icon(
                         if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
                         contentDescription = stringResource(R.string.data_log),
                         tint = if (recordingActive) colors.gaugeRed else colors.accent
                     )
                 }
-                IconButton(onClick = onTogglePIDScreen) {
+                IconButton(onClick = { onTogglePIDScreen(); navController.navigate("pids") }) {
                     Icon(Icons.Filled.Sensors, contentDescription = stringResource(R.string.sensors), tint = colors.accent)
                 }
-                IconButton(onClick = onToggleDTCDialog) {
+                IconButton(onClick = { onToggleDTCDialog(); navController.navigate("dtc") }) {
                     Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.fault_codes), tint = colors.gaugeYellow)
                 }
                 IconButton(onClick = onDisconnect) {
