@@ -74,10 +74,17 @@ fun DashboardScreen(
     showMaintenance: Boolean,
     showPerformanceTest: Boolean,
     showTripHistory: Boolean,
+    showPowerCalculator: Boolean,
+    showDriveScore: Boolean,
+    showShiftLight: Boolean,
     maintenanceItems: List<com.canopobd.data.model.MaintenanceItem>,
     currentKm: Int,
     fuelEconomyData: com.canopobd.data.model.FuelEconomyData,
     performanceTestState: com.canopobd.data.model.PerformanceTestState,
+    powerCalculation: com.canopobd.data.model.PowerCalculation,
+    driveScore: com.canopobd.data.model.DriveScore,
+    driveSession: com.canopobd.data.model.DriveSession,
+    shiftLightConfig: com.canopobd.data.model.ShiftLightConfig,
     remoteServerRunning: Boolean,
     remoteServerIp: String,
     remoteServerPort: Int,
@@ -149,6 +156,11 @@ fun DashboardScreen(
     onStartPerfTest: (com.canopobd.data.model.PerformanceTestType) -> Unit,
     onStopPerfTest: () -> Unit,
     onClearTripHistory: () -> Unit,
+    onTogglePowerCalculator: () -> Unit,
+    onToggleDriveScore: () -> Unit,
+    onToggleShiftLight: () -> Unit,
+    onUpdateShiftLightConfig: (com.canopobd.data.model.ShiftLightConfig) -> Unit,
+    onResetDriveScore: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -201,6 +213,9 @@ fun DashboardScreen(
                     onToggleMaintenance = onToggleMaintenance,
                     onTogglePerformanceTest = onTogglePerformanceTest,
                     onToggleTripHistory = onToggleTripHistory,
+                    onTogglePowerCalculator = onTogglePowerCalculator,
+                    onToggleDriveScore = onToggleDriveScore,
+                    onToggleShiftLight = onToggleShiftLight,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
@@ -445,6 +460,39 @@ fun DashboardScreen(
                 onClearHistory = onClearTripHistory
             )
         }
+
+        if (showPowerCalculator) {
+            com.canopobd.ui.power.PowerCalculatorDialog(
+                calculation = powerCalculation,
+                rpm = obdData.rpm,
+                maf = obdData.mafRate,
+                onDismiss = onTogglePowerCalculator
+            )
+        }
+
+        if (showDriveScore) {
+            com.canopobd.ui.drivescore.DriveScoreDialog(
+                score = driveScore,
+                sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000,
+                harshAccels = driveSession.harshAccels,
+                harshBrakes = driveSession.harshBrakes,
+                idleTimeSeconds = driveSession.idleTimeSeconds,
+                avgRpm = driveSession.avgRpm,
+                avgThrottle = driveSession.avgThrottle,
+                avgSpeed = driveSession.avgSpeed,
+                onDismiss = onToggleDriveScore,
+                onResetScore = onResetDriveScore
+            )
+        }
+
+        if (showShiftLight) {
+            com.canopobd.ui.shiftlight.ShiftLightDialog(
+                config = shiftLightConfig,
+                currentRpm = obdData.rpm,
+                onDismiss = onToggleShiftLight,
+                onUpdateConfig = onUpdateShiftLightConfig
+            )
+        }
     }
 }
 
@@ -575,6 +623,9 @@ private fun DashboardHeader(
     onToggleMaintenance: () -> Unit,
     onTogglePerformanceTest: () -> Unit,
     onToggleTripHistory: () -> Unit,
+    onTogglePowerCalculator: () -> Unit,
+    onToggleDriveScore: () -> Unit,
+    onToggleShiftLight: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -658,6 +709,15 @@ private fun DashboardHeader(
                 Icon(Icons.Filled.Bluetooth, contentDescription = stringResource(R.string.bluetooth), tint = colors.accent)
             }
             if (connectionState is OBDConnectionState.Connected) {
+                IconButton(onClick = onTogglePowerCalculator) {
+                    Icon(Icons.Filled.ElectricBolt, contentDescription = "Leistung", tint = colors.gaugeYellow)
+                }
+                IconButton(onClick = onToggleDriveScore) {
+                    Icon(Icons.Filled.DirectionsCar, contentDescription = "Fahrstil", tint = colors.gaugeGreen)
+                }
+                IconButton(onClick = onToggleShiftLight) {
+                    Icon(Icons.Filled.LightMode, contentDescription = "Schaltblitz", tint = colors.gaugeOrange)
+                }
                 IconButton(onClick = onToggleHUDMode) {
                     Icon(Icons.Filled.Tv, contentDescription = stringResource(R.string.hud_mode), tint = colors.gaugeCyan)
                 }

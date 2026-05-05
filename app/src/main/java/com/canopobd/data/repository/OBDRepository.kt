@@ -697,4 +697,24 @@ class OBDRepository(
 
         return FuelEconomyData()
     }
+
+    fun saveShiftLightConfig(config: ShiftLightConfig) {
+        prefs.edit()
+            .putBoolean("shift_light_enabled", config.enabled)
+            .putInt("shift_light_redline", config.redlineRpm)
+            .putInt("shift_light_warning", config.warningRpm)
+            .putBoolean("shift_light_flash", config.flashEnabled)
+            .putBoolean("shift_light_sound", config.soundEnabled)
+            .apply()
+    }
+
+    fun loadShiftLightConfig(): ShiftLightConfig {
+        return ShiftLightConfig(
+            enabled = prefs.getBoolean("shift_light_enabled", false),
+            redlineRpm = prefs.getInt("shift_light_redline", 6500),
+            warningRpm = prefs.getInt("shift_light_warning", 5500),
+            flashEnabled = prefs.getBoolean("shift_light_flash", true),
+            soundEnabled = prefs.getBoolean("shift_light_sound", false)
+        )
+    }
 }

@@ -98,6 +98,27 @@ class DashboardViewModel private constructor(
     private val _performanceTestState = MutableStateFlow(com.canopobd.data.model.PerformanceTestState())
     val performanceTestState: StateFlow<com.canopobd.data.model.PerformanceTestState> = _performanceTestState.asStateFlow()
 
+    private val _showPowerCalculator = MutableStateFlow(false)
+    val showPowerCalculator: StateFlow<Boolean> = _showPowerCalculator.asStateFlow()
+
+    private val _showDriveScore = MutableStateFlow(false)
+    val showDriveScore: StateFlow<Boolean> = _showDriveScore.asStateFlow()
+
+    private val _showShiftLight = MutableStateFlow(false)
+    val showShiftLight: StateFlow<Boolean> = _showShiftLight.asStateFlow()
+
+    private val _powerCalculation = MutableStateFlow(com.canopobd.data.model.PowerCalculation())
+    val powerCalculation: StateFlow<com.canopobd.data.model.PowerCalculation> = _powerCalculation.asStateFlow()
+
+    private val _driveScore = MutableStateFlow(com.canopobd.data.model.DriveScore())
+    val driveScore: StateFlow<com.canopobd.data.model.DriveScore> = _driveScore.asStateFlow()
+
+    private val _driveSession = MutableStateFlow(com.canopobd.data.model.DriveSession())
+    val driveSession: StateFlow<com.canopobd.data.model.DriveSession> = _driveSession.asStateFlow()
+
+    private val _shiftLightConfig = MutableStateFlow(com.canopobd.data.model.ShiftLightConfig())
+    val shiftLightConfig: StateFlow<com.canopobd.data.model.ShiftLightConfig> = _shiftLightConfig.asStateFlow()
+
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
@@ -128,6 +149,7 @@ class DashboardViewModel private constructor(
     init {
         if (_permissionsGranted.value) refreshDevices()
         _maintenanceItems.value = repository.loadMaintenanceItems()
+        _shiftLightConfig.value = repository.loadShiftLightConfig()
     }
 
     fun onPermissionsGranted() {
@@ -308,6 +330,99 @@ class DashboardViewModel private constructor(
 
     fun updatePerformanceTestStatus(message: String) {
         _performanceTestState.value = _performanceTestState.value.copy(statusMessage = message)
+    }
+
+    fun togglePowerCalculator() {
+        _showPowerCalculator.value = !_showPowerCalculator.value
+        if (_showPowerCalculator.value) {
+            val d = repository.obdData.value
+            _powerCalculation.value = com.canopobd.data.model.PowerCalculation.calculate(d.mafRate, d.rpm)
+        }
+    }
+
+    fun toggleDriveScore() {
+        _showDriveScore.value = !_showDriveScore.value
+    }
+
+    fun toggleShiftLight() {
+        _showShiftLight.value = !_showShiftLight.value
+    }
+
+    fun updateDriveScore() {
+        val session = _driveSession.value
+        val score = com.canopobd.data.model.DriveScore(
+            accelerationScore = (100 - session.harshAccels * 10).coerceIn(0, 100),
+            brakingScore = (100 - session.harshBrakes * 10).coerceIn(0, 100),
+            cruisingScore = calculateCruisingScore(session),
+            idleScore = calculateIdleScore(session),
+            rpmScore = calculateRpmScore(session),
+            throttleScore = calculateThrottleScore(session),
+            score = 0
+        )
+        val avgScore = (score.accelerationScore + score.brakingScore + score.cruisingScore +
+                score.idleScore + score.rpmScore + score.throttleScore) / 6
+        _driveScore.value = score.copy(score = avgScore)
+    }
+
+    private fun calculateCruisingScore(session: com.canopobd.data.model.DriveSession): Int {
+        return if (session.avgSpeed > 0) {
+            ((session.speedSamples / (session.speedSamples + session.harshAccels + session.harshBrakes)) * 100).toInt().coerceIn(0, 100)
+        } else 50
+    }
+
+    private fun calculateIdleScore(session: com.canopobd.data.model.DriveSession): Int {
+        val totalSeconds = if (session.endTime > 0) (session.endTime - session.startTime) / 1000 else 0L
+        return if (totalSeconds > 0) {
+            ((1.0 - (session.idleTimeSeconds.toDouble() / totalSeconds)) * 100).toInt().coerceIn(0, 100)
+        } else 50
+    }
+
+    private fun calculateRpmScore(session: com.canopobd.data.model.DriveSession): Int {
+        return when {
+            session.avgRpm < 1500 -> 80
+            session.avgRpm < 2500 -> 100
+            session.avgRpm < 3500 -> 80
+            session.avgRpm < 4500 -> 60
+            else -> 40
+        }
+    }
+
+    private fun calculateThrottleScore(session: com.canopobd.data.model.DriveSession): Int {
+        return when {
+            session.avgThrottle < 30 -> 100
+            session.avgThrottle < 50 -> 80
+            session.avgThrottle < 70 -> 60
+            else -> 40
+        }
+    }
+
+    fun resetDriveScore() {
+        _driveSession.value = com.canopobd.data.model.DriveSession()
+        _driveScore.value = com.canopobd.data.model.DriveScore()
+    }
+
+    fun recordDriveSample(rpm: Double, throttle: Double, speed: Double, prevRpm: Double) {
+        val session = _driveSession.value
+        val rpmDelta = rpm - prevRpm
+        val newSession = session.copy(
+            rpmSamples = session.rpmSamples + rpm,
+            throttleSamples = session.throttleSamples + throttle,
+            speedSamples = session.speedSamples + speed,
+            avgRpm = if (session.rpmSamples + rpm > 0) (session.rpmSamples + rpm) / 2.0 else rpm,
+            avgThrottle = if (session.throttleSamples + throttle > 0) (session.throttleSamples + throttle) / 2.0 else throttle,
+            avgSpeed = if (session.speedSamples + speed > 0) (session.speedSamples + speed) / 2.0 else speed,
+            maxRpm = maxOf(session.maxRpm, rpm),
+            maxThrottle = maxOf(session.maxThrottle, throttle),
+            harshAccels = if (rpmDelta > 3000) session.harshAccels + 1 else session.harshAccels,
+            harshBrakes = if (throttle < 10.0 && speed > 50.0 && prevRpm > rpm) session.harshBrakes + 1 else session.harshBrakes
+        )
+        _driveSession.value = newSession
+        updateDriveScore()
+    }
+
+    fun updateShiftLightConfig(config: com.canopobd.data.model.ShiftLightConfig) {
+        _shiftLightConfig.value = config
+        repository.saveShiftLightConfig(config)
     }
 
     fun setAlertConfig(config: com.canopobd.data.model.AlertConfig) {

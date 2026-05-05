@@ -519,3 +519,116 @@ data class PerformanceTestState(
     val history: List<PerformanceResult> = emptyList(),
     val statusMessage: String = ""
 )
+
+data class PowerCalculation(
+    val horsepower: Double = 0.0,
+    val torqueNm: Double = 0.0,
+    val horsepowerMetric: Double = 0.0,
+    val isValid: Boolean = false
+) {
+    companion object {
+        fun calculate(mafGS: Double, rpm: Double, veFactor: Double = 0.85): PowerCalculation {
+            if (mafGS <= 0.0 || rpm <= 0.0 || rpm > 8000.0) {
+                return PowerCalculation()
+            }
+            val airFlowKgH = mafGS * 3600.0
+            val airFlowKgs = airFlowKgH / 3600.0
+            val bmep = (airFlowKgs * 1.4 * 287.0 * (25.0 + 273.15)) / (0.85 * rpm * 0.5)
+            val torqueNm = (bmep * 0.5 * 0.002) * 1000.0
+            val powerKw = (torqueNm * rpm) / 9549.0
+            val hp = powerKw * 1.341
+            val hpMetric = powerKw * 1.3596
+            return PowerCalculation(
+                horsepower = hp,
+                torqueNm = torqueNm,
+                horsepowerMetric = hpMetric,
+                isValid = hp > 0.0 && hp < 2000.0 && torqueNm > 0.0 && torqueNm < 2000.0
+            )
+        }
+    }
+}
+
+data class DriveScore(
+    val score: Int = 0,
+    val accelerationScore: Int = 0,
+    val brakingScore: Int = 0,
+    val cruisingScore: Int = 0,
+    val idleScore: Int = 0,
+    val rpmScore: Int = 0,
+    val throttleScore: Int = 0
+) {
+    val grade: String get() = when {
+        score >= 90 -> "A+"
+        score >= 80 -> "A"
+        score >= 70 -> "B"
+        score >= 60 -> "C"
+        score >= 50 -> "D"
+        else -> "F"
+    }
+    val color: Long get() = when {
+        score >= 80 -> 0xFF44FF88
+        score >= 60 -> 0xFFFFE066
+        else -> 0xFFFF4444
+    }
+}
+
+data class DriveSession(
+    val startTime: Long = System.currentTimeMillis(),
+    val endTime: Long = 0L,
+    val avgRpm: Double = 0.0,
+    val maxRpm: Double = 0.0,
+    val avgThrottle: Double = 0.0,
+    val maxThrottle: Double = 0.0,
+    val avgSpeed: Double = 0.0,
+    val idleTimeSeconds: Long = 0L,
+    val harshAccels: Int = 0,
+    val harshBrakes: Int = 0,
+    val rpmSamples: Double = 0.0,
+    val throttleSamples: Double = 0.0,
+    val speedSamples: Double = 0.0
+)
+
+data class ShiftLightConfig(
+    val enabled: Boolean = false,
+    val redlineRpm: Int = 6500,
+    val warningRpm: Int = 5500,
+    val flashEnabled: Boolean = true,
+    val soundEnabled: Boolean = false
+)
+
+data class DashboardPreset(
+    val id: String,
+    val name: String,
+    val themeName: String,
+    val primaryGaugeIds: Set<String>,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+enum class ColdStartPhase(val label: String, val description: String) {
+    NOT_STARTED("Nicht gestartet", "Motor aus"),
+    CRANKING("Starten", "Anlasser dreht"),
+    WARMING_UP("Aufwärmen", "Motor wird warm"),
+    OPEN_LOOP("Schleifchenbetrieb", "Lambdaregelung aus"),
+    CLOSED_LOOP("Geschlossener Regelkreis", "Motor betriebsbereit"),
+    READY("Bereit", "Volle Leistung verfügbar")
+}
+
+data class ColdStartState(
+    val phase: ColdStartPhase = ColdStartPhase.NOT_STARTED,
+    val coolantTempStart: Double = 0.0,
+    val coolantTempCurrent: Double = 0.0,
+    val rpmStart: Double = 0.0,
+    val elapsedSeconds: Long = 0L,
+    val isRunning: Boolean = false
+) {
+    val warmupProgress: Float get() = when {
+        coolantTempCurrent <= 0.0 -> 0f
+        coolantTempCurrent >= 90.0 -> 1f
+        else -> ((coolantTempCurrent + 40.0) / 130.0).toFloat().coerceIn(0f, 1f)
+    }
+    val estimatedTimeRemaining: Long get() = when {
+        warmupProgress >= 1f -> 0L
+        warmupProgress <= 0f -> 0L
+        else -> ((1.0 - warmupProgress) * 300.0).toLong().coerceAtMost(300L)
+    }
+}

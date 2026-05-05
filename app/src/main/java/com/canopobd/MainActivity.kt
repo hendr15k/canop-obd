@@ -174,6 +174,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val currentKm by viewModel.currentKm.collectAsState()
     val fuelEconomyData by viewModel.fuelEconomyData.collectAsState()
     val performanceTestState by viewModel.performanceTestState.collectAsState()
+    val showPowerCalculator by viewModel.showPowerCalculator.collectAsState()
+    val showDriveScore by viewModel.showDriveScore.collectAsState()
+    val showShiftLight by viewModel.showShiftLight.collectAsState()
+    val powerCalculation by viewModel.powerCalculation.collectAsState()
+    val driveScore by viewModel.driveScore.collectAsState()
+    val driveSession by viewModel.driveSession.collectAsState()
+    val shiftLightConfig by viewModel.shiftLightConfig.collectAsState()
     val supportedPIDs by viewModel.supportedPIDs.collectAsState()
     val freezeFrames by viewModel.freezeFrames.collectAsState()
     val alertConfig by viewModel.alertConfig.collectAsState()
@@ -207,10 +214,17 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showMaintenance = showMaintenance,
         showPerformanceTest = showPerformanceTest,
         showTripHistory = showTripHistory,
+        showPowerCalculator = showPowerCalculator,
+        showDriveScore = showDriveScore,
+        showShiftLight = showShiftLight,
         maintenanceItems = maintenanceItems,
         currentKm = currentKm,
         fuelEconomyData = fuelEconomyData,
         performanceTestState = performanceTestState,
+        powerCalculation = powerCalculation,
+        driveScore = driveScore,
+        driveSession = driveSession,
+        shiftLightConfig = shiftLightConfig,
         remoteServerRunning = remoteServerRunning,
         remoteServerIp = remoteServerIp,
         remoteServerPort = remoteServerPort,
@@ -281,6 +295,11 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onResetMaintenanceItem = viewModel::resetMaintenanceItem,
         onStartPerfTest = viewModel::startPerformanceTest,
         onStopPerfTest = viewModel::stopPerformanceTest,
-        onClearTripHistory = viewModel::clearGPSTripHistory
+        onClearTripHistory = viewModel::clearGPSTripHistory,
+        onTogglePowerCalculator = viewModel::togglePowerCalculator,
+        onToggleDriveScore = viewModel::toggleDriveScore,
+        onToggleShiftLight = viewModel::toggleShiftLight,
+        onUpdateShiftLightConfig = viewModel::updateShiftLightConfig,
+        onResetDriveScore = viewModel::resetDriveScore
     )
 }

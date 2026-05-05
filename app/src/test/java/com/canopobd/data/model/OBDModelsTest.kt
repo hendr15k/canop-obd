@@ -564,4 +564,48 @@ class OBDModelsTest {
         assertEquals(0.0, data.throttleActuator, 0.001)
         assertEquals(0.0, data.hybridBatteryRemaining, 0.001)
     }
+
+    @Test
+    fun `PowerCalculation calculates when values in range`() {
+        val calc = PowerCalculation.calculate(mafGS = 30.0, rpm = 3000.0)
+        assertEquals(calc.isValid, calc.horsepower > 0 && calc.horsepower < 500)
+        assertEquals(calc.isValid, calc.torqueNm > 0 && calc.torqueNm < 1000)
+    }
+
+    @Test
+    fun `PowerCalculation returns invalid for zero values`() {
+        val calc = PowerCalculation.calculate(mafGS = 0.0, rpm = 0.0)
+        assertFalse(calc.isValid)
+        assertEquals(0.0, calc.horsepower, 0.001)
+    }
+
+    @Test
+    fun `DriveScore grade returns correct letter`() {
+        assertEquals("A+", DriveScore(score = 95).grade)
+        assertEquals("A", DriveScore(score = 85).grade)
+        assertEquals("B", DriveScore(score = 72).grade)
+        assertEquals("C", DriveScore(score = 62).grade)
+        assertEquals("D", DriveScore(score = 52).grade)
+        assertEquals("F", DriveScore(score = 40).grade)
+    }
+
+    @Test
+    fun `ColdStartState warmupProgress calculates correctly`() {
+        val cold = ColdStartState(coolantTempCurrent = -40.0)
+        assertEquals(0f, cold.warmupProgress, 0.01f)
+        val warm = ColdStartState(coolantTempCurrent = 90.0)
+        assertEquals(1f, warm.warmupProgress, 0.01f)
+        val mid = ColdStartState(coolantTempCurrent = 40.0)
+        assertTrue(mid.warmupProgress > 0f && mid.warmupProgress < 1f)
+    }
+
+    @Test
+    fun `ShiftLightConfig has correct defaults`() {
+        val config = ShiftLightConfig()
+        assertFalse(config.enabled)
+        assertEquals(6500, config.redlineRpm)
+        assertEquals(5500, config.warningRpm)
+        assertTrue(config.flashEnabled)
+        assertFalse(config.soundEnabled)
+    }
 }
