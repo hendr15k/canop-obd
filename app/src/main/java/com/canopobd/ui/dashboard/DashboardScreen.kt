@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.canopobd.R
 import com.canopobd.data.model.*
 import com.canopobd.ui.components.CircularGauge
-import com.canopobd.ui.components.GaugeRow
 import com.canopobd.ui.components.LiveTrendGraphDialog
 import com.canopobd.ui.customization.DashboardCustomizationDialog
 import com.canopobd.ui.datalog.DataLogDialog

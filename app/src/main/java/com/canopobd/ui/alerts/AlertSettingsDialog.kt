@@ -1,6 +1,5 @@
 package com.canopobd.ui.alerts
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,7 +18,6 @@ import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.ActiveAlert
 import com.canopobd.data.model.AlertConfig
-import com.canopobd.data.model.AlertType
 import com.canopobd.ui.theme.*
 
 @Composable

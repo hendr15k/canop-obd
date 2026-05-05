@@ -22,11 +22,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
-import com.canopobd.data.model.PerformanceResult
 import com.canopobd.data.model.PerformanceTestState
 import com.canopobd.data.model.PerformanceTestType
 import com.canopobd.ui.theme.*
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

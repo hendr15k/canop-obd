@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.canopobd.R
-import com.canopobd.data.model.ColorTheme
 import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
 import com.canopobd.ui.update.UpdateDialog
