@@ -26,8 +26,6 @@ import androidx.core.content.FileProvider
 import com.canopobd.R
 import com.canopobd.data.model.AppUpdate
 import com.canopobd.ui.theme.LocalAppColors
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
 

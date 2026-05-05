@@ -26,6 +26,10 @@ class ELM327BTConnection(
         private const val TAG = "ELM327"
         private val SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
         private const val MAX_RETRIES = 3
+        private const val COMMAND_TIMEOUT_MS = 3000L
+        private const val CONNECT_TIMEOUT_MS = 15000L
+        private const val INITIAL_RETRY_DELAY_MS = 100L
+        private const val MAX_RETRY_DELAY_MS = 500L
 
         private val DTC_DESCRIPTIONS = mapOf(
             "P0100" to "Mass Air Flow Circuit Malfunction",
@@ -670,6 +674,7 @@ class ELM327BTConnection(
     }
 
     suspend fun requestPID(pid: OBDPID): Double? = withContext(Dispatchers.IO) {
+        var retryDelay = INITIAL_RETRY_DELAY_MS
         repeat(MAX_RETRIES) { attempt ->
             try {
                 val response = sendCommandWithTimeout(pid.code)
@@ -679,7 +684,10 @@ class ELM327BTConnection(
                 Log.w(TAG, "PID ${pid.code} request failed (attempt ${attempt + 1}/$MAX_RETRIES): ${e.message}")
             }
 
-            if (attempt < MAX_RETRIES - 1) delay(100L)
+            if (attempt < MAX_RETRIES - 1) {
+                delay(retryDelay)
+                retryDelay = (retryDelay * 1.5).toLong().coerceAtMost(MAX_RETRY_DELAY_MS)
+            }
         }
         Log.d(TAG, "PID ${pid.code} unavailable after $MAX_RETRIES attempts")
         null
@@ -798,7 +806,7 @@ class ELM327BTConnection(
         output.write("$cmd\r".toByteArray())
         output.flush()
 
-        val deadline = System.currentTimeMillis() + 3_000L
+        val deadline = System.currentTimeMillis() + COMMAND_TIMEOUT_MS
         val responseBuilder = StringBuilder()
 
         while (System.currentTimeMillis() < deadline) {
@@ -812,7 +820,7 @@ class ELM327BTConnection(
                     if (responseBuilder.contains(">")) break
                 }
             } else {
-                delay(50L)
+                delay(30L)
             }
         }
 

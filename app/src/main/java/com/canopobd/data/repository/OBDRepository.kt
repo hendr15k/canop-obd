@@ -2,10 +2,22 @@ package com.canopobd.data.repository
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.util.Log
 import android.content.Context
 import android.content.SharedPreferences
 import com.canopobd.bluetooth.ELM327BTConnection
 import com.canopobd.bluetooth.RemoteBridge
+import com.canopobd.data.local.AlertConfigDao
+import com.canopobd.data.local.AlertConfigEntity
+import com.canopobd.data.local.AppSettingsDao
+import com.canopobd.data.local.AppSettingsEntity
+import com.canopobd.data.local.CanopoDatabase
+import com.canopobd.data.local.MaintenanceDao
+import com.canopobd.data.local.MaintenanceEntity
+import com.canopobd.data.local.ShiftLightConfigDao
+import com.canopobd.data.local.ShiftLightConfigEntity
+import com.canopobd.data.local.TripDao
+import com.canopobd.data.local.TripEntity
 import com.canopobd.data.model.*
 import com.canopobd.gps.GPSTracker
 import kotlinx.coroutines.*
@@ -19,6 +31,13 @@ class OBDRepository(
     private val connection: ELM327BTConnection? = bluetoothAdapter?.let { ELM327BTConnection(it) }
     private var remoteBridge: RemoteBridge? = null
     private val prefs: SharedPreferences = context.getSharedPreferences("canop_obd_prefs", Context.MODE_PRIVATE)
+
+    private val database = CanopoDatabase.getInstance(context)
+    private val maintenanceDao: MaintenanceDao = database.maintenanceDao()
+    private val alertConfigDao: AlertConfigDao = database.alertConfigDao()
+    private val shiftLightConfigDao: ShiftLightConfigDao = database.shiftLightConfigDao()
+    private val tripDao: TripDao = database.tripDao()
+    private val appSettingsDao: AppSettingsDao = database.appSettingsDao()
 
     private val _connectionState = MutableStateFlow<OBDConnectionState>(OBDConnectionState.Disconnected)
     val connectionState: StateFlow<OBDConnectionState> = _connectionState.asStateFlow()
@@ -115,6 +134,8 @@ class OBDRepository(
     )
 
     private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
+    private var lastTrendRecordTime = 0L
+    private val trendRecordInterval = 1000L
 
     private val _readinessMonitor = MutableStateFlow(ReadinessMonitor())
     val readinessMonitor: StateFlow<ReadinessMonitor> = _readinessMonitor.asStateFlow()
@@ -160,6 +181,37 @@ class OBDRepository(
             batteryLowWarning = prefs.getFloat("alert_battery", 11.5f),
             batteryLowWarningEnabled = prefs.getBoolean("alert_battery_on", true)
         )
+        scope.launch { migrateFromPrefsIfNeeded() }
+    }
+
+    private suspend fun migrateFromPrefsIfNeeded() {
+        if (prefs.getBoolean("room_migrated", false)) return
+        val existingItems = loadMaintenanceItemsFromPrefs()
+        if (existingItems.isNotEmpty()) {
+            maintenanceDao.insertAll(existingItems.map { item ->
+                MaintenanceEntity(
+                    type = item.type.name,
+                    lastServiceKm = item.lastServiceKm,
+                    intervalKm = item.intervalKm,
+                    lastServiceDate = item.lastServiceDate
+                )
+            })
+        }
+        prefs.edit().putBoolean("room_migrated", true).apply()
+    }
+
+    private fun loadMaintenanceItemsFromPrefs(): List<MaintenanceItem> {
+        return MaintenanceType.entries.mapNotNull { type ->
+            val km = prefs.getInt("maint_${type.name}_km", -1)
+            if (km >= 0) {
+                MaintenanceItem(
+                    type = type,
+                    lastServiceKm = km,
+                    intervalKm = prefs.getInt("maint_${type.name}_interval", type.defaultInterval),
+                    lastServiceDate = prefs.getLong("maint_${type.name}_date", 0L)
+                )
+            } else null
+        }
     }
 
     fun getPairedDevices(): List<BluetoothDeviceInfo> {
@@ -167,7 +219,8 @@ class OBDRepository(
             bluetoothAdapter?.bondedDevices?.map { device ->
                 BluetoothDeviceInfo(name = device.name ?: device.address, address = device.address)
             } ?: emptyList()
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            Log.w("OBDRepository", "Security exception getting paired devices", e)
             emptyList()
         }
     }
@@ -250,6 +303,16 @@ class OBDRepository(
         saveTripData()
     }
 
+    private fun handleConnectionLoss(error: String) {
+        val lastAddr = lastConnectedAddress
+        if (_autoReconnect.value && lastAddr != null) {
+            scheduleReconnect(lastAddr)
+        } else {
+            _connectionState.value = OBDConnectionState.Error(error)
+            _lastError.value = error
+        }
+    }
+
     fun cleanup() {
         scope.cancel()
     }
@@ -260,21 +323,25 @@ class OBDRepository(
 
     private fun recordConnectionSuccess() {
         val s = _connectionStats.value
+        val newSuccess = s.successCount + 1
+        val newFailure = s.failureCount
+        val rate = newSuccess.toDouble() / (newSuccess + newFailure)
         _connectionStats.value = s.copy(
-            successCount = s.successCount + 1,
-            quality = ConnectionQuality.fromSuccessRate(
-                (s.successCount + 1).toDouble() / (s.totalCount + 1)
-            )
+            successCount = newSuccess,
+            failureCount = newFailure,
+            quality = ConnectionQuality.fromSuccessRate(rate)
         )
     }
 
     private fun recordConnectionFailure() {
         val s = _connectionStats.value
+        val newSuccess = s.successCount
+        val newFailure = s.failureCount + 1
+        val rate = newSuccess.toDouble() / (newSuccess + newFailure)
         _connectionStats.value = s.copy(
-            failureCount = s.failureCount + 1,
-            quality = ConnectionQuality.fromSuccessRate(
-                s.successCount.toDouble() / (s.totalCount + 1)
-            )
+            successCount = newSuccess,
+            failureCount = newFailure,
+            quality = ConnectionQuality.fromSuccessRate(rate)
         )
     }
 
@@ -362,12 +429,15 @@ class OBDRepository(
                     timestamp = now
                 )
 
-                trendRecorder.record(
-                    _obdData.value.rpm,
-                    _obdData.value.speed,
-                    _obdData.value.coolantTemp
-                )
-                _trendHistory.value = trendRecorder.getHistory()
+                if (now - lastTrendRecordTime >= trendRecordInterval) {
+                    trendRecorder.record(
+                        _obdData.value.rpm,
+                        _obdData.value.speed,
+                        _obdData.value.coolantTemp
+                    )
+                    _trendHistory.value = trendRecorder.getHistory()
+                    lastTrendRecordTime = now
+                }
 
                 val unit = _measurementUnit.value
                 prefs.edit()
@@ -559,6 +629,23 @@ class OBDRepository(
             .putFloat("alert_battery", config.batteryLowWarning)
             .putBoolean("alert_battery_on", config.batteryLowWarningEnabled)
             .apply()
+        scope.launch {
+            alertConfigDao.insert(
+                AlertConfigEntity(
+                    id = 1,
+                    speedWarning = config.speedWarning,
+                    speedWarningEnabled = config.speedWarningEnabled,
+                    coolantWarning = config.coolantWarning,
+                    coolantWarningEnabled = config.coolantWarningEnabled,
+                    fuelWarning = config.fuelWarning,
+                    fuelWarningEnabled = config.fuelWarningEnabled,
+                    rpmWarning = config.rpmWarning,
+                    rpmWarningEnabled = config.rpmWarningEnabled,
+                    batteryLowWarning = config.batteryLowWarning,
+                    batteryLowWarningEnabled = config.batteryLowWarningEnabled
+                )
+            )
+        }
     }
 
     fun readReadinessMonitor() {
@@ -605,7 +692,9 @@ class OBDRepository(
                         fuelLevel = parts[5].toDoubleOrNull() ?: 0.0,
                         batteryVoltage = parts[6].toDoubleOrNull() ?: 0.0
                     ))
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    Log.w("OBDRepository", "Failed to parse CSV line: ${parts.joinToString(",")}", e)
+                }
             }
         }
         _importedData.value = entries
@@ -619,6 +708,16 @@ class OBDRepository(
             .putInt("maint_${item.type.name}_interval", item.intervalKm)
             .putLong("maint_${item.type.name}_date", System.currentTimeMillis())
             .apply()
+        scope.launch {
+            maintenanceDao.insert(
+                MaintenanceEntity(
+                    type = item.type.name,
+                    lastServiceKm = item.lastServiceKm,
+                    intervalKm = item.intervalKm,
+                    lastServiceDate = System.currentTimeMillis()
+                )
+            )
+        }
     }
 
     fun loadMaintenanceItems(): List<MaintenanceItem> {
@@ -635,6 +734,22 @@ class OBDRepository(
         }
     }
 
+    fun loadMaintenanceItemsFromRoom(): List<MaintenanceItem> {
+        val entities = kotlinx.coroutines.runBlocking {
+            maintenanceDao.getAllOnce()
+        }
+        return entities.mapNotNull { entity ->
+            MaintenanceType.entries.find { it.name == entity.type }?.let { type ->
+                MaintenanceItem(
+                    type = type,
+                    lastServiceKm = entity.lastServiceKm,
+                    intervalKm = entity.intervalKm,
+                    lastServiceDate = entity.lastServiceDate
+                )
+            }
+        }
+    }
+
     fun clearMaintenanceHistory() {
         val edit = prefs.edit()
         MaintenanceType.entries.forEach { type ->
@@ -643,6 +758,7 @@ class OBDRepository(
             edit.remove("maint_${type.name}_date")
         }
         edit.apply()
+        scope.launch { maintenanceDao.deleteAll() }
     }
 
     fun getFuelTrimAnalysis(): FuelTrimAnalysis {
@@ -711,6 +827,18 @@ class OBDRepository(
             .putBoolean("shift_light_flash", config.flashEnabled)
             .putBoolean("shift_light_sound", config.soundEnabled)
             .apply()
+        scope.launch {
+            shiftLightConfigDao.insert(
+                ShiftLightConfigEntity(
+                    id = 1,
+                    enabled = config.enabled,
+                    redlineRpm = config.redlineRpm,
+                    warningRpm = config.warningRpm,
+                    flashEnabled = config.flashEnabled,
+                    soundEnabled = config.soundEnabled
+                )
+            )
+        }
     }
 
     fun loadShiftLightConfig(): ShiftLightConfig {
@@ -721,5 +849,14 @@ class OBDRepository(
             flashEnabled = prefs.getBoolean("shift_light_flash", true),
             soundEnabled = prefs.getBoolean("shift_light_sound", false)
         )
+    }
+
+    fun saveCarProfile(profile: CarProfile) {
+        prefs.edit().putString("car_profile_id", profile.id).apply()
+    }
+
+    fun loadCarProfile(): CarProfile {
+        val id = prefs.getString("car_profile_id", null)
+        return if (id != null) CarProfile.fromId(id) ?: CarProfile.default() else CarProfile.default()
     }
 }

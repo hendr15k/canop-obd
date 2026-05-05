@@ -88,7 +88,7 @@ class OBDModelsTest {
     fun `OBDPID codes are unique`() {
         val codes = OBDPID.entries.map { it.code }
         val uniqueCodes = codes.toSet()
-        assertEquals(codes.size, uniqueCodes.size)
+        assertEquals(uniqueCodes.size, codes.size)
     }
 
     @Test
@@ -130,9 +130,9 @@ class OBDModelsTest {
 
     @Test
     fun `OBDPID ENGINE_FUEL_RATE calculates correctly`() {
-        val bytes = byteArrayOf(0x0A.toByte(), 0x00.toByte())
+        val bytes = byteArrayOf(0x00.toByte(), 0x64.toByte())
         val result = OBDPID.ENGINE_FUEL_RATE.formula(bytes)
-        assertEquals(2.56, result, 0.01)
+        assertEquals(5.0, result, 0.01)
     }
 
     @Test
@@ -150,7 +150,7 @@ class OBDModelsTest {
     }
 
     @Test
-    fun `OBDPID SHORT_TERM_FUEL_TRIM handles lean condition`() {
+    fun `OBDPID SHORT_TERM_FUEL_TRIM handles strongly lean condition`() {
         val bytes = byteArrayOf(0x70.toByte())
         val result = OBDPID.SHORT_TERM_FUEL_TRIM_BANK1.formula(bytes)
         assertTrue(result < 0)
@@ -158,23 +158,23 @@ class OBDModelsTest {
 
     @Test
     fun `OBDPID CONTROL_MODULE_VOLTAGE calculates correctly`() {
-        val bytes = byteArrayOf(0x0F.toByte(), 0xA0.toByte())
+        val bytes = byteArrayOf(0x35.toByte(), 0x84.toByte())
         val result = OBDPID.CONTROL_MODULE_VOLTAGE.formula(bytes)
-        assertEquals(14.0, result, 0.1)
+        assertEquals(13.7, result, 0.01)
     }
 
     @Test
     fun `OBDPID CATALYST_TEMP calculates correctly`() {
-        val bytes = byteArrayOf(0x0A.toByte(), 0x00.toByte())
+        val bytes = byteArrayOf(0x19.toByte(), 0x00.toByte())
         val result = OBDPID.CATALYST_TEMP_B1S1.formula(bytes)
-        assertEquals(620.0, result, 0.1)
+        assertEquals(600.0, result, 0.1)
     }
 
     @Test
     fun `OBDPID O2_VOLTAGE calculates correctly`() {
         val bytes = byteArrayOf(0x80.toByte())
         val result = OBDPID.O2_VOLTAGE_B1S1.formula(bytes)
-        assertEquals(0.5, result, 0.01)
+        assertEquals(0.64, result, 0.01)
     }
 
     @Test

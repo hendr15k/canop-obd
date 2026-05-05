@@ -2,6 +2,7 @@ package com.canopobd.bluetooth
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.net.wifi.WifiManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +93,9 @@ class RemoteBridge(
         _connectedClients.value = 0
         try {
             serverSocket?.close()
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w("RemoteBridge", "Failed to close server socket", e)
+        }
         serverSocket = null
         _isServerRunning.value = false
     }
@@ -189,7 +192,9 @@ class RemoteBridge(
                 writer?.close()
                 reader?.close()
                 socket.close()
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.w("RemoteBridge", "Failed to close client socket", e)
+            }
             synchronized(clients) { clients.remove(this) }
             _connectedClients.value = clients.size
         }
