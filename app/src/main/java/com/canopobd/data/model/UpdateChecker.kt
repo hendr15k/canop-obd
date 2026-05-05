@@ -55,16 +55,18 @@ object UpdateChecker {
             val body = json.optString("body", "")
             val publishedAt = json.optString("published_at", "")
 
+            val currentVersionName = getCurrentVersionName(context)
             val currentCode = getCurrentVersionCode(context)
 
-            // Find APK asset URL
             val assets = json.optJSONArray("assets") ?: JSONArray()
             var apkUrl = ""
+            var apkSize = 0L
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.optString("name", "")
                 if (name.endsWith(".apk")) {
                     apkUrl = asset.optString("browser_download_url", "")
+                    apkSize = asset.optLong("size", 0L)
                     break
                 }
             }
@@ -72,7 +74,8 @@ object UpdateChecker {
             if (apkUrl.isEmpty()) return null
 
             val remoteCode = parseVersionCode(body, versionName)
-            if (remoteCode <= currentCode) return null
+            val isNewer = compareVersions(versionName, currentVersionName) > 0 || remoteCode > currentCode
+            if (!isNewer) return null
 
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val skippedVersion = prefs.getString(KEY_SKIPPED_VERSION, "")
@@ -89,6 +92,18 @@ object UpdateChecker {
             Log.w(TAG, "Update check failed: ${e.message}")
             return null
         }
+    }
+
+    private fun compareVersions(remote: String, local: String): Int {
+        val remoteParts = remote.split(".").map { it.toIntOrNull() ?: 0 }
+        val localParts = local.split(".").map { it.toIntOrNull() ?: 0 }
+        val maxLen = maxOf(remoteParts.size, localParts.size)
+        for (i in 0 until maxLen) {
+            val r = remoteParts.getOrElse(i) { 0 }
+            val l = localParts.getOrElse(i) { 0 }
+            if (r != l) return r - l
+        }
+        return 0
     }
 
     fun shouldCheckForUpdate(context: Context): Boolean {
