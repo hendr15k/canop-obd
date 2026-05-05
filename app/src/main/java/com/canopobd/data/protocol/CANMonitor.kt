@@ -96,6 +96,9 @@ class CANMonitor(private val connection: ELM327BTConnection) {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _messagesPerSecond = MutableStateFlow(0)
+    val messagesPerSecond: StateFlow<Int> = _messagesPerSecond.asStateFlow()
+
     private val maxMessageHistory = 500
 
     suspend fun initialize(): Result<Unit> = withContext(Dispatchers.IO) {
@@ -131,6 +134,8 @@ class CANMonitor(private val connection: ELM327BTConnection) {
         _isMonitoring.value = true
         _messages.value = emptyList()
         _errorMessage.value = null
+        var messageCount = 0
+        var lastSecond = System.currentTimeMillis() / 1000
 
         monitoringJob = scope.launch {
             while (isActive && _isMonitoring.value) {
@@ -146,6 +151,14 @@ class CANMonitor(private val connection: ELM327BTConnection) {
                             }
                             _messages.value = current
                             onMessage?.invoke(msg)
+                            messageCount++
+
+                            val currentSecond = System.currentTimeMillis() / 1000
+                            if (currentSecond > lastSecond) {
+                                _messagesPerSecond.value = messageCount
+                                messageCount = 0
+                                lastSecond = currentSecond
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -162,6 +175,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
         _isMonitoring.value = false
         monitoringJob?.cancel()
         monitoringJob = null
+        _messagesPerSecond.value = 0
         scope.launch {
             try {
                 sendCommand("")

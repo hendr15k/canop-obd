@@ -197,6 +197,8 @@ fun DashboardScreen(
     _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
     onSelectCarProfile: (CarProfile) -> Unit,
+    appThemeMode: com.canopobd.data.model.AppThemeMode,
+    onSetAppThemeMode: (com.canopobd.data.model.AppThemeMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -388,7 +390,7 @@ fun DashboardScreen(
             }
             composable("settings") {
                 if (showSettings) {
-                    SettingsDialog(pollRate = pollRate, measurementUnit = measurementUnit, autoReconnect = autoReconnect, pollMode = pollMode, onDismiss = { onToggleSettings(); navController.popBackStack() }, onPollRateChange = onSetPollRate, onUnitChange = onSetMeasurementUnit, onAutoReconnectChange = onSetAutoReconnect, onPollModeChange = onSetPollMode)
+                    SettingsDialog(pollRate = pollRate, measurementUnit = measurementUnit, autoReconnect = autoReconnect, pollMode = pollMode, appThemeMode = appThemeMode, onDismiss = { onToggleSettings(); navController.popBackStack() }, onPollRateChange = onSetPollRate, onUnitChange = onSetMeasurementUnit, onAutoReconnectChange = onSetAutoReconnect, onPollModeChange = onSetPollMode, onSetAppThemeMode = onSetAppThemeMode)
                 }
             }
             composable("data_log") {
@@ -838,7 +840,7 @@ private fun DashboardHeader(
                         icon = Icons.Filled.Info,
                         label = stringResource(R.string.dashboard_vehicle_profile),
                         color = colors.highlight,
-                        onClick = onToggleVehicleInfo
+                        onClick = { _onToggleCarProfile(); navController.navigate("car_profile") }
                     )
                     QuickActionButton(
                         icon = Icons.Filled.BugReport,

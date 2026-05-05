@@ -2,6 +2,7 @@ package com.canopobd.ui.theme
 
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.canopobd.data.model.AppThemeMode
 
 // Primary palette — modern automotive dark
 val canopoDark = Color(0xFF090910)
@@ -113,39 +114,110 @@ val DefaultAppColors = AppColors(
     connectionPoor = connectionPoor
 )
 
+val DefaultLightAppColors = AppColors(
+    dark = Color(0xFFF5F5F5),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFF0F0F0),
+    primary = Color(0xFF1E40AF),
+    accent = canopoAccent,
+    highlight = canopoHighlight,
+    secondary = canopoSecondary,
+    gaugeRed = gaugeRed,
+    gaugeOrange = gaugeOrange,
+    gaugeYellow = gaugeYellow,
+    gaugeGreen = gaugeGreen,
+    gaugeCyan = gaugeCyan,
+    gaugeRedGlow = gaugeRedGlow,
+    gaugeOrangeGlow = gaugeOrangeGlow,
+    gaugeGreenGlow = gaugeGreenGlow,
+    gaugeBlueGlow = gaugeBlueGlow,
+    textPrimary = Color(0xFF1E293B),
+    textSecondary = Color(0xFF64748B),
+    textDim = Color(0xFF94A3B8),
+    textMuted = Color(0xFFCBD5E1),
+    surfaceCard = Color(0xFFFFFFFF),
+    surfaceElevated = Color(0xFFF8FAFC),
+    surfaceOverlay = Color(0xFFF1F5F9),
+    borderSubtle = Color(0xFFE2E8F0),
+    borderDefault = Color(0xFFCBD5E1),
+    borderAccent = canopoAccent,
+    connectionExcellent = gaugeGreen,
+    connectionGood = Color(0xFF4ADE80),
+    connectionFair = gaugeYellow,
+    connectionPoor = gaugeRed
+)
+
 fun androidx.compose.ui.graphics.Color.toAppColor(): Color = this
 
-fun com.canopobd.data.model.ColorTheme.toAppColors(): AppColors = AppColors(
-    dark = Color(primaryColor),
-    surface = Color(surfaceColor),
-    surfaceVariant = Color(surfaceColor).copy(alpha = 0.8f),
-    primary = Color(primaryColor),
-    accent = Color(accentColor),
-    highlight = Color(primaryColor),
-    secondary = Color(accentColor).copy(alpha = 0.8f),
-    gaugeRed = Color(this.gaugeRed),
-    gaugeOrange = Color(this.gaugeOrange),
-    gaugeYellow = Color(this.gaugeYellow),
-    gaugeGreen = Color(this.gaugeGreen),
-    gaugeCyan = Color(0xFF06B6D4),
-    gaugeRedGlow = Color(this.gaugeRed),
-    gaugeOrangeGlow = Color(this.gaugeOrange),
-    gaugeGreenGlow = Color(this.gaugeGreen),
-    gaugeBlueGlow = Color(0xFF2563EB),
-    textPrimary = Color(0xFFF8FAFC),
-    textSecondary = Color(0xFF94A3B8),
-    textDim = Color(0xFF475569),
-    textMuted = Color(0xFF334155),
-    surfaceCard = Color(primaryColor).copy(alpha = 0.1f),
-    surfaceElevated = Color(primaryColor).copy(alpha = 0.15f),
-    surfaceOverlay = Color(primaryColor).copy(alpha = 0.2f),
-    borderSubtle = Color(primaryColor).copy(alpha = 0.3f),
-    borderDefault = Color(primaryColor).copy(alpha = 0.5f),
-    borderAccent = Color(accentColor),
-    connectionExcellent = Color(this.gaugeGreen),
-    connectionGood = Color(0xFF4ADE80),
-    connectionFair = Color(this.gaugeYellow),
-    connectionPoor = Color(this.gaugeRed)
-)
+fun com.canopobd.data.model.ColorTheme.toAppColors(mode: AppThemeMode = AppThemeMode.DARK): AppColors {
+    if (mode == AppThemeMode.LIGHT) {
+        val pColor = Color(primaryColor)
+        val aColor = Color(accentColor)
+        return AppColors(
+            dark = Color(0xFFF5F5F5),
+            surface = Color(0xFFFFFFFF),
+            surfaceVariant = Color(0xFFF0F0F0),
+            primary = pColor,
+            accent = aColor,
+            highlight = pColor,
+            secondary = aColor.copy(alpha = 0.8f),
+            gaugeRed = Color(this.gaugeRed),
+            gaugeOrange = Color(this.gaugeOrange),
+            gaugeYellow = Color(this.gaugeYellow),
+            gaugeGreen = Color(this.gaugeGreen),
+            gaugeCyan = Color(0xFF06B6D4),
+            gaugeRedGlow = Color(this.gaugeRed),
+            gaugeOrangeGlow = Color(this.gaugeOrange),
+            gaugeGreenGlow = Color(this.gaugeGreen),
+            gaugeBlueGlow = Color(0xFF2563EB),
+            textPrimary = Color(0xFF1E293B),
+            textSecondary = Color(0xFF64748B),
+            textDim = Color(0xFF94A3B8),
+            textMuted = Color(0xFFCBD5E1),
+            surfaceCard = Color(0xFFFFFFFF),
+            surfaceElevated = Color(0xFFF8FAFC),
+            surfaceOverlay = Color(0xFFF1F5F9),
+            borderSubtle = Color(0xFFE2E8F0),
+            borderDefault = Color(0xFFCBD5E1),
+            borderAccent = aColor,
+            connectionExcellent = Color(this.gaugeGreen),
+            connectionGood = Color(0xFF4ADE80),
+            connectionFair = Color(this.gaugeYellow),
+            connectionPoor = Color(this.gaugeRed)
+        )
+    }
+    return AppColors(
+        dark = Color(primaryColor),
+        surface = Color(surfaceColor),
+        surfaceVariant = Color(surfaceColor).copy(alpha = 0.8f),
+        primary = Color(primaryColor),
+        accent = Color(accentColor),
+        highlight = Color(primaryColor),
+        secondary = Color(accentColor).copy(alpha = 0.8f),
+        gaugeRed = Color(this.gaugeRed),
+        gaugeOrange = Color(this.gaugeOrange),
+        gaugeYellow = Color(this.gaugeYellow),
+        gaugeGreen = Color(this.gaugeGreen),
+        gaugeCyan = Color(0xFF06B6D4),
+        gaugeRedGlow = Color(this.gaugeRed),
+        gaugeOrangeGlow = Color(this.gaugeOrange),
+        gaugeGreenGlow = Color(this.gaugeGreen),
+        gaugeBlueGlow = Color(0xFF2563EB),
+        textPrimary = Color(0xFFF8FAFC),
+        textSecondary = Color(0xFF94A3B8),
+        textDim = Color(0xFF475569),
+        textMuted = Color(0xFF334155),
+        surfaceCard = Color(primaryColor).copy(alpha = 0.1f),
+        surfaceElevated = Color(primaryColor).copy(alpha = 0.15f),
+        surfaceOverlay = Color(primaryColor).copy(alpha = 0.2f),
+        borderSubtle = Color(primaryColor).copy(alpha = 0.3f),
+        borderDefault = Color(primaryColor).copy(alpha = 0.5f),
+        borderAccent = Color(accentColor),
+        connectionExcellent = Color(this.gaugeGreen),
+        connectionGood = Color(0xFF4ADE80),
+        connectionFair = Color(this.gaugeYellow),
+        connectionPoor = Color(this.gaugeRed)
+    )
+}
 
 val LocalAppColors = compositionLocalOf { DefaultAppColors }

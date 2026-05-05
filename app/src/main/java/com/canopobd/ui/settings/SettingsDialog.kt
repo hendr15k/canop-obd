@@ -18,6 +18,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.canopobd.BuildConfig
 import com.canopobd.R
+import com.canopobd.data.model.AppThemeMode
 import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.PollMode
 import com.canopobd.ui.theme.*
@@ -28,11 +29,13 @@ fun SettingsDialog(
     measurementUnit: MeasurementUnit,
     autoReconnect: Boolean,
     pollMode: PollMode,
+    appThemeMode: AppThemeMode,
     onDismiss: () -> Unit,
     onPollRateChange: (Long) -> Unit,
     onUnitChange: (MeasurementUnit) -> Unit,
     onAutoReconnectChange: (Boolean) -> Unit,
-    onPollModeChange: (PollMode) -> Unit
+    onPollModeChange: (PollMode) -> Unit,
+    onSetAppThemeMode: (AppThemeMode) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -154,6 +157,43 @@ fun SettingsDialog(
                                     uncheckedTrackColor = canopoDark
                                 )
                             )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        @Suppress("DEPRECATION")
+                        Divider(color = canopoDark)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = stringResource(R.string.theme),
+                            color = textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AppThemeMode.entries.forEach { mode ->
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { onSetAppThemeMode(mode) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (appThemeMode == mode) canopoAccent.copy(alpha = 0.2f) else canopoDark,
+                                    border = if (appThemeMode == mode) androidx.compose.foundation.BorderStroke(2.dp, canopoAccent) else null
+                                ) {
+                                    Text(
+                                        text = mode.displayName,
+                                        fontSize = 12.sp,
+                                        color = if (appThemeMode == mode) canopoAccent else textSecondary,
+                                        modifier = Modifier.padding(vertical = 10.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
 

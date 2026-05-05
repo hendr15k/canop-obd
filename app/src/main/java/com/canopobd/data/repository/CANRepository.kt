@@ -130,14 +130,22 @@ class CANRepository(private val connection: ELM327BTConnection) {
     fun startExtendedPIDPolling() {
         if (_isMonitoring.value) return
         _isMonitoring.value = true
+        var consecutiveFailures = 0
 
         pollingJob = scope.launch {
             while (isActive && _isMonitoring.value) {
                 try {
                     updateExtendedPIDs()
                     updateTurboData()
+                    consecutiveFailures = 0
                 } catch (e: Exception) {
-                    Log.w(TAG, "Polling error: ${e.message}")
+                    consecutiveFailures++
+                    Log.e(TAG, "Extended PID polling error ($consecutiveFailures): ${e.message}")
+                    if (consecutiveFailures >= 5) {
+                        Log.e(TAG, "Too many polling failures, stopping extended PID polling")
+                        stopExtendedPIDPolling()
+                        break
+                    }
                 }
                 delay(POLL_INTERVAL_MS)
             }
@@ -151,39 +159,47 @@ class CANRepository(private val connection: ELM327BTConnection) {
     }
 
     private suspend fun updateExtendedPIDs() = withContext(Dispatchers.IO) {
-        val dids = listOf("F4B0", "F4C0", "F4E0", "F4F1", "F480")
-        mode22Client.readMultipleDIDs(dids).collect { results ->
-            val engineTorque = results["F4B0"]?.let { parseTorque(it) }
-            val boostTarget = results["F4C0"]?.let { parsePressure(it) }
-            val coolantTemp = results["F4E0"]?.let { parseTemperature(it) }
-            val batteryVoltage = results["F4F1"]?.let { parseVoltage(it) }
-            val fuelConsumption = results["F480"]?.let { parseFuelConsumption(it) }
+        try {
+            val dids = listOf("F4B0", "F4C0", "F4E0", "F4F1", "F480")
+            mode22Client.readMultipleDIDs(dids).collect { results ->
+                val engineTorque = results["F4B0"]?.let { parseTorque(it) }
+                val boostTarget = results["F4C0"]?.let { parsePressure(it) }
+                val coolantTemp = results["F4E0"]?.let { parseTemperature(it) }
+                val batteryVoltage = results["F4F1"]?.let { parseVoltage(it) }
+                val fuelConsumption = results["F480"]?.let { parseFuelConsumption(it) }
 
-            _extendedPIDData.value = _extendedPIDData.value.copy(
-                engineTorque = engineTorque,
-                boostPressureTarget = boostTarget,
-                coolantTemp = coolantTemp,
-                batteryVoltage = batteryVoltage,
-                fuelConsumption = fuelConsumption,
-                timestamp = System.currentTimeMillis()
-            )
+                _extendedPIDData.value = _extendedPIDData.value.copy(
+                    engineTorque = engineTorque,
+                    boostPressureTarget = boostTarget,
+                    coolantTemp = coolantTemp,
+                    batteryVoltage = batteryVoltage,
+                    fuelConsumption = fuelConsumption,
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "updateExtendedPIDs error: ${e.message}")
         }
     }
 
     private suspend fun updateTurboData() = withContext(Dispatchers.IO) {
-        val dids = listOf("220001", "220002", "220003", "220004", "220005", "220006", "220007", "220008")
-        mode22Client.readMultipleDIDs(dids).collect { results ->
-            _turboMonitoringData.value = TurboMonitoringData(
-                engineTorque = results["220001"]?.let { parseTorque(it) } ?: 0.0,
-                boostActual = results["220002"]?.let { parsePressure(it) } ?: 0.0,
-                boostTarget = results["220003"]?.let { parsePressure(it) } ?: 0.0,
-                wastegateDuty = results["220004"]?.let { parsePercent(it) } ?: 0.0,
-                turboSpeed = results["220005"]?.let { parseSpeed(it) } ?: 0.0,
-                turboInletTemp = results["220006"]?.let { parseTemperature(it) } ?: 0.0,
-                turboOutletTemp = results["220007"]?.let { parseTemperature(it) } ?: 0.0,
-                chargeAirTemp = results["220008"]?.let { parseTemperature(it) } ?: 0.0,
-                timestamp = System.currentTimeMillis()
-            )
+        try {
+            val dids = listOf("220001", "220002", "220003", "220004", "220005", "220006", "220007", "220008")
+            mode22Client.readMultipleDIDs(dids).collect { results ->
+                _turboMonitoringData.value = TurboMonitoringData(
+                    engineTorque = results["220001"]?.let { parseTorque(it) } ?: 0.0,
+                    boostActual = results["220002"]?.let { parsePressure(it) } ?: 0.0,
+                    boostTarget = results["220003"]?.let { parsePressure(it) } ?: 0.0,
+                    wastegateDuty = results["220004"]?.let { parsePercent(it) } ?: 0.0,
+                    turboSpeed = results["220005"]?.let { parseSpeed(it) } ?: 0.0,
+                    turboInletTemp = results["220006"]?.let { parseTemperature(it) } ?: 0.0,
+                    turboOutletTemp = results["220007"]?.let { parseTemperature(it) } ?: 0.0,
+                    chargeAirTemp = results["220008"]?.let { parseTemperature(it) } ?: 0.0,
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "updateTurboData error: ${e.message}")
         }
     }
 

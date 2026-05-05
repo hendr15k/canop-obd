@@ -647,7 +647,9 @@ class ELM327BTConnection(
             outputStream = socket?.outputStream
             _isConnected.value = true
 
-            initELM327()
+            if (!initELM327()) {
+                throw Exception("ELM327 initialization failed")
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             _isConnected.value = false
@@ -655,22 +657,28 @@ class ELM327BTConnection(
         }
     }
 
-    private suspend fun initELM327() {
-        sendCommand("ATZ")
-        delay(1000)
-        sendCommand("ATI")
-        delay(200)
-        sendCommand("ATE0")
-        delay(100)
-        sendCommand("ATL0")
-        delay(100)
-        sendCommand("ATS0")
-        delay(100)
-        sendCommand("ATH0")
-        delay(100)
-        sendCommand("ATSP0")
-        delay(100)
-        sendCommand("ATAT1")
+    private suspend fun initELM327(): Boolean {
+        return try {
+            sendCommand("ATZ")
+            delay(1000)
+            sendCommand("ATI")
+            delay(200)
+            sendCommand("ATE0")
+            delay(100)
+            sendCommand("ATL0")
+            delay(100)
+            sendCommand("ATS0")
+            delay(100)
+            sendCommand("ATH0")
+            delay(100)
+            sendCommand("ATSP0")
+            delay(100)
+            sendCommand("ATAT1")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "ELM327 init failed: ${e.message}")
+            false
+        }
     }
 
     suspend fun requestPID(pid: OBDPID): Double? = withContext(Dispatchers.IO) {

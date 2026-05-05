@@ -36,9 +36,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val colorTheme by viewModel.colorTheme.collectAsState()
-            val appColors = remember(colorTheme) { colorTheme.toAppColors() }
+            val appThemeMode by viewModel.appThemeMode.collectAsState()
+            val appColors = remember(colorTheme, appThemeMode) { colorTheme.toAppColors(appThemeMode) }
 
-            CanopObdTheme(appColors = appColors) {
+            CanopObdTheme(appColors = appColors, appThemeMode = appThemeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = appColors.dark
@@ -190,6 +191,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val importedData by viewModel.importedData.collectAsState()
     val showUpdateDialog by viewModel.showUpdateDialog.collectAsState()
     val availableUpdate by viewModel.availableUpdate.collectAsState()
+    val appThemeMode by viewModel.appThemeMode.collectAsState()
     val carProfile by viewModel.carProfile.collectAsState()
     val turboData by viewModel.turboData.collectAsState()
     val oilData by viewModel.oilData.collectAsState()
@@ -331,6 +333,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         _onToggleCarProfile = viewModel::toggleCarProfile,
         onToggleTurboCooldown = viewModel::toggleTurboCooldown,
         onSelectCarProfile = viewModel::selectCarProfile,
+        appThemeMode = appThemeMode,
+        onSetAppThemeMode = viewModel::setAppThemeMode,
         carProfile = carProfile,
         turboData = turboData,
         oilData = oilData,

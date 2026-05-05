@@ -12,7 +12,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Cable
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,6 +55,7 @@ fun CANMonitorDialog(
     var showTimestamp by remember { mutableStateOf(true) }
     var selectedFilterMode by remember { mutableStateOf(CANFilterMode.ALL) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showStatistics by remember { mutableStateOf(false) }
 
     val messages by canMonitor.messages.collectAsState()
     val filteredMessages = remember(messages, filterText, selectedFilterMode) {
@@ -67,6 +73,22 @@ fun CANMonitorDialog(
 
             matchesFilter && matchesMode
         }
+    }
+
+    val messagesPerSecond by canMonitor.messagesPerSecond.collectAsState(initial = 0)
+    val uniqueCanIds = remember(messages) { canMonitor.getUniqueCanIds() }
+    val perIdStats = remember(messages) {
+        messages.groupBy { it.canId }
+            .mapValues { (id, msgs) ->
+                PerIdStat(
+                    canId = id,
+                    count = msgs.size,
+                    lastSeen = msgs.maxOfOrNull { it.timestamp } ?: 0L
+                )
+            }
+            .values
+            .sortedByDescending { it.count }
+            .take(10)
     }
 
     val listState = rememberLazyListState()
@@ -160,6 +182,115 @@ fun CANMonitorDialog(
                                     text = if (isMonitoring) "Stopp" else "Start",
                                     fontSize = 12.sp
                                 )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "$messagesPerSecond",
+                                    color = colors.accent,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "msg/s",
+                                    color = colors.textSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${messages.size}",
+                                    color = colors.textPrimary,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Total",
+                                    color = colors.textSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${uniqueCanIds.size}",
+                                    color = colors.gaugeYellow,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Unique IDs",
+                                    color = colors.textSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            TextButton(
+                                onClick = { showStatistics = !showStatistics },
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Icon(
+                                    if (showStatistics) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    contentDescription = "Toggle Stats",
+                                    tint = colors.textSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Stats",
+                                    color = colors.textSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        if (showStatistics && perIdStats.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(6.dp),
+                                color = colors.surface
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Text(
+                                        text = "Top CAN-IDs:",
+                                        color = colors.textSecondary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    perIdStats.forEach { stat ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = stat.canId,
+                                                color = colors.gaugeGreen,
+                                                fontSize = 11.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = "${stat.count}x",
+                                                color = colors.textPrimary,
+                                                fontSize = 11.sp
+                                            )
+                                            Text(
+                                                text = formatTimestamp(stat.lastSeen),
+                                                color = colors.textSecondary,
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                    }
+                                }
                             }
                         }
 
@@ -452,6 +583,24 @@ private fun CANMessageRow(
                 fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace
             )
+        }
+    }
+}
+
+data class PerIdStat(
+    val canId: String,
+    val count: Int,
+    val lastSeen: Long
+)
+
+private fun formatTimestamp(timestamp: Long): String {
+    val diff = System.currentTimeMillis() - timestamp
+    return when {
+        diff < 1000 -> "now"
+        diff < 60000 -> "${diff / 1000}s"
+        else -> {
+            val formatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            formatter.format(Date(timestamp))
         }
     }
 }

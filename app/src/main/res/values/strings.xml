@@ -36,6 +36,7 @@
     <string name="poll_rate_fast">100ms (Fast)</string>
     <string name="poll_rate_slow">2000ms (Slow)</string>
     <string name="units">Units</string>
+    <string name="theme">Theme</string>
     <string name="about">About</string>
     <string name="app_version">App Version</string>
     <string name="obd_protocol">OBD Protocol</string>

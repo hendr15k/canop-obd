@@ -96,6 +96,9 @@ class OBDRepository(
     private val _colorTheme = MutableStateFlow(ColorTheme.CANOPO)
     val colorTheme: StateFlow<ColorTheme> = _colorTheme.asStateFlow()
 
+    private val _appThemeMode = MutableStateFlow(AppThemeMode.DARK)
+    val appThemeMode: StateFlow<AppThemeMode> = _appThemeMode.asStateFlow()
+
     private val _primaryGaugeIds = MutableStateFlow(setOf("rpm", "speed", "coolant"))
     val primaryGaugeIds: StateFlow<Set<String>> = _primaryGaugeIds.asStateFlow()
 
@@ -116,6 +119,7 @@ class OBDRepository(
     private var tripPrevSpeed: Double = 0.0
     private var tripPrevTimestamp: Long = 0L
     private var storedVin: String = ""
+    private var consecutivePollingFailures = 0
 
     private val pollPIDs = listOf(
         OBDPID.RPM, OBDPID.SPEED, OBDPID.COOLANT_TEMP, OBDPID.INTAKE_TEMP,
@@ -185,6 +189,9 @@ class OBDRepository(
         storedVin = prefs.getString("vin", "") ?: ""
         prefs.getString("color_theme", null)?.let {
             _colorTheme.value = ColorTheme.fromName(it)
+        }
+        prefs.getString("app_theme_mode", null)?.let {
+            _appThemeMode.value = AppThemeMode.fromName(it)
         }
         prefs.getStringSet("primary_gauges", null)?.let { ids ->
             _primaryGaugeIds.value = ids
@@ -379,109 +386,128 @@ class OBDRepository(
 
         pollingJob = scope.launch {
             while (isActive) {
-                val results = conn.readMultiplePIDs(pollPIDs)
-                val batteryVoltage = conn.getBatteryVoltage() ?: _obdData.value.batteryVoltage
-                val speed = results[OBDPID.SPEED] ?: _obdData.value.speed
-                val rpm = results[OBDPID.RPM] ?: _obdData.value.rpm
-                val fuelRate = results[OBDPID.ENGINE_FUEL_RATE] ?: 0.0
+                try {
+                    val results = conn.readMultiplePIDs(pollPIDs)
+                    val batteryVoltage = conn.getBatteryVoltage() ?: _obdData.value.batteryVoltage
+                    val speed = results[OBDPID.SPEED] ?: _obdData.value.speed
+                    val rpm = results[OBDPID.RPM] ?: _obdData.value.rpm
+                    val fuelRate = results[OBDPID.ENGINE_FUEL_RATE] ?: 0.0
 
-                tripSamples++
-                tripSpeedSum += speed
-                tripRpmSum += rpm
-                tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
+                    tripSamples++
+                    tripSpeedSum += speed
+                    tripRpmSum += rpm
+                    tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
 
-                val now = System.currentTimeMillis()
-                val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
-                if (dtHours > 0) {
-                    val distanceKm = (tripPrevSpeed + speed) / 2.0 * dtHours
-                    _tripData.value = _tripData.value.copy(
-                        durationSeconds = (now - tripStartTime) / 1000L,
-                        distanceKm = _tripData.value.distanceKm + distanceKm,
-                        maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, speed),
-                        avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
-                        maxRpm = maxOf(_tripData.value.maxRpm, rpm),
-                        avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
-                        sampleCount = tripSamples,
-                        totalFuelUsed = tripFuelUsedSum,
-                        avgFuelRate = if (tripSamples > 0) tripFuelUsedSum / ((now - tripStartTime) / 3_600_000.0.coerceAtLeast(0.001)) else 0.0,
-                        fuelStartLevel = tripFuelStart,
-                        fuelEndLevel = results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel,
-                        vin = storedVin
+                    val now = System.currentTimeMillis()
+                    val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
+                    if (dtHours > 0) {
+                        val distanceKm = (tripPrevSpeed + speed) / 2.0 * dtHours
+                        _tripData.value = _tripData.value.copy(
+                            durationSeconds = (now - tripStartTime) / 1000L,
+                            distanceKm = _tripData.value.distanceKm + distanceKm,
+                            maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, speed),
+                            avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
+                            maxRpm = maxOf(_tripData.value.maxRpm, rpm),
+                            avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
+                            sampleCount = tripSamples,
+                            totalFuelUsed = tripFuelUsedSum,
+                            avgFuelRate = if (tripSamples > 0) tripFuelUsedSum / ((now - tripStartTime) / 3_600_000.0.coerceAtLeast(0.001)) else 0.0,
+                            fuelStartLevel = tripFuelStart,
+                            fuelEndLevel = results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel,
+                            vin = storedVin
+                        )
+                    }
+                    tripPrevSpeed = speed
+                    tripPrevTimestamp = now
+
+                    _obdData.value = OBDData(
+                        rpm = results[OBDPID.RPM] ?: _obdData.value.rpm,
+                        speed = speed,
+                        coolantTemp = results[OBDPID.COOLANT_TEMP] ?: _obdData.value.coolantTemp,
+                        intakeTemp = results[OBDPID.INTAKE_TEMP] ?: _obdData.value.intakeTemp,
+                        throttle = results[OBDPID.THROTTLE] ?: _obdData.value.throttle,
+                        engineLoad = results[OBDPID.ENGINE_LOAD] ?: _obdData.value.engineLoad,
+                        fuelLevel = results[OBDPID.FUEL_LEVEL] ?: _obdData.value.fuelLevel,
+                        batteryVoltage = batteryVoltage,
+                        timingAdvance = results[OBDPID.TIMING_ADVANCE] ?: 0.0,
+                        mafRate = results[OBDPID.MAF_RATE] ?: 0.0,
+                        fuelPressure = results[OBDPID.FUEL_PRESSURE] ?: 0.0,
+                        intakePressure = results[OBDPID.INTAKE_PRESSURE] ?: 0.0,
+                        runTime = results[OBDPID.RUN_TIME] ?: 0.0,
+                        fuelRailPressure = results[OBDPID.FUEL_RAIL_PRESSURE] ?: 0.0,
+                        commandedEGR = results[OBDPID.COMMANDED_EGR] ?: 0.0,
+                        egrTemp = results[OBDPID.EGR_TEMP] ?: 0.0,
+                        commandedEvapPurge = results[OBDPID.COMMANDED_EVAPORATIVE_PURGE] ?: 0.0,
+                        barometricPressure = results[OBDPID.BAROMETRIC_PRESSURE] ?: 0.0,
+                        o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: 0.0,
+                        o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: 0.0,
+                        catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: 0.0,
+                        controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: 0.0,
+                        absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: 0.0,
+                        engineFuelRate = fuelRate,
+                        shortTermFuelTrimB1 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK1] ?: 0.0,
+                        longTermFuelTrimB1 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK1] ?: 0.0,
+                        shortTermFuelTrimB2 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK2] ?: 0.0,
+                        longTermFuelTrimB2 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK2] ?: 0.0,
+                        fuelAirRatio = results[OBDPID.FUEL_AIR_EQUIV_RATIO] ?: 0.0,
+                        acceleratorPosD = results[OBDPID.ACCELERATOR_POS_D] ?: 0.0,
+                        throttleC = results[OBDPID.THROTTLE_C] ?: 0.0,
+                        throttleActuator = results[OBDPID.THROTTLE_ACTUATOR] ?: 0.0,
+                        hybridBatteryRemaining = results[OBDPID.HYBRID_BATTERY_REMAINING] ?: 0.0,
+                        turboOilPressure = results[OBDPID.TURBO_OIL_PRESSURE],
+                        turboWastegateB = results[OBDPID.TURBO_WASTEGATE_B],
+                        turboBoostB = results[OBDPID.TURBO_BOOST_B],
+                        turboVgtPosition = results[OBDPID.TURBO_VARIABLE_GEOM],
+                        turboWaterCoolFlow = results[OBDPID.TURBO_WATER_COOL],
+                        turboCompInletTemp = results[OBDPID.TURBO_COMP_INLET_TEMP],
+                        turboCompOutletTemp = results[OBDPID.TURBO_COMP_OUTLET_TEMP],
+                        turboTurbineInletTemp = results[OBDPID.TURBO_TURBINE_INLET_TEMP],
+                        turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
+                        vin = storedVin,
+                        timestamp = now
                     )
-                }
-                tripPrevSpeed = speed
-                tripPrevTimestamp = now
-
-                _obdData.value = OBDData(
-                    rpm = results[OBDPID.RPM] ?: _obdData.value.rpm,
-                    speed = speed,
-                    coolantTemp = results[OBDPID.COOLANT_TEMP] ?: _obdData.value.coolantTemp,
-                    intakeTemp = results[OBDPID.INTAKE_TEMP] ?: _obdData.value.intakeTemp,
-                    throttle = results[OBDPID.THROTTLE] ?: _obdData.value.throttle,
-                    engineLoad = results[OBDPID.ENGINE_LOAD] ?: _obdData.value.engineLoad,
-                    fuelLevel = results[OBDPID.FUEL_LEVEL] ?: _obdData.value.fuelLevel,
-                    batteryVoltage = batteryVoltage,
-                    timingAdvance = results[OBDPID.TIMING_ADVANCE] ?: 0.0,
-                    mafRate = results[OBDPID.MAF_RATE] ?: 0.0,
-                    fuelPressure = results[OBDPID.FUEL_PRESSURE] ?: 0.0,
-                    intakePressure = results[OBDPID.INTAKE_PRESSURE] ?: 0.0,
-                    runTime = results[OBDPID.RUN_TIME] ?: 0.0,
-                    fuelRailPressure = results[OBDPID.FUEL_RAIL_PRESSURE] ?: 0.0,
-                    commandedEGR = results[OBDPID.COMMANDED_EGR] ?: 0.0,
-                    egrTemp = results[OBDPID.EGR_TEMP] ?: 0.0,
-                    commandedEvapPurge = results[OBDPID.COMMANDED_EVAPORATIVE_PURGE] ?: 0.0,
-                    barometricPressure = results[OBDPID.BAROMETRIC_PRESSURE] ?: 0.0,
-                    o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: 0.0,
-                    o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: 0.0,
-                    catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: 0.0,
-                    controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: 0.0,
-                    absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: 0.0,
-                    engineFuelRate = fuelRate,
-                    shortTermFuelTrimB1 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK1] ?: 0.0,
-                    longTermFuelTrimB1 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK1] ?: 0.0,
-                    shortTermFuelTrimB2 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK2] ?: 0.0,
-                    longTermFuelTrimB2 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK2] ?: 0.0,
-                    fuelAirRatio = results[OBDPID.FUEL_AIR_EQUIV_RATIO] ?: 0.0,
-                    acceleratorPosD = results[OBDPID.ACCELERATOR_POS_D] ?: 0.0,
-                    throttleC = results[OBDPID.THROTTLE_C] ?: 0.0,
-                    throttleActuator = results[OBDPID.THROTTLE_ACTUATOR] ?: 0.0,
-                    hybridBatteryRemaining = results[OBDPID.HYBRID_BATTERY_REMAINING] ?: 0.0,
-                    turboOilPressure = results[OBDPID.TURBO_OIL_PRESSURE],
-                    turboWastegateB = results[OBDPID.TURBO_WASTEGATE_B],
-                    turboBoostB = results[OBDPID.TURBO_BOOST_B],
-                    turboVgtPosition = results[OBDPID.TURBO_VARIABLE_GEOM],
-                    turboWaterCoolFlow = results[OBDPID.TURBO_WATER_COOL],
-                    turboCompInletTemp = results[OBDPID.TURBO_COMP_INLET_TEMP],
-                    turboCompOutletTemp = results[OBDPID.TURBO_COMP_OUTLET_TEMP],
-                    turboTurbineInletTemp = results[OBDPID.TURBO_TURBINE_INLET_TEMP],
-                    turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
-                    vin = storedVin,
-                    timestamp = now
-                )
 
                 if (now - lastTrendRecordTime >= trendRecordInterval) {
                     trendRecorder.record(
                         _obdData.value.rpm,
                         _obdData.value.speed,
-                        _obdData.value.coolantTemp
+                        _obdData.value.coolantTemp,
+                        _obdData.value.boostPressure,
+                        _obdData.value.wastegateControl,
+                        _obdData.value.turboRpm,
+                        _obdData.value.egtBank1,
+                        _obdData.value.chargeAirCoolerTemp
                     )
                     _trendHistory.value = trendRecorder.getHistory()
                     lastTrendRecordTime = now
                 }
 
-                val unit = _measurementUnit.value
-                prefs.edit()
-                    .putFloat("widget_rpm", _obdData.value.rpm.toFloat())
-                    .putFloat("widget_speed", unit.convertSpeed(_obdData.value.speed).toFloat())
-                    .putFloat("widget_coolant", unit.convertTemp(_obdData.value.coolantTemp).toFloat())
-                    .putFloat("widget_load", _obdData.value.engineLoad.toFloat())
-                    .putFloat("widget_fuel", _obdData.value.fuelLevel.toFloat())
-                    .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
-                    .apply()
+                    val unit = _measurementUnit.value
+                    prefs.edit()
+                        .putFloat("widget_rpm", _obdData.value.rpm.toFloat())
+                        .putFloat("widget_speed", unit.convertSpeed(_obdData.value.speed).toFloat())
+                        .putFloat("widget_coolant", unit.convertTemp(_obdData.value.coolantTemp).toFloat())
+                        .putFloat("widget_load", _obdData.value.engineLoad.toFloat())
+                        .putFloat("widget_fuel", _obdData.value.fuelLevel.toFloat())
+                        .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
+                        .apply()
 
-                recordConnectionSuccess()
-                checkAlerts()
-                if (_recordingActive.value) recordData()
+                    consecutivePollingFailures = 0
+                    _lastError.value = null
+                    recordConnectionSuccess()
+                    checkAlerts()
+                    if (_recordingActive.value) recordData()
+                } catch (e: Exception) {
+                    consecutivePollingFailures++
+                    Log.e("OBDRepository", "Polling error ($consecutivePollingFailures): ${e.message}")
+                    _lastError.value = "Polling-Fehler: ${e.message}"
+                    recordConnectionFailure()
+                    if (consecutivePollingFailures >= 5) {
+                        _connectionState.value = OBDConnectionState.Error("Verbindung unterbrochen")
+                        _lastError.value = "Verbindung unterbrochen nach $consecutivePollingFailures Fehlern"
+                        break
+                    }
+                }
                 delay(_pollRate.value)
             }
         }
@@ -555,6 +581,11 @@ class OBDRepository(
     fun setColorTheme(theme: ColorTheme) {
         _colorTheme.value = theme
         prefs.edit().putString("color_theme", theme.name).apply()
+    }
+
+    fun setAppThemeMode(mode: AppThemeMode) {
+        _appThemeMode.value = mode
+        prefs.edit().putString("app_theme_mode", mode.name).apply()
     }
 
     fun startGPSTracking() {

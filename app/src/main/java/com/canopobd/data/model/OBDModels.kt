@@ -347,6 +347,17 @@ enum class ColorTheme(val displayName: String, val primaryColor: Long, val accen
     }
 }
 
+enum class AppThemeMode(val displayName: String) {
+    DARK("Dunkel"),
+    LIGHT("Hell"),
+    SYSTEM("System");
+
+    companion object {
+        fun fromName(name: String): AppThemeMode =
+            entries.find { it.name == name } ?: DARK
+    }
+}
+
 data class DashboardLayout(
     val name: String,
     val theme: ColorTheme,
@@ -381,7 +392,12 @@ data class TrendPoint(
 data class TrendHistory(
     val rpm: List<TrendPoint> = emptyList(),
     val speed: List<TrendPoint> = emptyList(),
-    val coolantTemp: List<TrendPoint> = emptyList()
+    val coolantTemp: List<TrendPoint> = emptyList(),
+    val boostPressure: List<TrendPoint> = emptyList(),
+    val wastegateDuty: List<TrendPoint> = emptyList(),
+    val turboRpm: List<TrendPoint> = emptyList(),
+    val egtBank1: List<TrendPoint> = emptyList(),
+    val chargeAirTemp: List<TrendPoint> = emptyList()
 ) {
     companion object {
         const val MAX_POINTS = 60
