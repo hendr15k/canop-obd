@@ -189,6 +189,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val importedData by viewModel.importedData.collectAsState()
     val showUpdateDialog by viewModel.showUpdateDialog.collectAsState()
     val availableUpdate by viewModel.availableUpdate.collectAsState()
+    val carProfile by viewModel.carProfile.collectAsState()
+    val turboData by viewModel.turboData.collectAsState()
+    val oilData by viewModel.oilData.collectAsState()
+    val timingChainState by viewModel.timingChainState.collectAsState()
+    val showTurboMonitor by viewModel.showTurboMonitor.collectAsState()
+    val showTimingChainMonitor by viewModel.showTimingChainMonitor.collectAsState()
+    val showCarProfile by viewModel.showCarProfile.collectAsState()
+    val showTurboCooldown by viewModel.showTurboCooldown.collectAsState()
+    val turboCooldownState by viewModel.turboCooldownState.collectAsState()
 
     if (showUpdateDialog && availableUpdate != null) {
         UpdateDialog(
@@ -311,6 +320,20 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleDriveScore = viewModel::toggleDriveScore,
         onToggleShiftLight = viewModel::toggleShiftLight,
         onUpdateShiftLightConfig = viewModel::updateShiftLightConfig,
-        onResetDriveScore = viewModel::resetDriveScore
+        onResetDriveScore = viewModel::resetDriveScore,
+        onToggleTurboMonitor = viewModel::toggleTurboMonitor,
+        onToggleTimingChainMonitor = viewModel::toggleTimingChainMonitor,
+        onToggleCarProfile = viewModel::toggleCarProfile,
+        onToggleTurboCooldown = viewModel::toggleTurboCooldown,
+        onSelectCarProfile = viewModel::selectCarProfile,
+        carProfile = carProfile,
+        turboData = turboData,
+        oilData = oilData,
+        timingChainState = timingChainState,
+        showTurboMonitor = showTurboMonitor,
+        showTimingChainMonitor = showTimingChainMonitor,
+        showCarProfile = showCarProfile,
+        showTurboCooldown = showTurboCooldown,
+        turboCooldownState = turboCooldownState
     )
 }

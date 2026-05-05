@@ -126,7 +126,7 @@
     <!-- Readiness monitor -->
     <string name="readiness_title">Readiness Monitor</string>
     <string name="readiness_complete">Alle Tests bestanden</string>
-    <string name="readiness_progress">%d / %d Tests bestanden</string>
+    <string name="readiness_progress">%1$d / %2$d Tests bestanden</string>
     <string name="readiness_misfire">Misfire</string>
     <string name="readiness_fuel_system">Kraftstoffsystem</string>
     <string name="readiness_comprehensive">Komponenten</string>
@@ -266,8 +266,78 @@
     <string name="ltft_label">LTFT</string>
     <string name="trim_percent">%.1f%%</string>
 
+    <!-- Car Profile -->
+    <string name="car_profile_title">Fahrzeugprofil</string>
+    <string name="power_short">Leistung</string>
+    <string name="torque_short">Drehmoment</string>
+    <string name="redline_short">Redline</string>
+    <string name="boost_short">Boost</string>
+
+    <!-- Turbo Monitor -->
+    <string name="turbo_monitor_title">Turbo-Monitor</string>
+    <string name="turbo_type">Turbo</string>
+    <string name="ecu">ECU</string>
+    <string name="boost_pressure">Ladedruck</string>
+    <string name="target">Ziel</string>
+    <string name="deviation">Abweichung</string>
+    <string name="overboost_active">Overboost aktiv</string>
+    <string name="underboost_detected">Underboost erkannt</string>
+    <string name="wastegate_control">Wastegate-Steuerung</string>
+    <string name="wastegate_hint" formatted="false">0% = offen, 100% = geschlossen</string>
+    <string name="turbo_temperatures">Temperatur</string>
+    <string name="turbo_inlet">Saugrohr</string>
+    <string name="turbo_outlet">Laderdruck</string>
+    <string name="charge_air_cooler">Ladeluftkühler</string>
+    <string name="intercooler_efficiency">Ladeluftkühler-Effizienz</string>
+    <string name="temp_drop">Temperaturabsenkung: %d°C</string>
+    <string name="oil_status">Ölstatus</string>
+    <string name="oil_temp">Öltemp.</string>
+    <string name="oil_pressure">Öldruck</string>
+    <string name="oil_life">Restlaufzeit</string>
+    <string name="oil_consumption_warning">Ölverbrauch!</string>
+    <string name="oil_consumption_rate">Ölverbrauch</string>
+    <string name="turbo_health">Turbo-Gesundheit</string>
+
+    <!-- Timing Chain -->
+    <string name="timing_chain_title">Steuerkette</string>
+    <string name="chain_health_score">Zustandsbewertung</string>
+    <string name="cold_start_analysis">Kaltstart-Analyse</string>
+    <string name="rpm_cold">RPM kalt</string>
+    <string name="rpm_warm">RPM warm</string>
+    <string name="rpm_variation">Rpm-Schwankung</string>
+    <string name="rattle_detected">Rattern erkannt!</string>
+    <string name="rattle_duration">Ratterdauer</string>
+    <string name="current_status">Status</string>
+    <string name="samples">Messwerte</string>
+    <string name="timing_chain_warning">Warnung</string>
+    <string name="chain_warning_text">Die Steuerkette ist ein Verschleißteil. Bei ersten Anzeichen von Rattern (Kaltstart) sollte eine Werkstatt aufgesucht werden.</string>
+    <string name="cold_rattle_symptom">Kaltstart-Rattern erkannt</string>
+    <string name="cold_rattle_action">Steuerkette und Spanner prüfen lassen</string>
+    <string name="high_rpm_variation">Hohe Drehzahlschwankung</string>
+    <string name="high_rpm_action">Öldruck und Kettenspanner prüfen</string>
+    <string name="chain_health_low">Zustand kritisch</string>
+    <string name="chain_health_action">Sofort in Werkstatt!</string>
+    <string name="no_chain_issues">Keine Probleme erkannt</string>
+
     <!-- Update -->
     <string name="update_available">Update verf\u00FCgbar</string>
+
+    <!-- Turbo Cooldown -->
+    <string name="turbo_cooldown_title">Turbo-Rücklauf</string>
+    <string name="turbo_cooldown_active">Turbo-Kühlung läuft</string>
+    <string name="turbo_cooldown_wait">Bitte warten…</string>
+    <string name="turbo_cooldown_done">Abkühlung abgeschlossen</string>
+    <string name="turbo_cooldown_hints">Turbo-Schaden durch zu frühes Abstellen vermeiden</string>
+    <string name="turbo_cooldown_auto">Auto (nach Last)</string>
+    <string name="turbo_cooldown_manual">Manuell</string>
+    <string name="turbo_cooldown_cancel">Abbrechen</string>
+    <string name="turbo_cooldown_dialog_title">Turbo-Rücklauf aktiv</string>
+    <string name="turbo_cooldown_explanation">Turbolader nach hoher Beanspruchung abkühlen lassen, um Lagerschäden zu vermeiden.</string>
+    <string name="triggered_by_rpm">Ausgelöst durch Drehzahl</string>
+    <string name="triggered_by_boost">Ausgelöst durch Ladedruck</string>
+    <string name="triggered_by_speed">Ausgelöst durch Geschwindigkeit</string>
+
+    <!-- Update -->
     <string name="update_release_notes">\u00C4nderungen:</string>
     <string name="update_new_version_hint">Eine neue Version (v%s) ist verf\u00FCgbar. Lade sie herunter, um die neuesten Funktionen und Fehlerbehebungen zu erhalten.</string>
     <string name="update_downloading">Download… %d%%</string>

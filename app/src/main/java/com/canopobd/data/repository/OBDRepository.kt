@@ -115,6 +115,8 @@ class OBDRepository(
     )
 
     private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
+    private var lastTrendRecordTime = 0L
+    private val trendRecordInterval = 1000L
 
     private val _readinessMonitor = MutableStateFlow(ReadinessMonitor())
     val readinessMonitor: StateFlow<ReadinessMonitor> = _readinessMonitor.asStateFlow()
@@ -250,6 +252,16 @@ class OBDRepository(
         saveTripData()
     }
 
+    private fun handleConnectionLoss(error: String) {
+        val lastAddr = lastConnectedAddress
+        if (_autoReconnect.value && lastAddr != null) {
+            scheduleReconnect(lastAddr)
+        } else {
+            _connectionState.value = OBDConnectionState.Error(error)
+            _lastError.value = error
+        }
+    }
+
     fun cleanup() {
         scope.cancel()
     }
@@ -260,21 +272,25 @@ class OBDRepository(
 
     private fun recordConnectionSuccess() {
         val s = _connectionStats.value
+        val newSuccess = s.successCount + 1
+        val newFailure = s.failureCount
+        val rate = newSuccess.toDouble() / (newSuccess + newFailure)
         _connectionStats.value = s.copy(
-            successCount = s.successCount + 1,
-            quality = ConnectionQuality.fromSuccessRate(
-                (s.successCount + 1).toDouble() / (s.totalCount + 1)
-            )
+            successCount = newSuccess,
+            failureCount = newFailure,
+            quality = ConnectionQuality.fromSuccessRate(rate)
         )
     }
 
     private fun recordConnectionFailure() {
         val s = _connectionStats.value
+        val newSuccess = s.successCount
+        val newFailure = s.failureCount + 1
+        val rate = newSuccess.toDouble() / (newSuccess + newFailure)
         _connectionStats.value = s.copy(
-            failureCount = s.failureCount + 1,
-            quality = ConnectionQuality.fromSuccessRate(
-                s.successCount.toDouble() / (s.totalCount + 1)
-            )
+            successCount = newSuccess,
+            failureCount = newFailure,
+            quality = ConnectionQuality.fromSuccessRate(rate)
         )
     }
 
@@ -362,12 +378,15 @@ class OBDRepository(
                     timestamp = now
                 )
 
-                trendRecorder.record(
-                    _obdData.value.rpm,
-                    _obdData.value.speed,
-                    _obdData.value.coolantTemp
-                )
-                _trendHistory.value = trendRecorder.getHistory()
+                if (now - lastTrendRecordTime >= trendRecordInterval) {
+                    trendRecorder.record(
+                        _obdData.value.rpm,
+                        _obdData.value.speed,
+                        _obdData.value.coolantTemp
+                    )
+                    _trendHistory.value = trendRecorder.getHistory()
+                    lastTrendRecordTime = now
+                }
 
                 val unit = _measurementUnit.value
                 prefs.edit()
@@ -721,5 +740,14 @@ class OBDRepository(
             flashEnabled = prefs.getBoolean("shift_light_flash", true),
             soundEnabled = prefs.getBoolean("shift_light_sound", false)
         )
+    }
+
+    fun saveCarProfile(profile: CarProfile) {
+        prefs.edit().putString("car_profile_id", profile.id).apply()
+    }
+
+    fun loadCarProfile(): CarProfile {
+        val id = prefs.getString("car_profile_id", null)
+        return if (id != null) CarProfile.fromId(id) ?: CarProfile.default() else CarProfile.default()
     }
 }
