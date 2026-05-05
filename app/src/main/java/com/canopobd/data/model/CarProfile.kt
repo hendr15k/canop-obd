@@ -24,23 +24,23 @@ enum class CarProfile(
     ASTRA_J_2012_14T(
         id = "astra_j_2012_14t",
         displayName = "Opel Astra J 1.4 Turbo (140 PS)",
-        engineCode = "B14NET / A14NET",
-        displacement = "1.364 ccm",
+        engineCode = "A14NET / B14NET / LUJ",
+        displacement = "1364 ccm (1.4L)",
         power = "103 kW (140 PS) @ 4.900–6.000 rpm",
-        torque = "200 Nm @ 1.850–4.900 rpm (Overboost: 220 Nm)",
+        torque = "200 Nm @ 1.850–4.900 rpm (Overboost: 220 Nm max. 10 Sek.)",
         redlineRpm = 6500,
-        maxBoostGaugeBar = 1.0f,
-        normalBoostBar = 0.6f,
-        overboostBar = 0.8f,
+        maxBoostGaugeBar = 1.3f,
+        normalBoostBar = 0.7f,
+        overboostBar = 1.2f,
         peakRpmPower = 5500,
         peakRpmTorque = 3000,
-        fuelType = "Benzin (RON 95, E10-kompatibel)",
-        transmissionType = "6-Gang Schaltgetriebe (Getrag M32)",
+        fuelType = "Benzin (Super 95 min / 98 empfohlen)",
+        transmissionType = "6-Gang Schaltgetriebe (Getrag M32) / 6-Gang Automatik",
         oilSpec = "dexos2 5W-30",
-        oilCapacity = "~3,5 Liter mit Filter",
+        oilCapacity = "4,5 Liter mit Filter",
         fuelTankCapacity = "56 Liter",
-        turboType = "BorgWarner KP39 (Single-Scroll, intern geregelt)",
-        ecuType = "Bosch Motronic ME17.9.24"
+        turboType = "BorgWarner KP39 (Single-Scroll, Fixed-Geometry, Wastegate-geregelt)",
+        ecuType = "Bosch ME17.9.22 / Delco E78"
     );
 
     companion object {
@@ -69,11 +69,21 @@ data class TurboData(
     val chargeAirCoolerTemp: Double = 0.0,
     val turboHealthScore: Int = 100,
     val overboostActive: Boolean = false,
+    val overboostSecondsRemaining: Int = 0,
+    val overboostMaxDuration: Int = 10,
     val underboostDetected: Boolean = false,
     val wastegateDutyAtIdle: Double = 95.0,
     val wastegateDutyMaxBoost: Double = 25.0,
+    val currentTorqueNm: Double = 0.0,
+    val maxTorqueNm: Double = 200.0,
+    val overboostTorqueNm: Double = 220.0,
     val timestamp: Long = System.currentTimeMillis()
-)
+) {
+    val boostBar: Double get() = boostPressure / 100.0
+    val relativeBoostBar: Double get() = (boostBar - 1.0).coerceAtLeast(0.0)
+    val isOverboost: Boolean get() = boostBar > 1.0
+    val overboostPercentage: Double get() = if (isOverboost) ((boostBar - 1.0) / 0.3) * 100.0 else 0.0
+}
 
 data class OilData(
     val temperature: Double = 0.0,

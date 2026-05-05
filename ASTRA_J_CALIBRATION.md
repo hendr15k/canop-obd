@@ -181,7 +181,7 @@
 | **Ölwechsel** (Dexos2 5W-30, 4,5L) | 15.000 km / 12 Mon. | 10.000 km / 8 Mon. | 18.000 km / 14 Mon. |
 | **Luftfilter** | 30.000 km / 24 Mon. | 15.000 km / 12 Mon. | 40.000 km / 36 Mon. |
 | **Zündkerzen** (NGK LZKR6AP-11G) | 60.000 km / 48 Mon. | 30.000 km / 24 Mon. | 70.000 km / 60 Mon. |
-| **Kühlmittel** (5,7L) | 80.000 km / 60 Mon. | 60.000 km / 48 Mon. | 80.000 km / 72 Mon. |
+| **Kühlmittel** (5,7L Dex-Cool) | 80.000 km / 60 Mon. | 60.000 km / 48 Mon. | 80.000 km / 72 Mon. |
 | **Turbo-Inspektion** (KP39) | 60.000 km / 48 Mon. | 45.000 km / 36 Mon. | 80.000 km / 72 Mon. |
 | **Timing-Kette Prüfung** | 75.000 km / 60 Mon. | 60.000 km / 48 Mon. | 100.000 km / 84 Mon. |
 | **Getriebeöl** (Dexron VI ATF) | 80.000 km / 60 Mon. | 60.000 km / 48 Mon. | 100.000 km / 72 Mon. |
@@ -354,7 +354,7 @@
 
 | Parameter | Wert |
 |-----------|------|
-| **Ölkapazität** | 4,5 L (inkl. Filter) |
+| **Ölkapazität** | 4,5 Liter (inkl. Filter) |
 | **Ölspezifikation** | Dexos2 5W-30 |
 | **Alternative Öle** | ACEA C3 5W-30 / A3/B4 5W-40 |
 | **Öldruck Leerlauf** | ≥ 1,0 bar |
