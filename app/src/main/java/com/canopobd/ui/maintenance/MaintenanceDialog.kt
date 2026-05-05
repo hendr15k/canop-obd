@@ -142,6 +142,10 @@ private fun MaintenanceItemRow(
                             MaintenanceType.BRAKE_PADS -> Icons.Filled.Warning
                             MaintenanceType.AIR_FILTER -> Icons.Filled.Air
                             MaintenanceType.TRANSMISSION_FLUID -> Icons.Filled.Settings
+                            MaintenanceType.TURBO_INSPECTION -> Icons.Filled.Settings
+                            MaintenanceType.COOLANT -> Icons.Filled.Settings
+                            MaintenanceType.SPARK_PLUGS -> Icons.Filled.Settings
+                            MaintenanceType.TURBO_BOOST_CHECK -> Icons.Filled.Settings
                         },
                         contentDescription = null,
                         tint = statusColor,
