@@ -58,6 +58,22 @@ class MaintenanceService {
         const val FUEL_CONSUMPTION_TARGET = 6.0
         const val FUEL_CONSUMPTION_WARNING = 7.5
         const val FUEL_CONSUMPTION_CRITICAL = 9.0
+        
+        // Kostenschätzungen (Workshop)
+        const val OIL_CHANGE_COST = 100.0
+        const val SPARK_PLUGS_COST = 130.0
+        const val AIR_FILTER_COST = 50.0
+        const val TURBO_INSPECTION_COST = 120.0
+        const val COOLANT_COST = 120.0
+        const val BRAKE_PADS_COST = 250.0
+        const val TRANSMISSION_FLUID_COST = 150.0
+        const val TIRES_COST = 600.0
+        const val INSPECTION_COST = 150.0
+        const val TIMING_CHAIN_COST = 1200.0
+        const val TURBO_COST = 1200.0
+        const val WASTEGATE_COST = 200.0
+        const val MAF_SENSOR_COST = 200.0
+        const val LAMBDA_SENSOR_COST = 250.0
     }
     
     /**
@@ -497,17 +513,21 @@ class MaintenanceService {
      */
     private fun estimateItemCost(type: MaintenanceType): Double {
         return when (type) {
-            MaintenanceType.OIL_CHANGE -> 80.0 // Öl + Filter + Arbeit
-            MaintenanceType.SPARK_PLUGS -> 120.0 // 4x Zündkerzen + Arbeit
-            MaintenanceType.AIR_FILTER -> 35.0 // Luftfilter
-            MaintenanceType.BRAKE_PADS -> 200.0 // Bremsbeläge vorne
-            MaintenanceType.TURBO_INSPECTION -> 150.0 // Sichtprüfung
-            MaintenanceType.COOLANT -> 100.0 // Kühlmittel + Spülung
-            MaintenanceType.TRANSMISSION_FLUID -> 150.0 // Getriebeöl
-            MaintenanceType.TIRES -> 400.0 // Satz Reifen
-            MaintenanceType.INSPECTION -> 150.0 // TÜV + AU
-            MaintenanceType.TURBO_BOOST_CHECK -> 200.0 // Diagnose
+            MaintenanceType.OIL_CHANGE -> OIL_CHANGE_COST
+            MaintenanceType.SPARK_PLUGS -> SPARK_PLUGS_COST
+            MaintenanceType.AIR_FILTER -> AIR_FILTER_COST
+            MaintenanceType.BRAKE_PADS -> BRAKE_PADS_COST
+            MaintenanceType.TURBO_INSPECTION -> TURBO_INSPECTION_COST
+            MaintenanceType.COOLANT -> COOLANT_COST
+            MaintenanceType.TRANSMISSION_FLUID -> TRANSMISSION_FLUID_COST
+            MaintenanceType.TIRES -> TIRES_COST
+            MaintenanceType.INSPECTION -> INSPECTION_COST
+            MaintenanceType.TURBO_BOOST_CHECK -> TURBO_INSPECTION_COST
         }
+    }
+    
+    fun getMaintenanceSpec(type: MaintenanceType): AstraJ14TurboMaintenanceData.MaintenanceSpec? {
+        return AstraJ14TurboMaintenanceData.getSpecForType(type)
     }
     
     /**

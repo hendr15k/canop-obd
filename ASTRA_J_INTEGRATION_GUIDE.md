@@ -1,8 +1,10 @@
-# Opel Astra J 1.4 Turbo (A14NET) - Integration Guide
+# Opel Astra J 1.4 Turbo (A14NET) - Feature Integration Guide
 
-## Übersicht
+## Overview
 
-Diese Dokumentation beschreibt die Integration und Optimierung für den Opel Astra J 2012 1.4 Turbo Benzin 140 PS (Motorcode: A14NET / LUJ).
+This document describes the integration and optimization features for the Opel Astra J 2012 1.4 Turbo Benzin 140 PS (Motorcode: A14NET / LUJ).
+
+---
 
 ## Wichtigste Integration-Features
 
@@ -47,7 +49,9 @@ data class TurboData(
 | Ladeluft | 20-45 °C | ≥ 58,5 °C | ≥ 65 °C |
 | EGT | 400-700 °C | ≥ 765 °C | ≥ 850 °C |
 
-### 4. OBD-II PIDs (Mode 01)
+---
+
+## OBD-II PIDs (Mode 01)
 
 | PID | Name | Einheit | Formel |
 |-----|------|---------|--------|
@@ -62,7 +66,9 @@ data class TurboData(
 | 0177 | CAC Temp | °C | A-40 |
 | 0178 | EGT Bank 1 | °C | (A×256+B)/10-40 |
 
-### 5. Mode 22 PIDs (Herstellerspezifisch)
+---
+
+## Mode 22 PIDs (Herstellerspezifisch)
 
 | PID | Beschreibung | Einheit |
 |-----|-------------|---------|
@@ -73,8 +79,11 @@ data class TurboData(
 | 220005 | Turbo Drehzahl | RPM |
 | 220006 | Turbo Einlauf-Temp | °C |
 | 220007 | Turbo Auslauf-Temp | °C |
+| 220008 | Ladelufttemperatur | °C |
 | 221001 | Kraftstoffrail-Druck | kPa |
 | 225001 | Lambda Wideband | λ |
+
+---
 
 ## Wartung & Probleme
 
@@ -98,6 +107,8 @@ data class TurboData(
 | 80.000-150.000 | Kettenspanner, Wastegate | P0340, P0234/P0299 |
 | 100.000+ | Timing-Kette Verschleiß | P0016-P0019 |
 
+---
+
 ## Schaltpunkt-Empfehlungen (M32 Getriebe)
 
 | Gang | Optimal (RPM) | Max RPM |
@@ -108,6 +119,8 @@ data class TurboData(
 | 4→5 | 3000-3500 | 5500 |
 | 5→6 | 2800-3200 | 5000 |
 
+---
+
 ## Tuning-Stufen
 
 | Stage | Leistung | Torque | Boost | Anmerkung |
@@ -115,6 +128,8 @@ data class TurboData(
 | Stage 1 | 170-185 PS | 260-280 Nm | 0,7-0,8 bar | ECU Remap, Luftfilter |
 | Stage 2 | 195-210 PS | 290-310 Nm | 0,9-1,0 bar | Intercooler, Auspuff |
 | Stage 3 | 230-260 PS | 320-350 Nm | 1,2-1,5 bar | Turbo-Tausch, Built Engine |
+
+---
 
 ## Diagnose-Hilfen
 
@@ -125,6 +140,8 @@ data class TurboData(
 ### Fuel-Trim-Analyse
 - **STFT + LTFT > 15%:** Mager (Leck, MAF defekt)
 - **STFT + LTFT < -15%:** Fett (Lambda-Sensor, Druck)
+
+---
 
 ## Referenzmesswerte
 
@@ -140,6 +157,8 @@ data class TurboData(
 - Wastegate: 30-50%
 - EGT: < 850 °C
 - MAF: 30-90 g/s
+
+---
 
 ## Quellen
 - Bosch ME17.9.22 Technische Dokumentation

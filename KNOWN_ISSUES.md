@@ -432,9 +432,47 @@ Der A14NET-Motor ist grundsätzlich zuverlässig, hat aber einige bekannte Schwa
 
 ---
 
+## Tuning-bezogene Risiken
+
+### Tuning-Implementierung (A14NET)
+
+| Risiko | Wahrscheinlichkeit | Vorbeugung |
+|--------|-------------------|------------|
+| Ölverbrauch erhöhen | 60% (Stage 1+) | Qualitätsöl verwenden, Ölwechsel reduzieren |
+| Öldruckanstieg | 40% (Stage 2+) | Öltemperatur überwachen |
+| Lambda-Instabilität | 50% (ohne Anpassung) | ECU-Remapping durchführen |
+| Überhitzungsgefahr | 30% (Stage 2+) | Intercooler prüfen, Temperaturen überwachen |
+| Garantieverlust | 100% | Tuning-Dokumentation erstellen |
+
+### Tuning-spezifische DTCs
+
+| Code | Tuning-Bezug | Bedeutung |
+|------|--------------|-----------|
+| P0087 | Kraftstoffdruck | Rail-Druck zu niedrig (nach Tuning) |
+| P0088 | Kraftstoffdruck | Rail-Druck zu hoch (übergesteuert) |
+| P0234 | Overboost | Ladedruck überschritten |
+| P0299 | Underboost | Ladedruck zu niedrig |
+| P1241 | Turbo-Druck | Turbo-Druckabweichung |
+| P1253 | Turbo-Steuerung | Wastegate-Fehler |
+
+### Tuning-Wartung (erweiterte intervalle)
+
+| Komponente | Serie | Stage 1 | Stage 2 | Stage 3 |
+|------------|-------|---------|---------|---------|
+| Ölwechsel | 15.000 km | 10.000 km | 7.500 km | 5.000 km |
+| Ölqualität | Dexos2 5W-30 | Dexos2 0W-40 | Rennöl 5W-50 | Synthetik 10W-60 |
+| Zündkerzen | 60.000 km | 40.000 km | 30.000 km | 25.000 km |
+| PCV-Ventil | 60.000 km | 40.000 km | 30.000 km | 20.000 km |
+| Intercooler | 100.000 km | 80.000 km | 60.000 km | 40.000 km |
+
+---
+
 ## Quellen
 
 - Opel/VAUXHALL Technical Service Bulletins (TSB)
 - Bosch Service Information (ME17.9.22)
 - A14NET Community Erfahrungsberichte
 - CANOPO-ODB Bekannte Probleme-Datenbank
+- MOTOR-TALK.de Astra J Foren
+- Chiptuningforum.com GM Family 1 Diskussionen
+- Wikipedia: Opel Astra J / GM Family 1 Engine
