@@ -240,6 +240,7 @@ class OBDRepository(
         stopRemoteServer()
         stopGPSTracking()
         pollingJob?.cancel()
+        pollingJob = null
         connection?.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
@@ -247,6 +248,10 @@ class OBDRepository(
         trendRecorder.clear()
         _trendHistory.value = TrendHistory()
         saveTripData()
+    }
+
+    fun cleanup() {
+        scope.cancel()
     }
 
     private fun resetConnectionStats() {
