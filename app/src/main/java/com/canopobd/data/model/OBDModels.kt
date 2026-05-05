@@ -546,12 +546,16 @@ data class MaintenanceItem(
 }
 
 enum class MaintenanceType(val label: String, val defaultInterval: Int) {
-    OIL_CHANGE("��lwechsel", 15000),
+    OIL_CHANGE("Ölwechsel", 15000),
     TIRES("Reifen", 30000),
     INSPECTION("TÜV / AU", 60000),
     BRAKE_PADS("Bremsbeläge", 20000),
     AIR_FILTER("Luftfilter", 30000),
-    TRANSMISSION_FLUID("Getriebeöl", 60000)
+    TRANSMISSION_FLUID("Getriebeöl", 60000),
+    TURBO_INSPECTION("Turbolader-Inspektion", 60000),
+    COOLANT("Kühlmittel", 60000),
+    SPARK_PLUGS("Zündkerzen", 30000),
+    TURBO_BOOST_CHECK("Ladedruck prüfen", 45000)
 }
 
 enum class MaintenanceStatus {
