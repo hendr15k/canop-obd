@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import android.util.Log
 import com.canopobd.data.model.DTCResponse
 import com.canopobd.data.model.DiagnosticTroubleCode
 import com.canopobd.data.model.FreezeFrame
@@ -21,16 +22,8 @@ import java.util.UUID
 class ELM327BTConnection(
     private val bluetoothAdapter: BluetoothAdapter
 ) {
-    private var socket: BluetoothSocket? = null
-    private var inputStream: InputStream? = null
-    private var outputStream: OutputStream? = null
-
-    private val _isConnected = MutableStateFlow(false)
-    val isConnected: StateFlow<Boolean> = _isConnected
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
     companion object {
+        private const val TAG = "ELM327"
         private val SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
         private const val MAX_RETRIES = 3
 
@@ -186,6 +179,15 @@ class ELM327BTConnection(
         )
     }
 
+    private var socket: BluetoothSocket? = null
+    private var inputStream: InputStream? = null
+    private var outputStream: OutputStream? = null
+
+    private val _isConnected = MutableStateFlow(false)
+    val isConnected: StateFlow<Boolean> = _isConnected
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     suspend fun connect(device: BluetoothDevice): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             socket?.close()
@@ -231,18 +233,27 @@ class ELM327BTConnection(
                 val response = sendCommandWithTimeout(pid.code)
                 val result = parseResponse(response, pid)
                 if (result != null) return@withContext result
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.w(TAG, "PID ${pid.code} request failed (attempt ${attempt + 1}/$MAX_RETRIES): ${e.message}")
+            }
 
             if (attempt < MAX_RETRIES - 1) delay(100L)
         }
+        Log.d(TAG, "PID ${pid.code} unavailable after $MAX_RETRIES attempts")
         null
     }
 
     suspend fun readMultiplePIDs(pids: List<OBDPID>): Map<OBDPID, Double> = withContext(Dispatchers.IO) {
         val results = mutableMapOf<OBDPID, Double>()
-        for (pid in pids) {
-            requestPID(pid)?.let { results[pid] = it }
+        pids.chunked(4).forEach { batch ->
+            val deferreds = batch.map { pid ->
+                async { pid to requestPID(pid) }
+            }
+            deferreds.awaitAll().forEach { (pid, value) ->
+                value?.let { results[pid] = it }
+            }
         }
+        Log.v(TAG, "Read ${results.size}/${pids.size} PIDs")
         results
     }
 
@@ -254,13 +265,17 @@ class ELM327BTConnection(
             val response = sendCommandWithTimeout("03")
             val dtcs = parseDTCCodes(response, false)
             codes.addAll(dtcs)
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read DTCs: ${e.message}")
+        }
 
         try {
             val pendingResponse = sendCommandWithTimeout("07")
             val pending = parseDTCCodes(pendingResponse, true)
             pendingCodes.addAll(pending)
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read pending DTCs: ${e.message}")
+        }
 
         DTCResponse(codes, pendingCodes)
     }
@@ -269,7 +284,8 @@ class ELM327BTConnection(
         try {
             sendCommandWithTimeout("04")
             true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to clear DTCs: ${e.message}")
             false
         }
     }
@@ -316,7 +332,8 @@ class ELM327BTConnection(
         return try {
             val response = sendCommandWithTimeout("ATRV")
             parseVoltageResponse(response)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read battery voltage: ${e.message}")
             null
         }
     }
@@ -334,7 +351,7 @@ class ELM327BTConnection(
         val output = outputStream ?: throw IOException("Not connected")
         val input = inputStream ?: throw IOException("Not connected")
 
-        try { while (input.available() > 0) input.read(ByteArray(64)) } catch (_: Exception) { }
+        try { while (input.available() > 0) input.read(ByteArray(64)) } catch (e: Exception) { Log.v(TAG, "Buffer clear warning: ${e.message}") }
 
         output.write("$cmd\r".toByteArray())
         output.flush()
@@ -391,7 +408,8 @@ class ELM327BTConnection(
             delay(200)
             val response = sendCommandWithTimeout("0902")
             parseVIN(response)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read VIN: ${e.message}")
             ""
         }
     }
@@ -451,12 +469,15 @@ class ELM327BTConnection(
                                 data["Coolant"] = (coolHex.substring(0, 2).toInt(16) - 40).toDouble()
                             }
                         }
-                    } catch (_: Exception) {}
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to read freeze frame data: ${e.message}")
+                    }
                     frames.add(FreezeFrame(DiagnosticTroubleCode(code, description), data))
                 }
             }
             frames
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read freeze frames: ${e.message}")
             emptyList()
         }
     }
@@ -465,7 +486,8 @@ class ELM327BTConnection(
         try {
             val response = sendCommandWithTimeout("0101")
             parseReadiness(response)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read readiness monitor: ${e.message}")
             ReadinessMonitor()
         }
     }
@@ -497,7 +519,8 @@ class ELM327BTConnection(
     suspend fun readProtocol(): String = withContext(Dispatchers.IO) {
         try {
             sendCommandWithTimeout("ATDP")
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read protocol: ${e.message}")
             "Unknown"
         }
     }
@@ -542,7 +565,9 @@ class ELM327BTConnection(
                     }
                 }
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to scan supported PIDs: ${e.message}")
+        }
         supported
     }
 
@@ -550,11 +575,14 @@ class ELM327BTConnection(
         scope.cancel()
         try {
             socket?.close()
-        } catch (e: IOException) { }
+        } catch (e: IOException) {
+            Log.v(TAG, "Socket close warning: ${e.message}")
+        }
         socket = null
         inputStream = null
         outputStream = null
         _isConnected.value = false
+        Log.i(TAG, "Disconnected")
     }
 
     fun getPairedDevices(): List<BluetoothDevice> {
