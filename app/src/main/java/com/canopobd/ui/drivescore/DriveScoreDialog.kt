@@ -121,6 +121,17 @@ fun DriveScoreDialog(
                             ScoreMini(score.rpmScore, stringResource(R.string.drive_score_rpm), gaugeOrange)
                             ScoreMini(score.throttleScore, stringResource(R.string.drive_score_throttle), gaugeCyan)
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            ScoreMini(score.boostScore, stringResource(R.string.drive_score_boost), gaugeCyan)
+                            ScoreMini(score.ecoScore, stringResource(R.string.drive_score_eco), gaugeGreen)
+                            ScoreMini(score.turboHealthScore, stringResource(R.string.drive_score_turbo_health), gaugeOrange)
+                        }
                     }
                 }
 

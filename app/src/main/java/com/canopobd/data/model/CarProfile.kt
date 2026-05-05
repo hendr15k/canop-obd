@@ -46,7 +46,17 @@ enum class CarProfile(
     companion object {
         fun fromId(id: String): CarProfile? = entries.find { it.id == id }
         fun default(): CarProfile = ASTRA_J_2012_14T
+
+        fun fromVehicleProfile(vp: VehicleProfile): CarProfile? =
+            entries.find { it.id == vp.id }
+
+        fun allWithVehicleProfile(): List<Pair<CarProfile, VehicleProfile>> =
+            entries.mapNotNull { cp ->
+                VehicleProfiles.fromId(cp.id)?.let { vp -> cp to vp }
+            }
     }
+
+    fun toVehicleProfile(): VehicleProfile? = VehicleProfiles.fromId(id)
 }
 
 data class TurboData(

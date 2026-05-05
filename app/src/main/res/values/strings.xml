@@ -545,6 +545,9 @@
     <string name="drive_score_idle">Leerlauf</string>
     <string name="drive_score_rpm">Drehzahl</string>
     <string name="drive_score_throttle">Gaspedal</string>
+    <string name="drive_score_boost">Ladedruck</string>
+    <string name="drive_score_eco">Ökofahrer</string>
+    <string name="drive_score_turbo_health">Turbo-Zustand</string>
     <string name="drive_score_section_session">Fahrtsitzung</string>
     <string name="drive_score_duration">Dauer</string>
     <string name="drive_score_avg_rpm">Ø Drehzahl</string>
@@ -573,4 +576,71 @@
     <string name="gauge_fuel_rate_desc">Kraftstoffverbrauch</string>
     <string name="gauge_accel_pedal_desc">Gaspedal</string>
     <string name="gauge_hybrid_battery_desc">Hybrid-Batterie</string>
+
+    <!-- Astra J Specific -->
+    <string name="astra_j_title">Opel Astra J 1.4 Turbo</string>
+    <string name="astra_j_engine">Motor: A14NET</string>
+    <string name="astra_j_power">Leistung: 103 kW (140 PS)</string>
+    <string name="astra_j_torque">Drehmoment: 200 Nm</string>
+    <string name="astra_j_overboost">Overboost: 220 Nm</string>
+    <string name="astra_j_turbo_type">Turbolader: BorgWarner KP39</string>
+    <string name="astra_j_ecu">Steuergeraet: Bosch ME17.9.24</string>
+    
+    <!-- Turbo Monitoring -->
+    <string name="turbo_rpm">Turbo-Drehzahl</string>
+    <string name="turbo_boost_relative">Ladedruck (relativ)</string>
+    <string name="turbo_boost_absolute">Ladedruck (absolut)</string>
+    <string name="turbo_wastegate_pos">Wastegate Position</string>
+    <string name="turbo_health_score">Turbo-Gesundheits-Score</string>
+    <string name="turbo_spool_time">Turbo-Ansprechzeit</string>
+    <string name="turbo_oil_pressure">Turbo-Oeldruck</string>
+    <string name="turbo_inlet_temp">Turbo-Einlasstemperatur</string>
+    <string name="turbo_outlet_temp">Turbo-Auslasstemperatur</string>
+    <string name="turbo_intercooler_eff">Ladeluftkuehler-Wirkungsgrad</string>
+    
+    <!-- Torque Monitoring -->
+    <string name="torque_demand">Drehmoment-Anforderung</string>
+    <string name="torque_actual">Drehmoment (Ist)</string>
+    <string name="torque_reference">Drehmoment (Referenz)</string>
+    <string name="torque_efficiency">Drehmoment-Wirkungsgrad</string>
+    
+    <!-- Charge Air -->
+    <string name="charge_air_temp">Ladelufttemperatur</string>
+    <string name="intake_air_temp_2">Ansauglufttemperatur 2</string>
+    <string name="intercooler_warning">Ladeluftkuehler effizienz gering!</string>
+    
+    <!-- Fuel -->
+    <string name="fuel_tank_input">Tankinhalt (Sensor)</string>
+    <string name="ethanol_percent">Ethanol-Anteil</string>
+    <string name="fuel_consumption_sport">Sport-Verbrauch</string>
+    <string name="fuel_consumption_eco">Eco-Verbrauch</string>
+    
+    <!-- Oil -->
+    <string name="oil_temp_warning">Motortemperatur zu hoch!</string>
+    <string name="oil_pressure_low">Oeldruck kritisch niedrig!</string>
+    
+    <!-- Boost Alerts -->
+    <string name="boost_overboost">Overboost aktiviert!</string>
+    <string name="boost_underboost">Unterladung erkannt!</string>
+    <string name="boost_target_reached">Ziel-Ladedruck erreicht</string>
+    
+    <!-- Eco Driving -->
+    <string name="eco_optimal_rpm">Optimaler Drehzahlbereich: 1500-3000</string>
+    <string name="eco_coasting">Segeln im Gang</string>
+    <string name="eco_turbo_score">Turbo-Effizienz-Score</string>
+    
+    <!-- Vehicle Profile -->
+    <string name="vehicle_profile_select">Fahrzeugprofil auswaehlen</string>
+    <string name="vehicle_profile_astra_j">Opel Astra J 1.4 Turbo (140 PS)</string>
+    <string name="vehicle_profile_ecu">Steuergeraet: %s</string>
+    <string name="vehicle_profile_fuel">Kraftstoff: %s RON</string>
+    
+    <!-- Known Issues -->
+    <string name="issue_timing_chain">Kettenspanner</string>
+    <string name="issue_maf_sensor">MAF-Sensor</string>
+    <string name="issue_wastegate">Wastegate-Stellglied</string>
+    <string name="issue_pcv">PCV-Ventil</string>
+    <string name="issue_coolant_sensor">Kuhlmittel-Sensor</string>
+    <string name="issue_turbo_boost">Ladedruck</string>
+    <string name="issue_spark_plugs">Zundkerzen</string>
 </resources>

@@ -168,6 +168,78 @@ enum class OBDPID(
     }),
     TURBO_BOOST_VACUUM("0175", "Turbo Boost Vacuum", "kPa", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
+    }),
+    ACCELERATOR_POS_E("011B", "Accelerator Pedal E", "%", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    }),
+    ENGINE_RUNTIME_MIL("015F", "Engine Runtime MIL On", "s", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    ALTERNATOR_DUTY("0153", "Alternator Duty Cycle", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    O2_VOLTAGE_B1S3("0145", "O2 Sensor B1S3 Voltage", "V", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 200.0 else 0.0
+    }),
+    O2_VOLTAGE_B2S1("0146", "O2 Sensor B2S1 Voltage", "V", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 200.0 else 0.0
+    }),
+    O2_VOLTAGE_B2S2("0147", "O2 Sensor B2S2 Voltage", "V", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 200.0 else 0.0
+    }),
+    INTAKE_AIR_TEMP_2("0156", "Intake Air Temp 2", "°C", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
+    }),
+    TURBO_OIL_PRESSURE("0167", "Turbo Oil Pressure", "kPa", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    TURBO_INLET_TEMP("0168", "Turbo Inlet Temp", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    TURBO_OUTLET_TEMP("0169", "Turbo Outlet Temp", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    TURBO_WASTEGATE_B("016A", "Turbo Wastegate B", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    TURBO_BOOST_B("016B", "Turbo Boost B", "kPa", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    TURBO_VARIABLE_GEOM("016C", "Turbo VGT Position", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    TURBO_WATER_COOL("016D", "Turbo Water Cool Flow", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    TURBO_COMP_INLET_TEMP("016E", "Turbo Comp Inlet Temp", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    TURBO_COMP_OUTLET_TEMP("016F", "Turbo Comp Outlet Temp", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    TURBO_TURBINE_INLET_TEMP("0176", "Turbo Turbine Inlet Temp", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    TURBO_TURBINE_OUTLET_TEMP("017A", "Turbo Turbine Outlet Temp", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    TURBO_BOOST_ABS("017B", "Turbo Boost Absolute", "kPa", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    TURBO_ACTUATOR_DUTY("017E", "Turbo Actuator Duty", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    WARMUP_CATALYST("0150", "Warmup Catalyst Status", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    CATALYST_TEMP_B1S2("013D", "Catalyst Temp B1S2", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    CATALYST_TEMP_B2S1("0154", "Catalyst Temp B2S1", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    CATALYST_TEMP_B2S2("0155", "Catalyst Temp B2S2", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
     });
 
     companion object {
@@ -225,7 +297,31 @@ data class OBDData(
     val referenceTorque: Double = 0.0,
     val ethanolPercent: Double = 0.0,
     val oilTemp: Double = 0.0,
-    val turboBoostVacuum: Double = 0.0
+    val turboBoostVacuum: Double = 0.0,
+    val acceleratorPosE: Double = 0.0,
+    val engineRuntimeMil: Double = 0.0,
+    val alternatorDuty: Double = 0.0,
+    val o2VoltageB1S3: Double = 0.0,
+    val o2VoltageB2S1: Double = 0.0,
+    val o2VoltageB2S2: Double = 0.0,
+    val intakeAirTemp2: Double = 0.0,
+    val turboOilPressure: Double = 0.0,
+    val turboInletTemp: Double = 0.0,
+    val turboOutletTemp: Double = 0.0,
+    val turboWastegateB: Double = 0.0,
+    val turboBoostB: Double = 0.0,
+    val turboVgtPosition: Double = 0.0,
+    val turboWaterCoolFlow: Double = 0.0,
+    val turboCompInletTemp: Double = 0.0,
+    val turboCompOutletTemp: Double = 0.0,
+    val turboTurbineInletTemp: Double = 0.0,
+    val turboTurbineOutletTemp: Double = 0.0,
+    val turboBoostAbsolute: Double = 0.0,
+    val turboActuatorDuty: Double = 0.0,
+    val warmupCatalyst: Double = 0.0,
+    val catalystTempB1S2: Double = 0.0,
+    val catalystTempB2S1: Double = 0.0,
+    val catalystTempB2S2: Double = 0.0
 )
 
 data class GaugeConfig(
@@ -619,7 +715,10 @@ data class DriveScore(
     val cruisingScore: Int = 0,
     val idleScore: Int = 0,
     val rpmScore: Int = 0,
-    val throttleScore: Int = 0
+    val throttleScore: Int = 0,
+    val boostScore: Int = 0,
+    val ecoScore: Int = 0,
+    val turboHealthScore: Int = 0
 ) {
     val grade: String get() = when {
         score >= 90 -> "A+"
@@ -649,7 +748,21 @@ data class DriveSession(
     val harshBrakes: Int = 0,
     val rpmSamples: Double = 0.0,
     val throttleSamples: Double = 0.0,
-    val speedSamples: Double = 0.0
+    val speedSamples: Double = 0.0,
+    val avgBoostBar: Double = 0.0,
+    val maxBoostBar: Double = 0.0,
+    val boostSamples: Double = 0.0,
+    val boostSampleCount: Int = 0,
+    val optimalBoostTime: Int = 0,
+    val highBoostTime: Int = 0,
+    val coastingInGearSamples: Int = 0,
+    val deceleratingSamples: Int = 0,
+    val rpmAbove4500Samples: Int = 0,
+    val boostSumOfSquares: Double = 0.0,
+    val wastegateDutySum: Double = 0.0,
+    val wastegateSampleCount: Int = 0,
+    val rpmRateSamples: Double = 0.0,
+    val rpmRateSampleCount: Int = 0
 )
 
 data class ShiftLightConfig(
@@ -665,6 +778,13 @@ data class DashboardPreset(
     val name: String,
     val themeName: String,
     val primaryGaugeIds: Set<String>,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+data class TurboSpecificPreset(
+    val id: String,
+    val name: String,
+    val gaugeIds: List<String>,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -696,7 +816,7 @@ data class AstraJ14TurboCalibration(
     val minOilPressureRpm: Double = 2.0,
     val maxTurboRpm: Int = 200000,
     val oilCapacityLiters: Double = 4.5,
-    val turbochargerType: String = "BorgWarner K03 / IHI Twin-Scroll",
+    val turbochargerType: String = "BorgWarner KP39 (Single-Scroll, wastegate-geregelt)",
     val engineCode: String = "A14NET",
     val gmEngineCode: String = "LUJ",
     val fuelType: String = "Benzin (95 RON min / 98 empfohlen)",
@@ -728,7 +848,20 @@ data class AstraJ14TurboCalibration(
     val sparkPlugIntervalKm: Int = 60000,
     val coolantIntervalKm: Int = 80000,
     val timingChainIntervalKm: Int = 150000,
-    val vvtSystem: String = "DCVCP (Dual Continuous Variable Cam Phasing)"
+    val vvtSystem: String = "DCVCP (Dual Continuous Variable Cam Phasing)",
+    val overboostMaxBar: Double = 1.3,
+    val normalBoostTargetBar: Double = 0.7,
+    val wastegateTargetPercent: Double = 45.0,
+    val maxRpmSustained: Int = 6000,
+    val powerCurvePeakRpm: Int = 5500,
+    val torqueCurvePeakRpm: Int = 3000,
+    val intercoolerEfficiencyTarget: Double = 85.0,
+    val fuelConsumptionSport: Double = 8.5,
+    val fuelConsumptionEco: Double = 5.5,
+    val oilPressureIdle: Double = 1.0,
+    val oilPressureRpm: Double = 2.5,
+    val recommendedFuelOctane: Int = 98,
+    val minFuelOctane: Int = 95
 ) {
     fun getBoostBar(pressureKpa: Double): Double = pressureKpa / 100.0
     fun isRpmWarning(rpm: Double): Boolean = rpm >= rpmWarning
@@ -770,13 +903,41 @@ data class AstraJ14TurboCalibration(
             OBDPID.TURBO_RPM, OBDPID.CHARGE_AIR_COOLER_TEMP,
             OBDPID.EGT_BANK1, OBDPID.EGT_BANK2, OBDPID.OIL_TEMP,
             OBDPID.ACTUAL_TORQUE, OBDPID.DEMAND_TORQUE, OBDPID.REFERENCE_TORQUE,
-            OBDPID.FUEL_RAIL_PRESSURE, OBDPID.INTAKE_PRESSURE
+            OBDPID.FUEL_RAIL_PRESSURE, OBDPID.INTAKE_PRESSURE,
+            OBDPID.COOLANT_TEMP, OBDPID.INTAKE_TEMP, OBDPID.ENGINE_LOAD,
+            OBDPID.BAROMETRIC_PRESSURE, OBDPID.SHORT_TERM_FUEL_TRIM_BANK1,
+            OBDPID.LONG_TERM_FUEL_TRIM_BANK1
         )
         val DASHBOARD_PRESET = DashboardPreset(
             id = "astra_j_14_turbo",
             name = "Opel Astra J 1.4 Turbo",
             themeName = "CANOPO",
-            primaryGaugeIds = setOf("rpm", "boost", "coolant", "speed", "oil_temp", "charge_air"),
+            primaryGaugeIds = setOf(
+                "rpm",
+                "speed",
+                "boost",
+                "coolant",
+                "oil_temp",
+                "charge_air",
+                "throttle",
+                "fuel_level",
+                "battery",
+                "torque",
+                "wastegate"
+            ),
+            createdAt = System.currentTimeMillis()
+        )
+        val TURBO_SPECIFIC_PRESET = TurboSpecificPreset(
+            id = "astra_j_14_turbo_monitor",
+            name = "Astra J Turbo Monitoring",
+            gaugeIds = listOf(
+                "turbo_rpm",
+                "boost_pressure",
+                "wastegate_position",
+                "charge_air_temp",
+                "intake_air_temp",
+                "turbo_health_score"
+            ),
             createdAt = System.currentTimeMillis()
         )
         val RECOMMENDED_PIDS = listOf(
@@ -811,13 +972,13 @@ data class AstraJ14TurboCalibration(
             MaintenanceItem(type = MaintenanceType.TURBO_BOOST_CHECK, intervalKm = 45000)
         )
         val KNOWN_ISSUES = listOf(
-            KnownIssue("Timing Chain", "Rattle auf Kaltstart, P0340/P1345", "80.000-150.000 km", "Olqualitat und regelmaige Olwechsel"),
-            KnownIssue("MAF Sensor", "Rauer Leerlauf, Leistungsverlust, P0100-P0103", "60.000-120.000 km", "MAF-Reiniger verwenden, Luftfilter prufen"),
-            KnownIssue("Wastegate", "Rasseln bei niedriger Drehzahl, P0234", "80.000-150.000 km", "Wastegate-Stellglied prufen"),
-            KnownIssue("PCV Ventil", "Olverbrauch, blauer Rauch, P1100", "60.000-100.000 km", "Zylinderkopfhaube ersetzen"),
-            KnownIssue("Kuhlmittel", "Uberhitzung, Kuhlmittelverlust", "80.000-150.000 km", "Wasserpumpe und Kuhlmittelkreislauf prufen"),
-            KnownIssue("Olverbrauch", "Olstand zwischen Wechseln, P0298", "100.000+ km", "Kolbenringe und Ventilschaftdichtungen prufen"),
-            KnownIssue("Drosselklappe", "Rauer Leerlauf, P2100/P2101", "60.000-120.000 km", "Drosselklappe reinigen und anlernen")
+            KnownIssue("Kettenspanner", "Rattern bei Kaltstart, P0340/P0341/P1345", "80.000-150.000 km", "Oelqualitaet und Oelwechselintervalle einhalten, Kettenspanner ersetzen"),
+            KnownIssue("MAF-Sensor", "Rauer Leerlauf, Leistungsverlust, P0100-P0103", "60.000-120.000 km", "MAF-Sensor mit speziellem Reiniger reinigen, Luftmassenmesser prufen"),
+            KnownIssue("Wastegate-Stellglied", "Rasseln, Ladedruck-Schwankungen, P0234/P0235", "80.000-150.000 km", "Wastegate-Stellglied auf Freigang prufen, O-Ring kontrollieren"),
+            KnownIssue("PCV-Ventil", "Oelverbrauch, blauer Rauch, P1100/P1101", "60.000-100.000 km", "Zylinderkopfhaube mit Ventilen ersetzen, Often PCV-Pruefung"),
+            KnownIssue("Kuhlmittel-Temperaturfuhler", "Kalte Motorstartprobleme, P0116/P0117", "80.000-150.000 km", "Kuhlmittel-Temperatursensor ersetzen"),
+            KnownIssue("Turbo-Ladedruck", "Leistungsverlust bei hoher Drehzahl", "100.000+ km", "Ladedrucksensor und Wastegate-Pruefung"),
+            KnownIssue("Zundkerzen", "Zundungsaussetzer, schlechtes Startverhalten", "30.000-60.000 km", "Zundkerzen erneuern, Elektrodenabstand prufen")
         )
     }
 }
@@ -880,16 +1041,16 @@ data class TurboHealthMonitor(
     val intakeAirTempC: Double = 0.0,
     val ambientTempC: Double = 0.0,
     val barometricPressureKpa: Double = 100.0,
-    val targetBoostKpa: Double = 100.0,
+    val targetBoostKpa: Double = 60.0,
     val sampleCount: Int = 0
 ) {
     val boostBar: Double get() = boostPressureKpa / 100.0
     val baroBar: Double get() = barometricPressureKpa / 100.0
-    val relativeBoostBar: Double get() = boostBar - baroBar
-    val overboostBar: Double get() = relativeBoostBar - 1.0
-    val boostDeviationPercent: Double get() = if (targetBoostKpa > 0) ((boostPressureKpa - targetBoostKpa) / targetBoostKpa) * 100.0 else 0.0
-    val isOverboost: Boolean get() = overboostBar > 0.2
-    val isUnderboost: Boolean get() = relativeBoostBar < 0.8 && sampleCount > 10
+    val relativeBoostBar: Double get() = (boostBar - baroBar).coerceAtLeast(0.0)
+    val targetBoostBar: Double get() = targetBoostKpa / 100.0
+    val boostDeviationPercent: Double get() = if (targetBoostKpa > 0) ((relativeBoostBar * 100.0 - targetBoostKpa) / targetBoostKpa) * 100.0 else 0.0
+    val isOverboost: Boolean get() = relativeBoostBar > 1.0
+    val isUnderboost: Boolean get() = (relativeBoostBar < targetBoostBar * 0.5) && sampleCount > 10
     val wastegateHealth: WastegateHealth get() = when {
         wastegatePosition < 5.0 -> WastegateHealth.STUCK_CLOSED
         wastegatePosition > 95.0 -> WastegateHealth.STUCK_OPEN

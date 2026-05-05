@@ -427,11 +427,26 @@ class DashboardViewModel private constructor(
     private fun updateTurboData() {
         val data = repository.obdData.value
         val profile = _carProfileState.value
-        val boostPressure = data.intakePressure
+        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+        val relativeBoostKpa = (absoluteBoostKpa - baroKpa).coerceAtLeast(0.0)
+        val relativeBoostBar = relativeBoostKpa / 100.0
+        val targetRelativeBar = profile.normalBoostBar.toDouble()
+        val overboostActive = relativeBoostBar > 1.0
+        val underboostDetected = relativeBoostBar < targetRelativeBar * 0.5 && data.rpm > 2000
+        val healthScore = when {
+            overboostActive -> 40
+            underboostDetected -> 50
+            relativeBoostBar > targetRelativeBar * 0.85 -> 90
+            else -> 100
+        }
         _turboData.value = _turboData.value.copy(
-            boostPressure = boostPressure,
-            boostTarget = profile.normalBoostBar.toDouble(),
-            wastegateDutyCycle = if (boostPressure > 0) (profile.normalBoostBar / boostPressure * 50).coerceIn(25.0, 95.0) else 95.0,
+            boostPressure = relativeBoostBar,
+            boostTarget = targetRelativeBar,
+            wastegateDutyCycle = if (relativeBoostBar > 0.01) (targetRelativeBar / relativeBoostBar * 50).coerceIn(25.0, 95.0) else 95.0,
+            turboHealthScore = healthScore,
+            overboostActive = overboostActive,
+            underboostDetected = underboostDetected,
             timestamp = System.currentTimeMillis()
         )
     }
@@ -480,9 +495,16 @@ class DashboardViewModel private constructor(
         _driveScore.value = com.canopobd.data.model.DriveScore()
     }
 
-    fun recordDriveSample(rpm: Double, throttle: Double, speed: Double, prevRpm: Double) {
+    fun recordDriveSample(rpm: Double, throttle: Double, speed: Double, prevRpm: Double, boostBar: Double = 0.0, wastegateDuty: Double = 0.0) {
         val session = _driveSession.value
         val rpmDelta = rpm - prevRpm
+        val isDecelerating = throttle < 10.0 && prevRpm > rpm
+        val isCoastingInGear = isDecelerating && speed > 10.0
+
+        val newBoostSum = session.boostSamples + boostBar
+        val newBoostCount = session.boostSampleCount + 1
+        val newAvgBoost = newBoostSum / newBoostCount
+
         val newSession = session.copy(
             rpmSamples = session.rpmSamples + rpm,
             throttleSamples = session.throttleSamples + throttle,
@@ -493,7 +515,21 @@ class DashboardViewModel private constructor(
             maxRpm = maxOf(session.maxRpm, rpm),
             maxThrottle = maxOf(session.maxThrottle, throttle),
             harshAccels = if (rpmDelta > 3000) session.harshAccels + 1 else session.harshAccels,
-            harshBrakes = if (throttle < 10.0 && speed > 50.0 && prevRpm > rpm) session.harshBrakes + 1 else session.harshBrakes
+            harshBrakes = if (throttle < 10.0 && speed > 50.0 && prevRpm > rpm) session.harshBrakes + 1 else session.harshBrakes,
+            boostSamples = newBoostSum,
+            boostSampleCount = newBoostCount,
+            avgBoostBar = newAvgBoost,
+            maxBoostBar = maxOf(session.maxBoostBar, boostBar),
+            optimalBoostTime = session.optimalBoostTime + if (boostBar in 0.4..0.7) 1 else 0,
+            highBoostTime = session.highBoostTime + if (boostBar > 0.9 && throttle < 30.0) 1 else 0,
+            coastingInGearSamples = session.coastingInGearSamples + if (isCoastingInGear) 1 else 0,
+            deceleratingSamples = session.deceleratingSamples + if (isDecelerating) 1 else 0,
+            rpmAbove4500Samples = session.rpmAbove4500Samples + if (rpm > 4500.0) 1 else 0,
+            boostSumOfSquares = session.boostSumOfSquares + (boostBar * boostBar),
+            wastegateDutySum = session.wastegateDutySum + wastegateDuty,
+            wastegateSampleCount = session.wastegateSampleCount + 1,
+            rpmRateSamples = session.rpmRateSamples + kotlin.math.abs(rpmDelta),
+            rpmRateSampleCount = session.rpmRateSampleCount + 1
         )
         _driveSession.value = newSession
         updateDriveScore()
