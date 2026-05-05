@@ -118,7 +118,7 @@ enum class OBDPID(
     THROTTLE_C("015D", "Throttle C", "%", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
     }),
-    THROTTLE_ACTUATOR("015C", "Throttle Actuator", "%", 2, { b ->
+    THROTTLE_ACTUATOR("005C", "Throttle Actuator", "%", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
@@ -151,13 +151,13 @@ enum class OBDPID(
     FUEL_SYSTEM_STATUS("0103", "Fuel System Status", "", 2, { b ->
         if (b.size >= 2) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
-    ACTUAL_TORQUE("0162", "Actual Torque", "%", 1, { b ->
+    DEMAND_TORQUE("0061", "Driver Demand Torque", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    DEMAND_TORQUE("0161", "Driver Demand Torque", "%", 1, { b ->
+    ACTUAL_TORQUE("0062", "Actual Torque", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    REFERENCE_TORQUE("0163", "Reference Torque", "Nm", 2, { b ->
+    REFERENCE_TORQUE("0063", "Reference Torque", "Nm", 2, { b ->
         if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
     ETHANOL_FUEL_PERCENT("0152", "Ethanol Fuel %", "%", 1, { b ->

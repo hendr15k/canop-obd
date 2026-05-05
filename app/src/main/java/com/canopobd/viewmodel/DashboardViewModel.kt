@@ -123,7 +123,8 @@ class DashboardViewModel private constructor(
     private val _shiftLightConfig = MutableStateFlow(com.canopobd.data.model.ShiftLightConfig())
     val shiftLightConfig: StateFlow<com.canopobd.data.model.ShiftLightConfig> = _shiftLightConfig.asStateFlow()
 
-    val carProfile: StateFlow<com.canopobd.data.model.CarProfile> = MutableStateFlow(com.canopobd.data.model.CarProfile.default())
+    private val _carProfileState = MutableStateFlow(com.canopobd.data.model.CarProfile.default())
+    val carProfile: StateFlow<com.canopobd.data.model.CarProfile> = _carProfileState.asStateFlow()
     private val _turboData = MutableStateFlow(com.canopobd.data.model.TurboData())
     val turboData: StateFlow<com.canopobd.data.model.TurboData> = _turboData.asStateFlow()
     private val _oilData = MutableStateFlow(com.canopobd.data.model.OilData())
@@ -180,9 +181,7 @@ class DashboardViewModel private constructor(
         if (_permissionsGranted.value) refreshDevices()
         _maintenanceItems.value = repository.loadMaintenanceItems()
         _shiftLightConfig.value = repository.loadShiftLightConfig()
-        _maintenanceItems.value = repository.loadMaintenanceItems()
-        _shiftLightConfig.value = repository.loadShiftLightConfig()
-        (carProfile as MutableStateFlow).value = repository.loadCarProfile()
+        _carProfileState.value = repository.loadCarProfile()
         checkForUpdate()
     }
 
@@ -405,15 +404,15 @@ class DashboardViewModel private constructor(
     }
 
     fun selectCarProfile(profile: com.canopobd.data.model.CarProfile) {
-        (carProfile as MutableStateFlow).value = profile
+        _carProfileState.value = profile
         repository.saveCarProfile(profile)
         _showCarProfile.value = false
     }
 
     private fun updateTurboData() {
         val data = repository.obdData.value
-        val profile = (carProfile as MutableStateFlow).value
-        val boostPressure = data.intakeTemp
+        val profile = _carProfileState.value
+        val boostPressure = data.intakePressure
         _turboData.value = _turboData.value.copy(
             boostPressure = boostPressure,
             boostTarget = profile.normalBoostBar.toDouble(),
