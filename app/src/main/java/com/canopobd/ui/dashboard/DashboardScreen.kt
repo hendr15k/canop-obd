@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.canopobd.R
 import com.canopobd.data.model.*
 import com.canopobd.ui.components.CircularGauge
+import com.canopobd.ui.components.CompactGauge
 import com.canopobd.ui.components.LiveTrendGraphDialog
 import com.canopobd.ui.customization.DashboardCustomizationDialog
 import com.canopobd.ui.datalog.DataLogDialog
@@ -612,13 +613,13 @@ private fun SecondaryGaugeGrid(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 row.forEach { (_, gauge) ->
-                    SecondaryGauge(
-                        label = gauge.label,
+                    CompactGauge(
                         value = gauge.value.toDouble(),
+                        label = gauge.label,
                         unit = gauge.unit,
                         max = gauge.maxValue.toDouble(),
                         color = gauge.color,
-                        isPercentage = gauge.isPercentage
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
                     )
                 }
                 repeat(3 - row.size) {
@@ -671,151 +672,279 @@ private fun DashboardHeader(
     onStopGPSTrack: () -> Unit
 ) {
     val colors = LocalAppColors.current
-    Row(
+    val connectionColor = when (connectionState) {
+        is OBDConnectionState.Connected -> colors.gaugeGreen
+        is OBDConnectionState.Connecting -> colors.gaugeYellow
+        is OBDConnectionState.Error -> colors.gaugeRed
+        else -> colors.textSecondary
+    }
+    val connectionText = when (connectionState) {
+        is OBDConnectionState.Connected -> stringResource(R.string.status_connected)
+        is OBDConnectionState.Connecting -> stringResource(R.string.status_connecting)
+        is OBDConnectionState.Disconnected -> stringResource(R.string.status_disconnected)
+        is OBDConnectionState.Error -> (connectionState as OBDConnectionState.Error).message
+    }
+
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        shape = RoundedCornerShape(16.dp),
+        color = colors.surfaceCard,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.borderSubtle)
     ) {
-        Column {
-            Text(
-                text = stringResource(R.string.app_name),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.highlight
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = when (connectionState) {
-                        is OBDConnectionState.Connected -> stringResource(R.string.status_connected)
-                        is OBDConnectionState.Connecting -> stringResource(R.string.status_connecting)
-                        is OBDConnectionState.Disconnected -> stringResource(R.string.status_disconnected)
-                        is OBDConnectionState.Error -> (connectionState as OBDConnectionState.Error).message
-                    },
-                    fontSize = 12.sp,
-                    color = when (connectionState) {
-                        is OBDConnectionState.Connected -> colors.gaugeGreen
-                        is OBDConnectionState.Error -> colors.gaugeRed
-                        else -> colors.textSecondary
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(connectionColor, RoundedCornerShape(5.dp))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = connectionText,
+                        fontSize = 12.sp,
+                        color = connectionColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (connectionState is OBDConnectionState.Connected) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ConnectionQualityBadge(stats = connectionStats, colors = colors)
+                        if (remoteServerRunning) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Filled.Wifi, contentDescription = null, tint = colors.gaugeGreen, modifier = Modifier.size(14.dp))
+                            Text(stringResource(R.string.status_remote, remoteConnectedClients), fontSize = 11.sp, color = colors.gaugeGreen)
+                        }
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                QuickActionButton(
+                    icon = Icons.Filled.DirectionsCar,
+                    label = stringResource(R.string.trip_title),
+                    color = colors.textSecondary,
+                    onClick = { onToggleTripComputer(); navController.navigate("trip_computer") }
+                )
+                QuickActionButton(
+                    icon = Icons.Filled.LocalGasStation,
+                    label = stringResource(R.string.fuel_economy_title),
+                    color = colors.textSecondary,
+                    onClick = { onToggleFuelEconomy(); navController.navigate("fuel_economy") }
+                )
+                QuickActionButton(
+                    icon = Icons.Filled.Build,
+                    label = stringResource(R.string.maintenance_title),
+                    color = colors.textSecondary,
+                    onClick = { onToggleMaintenance(); navController.navigate("maintenance") }
+                )
+                QuickActionButton(
+                    icon = Icons.Filled.Speed,
+                    label = stringResource(R.string.perf_test_title),
+                    color = colors.textSecondary,
+                    onClick = { onTogglePerformanceTest(); navController.navigate("performance_test") }
+                )
+                QuickActionButton(
+                    icon = Icons.AutoMirrored.Filled.ShowChart,
+                    label = stringResource(R.string.trend),
+                    color = colors.textSecondary,
+                    onClick = { onToggleTrendGraph(); navController.navigate("trend_graph") }
+                )
+                QuickActionButton(
+                    icon = Icons.Filled.Route,
+                    label = stringResource(R.string.trip_history_title),
+                    color = colors.textSecondary,
+                    onClick = { onToggleTripHistory(); navController.navigate("trip_history") }
+                )
+                QuickActionButton(
+                    icon = if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
+                    label = stringResource(R.string.gps_track),
+                    color = if (isGPSTracking) colors.gaugeGreen else colors.textSecondary,
+                    onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                QuickActionButton(
+                    icon = Icons.Filled.Dashboard,
+                    label = stringResource(R.string.customize_dashboard),
+                    color = colors.accent,
+                    onClick = { onToggleCustomization(); navController.navigate("customization") }
+                )
+                QuickActionButton(
+                    icon = Icons.Filled.Settings,
+                    label = stringResource(R.string.settings),
+                    color = colors.textSecondary,
+                    onClick = { onToggleSettings(); navController.navigate("settings") }
+                )
+                QuickActionButton(
+                    icon = Icons.Filled.Bluetooth,
+                    label = stringResource(R.string.bluetooth),
+                    color = colors.accent,
+                    onClick = { onToggleDevicePicker(); navController.navigate("device_picker") }
                 )
                 if (connectionState is OBDConnectionState.Connected) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    ConnectionQualityBadge(stats = connectionStats, colors = colors)
-                }
-                if (remoteServerRunning) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Filled.Wifi, contentDescription = null, tint = colors.gaugeGreen, modifier = Modifier.size(14.dp))
-                    Text(stringResource(R.string.status_remote, remoteConnectedClients), fontSize = 11.sp, color = colors.gaugeGreen)
+                    QuickActionButton(
+                        icon = Icons.Filled.ElectricBolt,
+                        label = stringResource(R.string.dashboard_power),
+                        color = colors.gaugeYellow,
+                        onClick = { onTogglePowerCalculator(); navController.navigate("power_calculator") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.SportsScore,
+                        label = stringResource(R.string.dashboard_driving_style),
+                        color = colors.gaugeGreen,
+                        onClick = { onToggleDriveScore(); navController.navigate("drive_score") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.LightMode,
+                        label = stringResource(R.string.dashboard_shift_light),
+                        color = colors.gaugeOrange,
+                        onClick = { onToggleShiftLight(); navController.navigate("shift_light") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Info,
+                        label = stringResource(R.string.dashboard_vehicle_profile),
+                        color = colors.highlight,
+                        onClick = onToggleVehicleInfo
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.BugReport,
+                        label = stringResource(R.string.dashboard_known_issues),
+                        color = colors.gaugeYellow,
+                        onClick = onToggleKnownIssues
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Air,
+                        label = stringResource(R.string.dashboard_turbo),
+                        color = colors.accent,
+                        onClick = onToggleTurboMonitor
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.SettingsApplications,
+                        label = stringResource(R.string.dashboard_timing_chain),
+                        color = colors.accent,
+                        onClick = { onToggleTimingChainMonitor(); navController.navigate("timing_chain_monitor") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Timer,
+                        label = stringResource(R.string.dashboard_turbo_cooldown),
+                        color = colors.gaugeCyan,
+                        onClick = { onToggleTurboCooldown(); navController.navigate("turbo_cooldown") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Tv,
+                        label = stringResource(R.string.hud_mode),
+                        color = colors.gaugeCyan,
+                        onClick = { onToggleHUDMode(); navController.navigate("hud") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Verified,
+                        label = stringResource(R.string.readiness),
+                        color = colors.gaugeGreen,
+                        onClick = { onToggleReadiness(); navController.navigate("readiness") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Biotech,
+                        label = stringResource(R.string.diagnostics),
+                        color = colors.accent,
+                        onClick = { onToggleDiagnostics(); navController.navigate("diagnostics") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Analytics,
+                        label = stringResource(R.string.analysis),
+                        color = colors.accent,
+                        onClick = { onToggleDataAnalysis(); navController.navigate("data_analysis") }
+                    )
+                    QuickActionButton(
+                        icon = if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
+                        label = stringResource(R.string.alerts),
+                        color = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary,
+                        onClick = { onToggleAlertSettings(); navController.navigate("alerts") }
+                    )
+                    QuickActionButton(
+                        icon = if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
+                        label = stringResource(R.string.remote_server),
+                        color = if (remoteServerRunning) colors.gaugeGreen else colors.accent,
+                        onClick = { onToggleRemoteDialog(); navController.navigate("remote_server") }
+                    )
+                    QuickActionButton(
+                        icon = if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
+                        label = stringResource(R.string.data_log),
+                        color = if (recordingActive) colors.gaugeRed else colors.accent,
+                        onClick = { onToggleDataLog(); navController.navigate("data_log") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Sensors,
+                        label = stringResource(R.string.sensors),
+                        color = colors.accent,
+                        onClick = { onTogglePIDScreen(); navController.navigate("pids") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Warning,
+                        label = stringResource(R.string.fault_codes),
+                        color = colors.gaugeYellow,
+                        onClick = { onToggleDTCDialog(); navController.navigate("dtc") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Close,
+                        label = stringResource(R.string.disconnect),
+                        color = colors.gaugeRed,
+                        onClick = onDisconnect
+                    )
                 }
             }
         }
+    }
+}
 
-                Row {
-            IconButton(onClick = { onToggleTripComputer(); navController.navigate("trip_computer") }) {
-                Icon(Icons.Filled.DirectionsCar, contentDescription = stringResource(R.string.trip_title), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { onToggleFuelEconomy(); navController.navigate("fuel_economy") }) {
-                Icon(Icons.Filled.LocalGasStation, contentDescription = stringResource(R.string.fuel_economy_title), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { onToggleMaintenance(); navController.navigate("maintenance") }) {
-                Icon(Icons.Filled.Build, contentDescription = stringResource(R.string.maintenance_title), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { onTogglePerformanceTest(); navController.navigate("performance_test") }) {
-                Icon(Icons.Filled.Speed, contentDescription = stringResource(R.string.perf_test_title), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { onToggleTrendGraph(); navController.navigate("trend_graph") }) {
-                Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = stringResource(R.string.trend), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { onToggleTripHistory(); navController.navigate("trip_history") }) {
-                Icon(Icons.Filled.Route, contentDescription = stringResource(R.string.trip_history_title), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() }) {
-                Icon(
-                    if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
-                    contentDescription = stringResource(R.string.gps_track),
-                    tint = if (isGPSTracking) colors.gaugeGreen else colors.textSecondary
-                )
-            }
-            IconButton(onClick = { onToggleCustomization(); navController.navigate("customization") }) {
-                Icon(Icons.Filled.Dashboard, contentDescription = stringResource(R.string.customize_dashboard), tint = colors.accent)
-            }
-            IconButton(onClick = { onToggleSettings(); navController.navigate("settings") }) {
-                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings), tint = colors.textSecondary)
-            }
-            IconButton(onClick = { onToggleDevicePicker(); navController.navigate("device_picker") }) {
-                Icon(Icons.Filled.Bluetooth, contentDescription = stringResource(R.string.bluetooth), tint = colors.accent)
-            }
-            if (connectionState is OBDConnectionState.Connected) {
-                IconButton(onClick = { onTogglePowerCalculator(); navController.navigate("power_calculator") }) {
-                    Icon(Icons.Filled.ElectricBolt, contentDescription = "Leistung", tint = colors.gaugeYellow)
-                }
-                IconButton(onClick = { onToggleDriveScore(); navController.navigate("drive_score") }) {
-                    Icon(Icons.Filled.DirectionsCar, contentDescription = "Fahrstil", tint = colors.gaugeGreen)
-                }
-                IconButton(onClick = { onToggleShiftLight(); navController.navigate("shift_light") }) {
-                    Icon(Icons.Filled.LightMode, contentDescription = "Schaltblitz", tint = colors.gaugeOrange)
-                }
-                IconButton(onClick = onToggleVehicleInfo) {
-                    Icon(Icons.Filled.Info, contentDescription = "Fahrzeugprofil", tint = colors.highlight)
-                }
-                IconButton(onClick = onToggleKnownIssues) {
-                    Icon(Icons.Filled.BugReport, contentDescription = "Bekannte Probleme", tint = colors.gaugeYellow)
-                }
-                IconButton(onClick = onToggleTurboMonitor) {
-                    Icon(Icons.Filled.Air, contentDescription = "Turbo", tint = colors.accent)
-                }
-                IconButton(onClick = { onToggleTimingChainMonitor(); navController.navigate("timing_chain_monitor") }) {
-                    Icon(Icons.Filled.SettingsApplications, contentDescription = "Steuerkette", tint = colors.accent)
-                }
-                IconButton(onClick = { onToggleCarProfile(); navController.navigate("car_profile") }) {
-                    Icon(Icons.Filled.DirectionsCar, contentDescription = "Fahrzeugprofil", tint = colors.highlight)
-                }
-                IconButton(onClick = { onToggleTurboCooldown(); navController.navigate("turbo_cooldown") }) {
-                    Icon(Icons.Filled.Timer, contentDescription = "Turbo-Rücklauf", tint = colors.gaugeCyan)
-                }
-                IconButton(onClick = { onToggleHUDMode(); navController.navigate("hud") }) {
-                    Icon(Icons.Filled.Tv, contentDescription = stringResource(R.string.hud_mode), tint = colors.gaugeCyan)
-                }
-                IconButton(onClick = { onToggleReadiness(); navController.navigate("readiness") }) {
-                    Icon(Icons.Filled.Verified, contentDescription = stringResource(R.string.readiness), tint = colors.gaugeGreen)
-                }
-                IconButton(onClick = { onToggleDiagnostics(); navController.navigate("diagnostics") }) {
-                    Icon(Icons.Filled.Biotech, contentDescription = stringResource(R.string.diagnostics), tint = colors.accent)
-                }
-                IconButton(onClick = { onToggleDataAnalysis(); navController.navigate("data_analysis") }) {
-                    Icon(Icons.Filled.Analytics, contentDescription = stringResource(R.string.analysis), tint = colors.accent)
-                }
-                IconButton(onClick = { onToggleAlertSettings(); navController.navigate("alerts") }) {
-                    Icon(
-                        if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
-                        contentDescription = stringResource(R.string.alerts),
-                        tint = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary
-                    )
-                }
-                IconButton(onClick = { onToggleRemoteDialog(); navController.navigate("remote_server") }) {
-                    Icon(
-                        if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
-                        contentDescription = stringResource(R.string.remote_server),
-                        tint = if (remoteServerRunning) colors.gaugeGreen else colors.accent
-                    )
-                }
-                IconButton(onClick = { onToggleDataLog(); navController.navigate("data_log") }) {
-                    Icon(
-                        if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
-                        contentDescription = stringResource(R.string.data_log),
-                        tint = if (recordingActive) colors.gaugeRed else colors.accent
-                    )
-                }
-                IconButton(onClick = { onTogglePIDScreen(); navController.navigate("pids") }) {
-                    Icon(Icons.Filled.Sensors, contentDescription = stringResource(R.string.sensors), tint = colors.accent)
-                }
-                IconButton(onClick = { onToggleDTCDialog(); navController.navigate("dtc") }) {
-                    Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.fault_codes), tint = colors.gaugeYellow)
-                }
-                IconButton(onClick = onDisconnect) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.disconnect), tint = colors.gaugeRed)
-                }
-            }
+@Composable
+private fun QuickActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    val colors = LocalAppColors.current
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Transparent
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }
@@ -838,45 +967,6 @@ private fun ConnectionQualityBadge(stats: ConnectionStats, colors: AppColors) {
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(text = stats.quality.label, fontSize = 10.sp, color = color)
-    }
-}
-
-@Composable
-private fun SecondaryGauge(
-    label: String,
-    value: Double,
-    unit: String,
-    max: Double,
-    color: Color,
-    isPercentage: Boolean = false
-) {
-    val colors = LocalAppColors.current
-    val displayValue = if (isPercentage) abs(value).coerceIn(0.0, max) else value.coerceIn(0.0, max)
-    val intensity = (displayValue / max.coerceAtLeast(0.01)).toFloat().coerceIn(0f, 1f)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = color.copy(alpha = 0.06f + intensity * 0.08f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.12f + intensity * 0.15f))
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
-        ) {
-            Text(
-                text = "%.0f%s".format(displayValue, unit),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = color,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Text(
-                text = label,
-                fontSize = 10.sp,
-                color = colors.textSecondary,
-                fontWeight = FontWeight.Medium
-            )
-        }
     }
 }
 

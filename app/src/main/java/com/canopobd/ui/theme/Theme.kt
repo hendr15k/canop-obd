@@ -12,18 +12,18 @@ import androidx.core.view.WindowCompat
 private val DarkColorScheme = darkColorScheme(
     primary = canopoAccent,
     secondary = canopoHighlight,
-    tertiary = canopoPrimary,
+    tertiary = canopoSecondary,
     background = canopoDark,
     surface = canopoSurface,
+    surfaceVariant = canopoSurfaceVariant,
     onPrimary = textPrimary,
     onSecondary = textPrimary,
     onTertiary = textPrimary,
     onBackground = textPrimary,
     onSurface = textPrimary,
-    surfaceVariant = canopoDark,
     onSurfaceVariant = textSecondary,
     error = gaugeRed,
-    onError = androidx.compose.ui.graphics.Color.White
+    onError = textPrimary
 )
 
 @Composable
@@ -45,7 +45,7 @@ fun CanopObdTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography(),
+        typography = AppTypography,
         content = {
             androidx.compose.runtime.CompositionLocalProvider(
                 LocalAppColors provides appColors

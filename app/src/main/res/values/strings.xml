@@ -346,4 +346,20 @@
     <string name="update_install">Jetzt installieren</string>
     <string name="update_ready_to_install">Download abgeschlossen. Tippe auf \u201EJetzt installieren\u201C, um die App zu aktualisieren.</string>
     <string name="update_download_error">Download fehlgeschlagen: %s</string>
+
+    <!-- Dashboard Header -->
+    <string name="dashboard_power">Leistung</string>
+    <string name="dashboard_driving_style">Fahrstil</string>
+    <string name="dashboard_shift_light">Schaltblitz</string>
+    <string name="dashboard_vehicle_profile">Fahrzeugprofil</string>
+    <string name="dashboard_known_issues">Bekannte Probleme</string>
+    <string name="dashboard_turbo">Turbo</string>
+    <string name="dashboard_timing_chain">Steuerkette</string>
+    <string name="dashboard_car_profile">Fahrzeugprofil</string>
+    <string name="dashboard_turbo_cooldown">Turbo-Rücklauf</string>
+
+    <!-- Gauge Labels -->
+    <string name="gauge_label_rpm">RPM</string>
+    <string name="gauge_label_speed">Speed</string>
+    <string name="gauge_label_coolant">Coolant</string>
 </resources>
