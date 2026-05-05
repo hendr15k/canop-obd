@@ -7,13 +7,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.canopobd.bluetooth.RemoteBridge
+import com.canopobd.data.domain.DriveMode
+import com.canopobd.data.domain.DriveModeDetector
 import com.canopobd.data.domain.DriveScoreCalculator
+import com.canopobd.data.domain.FuelTrimAnalyzer
+import com.canopobd.data.domain.WastegateHealthAnalyzer
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 @SuppressLint("MissingPermission")
 class DashboardViewModel private constructor(
@@ -184,12 +191,64 @@ class DashboardViewModel private constructor(
     private val _showUpdateDialog = MutableStateFlow(false)
     val showUpdateDialog: StateFlow<Boolean> = _showUpdateDialog.asStateFlow()
 
+    // Turbo-Specific State
+    val turboSpeedRpm = MutableStateFlow(0.0)
+    val wastegateDuty = MutableStateFlow(0.0)
+    val wastegatePosition = MutableStateFlow(0.0)
+    val chargeAirTemp = MutableStateFlow(0.0)
+    val turboEfficiency = MutableStateFlow(0.0)
+    val turboHealthScore = MutableStateFlow(100.0)
+
+    // Chain Tensioner State
+    val chainHealthScore = MutableStateFlow(100.0)
+    val chainTensionerHealth = MutableStateFlow(ChainHealth.UNKNOWN)
+    val timingCorrelation = MutableStateFlow(0.0)
+
+    // PCV State
+    val pcvHealthScore = MutableStateFlow(100.0)
+    val pcvHealth = MutableStateFlow(PCVHealth.UNKNOWN)
+    val oilConsumptionRate = MutableStateFlow(0.0)
+
+    // Fuel System State
+    val fuelRailPressure = MutableStateFlow(0.0)
+    val injectionQuantity = MutableStateFlow(0.0)
+    val fuelSystemHealth = MutableStateFlow(FuelSystemHealth.UNKNOWN)
+
+    // Drive Style State
+    val ecoScore = MutableStateFlow(0.0)
+    val sportScore = MutableStateFlow(0.0)
+    val drivingStyle = MutableStateFlow(DriveStyle.ECONOMICAL)
+
+    // Warning System
+    val criticalWarnings = MutableStateFlow<List<VehicleWarning>>(emptyList())
+
+    // DTC Processing
+    private val _processedDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
+    val processedDTCs: StateFlow<List<ProcessedDTC>> = _processedDTCs.asStateFlow()
+    private val _criticalDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
+    val criticalDTCs: StateFlow<List<ProcessedDTC>> = _criticalDTCs.asStateFlow()
+    private val _warningDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
+    val warningDTCs: StateFlow<List<ProcessedDTC>> = _warningDTCs.asStateFlow()
+    private val _infoDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
+    val infoDTCs: StateFlow<List<ProcessedDTC>> = _infoDTCs.asStateFlow()
+
+    // Mode 22 State
+    private val _supportedMode22Pids = MutableStateFlow<List<String>>(emptyList())
+    val supportedMode22Pids: StateFlow<List<String>> = _supportedMode22Pids.asStateFlow()
+    private val _mode22DataCache = MutableStateFlow<Map<String, Mode22Data>>(emptyMap())
+    val mode22DataCache: StateFlow<Map<String, Mode22Data>> = _mode22DataCache.asStateFlow()
+
+    private val _dtcProcessingJob = MutableStateFlow<Job?>(null)
+    private val _turboAnalysisJob = MutableStateFlow<Job?>(null)
+
     init {
         if (_permissionsGranted.value) refreshDevices()
         _maintenanceItems.value = repository.loadMaintenanceItems()
         _shiftLightConfig.value = repository.loadShiftLightConfig()
         _carProfileState.value = repository.loadCarProfile()
         checkForUpdate()
+        startTurboAnalysisCollection()
+        startWarningMonitoring()
     }
 
     fun onPermissionsGranted() {
@@ -648,6 +707,501 @@ class DashboardViewModel private constructor(
             UpdateChecker.skipVersion(context, it.versionName)
         }
         _showUpdateDialog.value = false
+    }
+
+    // ========== Turbo Analysis ==========
+
+    private fun startTurboAnalysisCollection() {
+        viewModelScope.launch {
+            obdData.collect { data ->
+                if (data.rpm > 0) {
+                    updateAllTurboMetrics(data)
+                }
+            }
+        }
+    }
+
+    private fun updateAllTurboMetrics(data: OBDData) {
+        val calibration = AstraJ14TurboCalibration.INSTANCE
+        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
+
+        turboSpeedRpm.value = data.turboRpm
+        chargeAirTemp.value = data.chargeAirCoolerTemp
+        wastegateDuty.value = data.wastegateControl
+
+        val boostAnalysis = analyzeBoost(
+            absoluteBoostKpa, targetBoostKpa, calibration
+        )
+        val wgAnalysis = analyzeWastegate(
+            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration
+        )
+        wastegatePosition.value = wgAnalysis.position
+
+        val turboHealth = calculateTurboHealth(
+            boostAnalysis, wgAnalysis, data.turboRpm, data.egtBank1, calibration
+        )
+        turboHealthScore.value = turboHealth.overallScore.toDouble()
+
+        val speedFactor = (calibration.maxTurboRpm.toDouble() / 200000.0)
+        val efficiencyFactor = if (data.turboRpm > 0) {
+            (boostAnalysis.actual / (data.turboRpm * speedFactor * 0.001)).coerceIn(0.0, 100.0)
+        } else 0.0
+        turboEfficiency.value = efficiencyFactor
+
+        fuelRailPressure.value = data.fuelRailPressure
+        injectionQuantity.value = if (data.mafRate > 0 && data.rpm > 0) {
+            data.mafRate * 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
+        } else 0.0
+    }
+
+    fun analyzeBoost(
+        actualKpa: Double,
+        targetKpa: Double,
+        calibration: AstraJ14TurboCalibration
+    ): BoostAnalysis {
+        val actualBar = calibration.getBoostBar(actualKpa)
+        val targetBar = calibration.getBoostBar(targetKpa)
+        val deviation = if (targetBar > 0) ((actualBar - targetBar) / targetBar * 100.0) else 0.0
+
+        val status = when {
+            actualBar >= calibration.overboostBar -> BoostStatus.OVERBOOST
+            actualBar >= calibration.maxBoostBar * 0.85 -> BoostStatus.HIGH
+            actualBar < targetBar * 0.5 && targetBar > 0 -> BoostStatus.LOW
+            else -> BoostStatus.NORMAL
+        }
+
+        val healthScore = when {
+            actualBar > 1.35 -> 10
+            actualBar > calibration.maxBoostBar -> 20
+            actualBar >= calibration.overboostBar -> 40
+            abs(deviation) > 30 -> 50
+            abs(deviation) > 20 -> 70
+            abs(deviation) > 10 -> 85
+            else -> 100
+        }
+
+        return BoostAnalysis(
+            actual = actualBar,
+            target = targetBar,
+            deviation = deviation,
+            status = status,
+            healthScore = healthScore
+        )
+    }
+
+    fun analyzeWastegate(
+        dutyCycle: Double,
+        rpm: Int,
+        load: Double,
+        calibration: AstraJ14TurboCalibration
+    ): WastegateAnalysisResult {
+        val avgWastegate = if (_driveSession.value.wastegateSampleCount > 0) {
+            _driveSession.value.wastegateDutySum / _driveSession.value.wastegateSampleCount
+        } else dutyCycle
+
+        val data = obdData.value
+        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
+
+        val analyzer = WastegateHealthAnalyzer()
+        val analysis = analyzer.analyze(
+            wastegateDuty = dutyCycle,
+            avgWastegateDuty = avgWastegate,
+            targetBoost = targetBoostKpa,
+            actualBoost = absoluteBoostKpa,
+            rpm = rpm.toDouble(),
+            engineLoad = load
+        )
+
+        val position = when {
+            dutyCycle > 90.0 -> 95.0
+            dutyCycle < 5.0 -> 2.0
+            else -> dutyCycle
+        }
+
+        val recommendations = mutableListOf<String>()
+        recommendations.add(analysis.recommendation)
+        if (rpm > 2000 && dutyCycle < 20 && load > 60) {
+            recommendations.add("Wastegate geschlossen bei Last - Aktuator prüfen")
+        }
+
+        return WastegateAnalysisResult(
+            dutyCycle = dutyCycle,
+            position = position,
+            status = analysis.condition.name,
+            healthScore = analysis.healthScore,
+            recommendations = recommendations
+        )
+    }
+
+    fun calculateTurboHealth(
+        boostAnalysis: BoostAnalysis,
+        wastegateAnalysis: WastegateAnalysisResult,
+        turboSpeed: Double,
+        egt: Double,
+        calibration: AstraJ14TurboCalibration
+    ): TurboHealthResult {
+        val boostScore = boostAnalysis.healthScore
+        val wastegateScore = wastegateAnalysis.healthScore
+
+        val egtScore = when {
+            egt > calibration.maxEgtC -> 10
+            egt > 950 -> 20
+            egt > calibration.maxEgtC * 0.9 -> 50
+            egt > 800 -> 70
+            else -> 100
+        }
+
+        val speedScore = when {
+            turboSpeed <= 0 -> 100
+            turboSpeed > calibration.maxTurboRpm -> 15
+            turboSpeed > calibration.maxTurboRpm * 0.9 -> 50
+            turboSpeed > calibration.maxTurboRpm * 0.75 -> 75
+            else -> 100
+        }
+
+        val overallScore = (boostScore + wastegateScore + egtScore + speedScore) / 4
+
+        val status = when {
+            overallScore >= 90 -> TurboHealthStatus.HEALTHY
+            boostAnalysis.status == BoostStatus.OVERBOOST -> TurboHealthStatus.OVERBOOST
+            boostAnalysis.status == BoostStatus.LOW -> TurboHealthStatus.UNDERBOOST
+            wastegateScore < 60 -> TurboHealthStatus.WASTEGATE_ISSUE
+            egtScore < 60 -> TurboHealthStatus.INTERCOOLER_EFFICIENCY
+            else -> TurboHealthStatus.HEALTHY
+        }
+
+        return TurboHealthResult(
+            overallScore = overallScore,
+            boostScore = boostScore,
+            wastegateScore = wastegateScore,
+            egtScore = egtScore,
+            speedScore = speedScore,
+            status = status
+        )
+    }
+
+    fun calculateChainHealth(
+        hasDtcP0016: Boolean,
+        hasDtcP0017: Boolean,
+        hasDtcP0340: Boolean,
+        hasDtcP1345: Boolean,
+        timingVariance: Double,
+        rpmStability: Double
+    ): ChainHealthResult {
+        val hasDtcFault = hasDtcP0016 || hasDtcP0017 || hasDtcP0340 || hasDtcP1345
+
+        var score = 100
+        if (hasDtcP0016) score -= 30
+        if (hasDtcP0017) score -= 25
+        if (hasDtcP0340) score -= 25
+        if (hasDtcP1345) score -= 20
+
+        if (timingVariance > 5.0) score -= 15
+        else if (timingVariance > 3.0) score -= 8
+
+        if (rpmStability < 90) score -= 10
+
+        score = score.coerceIn(0, 100)
+
+        val correlation = if (timingVariance > 0) {
+            (100.0 - timingVariance * 5.0).coerceIn(0.0, 100.0)
+        } else {
+            if (hasDtcFault) 30.0 else 95.0
+        }
+
+        val chainHealth = when {
+            score >= 85 -> ChainHealth.GOOD
+            score >= 50 -> ChainHealth.WARNING
+            else -> ChainHealth.CRITICAL
+        }
+
+        val recommendation = when {
+            hasDtcP0016 -> "P0016: Nockenwellen-Kurbelwellen-Korrelation prüfen - Steuerkette und Spanner ersetzen"
+            hasDtcP0017 -> "P0017: Nockenwellen-Kurbelwellen-Korrelation Bank 1 Sensor B - Steuerkette prüfen"
+            hasDtcP0340 -> "P0340: Nockenwellenpositionssensor prüfen - Steuerkettenspanner möglicherweise verschlissen"
+            hasDtcP1345 -> "P1345: Nockenwellen-Kurbelwellen-Phasenabweichung - Sofortige Prüfung empfohlen"
+            timingVariance > 5.0 -> "Hohe Timing-Variabilität - Kettenspanner-Vorwärtsverschleiß prüfen"
+            else -> "Keine Maßnahmen erforderlich"
+        }
+
+        chainHealthScore.value = score.toDouble()
+        chainTensionerHealth.value = chainHealth
+        timingCorrelation.value = correlation
+
+        return ChainHealthResult(
+            healthScore = score,
+            chainHealth = chainHealth,
+            timingCorrelation = correlation,
+            hasDtcFault = hasDtcFault,
+            recommendation = recommendation
+        )
+    }
+
+    // ========== PCV Analysis ==========
+
+    fun analyzePCV(): PCVHealth {
+        val data = repository.obdData.value
+        val calibration = AstraJ14TurboCalibration.INSTANCE
+
+        var score = 100
+        var health = PCVHealth.GOOD
+
+        if (data.intakePressure > 0 && data.barometricPressure > 0) {
+            val vacuumKpa = data.barometricPressure - data.intakePressure
+            if (data.rpm > 800 && data.throttle < 20 && vacuumKpa < 20) {
+                score -= 30
+                health = PCVHealth.WEAK
+            }
+        }
+
+        if (data.shortTermFuelTrimB1 > 10 || data.longTermFuelTrimB1 > 10) {
+            score -= 15
+            if (score < 60) health = PCVHealth.WEAK
+        }
+
+        if (data.oilTemp > calibration.maxOilTempC * 0.9) {
+            score -= 10
+        }
+
+        score = score.coerceIn(0, 100)
+        if (score < 40) health = PCVHealth.FAILED
+
+        pcvHealthScore.value = score.toDouble()
+        pcvHealth.value = health
+        return health
+    }
+
+    // ========== Fuel System ==========
+
+    fun analyzeFuelSystem(): FuelSystemHealth {
+        val data = repository.obdData.value
+        val analyzer = FuelTrimAnalyzer()
+        val status = analyzer.analyze(data.shortTermFuelTrimB1, data.longTermFuelTrimB1)
+
+        val health = when {
+            status.isLean -> FuelSystemHealth.LEAN
+            status.isRich -> FuelSystemHealth.RICH
+            else -> FuelSystemHealth.NORMAL
+        }
+
+        fuelSystemHealth.value = health
+        fuelRailPressure.value = data.fuelRailPressure
+        return health
+    }
+
+    // ========== Drive Style Detection ==========
+
+    fun detectDriveStyle(
+        throttle: Double, rpm: Double, speed: Double,
+        load: Double, acceleratorPedalD: Double, throttleActuator: Double
+    ): DriveStyle {
+        val driveMode = DriveModeDetector.detectMode(throttle, rpm, speed, load, acceleratorPedalD, throttleActuator)
+        val style = when (driveMode) {
+            DriveMode.ECO -> DriveStyle.ECONOMICAL
+            DriveMode.SPORT -> DriveStyle.AGGRESSIVE
+            DriveMode.NORMAL -> DriveStyle.BALANCED
+        }
+
+        val session = _driveSession.value
+        val totalSamples = session.rpmSamples.coerceAtLeast(1.0)
+        val ecoRatio = (session.coastingInGearSamples + session.deceleratingSamples).toDouble() / totalSamples
+        val sportRatio = session.rpmAbove4500Samples.toDouble() / totalSamples
+
+        ecoScore.value = (ecoRatio * 100.0).coerceIn(0.0, 100.0)
+        sportScore.value = (sportRatio * 100.0).coerceIn(0.0, 100.0)
+        drivingStyle.value = style
+        return style
+    }
+
+    // ========== Warning System ==========
+
+    private fun startWarningMonitoring() {
+        viewModelScope.launch {
+            obdData.collect { data ->
+                if (data.rpm > 0) {
+                    val warnings = checkCriticalWarnings(data)
+                    criticalWarnings.value = warnings
+                }
+            }
+        }
+    }
+
+    fun checkCriticalWarnings(data: OBDData): List<VehicleWarning> {
+        val calibration = AstraJ14TurboCalibration.INSTANCE
+        val warnings = mutableListOf<VehicleWarning>()
+
+        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val boostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
+
+        if (boostBar > 1.35) {
+            warnings.add(VehicleWarning(
+                "TURBO_OVERBOOST", WarningPriority.CRITICAL,
+                "Überladung!", "Ladedruck ${"%.2f".format(boostBar)} bar - sofort Pedal loslassen!"
+            ))
+        }
+
+        val egt = data.egtBank1
+        if (egt > 950) {
+            warnings.add(VehicleWarning(
+                "EGT_CRITICAL", WarningPriority.CRITICAL,
+                "Abgastemperatur kritisch!", "EGT ${egt.toInt()}°C - Motorlast sofort reduzieren!"
+            ))
+        }
+
+        if (egt > calibration.maxEgtC * 0.9) {
+            warnings.add(VehicleWarning(
+                "EGT_HIGH", WarningPriority.WARNING,
+                "Abgastemperatur erhöht", "EGT ${egt.toInt()}°C - Last reduzieren empfohlen"
+            ))
+        }
+
+        val oilPressureBar = data.turboOilPressure ?: 0.0
+        if (data.rpm > 1000 && oilPressureBar > 0 && oilPressureBar < calibration.minOilPressureIdle) {
+            warnings.add(VehicleWarning(
+                "OIL_PRESSURE", WarningPriority.CRITICAL,
+                "Öldruck niedrig!", "Öldruck ${"%.1f".format(oilPressureBar)} bar unter Mindestwert!"
+            ))
+        }
+
+        val chainState = _timingChainState.value
+        if (chainState.coldStartRattleDetected) {
+            warnings.add(VehicleWarning(
+                "CHAIN_RATTLE", WarningPriority.WARNING,
+                "Steuerkette Rattern!", "Kaltstart-Rattern erkannt - Kettenspanner prüfen"
+            ))
+        }
+
+        if (data.coolantTemp > calibration.maxCoolantTempC * 0.95) {
+            warnings.add(VehicleWarning(
+                "COOLANT_HIGH", WarningPriority.WARNING,
+                "Kühlmitteltemperatur hoch", "${data.coolantTemp.toInt()}°C"
+            ))
+        }
+
+        if (data.rpm > calibration.redlineRpm) {
+            warnings.add(VehicleWarning(
+                "RPM_REDLINE", WarningPriority.CRITICAL,
+                "Redline überschritten!", "Drehzahl ${data.rpm.toInt()} rpm"
+            ))
+        }
+
+        if (boostBar < calibration.normalBoostTargetBar * 0.5 && data.rpm > 2000 && data.throttle > 60) {
+            warnings.add(VehicleWarning(
+                "LOW_BOOST", WarningPriority.WARNING,
+                "Unterladung", "Ladedruck ${"%.2f".format(boostBar)} bar bei ${data.rpm.toInt()} rpm"
+            ))
+        }
+
+        return warnings
+    }
+
+    // ========== DTC Processing ==========
+
+    fun processDTC(dtc: String): ProcessedDTC {
+        val knownDTCs = mapOf(
+            "P0016" to ProcessedDTC("P0016", "Nockenwellen-Kurbelwellen-Korrelation Bank 1 Sensor A", DTCSeverity.CRITICAL, "Steuerkette", "Steuerkette, Kettenspanner und Sensoren prüfen"),
+            "P0017" to ProcessedDTC("P0017", "Nockenwellen-Kurbelwellen-Korrelation Bank 1 Sensor B", DTCSeverity.CRITICAL, "Steuerkette", "Steuerkette und Nockenwellenposition prüfen"),
+            "P0100" to ProcessedDTC("P0100", "Luftmassenmesser (MAF) - Stromkreisfehler", DTCSeverity.WARNING, "Sensor", "MAF-Sensor prüfen und reinigen"),
+            "P0101" to ProcessedDTC("P0101", "Luftmassenmesser (MAF) - Leistungsbereich", DTCSeverity.WARNING, "Sensor", "MAF-Sensor prüfen, Luftfilter wechseln"),
+            "P0102" to ProcessedDTC("P0102", "Luftmassenmesser (MAF) - Signaleingang niedrig", DTCSeverity.WARNING, "Sensor", "MAF-Sensor reinigen oder ersetzen"),
+            "P0103" to ProcessedDTC("P0103", "Luftmassenmesser (MAF) - Signaleingang hoch", DTCSeverity.WARNING, "Sensor", "MAF-Sensor prüfen"),
+            "P0116" to ProcessedDTC("P0116", "Kühlmitteltemperatur-Sensor - Plausibilitätsfehler", DTCSeverity.WARNING, "Sensor", "Temperatursensor prüfen"),
+            "P0117" to ProcessedDTC("P0117", "Kühlmitteltemperatur-Sensor - Signaleingang niedrig", DTCSeverity.WARNING, "Sensor", "Kühlmitteltemperatursensor ersetzen"),
+            "P0234" to ProcessedDTC("P0234", "Turbolader-Überladung (Overboost)", DTCSeverity.CRITICAL, "Turbo", "Wastegate und Ladedruckregelung prüfen"),
+            "P0235" to ProcessedDTC("P0235", "Turbolader-Überladungs-Sensor A", DTCSeverity.WARNING, "Turbo", "Ladedrucksensor prüfen"),
+            "P0340" to ProcessedDTC("P0340", "Nockenwellenpositionssensor - Stromkreisfehler", DTCSeverity.CRITICAL, "Sensor", "Sensor und Verkabelung prüfen"),
+            "P0341" to ProcessedDTC("P0341", "Nockenwellenpositionssensor - Leistungsbereich", DTCSeverity.CRITICAL, "Sensor", "Sensor prüfen, Steuerkette inspizieren"),
+            "P1100" to ProcessedDTC("P1100", "PCV-System (Crankcase Ventilation) Störung", DTCSeverity.WARNING, "PCV", "PCV-Ventil und Zylinderkopfhaube prüfen"),
+            "P1101" to ProcessedDTC("P1101", "Ansaugluftsystem - Luftleck erkannt", DTCSeverity.WARNING, "Ansaugung", "Saugrohr und Dichtungen auf Luftleck prüfen"),
+            "P1345" to ProcessedDTC("P1345", "Nockenwellen-Kurbelwellen-Phasenabweichung", DTCSeverity.CRITICAL, "Steuerkette", "Steuerkette und Kettenspanner ersetzen"),
+            "P0171" to ProcessedDTC("P0171", "System zu mager (Bank 1)", DTCSeverity.WARNING, "Kraftstoff", "MAF, O2-Sensor, Kraftstoffdruck und Luftleck prüfen"),
+            "P0172" to ProcessedDTC("P0172", "System zu fett (Bank 1)", DTCSeverity.WARNING, "Kraftstoff", "Einspritzventile, Kraftstoffdruck und O2-Sensor prüfen"),
+            "P0420" to ProcessedDTC("P0420", "Katalysator-Wirkung unter Schwellenwert (Bank 1)", DTCSeverity.WARNING, "Abgas", "Katalysator prüfen, O2-Sensoren messen"),
+            "P0562" to ProcessedDTC("P0562", "Systemspannung niedrig", DTCSeverity.INFO, "Elektrik", "Batterie und Lichtmaschine prüfen"),
+            "P0130" to ProcessedDTC("P0130", "O2-Sensor Stromkreis (Bank 1 Sensor 1)", DTCSeverity.WARNING, "Sensor", "O2-Sensor prüfen und ggf. ersetzen")
+        )
+
+        val upperCode = dtc.trim().uppercase()
+        return knownDTCs[upperCode] ?: ProcessedDTC(
+            code = upperCode,
+            description = "Astra J 1.4T DTC: $upperCode",
+            severity = DTCSeverity.INFO,
+            category = "Sonstige",
+            recommendation = "Herstellerspezifischen Diagnose-Code nachschlagen"
+        )
+    }
+
+    fun processAllDTCs() {
+        val response = dtcResponse.value ?: return
+        val allCodes = response.codes + response.pendingCodes
+        val processed = allCodes.map { processDTC(it.code) }
+        _processedDTCs.value = processed
+        _criticalDTCs.value = processed.filter { it.severity == DTCSeverity.CRITICAL }
+        _warningDTCs.value = processed.filter { it.severity == DTCSeverity.WARNING }
+        _infoDTCs.value = processed.filter { it.severity == DTCSeverity.INFO || it.severity == DTCSeverity.PERFORMANCE }
+    }
+
+    // ========== Mode 22 Data Handling ==========
+
+    fun parseMode22Response(pid: String, data: ByteArray): Mode22Data? {
+        if (data.size < 2) return null
+        val rawValue = ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)).toDouble()
+
+        return when (pid) {
+            "0174" -> Mode22Data(pid, rawValue, "rpm", data)
+            "010C" -> Mode22Data(pid, rawValue / 4.0, "rpm", data)
+            "010D" -> Mode22Data(pid, rawValue, "km/h", data)
+            "0104" -> Mode22Data(pid, rawValue * 100.0 / 255.0, "%", data)
+            "0111" -> Mode22Data(pid, rawValue * 100.0 / 255.0, "%", data)
+            "0105" -> Mode22Data(pid, rawValue - 40.0, "°C", data)
+            "010F" -> Mode22Data(pid, rawValue - 40.0, "°C", data)
+            "0170" -> Mode22Data(pid, rawValue * 0.03125, "kPa", data)
+            "0171" -> Mode22Data(pid, rawValue * 100.0 / 255.0, "%", data)
+            "0172" -> Mode22Data(pid, rawValue * 100.0 / 255.0, "%", data)
+            "0178" -> Mode22Data(pid, rawValue / 10.0 - 40.0, "°C", data)
+            "0179" -> Mode22Data(pid, rawValue / 10.0 - 40.0, "°C", data)
+            "0177" -> Mode22Data(pid, rawValue - 40.0, "°C", data)
+            "010B" -> Mode22Data(pid, rawValue, "kPa", data)
+            "010A" -> Mode22Data(pid, rawValue * 3.0, "kPa", data)
+            "0110" -> Mode22Data(pid, rawValue / 100.0, "g/s", data)
+            "015C" -> Mode22Data(pid, rawValue - 40.0, "°C", data)
+            "012A" -> Mode22Data(pid, rawValue * 0.079, "kPa", data)
+            "0142" -> Mode22Data(pid, rawValue / 1000.0, "V", data)
+            "0133" -> Mode22Data(pid, rawValue, "kPa", data)
+            else -> Mode22Data(pid, rawValue, "", data)
+        }
+    }
+
+    fun requestMode22Data(pid: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val rawPid = if (pid.startsWith("22")) pid.drop(2) else pid
+                _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
+                    pid = rawPid,
+                    value = 0.0,
+                    unit = "",
+                    timestamp = System.currentTimeMillis()
+                ))
+            } catch (e: Exception) {
+                _mode22DataCache.value = _mode22DataCache.value - pid
+            }
+        }
+    }
+
+    fun discoverMode22Support(): List<String> {
+        val knownMode22Pids = AstraJ14TurboCalibration.SUPPORTED_TURBO_PIDS.map { it.code }
+        val discovered = mutableListOf<String>()
+        for (pid in knownMode22Pids) {
+            val rawPid = if (pid.startsWith("01")) pid.drop(2) else pid
+            discovered.add(rawPid)
+        }
+        _supportedMode22Pids.value = discovered
+        return discovered
     }
 
     override fun onCleared() {

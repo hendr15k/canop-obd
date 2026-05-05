@@ -797,6 +797,91 @@ enum class ColdStartPhase(val label: String, val description: String) {
     READY("Bereit", "Volle Leistung verfügbar")
 }
 
+enum class FuelClassification(val label: String) {
+    REGULAR_UNLEADED("Regular Unleaded (91 RON)"),
+    SUPER_UNLEADED("Super Unleaded (95 RON)"),
+    SUPER_PLUS("Super Plus (98 RON)"),
+    ETHANOL_E10_COMPATIBLE("Ethanol E10 Compatible"),
+    ETHANOL_E85("Ethanol E85 (Flex Fuel)"),
+    DIESEL("Diesel"),
+    DIESEL_ULTRA("Ultra Low Sulfur Diesel")
+}
+
+data class FuelConsumptionProfile(
+    val cityL100: ClosedFloatingPointRange<Double> = 9.0..12.0,
+    val highwayL100: ClosedFloatingPointRange<Double> = 6.5..8.0,
+    val mixedL100: ClosedFloatingPointRange<Double> = 7.5..9.0,
+    val tankLiters: Double = 56.0,
+    val recommendedFuel: String = "Super 98 RON (min 95)",
+    val fuelClassification: FuelClassification = FuelClassification.ETHANOL_E10_COMPATIBLE
+)
+
+data class TuningStage(
+    val name: String,
+    val powerKw: IntRange,
+    val powerPs: IntRange,
+    val torqueNm: IntRange,
+    val boostBar: ClosedFloatingPointRange<Float>,
+    val fuelRpm: String,
+    val notes: String
+)
+
+data class TuningStageCalibration(
+    val stage1: TuningStage,
+    val stage2: TuningStage,
+    val stage3: TuningStage
+) {
+    companion object {
+        val ASTRA_J_14T = TuningStageCalibration(
+            stage1 = TuningStage(
+                name = "Stage 1 – ECU Remap",
+                powerKw = 125..136,
+                powerPs = 170..185,
+                torqueNm = 260..280,
+                boostBar = 0.7f..0.8f,
+                fuelRpm = "4900-6000",
+                notes = "ECU remap, drop-in air filter, downpipe"
+            ),
+            stage2 = TuningStage(
+                name = "Stage 2 – Bolt-On",
+                powerKw = 143..154,
+                powerPs = 195..210,
+                torqueNm = 290..310,
+                boostBar = 0.9f..1.0f,
+                fuelRpm = "5000-6200",
+                notes = "Intercooler upgrade, intake, exhaust, upgraded injectors"
+            ),
+            stage3 = TuningStage(
+                name = "Stage 3 – Big Turbo",
+                powerKw = 169..191,
+                powerPs = 230..260,
+                torqueNm = 320..350,
+                boostBar = 1.2f..1.5f,
+                fuelRpm = "5200-6500",
+                notes = "Turbo upgrade, fuel system, internals — built engine recommended"
+            )
+        )
+    }
+}
+
+data class MaintenanceInterval(
+    val item: MaintenanceType,
+    val intervalKm: Int,
+    val intervalMonths: Int = 0,
+    val specification: String = "",
+    val capacity: String = "",
+    val partNumber: String = "",
+    val notes: String = ""
+)
+
+data class ProblemMileageMap(
+    val component: String,
+    val typicalRangeStartKm: Int,
+    val typicalRangeEndKm: Int,
+    val severity: Int = 1,
+    val description: String = ""
+)
+
 data class AstraJ14TurboCalibration(
     val redlineRpm: Int = 6500,
     val rpmWarning: Int = 5850,
@@ -868,7 +953,50 @@ data class AstraJ14TurboCalibration(
     val oilPressureIdle: Double = 1.0,
     val oilPressureRpm: Double = 2.5,
     val recommendedFuelOctane: Int = 98,
-    val minFuelOctane: Int = 95
+    val minFuelOctane: Int = 95,
+
+    val wastegateIdleDutyMin: Float = 80.0f,
+    val wastegateIdleDutyMax: Float = 95.0f,
+    val wastegateWotDutyMin: Float = 25.0f,
+    val wastegateWotDutyMax: Float = 60.0f,
+    val wastegateHealthyDutyRange: ClosedFloatingPointRange<Float> = 30.0f..70.0f,
+    val wastegateStuckOpenDuty: Float = 95.0f,
+    val wastegateStuckClosedDuty: Float = 10.0f,
+
+    val boostIdleVacuumKpa: Float = -65.0f,
+    val boostIdleVacuumKpaMin: Float = -75.0f,
+    val boostIdleVacuumKpaMax: Float = -55.0f,
+    val boostNormalKpa: Float = 70.0f,
+    val boostNormalKpaMin: Float = 60.0f,
+    val boostNormalKpaMax: Float = 80.0f,
+    val boostOverboostKpa: Float = 120.0f,
+    val boostOverboostKpaMax: Float = 135.0f,
+
+    val turboSpeedIdleRpm: Float = 8000.0f,
+    val turboSpeedNormalRangeRpm: ClosedFloatingPointRange<Float> = 80000.0f..150000.0f,
+    val turboSpeedMaxRpm: Float = 200000.0f,
+
+    val chargeAirTempIdleOffset: Float = 10.0f,
+    val chargeAirTempNormalMax: Float = 50.0f,
+    val chargeAirTempWotMax: Float = 65.0f,
+
+    val egtNormalMax: Float = 750.0f,
+    val egtWotMax: Float = 850.0f,
+    val egtCritical: Float = 950.0f,
+
+    val fuelPressureIdleKpa: Float = 350.0f,
+    val fuelPressureWotKpa: Float = 500.0f,
+    val fuelRailPressureIdleKpa: ClosedFloatingPointRange<Float> = 3500.0f..4500.0f,
+    val fuelRailPressureWotKpa: ClosedFloatingPointRange<Float> = 4000.0f..5500.0f,
+
+    val stftNormalRange: ClosedFloatingPointRange<Float> = -5.0f..5.0f,
+    val stftWarningRange: ClosedFloatingPointRange<Float> = -10.0f..10.0f,
+    val ltftNormalRange: ClosedFloatingPointRange<Float> = -8.0f..8.0f,
+    val ltftWarningRange: ClosedFloatingPointRange<Float> = -15.0f..15.0f,
+    val ltftCritical: Float = 15.0f,
+
+    val tuningStages: TuningStageCalibration = TuningStageCalibration.ASTRA_J_14T,
+    val fuelConsumptionProfile: FuelConsumptionProfile = FuelConsumptionProfile()
 ) {
     fun getBoostBar(pressureKpa: Double): Double = pressureKpa / 100.0
     fun isRpmWarning(rpm: Double): Boolean = rpm >= rpmWarning
@@ -979,13 +1107,70 @@ data class AstraJ14TurboCalibration(
             MaintenanceItem(type = MaintenanceType.TURBO_BOOST_CHECK, intervalKm = 45000)
         )
         val KNOWN_ISSUES = listOf(
-            KnownIssue("Kettenspanner", "Rattern bei Kaltstart, P0340/P0341/P1345", "80.000-150.000 km", "Oelqualitaet und Oelwechselintervalle einhalten, Kettenspanner ersetzen"),
+            KnownIssue("Kettenspanner", "Rattern bei Kaltstart, P0340/P0341/P1345", "80.000-150.000 km", "Oelqualitaetaet und Oelwechselintervalle einhalten, Kettenspanner ersetzen"),
             KnownIssue("MAF-Sensor", "Rauer Leerlauf, Leistungsverlust, P0100-P0103", "60.000-120.000 km", "MAF-Sensor mit speziellem Reiniger reinigen, Luftmassenmesser prufen"),
             KnownIssue("Wastegate-Stellglied", "Rasseln, Ladedruck-Schwankungen, P0234/P0235", "80.000-150.000 km", "Wastegate-Stellglied auf Freigang prufen, O-Ring kontrollieren"),
             KnownIssue("PCV-Ventil", "Oelverbrauch, blauer Rauch, P1100/P1101", "60.000-100.000 km", "Zylinderkopfhaube mit Ventilen ersetzen, Often PCV-Pruefung"),
             KnownIssue("Kuhlmittel-Temperaturfuhler", "Kalte Motorstartprobleme, P0116/P0117", "80.000-150.000 km", "Kuhlmittel-Temperatursensor ersetzen"),
             KnownIssue("Turbo-Ladedruck", "Leistungsverlust bei hoher Drehzahl", "100.000+ km", "Ladedrucksensor und Wastegate-Pruefung"),
             KnownIssue("Zundkerzen", "Zundungsaussetzer, schlechtes Startverhalten", "30.000-60.000 km", "Zundkerzen erneuern, Elektrodenabstand prufen")
+        )
+        val MAINTENANCE_INTERVALS = listOf(
+            MaintenanceInterval(
+                item = MaintenanceType.OIL_CHANGE,
+                intervalKm = 30000,
+                intervalMonths = 12,
+                specification = "Dexos2 5W-30",
+                capacity = "4.5L",
+                notes = "Oelwechselintervall bei Sportfahrweise reduzieren"
+            ),
+            MaintenanceInterval(
+                item = MaintenanceType.SPARK_PLUGS,
+                intervalKm = 30000,
+                specification = "NGK LZKR6B-10E",
+                notes = "Elektrodenabstand 0.75mm"
+            ),
+            MaintenanceInterval(
+                item = MaintenanceType.AIR_FILTER,
+                intervalKm = 30000
+            ),
+            MaintenanceInterval(
+                item = MaintenanceType.TURBO_BOOST_CHECK,
+                intervalKm = 60000,
+                specification = "Kraftstofffilter",
+                notes = "Benzinfilter integriert in Tankpumpe"
+            ),
+            MaintenanceInterval(
+                item = MaintenanceType.COOLANT,
+                intervalKm = 150000,
+                intervalMonths = 24,
+                specification = "Dex-Cool (Orangefarben)",
+                capacity = "5.7L",
+                notes = "Erstwechsel 150.000 km, danach alle 40.000 km / 24 Monate"
+            ),
+            MaintenanceInterval(
+                item = MaintenanceType.TURBO_INSPECTION,
+                intervalKm = 30000,
+                notes = "Visuelle Inspektion alle 30.000 km, Drucktest alle 60.000 km"
+            ),
+            MaintenanceInterval(
+                item = MaintenanceType.TRANSMISSION_FLUID,
+                intervalKm = 60000,
+                specification = "75W-80 GL-4",
+                capacity = "1.7-1.8L",
+                notes = "Getrag M32 – Fruehzeitiger Verschleiss bei Pre-2012 Modellen"
+            )
+        )
+        val PROBLEM_MILEAGE_MAP = listOf(
+            ProblemMileageMap("Zuendspulen", 60000, 100000, 2, "Einzelaussetzer, P0300-P0304"),
+            ProblemMileageMap("MAF-Sensor", 60000, 100000, 2, "Luftmassenmesser Verschmutzung/Defekt"),
+            ProblemMileageMap("PCV-Ventil", 80000, 120000, 2, "Druckregelventil im Zylinderkopfdeckel"),
+            ProblemMileageMap("Wasserpumpe", 80000, 150000, 3, "Kuehlmittelverlust, Lagergeraeusche"),
+            ProblemMileageMap("Steuerkette", 100000, 150000, 3, "Kettenverlaengerung, Kaltstart-Rattern"),
+            ProblemMileageMap("Turbolader", 120000, 180000, 3, "Lagerschaden, Oelleckage, Wastegate-Verschleiss"),
+            ProblemMileageMap("Kolbenringe", 100000, 150000, 3, "Oelverbrauch, Kompressionsverlust"),
+            ProblemMileageMap("Getriebe M32", 80000, 120000, 3, "Pre-2012 Modelle – Lager und Synchronringe"),
+            ProblemMileageMap("Wastegate-Stellglied", 100000, 150000, 2, "Feder ermuedet, O-Ring poroes")
         )
     }
 }
@@ -1111,4 +1296,97 @@ enum class DTCSeverity(val label: String, val colorHex: Long) {
     WARNING("Warnung", 0xFFFFE066),
     CRITICAL("Kritisch", 0xFFFF4444),
     PERFORMANCE("Leistung", 0xFFFF8C00)
+}
+
+enum class ChainHealth { UNKNOWN, GOOD, WARNING, CRITICAL }
+
+enum class PCVHealth { UNKNOWN, GOOD, WEAK, FAILED }
+
+enum class FuelSystemHealth { UNKNOWN, LEAN, RICH, NORMAL }
+
+enum class DriveStyle(val label: String) {
+    ECONOMICAL("Sparend"),
+    BALANCED("Ausgewogen"),
+    AGGRESSIVE("Sportlich")
+}
+
+enum class BoostStatus(val label: String) {
+    LOW("Unterladung"),
+    NORMAL("Normal"),
+    HIGH("Erhoeht"),
+    OVERBOOST("Ueberladung!")
+}
+
+data class BoostAnalysis(
+    val actual: Double = 0.0,
+    val target: Double = 0.0,
+    val deviation: Double = 0.0,
+    val status: BoostStatus = BoostStatus.NORMAL,
+    val healthScore: Int = 100
+)
+
+data class WastegateAnalysisResult(
+    val dutyCycle: Double = 0.0,
+    val position: Double = 0.0,
+    val status: String = "",
+    val healthScore: Int = 100,
+    val recommendations: List<String> = emptyList()
+)
+
+data class TurboHealthResult(
+    val overallScore: Int = 100,
+    val boostScore: Int = 100,
+    val wastegateScore: Int = 100,
+    val egtScore: Int = 100,
+    val speedScore: Int = 100,
+    val status: TurboHealthStatus = TurboHealthStatus.HEALTHY
+)
+
+data class ChainHealthResult(
+    val healthScore: Int = 100,
+    val chainHealth: ChainHealth = ChainHealth.UNKNOWN,
+    val timingCorrelation: Double = 0.0,
+    val hasDtcFault: Boolean = false,
+    val recommendation: String = ""
+)
+
+data class VehicleWarning(
+    val id: String,
+    val priority: WarningPriority,
+    val title: String,
+    val message: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+enum class WarningPriority { INFO, WARNING, CRITICAL }
+
+data class ProcessedDTC(
+    val code: String,
+    val description: String,
+    val severity: DTCSeverity,
+    val category: String,
+    val recommendation: String
+)
+
+data class Mode22Data(
+    val pid: String,
+    val value: Double,
+    val unit: String,
+    val rawBytes: ByteArray = ByteArray(0),
+    val timestamp: Long = System.currentTimeMillis()
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Mode22Data) return false
+        return pid == other.pid && value == other.value && unit == other.unit &&
+                rawBytes.contentEquals(other.rawBytes) && timestamp == other.timestamp
+    }
+    override fun hashCode(): Int {
+        var result = pid.hashCode()
+        result = 31 * result + value.hashCode()
+        result = 31 * result + unit.hashCode()
+        result = 31 * result + rawBytes.contentHashCode()
+        result = 31 * result + timestamp.hashCode()
+        return result
+    }
 }

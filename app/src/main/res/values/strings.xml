@@ -651,4 +651,54 @@
     <string name="charge_air_high_warning">Ladelufttemperatur zu hoch — Ladeluftkühler prüfen</string>
     <string name="wastegate">Wastegate</string>
     <string name="temperatures">Temperaturen</string>
+
+    <!-- ChainTensionerWarningCard -->
+    <string name="chain_tensioner_title">Steuerkettenspanner</string>
+    <string name="chain_estimated_life">Restlebensdauer</string>
+    <string name="chain_last_checked">Zuletzt geprüft</string>
+    <string name="chain_check_now">Jetzt prüfen</string>
+    <string name="chain_rattle_active">Kaltstart-Rattern erkannt — Steuerkette sofort prüfen!</string>
+    <string name="chain_status_critical">Steuerkette kritisch — sofort prüfen lassen!</string>
+    <string name="chain_status_wear">Verschleiß erkannt — Steuerkette bei nächster Wartung prüfen</string>
+
+    <!-- TurboDetailCard -->
+    <string name="turbo_detail_title">Turbo-Detail</string>
+
+    <!-- FuelSystemCard -->
+    <string name="fuel_system_title">Kraftstoffsystem</string>
+    <string name="fuel_rail_pressure">Kraftstoffraildruck</string>
+    <string name="fuel_injection_qty">Einspritzmenge</string>
+    <string name="fuel_lambda">Lambda-Wert</string>
+
+    <!-- PCVHealthCard -->
+    <string name="pcv_title">PCV-System</string>
+    <string name="pcv_health">PCV-Gesundheit</string>
+    <string name="pcv_maf_correlation">MAF-Korrelation</string>
+    <string name="pcv_stft_deviation">STFT-Abweichung</string>
+    <string name="pcv_oil_consumption_trend">Ölverbrauch-Trend</string>
+    <string name="pcv_check_now">PCV prüfen</string>
+
+    <!-- DriveStyleCard -->
+    <string name="drive_style_overboost">Overboost</string>
+    <string name="drive_style_brakes">Bremsen</string>
+    <string name="drive_style_rpm_dist">RPM-Verteilung</string>
+
+    <!-- M32GearboxStatusCard -->
+    <string name="gearbox_title">Getriebe (M32)</string>
+    <string name="gearbox_health_score">Getriebe-Zustand</string>
+    <string name="gearbox_temp">Getriebetemperatur</string>
+    <string name="gearbox_ratio">Drehzahl-Verhältnis</string>
+    <string name="gearbox_fluid_maintenance">Getriebeöl-Wartung</string>
+    <string name="gearbox_rattle_warning">Getriebe-Rasseln erkannt — Lager prüfen!</string>
+
+    <!-- TuningStageIndicator -->
+    <string name="tuning_stage_title">Tuning-Stufe</string>
+    <string name="tuning_boost_comparison">Ladedruck-Vergleich</string>
+    <string name="tuning_power_estimate">Leistungsschätzung</string>
+    <string name="tuning_fuel_recommendation">Kraftstoff</string>
+    <string name="tuning_m32_warning">Achtung: M32-Getriebe Grenze bei Stage 2+! Getriebeöl-Upgrade empfohlen.</string>
+
+    <!-- CriticalWarningOverlay -->
+    <string name="overlay_dismiss">Schließen</string>
+    <string name="overlay_auto_dismiss">Automatisches Schließen in 10 Sekunden</string>
 </resources>
