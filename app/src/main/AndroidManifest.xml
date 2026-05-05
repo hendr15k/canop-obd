@@ -15,8 +15,10 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <!-- GPS permissions -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Install APK updates -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Declare Bluetooth feature (not required, but recommended) -->
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
