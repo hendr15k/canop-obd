@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.canopobd.bluetooth.RemoteBridge
+import com.canopobd.data.domain.DriveScoreCalculator
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.Dispatchers
@@ -471,50 +472,7 @@ class DashboardViewModel private constructor(
 
     fun updateDriveScore() {
         val session = _driveSession.value
-        val score = com.canopobd.data.model.DriveScore(
-            accelerationScore = (100 - session.harshAccels * 10).coerceIn(0, 100),
-            brakingScore = (100 - session.harshBrakes * 10).coerceIn(0, 100),
-            cruisingScore = calculateCruisingScore(session),
-            idleScore = calculateIdleScore(session),
-            rpmScore = calculateRpmScore(session),
-            throttleScore = calculateThrottleScore(session),
-            score = 0
-        )
-        val avgScore = (score.accelerationScore + score.brakingScore + score.cruisingScore +
-                score.idleScore + score.rpmScore + score.throttleScore) / 6
-        _driveScore.value = score.copy(score = avgScore)
-    }
-
-    private fun calculateCruisingScore(session: com.canopobd.data.model.DriveSession): Int {
-        return if (session.avgSpeed > 0) {
-            ((session.speedSamples / (session.speedSamples + session.harshAccels + session.harshBrakes)) * 100).toInt().coerceIn(0, 100)
-        } else 50
-    }
-
-    private fun calculateIdleScore(session: com.canopobd.data.model.DriveSession): Int {
-        val totalSeconds = if (session.endTime > 0) (session.endTime - session.startTime) / 1000 else 0L
-        return if (totalSeconds > 0) {
-            ((1.0 - (session.idleTimeSeconds.toDouble() / totalSeconds)) * 100).toInt().coerceIn(0, 100)
-        } else 50
-    }
-
-    private fun calculateRpmScore(session: com.canopobd.data.model.DriveSession): Int {
-        return when {
-            session.avgRpm < 1500 -> 80
-            session.avgRpm < 2500 -> 100
-            session.avgRpm < 3500 -> 80
-            session.avgRpm < 4500 -> 60
-            else -> 40
-        }
-    }
-
-    private fun calculateThrottleScore(session: com.canopobd.data.model.DriveSession): Int {
-        return when {
-            session.avgThrottle < 30 -> 100
-            session.avgThrottle < 50 -> 80
-            session.avgThrottle < 70 -> 60
-            else -> 40
-        }
+        _driveScore.value = DriveScoreCalculator.computeScore(session)
     }
 
     fun resetDriveScore() {

@@ -54,14 +54,14 @@ fun DriveScoreDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Fahrstil-Analyse",
+                        text = stringResource(R.string.drive_score_analysis_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = canopoHighlight
                     )
                     Row {
                         IconButton(onClick = onResetScore) {
-                            Icon(Icons.Filled.Refresh, contentDescription = "Reset", tint = gaugeYellow, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.drive_score_reset), tint = gaugeYellow, modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = onDismiss) {
                             Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
@@ -93,7 +93,7 @@ fun DriveScoreDialog(
                                     color = Color(score.color)
                                 )
                                 Text(
-                                    text = "${score.score}/100",
+                                    text = stringResource(R.string.drive_score_score_format, score.score),
                                     fontSize = 16.sp,
                                     color = textSecondary
                                 )
@@ -106,9 +106,9 @@ fun DriveScoreDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            ScoreMini(score.accelerationScore, "Beschleunigung", gaugeGreen)
-                            ScoreMini(score.brakingScore, "Bremsen", gaugeRed)
-                            ScoreMini(score.cruisingScore, "Schwung", gaugeCyan)
+                            ScoreMini(score.accelerationScore, stringResource(R.string.drive_score_acceleration), gaugeGreen)
+                            ScoreMini(score.brakingScore, stringResource(R.string.drive_score_braking), gaugeRed)
+                            ScoreMini(score.cruisingScore, stringResource(R.string.drive_score_cruising), gaugeCyan)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -117,9 +117,9 @@ fun DriveScoreDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            ScoreMini(score.idleScore, "Leerlauf", gaugeYellow)
-                            ScoreMini(score.rpmScore, "Drehzahl", gaugeOrange)
-                            ScoreMini(score.throttleScore, "Gas", gaugeCyan)
+                            ScoreMini(score.idleScore, stringResource(R.string.drive_score_idle), gaugeYellow)
+                            ScoreMini(score.rpmScore, stringResource(R.string.drive_score_rpm), gaugeOrange)
+                            ScoreMini(score.throttleScore, stringResource(R.string.drive_score_throttle), gaugeCyan)
                         }
                     }
                 }
@@ -133,7 +133,7 @@ fun DriveScoreDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "Fahrtsitzung",
+                            text = stringResource(R.string.drive_score_section_session),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = canopoAccent
@@ -143,26 +143,26 @@ fun DriveScoreDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            StatItem(label = "Dauer", value = formatDuration(sessionDuration))
-                            StatItem(label = "Ø Drehzahl", value = "%.0f rpm".format(avgRpm))
-                            StatItem(label = "Ø Gas", value = "%.0f%%".format(avgThrottle))
+                            StatItem(label = stringResource(R.string.drive_score_duration), value = formatDuration(sessionDuration))
+                            StatItem(label = stringResource(R.string.drive_score_avg_rpm), value = stringResource(R.string.drive_score_avg_rpm_format, avgRpm))
+                            StatItem(label = stringResource(R.string.drive_score_avg_throttle), value = stringResource(R.string.drive_score_avg_throttle_format, avgThrottle))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            StatItem(label = "Ø Speed", value = "%.0f km/h".format(avgSpeed))
-                            StatItem(label = "Rüde Beschl.", value = "$harshAccels")
-                            StatItem(label = "Rüde Brems.", value = "$harshBrakes")
+                            StatItem(label = stringResource(R.string.drive_score_avg_speed), value = stringResource(R.string.drive_score_avg_speed_format, avgSpeed))
+                            StatItem(label = stringResource(R.string.drive_score_harsh_accel), value = "$harshAccels")
+                            StatItem(label = stringResource(R.string.drive_score_harsh_brake), value = "$harshBrakes")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            StatItem(label = "Leerlaufzeit", value = formatDuration(idleTimeSeconds))
-                            StatItem(label = "Verbrauch", value = "--- L/100km")
+                            StatItem(label = stringResource(R.string.drive_score_idle_time), value = formatDuration(idleTimeSeconds))
+                            StatItem(label = stringResource(R.string.drive_score_fuel_consumption), value = stringResource(R.string.drive_score_fuel_placeholder))
                         }
                     }
                 }

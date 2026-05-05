@@ -499,9 +499,48 @@
     <string name="vehicle_info_connector">Stecker</string>
     <string name="vehicle_info_ecu_address">ECU-Adresse</string>
     <string name="vehicle_info_extended_pids">Erweiterte PIDs</string>
+    <string name="vehicle_info_vin">VIN</string>
+    <string name="vehicle_info_interval_km">alle %s km</string>
+    <string name="vehicle_info_fuel_octane">Benzin</string>
+    <string name="vehicle_info_min_octane_recommended">95 RON (98 empfohlen)</string>
+    <string name="vehicle_info_timing_chain_cold_start_hint">Bei Kaltstart-Rasseln prüfen!</string>
+    <string name="vehicle_info_overboost_torque">%d Nm Overboost</string>
+    <string name="vehicle_info_rpm_unit">U/min</string>
+    <string name="vehicle_info_l_per_100km">L/100km</string>
+    <string name="vehicle_info_g_per_km">g/km</string>
+    <string name="vehicle_info_acceleration_time">%s s</string>
+    <string name="vehicle_info_battery_agm">%s Ah AGM</string>
+    <string name="vehicle_info_alternator_format">%sV / 120-140A</string>
+    <string name="vehicle_info_boost_bar">%s bar</string>
+    <string name="vehicle_info_oil_capacity_filter">%s L (mit Filter)</string>
+    <string name="vehicle_info_coolant_dexcool">%s L (Dex-Cool 50/50)</string>
+    <string name="vehicle_info_spark_plug_gap_mm">%s mm</string>
+    <string name="vehicle_info_can_protocol">ISO 15765-4 CAN (500 kbit/s)</string>
+    <string name="vehicle_info_connector_location">OBD-II 16-Pin, unter dem Lenkrad links</string>
+    <string name="vehicle_info_ecu_address_engine">0x7E0 (Motor)</string>
+    <string name="vehicle_info_extended_pids_uds">Service $22 (UDS)</string>
+    <string name="vehicle_info_section_turbocharger">Turbolader</string>
+    <string name="vehicle_info_section_fuel_section">Kraftstoff</string>
+    <string name="vehicle_info_section_performance_data">Leistungsdaten</string>
+    <string name="vehicle_info_section_maintenance_intervals">Wartungsintervalle</string>
+    <string name="vehicle_info_section_obd_notes">OBD-II Hinweise</string>
+    <string name="vehicle_info_alternative">Alternative</string>
+    <string name="vehicle_info_interval">Intervall</string>
+    <string name="vehicle_info_torque_spec">Anzugmoment</string>
+    <string name="vehicle_info_note">Hinweis</string>
+    <string name="vehicle_info_turbocharger_type">Typ</string>
+    <string name="vehicle_info_wastegate_fixed">Wastegate (festgelegt)</string>
+    <string name="vehicle_info_section_electric">Elektrik</string>
+    <string name="vehicle_info_section_obd2">OBD-II Hinweise</string>
 
     <!-- DriveScoreDialog -->
+    <string name="drive_score_analysis_title">Fahrstil-Analyse</string>
     <string name="drive_score_title">Fahrstil</string>
+    <string name="drive_score_score_format">%d/100</string>
+    <string name="drive_score_avg_rpm_format">%.0f rpm</string>
+    <string name="drive_score_avg_throttle_format">%.0f%%</string>
+    <string name="drive_score_avg_speed_format">%.0f km/h</string>
+    <string name="drive_score_fuel_placeholder">--- L/100km</string>
     <string name="drive_score_reset">Zurücksetzen</string>
     <string name="drive_score_idle">Leerlauf</string>
     <string name="drive_score_rpm">Drehzahl</string>
@@ -517,7 +556,7 @@
     <string name="drive_score_fuel_consumption">Kraftstoffverbrauch</string>
     <string name="drive_score_acceleration">Beschleunigung</string>
     <string name="drive_score_braking">Bremsen</string>
-    <string name="drive_score_cruising">Konzipiert für</string>
+    <string name="drive_score_cruising">Schwung</string>
 
     <!-- Gauge Descriptions -->
     <string name="gauge_rpm_desc">Motor RPM</string>
