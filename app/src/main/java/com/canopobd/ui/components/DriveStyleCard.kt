@@ -224,13 +224,15 @@ private fun EcoSportBalance(
         Spacer(modifier = Modifier.height(6.dp))
 
         // Balance bar
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(colors.surfaceVariant)
         ) {
+            val barWidth = maxWidth
+
             // ECO side
             Box(
                 modifier = Modifier
@@ -251,7 +253,7 @@ private fun EcoSportBalance(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(2.dp)
-                    .offset(x = (balance * 300).dp)
+                    .offset(x = (balance * barWidth.value).dp)
                     .background(colors.textPrimary)
             )
         }

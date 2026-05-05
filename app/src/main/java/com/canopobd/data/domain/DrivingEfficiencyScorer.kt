@@ -1,7 +1,5 @@
 package com.canopobd.data.domain
 
-import kotlin.math.abs
-
 class DrivingEfficiencyScorer {
 
     data class EfficiencyScore(

@@ -786,4 +786,12 @@
     <string name="incomplete">Offen</string>
     <string name="not_supported">Nicht unterstützt</string>
     <string name="complete">Bereit</string>
+
+    <!-- Widget strings -->
+    <string name="widget_app_name">canop-obd</string>
+    <string name="widget_default_value">0</string>
+    <string name="widget_rpm_label">RPM</string>
+    <string name="widget_speed_unit">km/h</string>
+    <string name="widget_temp_default">--°C</string>
+    <string name="widget_percent_default">--%</string>
 </resources>

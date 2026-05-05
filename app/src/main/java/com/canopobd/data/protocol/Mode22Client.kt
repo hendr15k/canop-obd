@@ -4,8 +4,6 @@ import android.util.Log
 import com.canopobd.bluetooth.ELM327BTConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 data class Mode22DIDInfo(
     val code: String,
@@ -251,8 +249,8 @@ class Mode22Client(private val connection: ELM327BTConnection) {
     fun readMultipleDIDs(dids: List<String>): Flow<Map<String, ByteArray?>> = flow {
         val results = mutableMapOf<String, ByteArray?>()
         for (did in dids) {
+            val cleanDid = did.uppercase().replace(" ", "").replace("0X", "").replace("22", "")
             try {
-                val cleanDid = did.uppercase().replace(" ", "").replace("0X", "").replace("22", "")
                 val command = "22$cleanDid"
                 val response = connection.sendRawCommand(command)
                 val data = parseDIDResponse(response, cleanDid)
@@ -260,7 +258,7 @@ class Mode22Client(private val connection: ELM327BTConnection) {
                 delay(50)
             } catch (e: Exception) {
                 Log.w(TAG, "Read DID $did failed: ${e.message}")
-                results[did] = null
+                results[cleanDid] = null
             }
         }
         emit(results)

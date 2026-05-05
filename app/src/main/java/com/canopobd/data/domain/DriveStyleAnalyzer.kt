@@ -398,7 +398,7 @@ class DriveStyleAnalyzer(
         if (rpmDist.percentOptimal > 60) {
             detailedFeedback.add("Gute RPM-Verteilung: ${rpmDist.percentOptimal.toInt()}% im optimalen Bereich")
         } else if (rpmDist.percentBelowOptimal > 50) {
-            detailedFeedback.add("Haeufig zu niedrige Drehzahl - Motor solltehoeher belastet werden")
+            detailedFeedback.add("Haeufig zu niedrige Drehzahl - Motor sollte hoeher belastet werden")
         }
 
         if (rpmDist.percentRedline > 5) {

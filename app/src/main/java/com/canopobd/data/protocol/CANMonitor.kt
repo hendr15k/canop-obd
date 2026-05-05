@@ -4,8 +4,6 @@ import android.util.Log
 import com.canopobd.bluetooth.ELM327BTConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 data class CANMessage(
     val timestamp: Long,
@@ -335,6 +333,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
                                 dataBytes.add(parts[i].toInt(16).toByte())
                                 i++
                             } catch (e: Exception) {
+                                Log.w(TAG, "Invalid hex byte at index $i: ${parts[i]}")
                             }
                         }
                     }

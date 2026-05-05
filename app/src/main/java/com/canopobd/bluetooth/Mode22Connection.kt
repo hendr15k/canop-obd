@@ -154,9 +154,9 @@ object Mode22PIDs {
         CALIBRATION_ID to Mode22PIDInfo("F191", "Calibration ID", "", 16) { _ -> 0.0 },
         CALIBRATION_VERIFICATION to Mode22PIDInfo("F192", "CVN", "", 4) { b ->
             if (b.size >= 4) {
-                ((b[0].toInt() and 0xFF) * 0x1000000 + 
-                 (b[1].toInt() and 0xFF) * 0x10000 + 
-                 (b[2].toInt() and 0xFF) * 0x100 + 
+                (((b[0].toInt() and 0xFF) shl 24) or
+                 ((b[1].toInt() and 0xFF) shl 16) or
+                 ((b[2].toInt() and 0xFF) shl 8) or
                  (b[3].toInt() and 0xFF)).toDouble()
             } else 0.0
         },
@@ -339,6 +339,7 @@ data class Mode22Response(
     override fun hashCode(): Int {
         var result = pid.hashCode()
         result = 31 * result + rawResponse.hashCode()
+        result = 31 * result + dataBytes.contentHashCode()
         return result
     }
 }
@@ -390,5 +391,5 @@ data class Mode22TurboData(
      * Check if there's an underboost condition
      */
     val isUnderboost: Boolean
-        get() = turboBoostActual > 0 && boostDeviation < -20.0
+        get() = turboBoostActual <= 0 && turboBoostTarget > 0
 }

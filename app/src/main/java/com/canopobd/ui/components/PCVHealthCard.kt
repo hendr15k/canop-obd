@@ -41,13 +41,13 @@ import kotlin.math.abs
  */
 @Composable
 fun PCVHealthCard(
+    modifier: Modifier = Modifier,
     pcvHealthScore: Int = 100,
     oilConsumptionReadings: List<Double> = emptyList(),
     mafCorrelationOk: Boolean = true,
     stftDeviation: Double = 0.0,
     lastMaintenanceKm: Int = 0,
     currentKm: Int = 0,
-    modifier: Modifier = Modifier,
     onPcvCheckClick: (() -> Unit)? = null,
     colors: AppColors = LocalAppColors.current
 ) {

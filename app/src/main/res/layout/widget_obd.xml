@@ -10,7 +10,7 @@
         android:id="@+id/widget_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="canop-obd"
+        android:text="@string/widget_app_name"
         android:textColor="#7B2FFF"
         android:textSize="14sp"
         android:textStyle="bold" />
@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="0"
+            android:text="@string/widget_default_value"
             android:textColor="#44FF88"
             android:textSize="28sp"
             android:textStyle="bold"
@@ -38,7 +38,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="0"
+            android:text="@string/widget_default_value"
             android:textColor="#3282B8"
             android:textSize="28sp"
             android:textStyle="bold"
@@ -57,9 +57,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="RPM"
+            android:text="@string/widget_rpm_label"
             android:textColor="#606060"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:gravity="center" />
 
         <TextView
@@ -67,9 +67,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="km/h"
+            android:text="@string/widget_speed_unit"
             android:textColor="#606060"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:gravity="center" />
 
     </LinearLayout>
@@ -85,7 +85,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="--°C"
+            android:text="@string/widget_temp_default"
             android:textColor="#FF8800"
             android:textSize="14sp"
             android:gravity="center" />
@@ -95,7 +95,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="--%"
+            android:text="@string/widget_percent_default"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:gravity="center" />
@@ -105,7 +105,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="--%"
+            android:text="@string/widget_percent_default"
             android:textColor="#FF8800"
             android:textSize="14sp"
             android:gravity="center" />

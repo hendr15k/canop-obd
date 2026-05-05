@@ -133,6 +133,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Session initialization error: ${e.message}")
+            sessionActive = false
+            extendedSessionActive = false
             emit(false)
         }
     }.flowOn(Dispatchers.IO)
@@ -669,9 +671,9 @@ object UDSConstants {
         const val ENGINE_SPEED = "F437"
         const val VEHICLE_SPEED = "F438"
         const val THROTTLE_POSITION = "F449"
-        const val ENGINE_LOAD = "F437"
+        const val ENGINE_LOAD = "F442"
         const val FUEL_LEVEL = "F42A"
-        const val OIL_TEMP = "F440"
+        const val OIL_TEMP = "F425"
         const val OIL_PRESSURE = "F441"
         const val INJECTION_QUANTITY = "F450"
         const val INJECTION_TIMING = "F451"
@@ -680,7 +682,7 @@ object UDSConstants {
         const val WASTEGATE_DUTY = "F462"
         const val CHARGE_AIR_TEMP = "F463"
         const val CATALYST_TEMP = "F470"
-        const val WIDEBAND_LAMBDA = "F480"
+        const val WIDEBAND_LAMBDA = "F4A0"
     }
 
     object GMRoutines {

@@ -339,30 +339,31 @@ private fun BoostSection(
         Spacer(modifier = Modifier.height(8.dp))
         
         // Boost gauge bar
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(10.dp)
                 .clip(RoundedCornerShape(5.dp))
                 .background(colors.surfaceVariant)
         ) {
-            // Normal range indicator
+            val barWidthPx = constraints.maxWidth.toFloat()
             val normalStart = (carProfile.normalBoostBar - 0.1f) / maxGauge
             val normalEnd = (carProfile.normalBoostBar + 0.15f) / maxGauge
+            val normalStartPx = normalStart * barWidthPx
+            val normalWidthPx = (normalEnd - normalStart) * barWidthPx
             
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth(normalStart.toFloat().coerceAtLeast(0f))
+                    .fillMaxWidth(normalStart.coerceAtLeast(0f))
             )
             
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .padding(horizontal = (normalStart * maxGauge / maxGauge).toFloat().dp)
-                    .offset(x = (normalStart * maxGauge * 100).dp)
+                    .offset(x = normalStartPx.toInt().dp)
+                    .width(normalWidthPx.toInt().dp)
                     .background(colors.gaugeGreen.copy(alpha = 0.3f))
-                    .width(((normalEnd - normalStart) * 100).dp)
             )
             
             // Actual boost indicator

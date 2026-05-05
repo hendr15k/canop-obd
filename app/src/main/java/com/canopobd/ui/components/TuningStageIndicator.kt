@@ -41,11 +41,11 @@ import com.canopobd.ui.theme.LocalAppColors
  */
 @Composable
 fun TuningStageIndicator(
+    modifier: Modifier = Modifier,
     boostPressureBar: Double = 0.0,
     targetBoostBar: Double = 0.0,
     estimatedPowerHp: Double = 0.0,
     fuelOctane: Int = 95,
-    modifier: Modifier = Modifier,
     colors: AppColors = LocalAppColors.current
 ) {
     val stage = remember(boostPressureBar, estimatedPowerHp) {

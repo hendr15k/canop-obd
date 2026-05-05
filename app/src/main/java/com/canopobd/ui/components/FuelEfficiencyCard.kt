@@ -267,7 +267,7 @@ private fun EfficiencyGauge(
         label = "gaugeScore"
     )
 
-    Canvas(modifier = modifier) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
         val strokeWidth = 12.dp.toPx()
         val radius = (size.height - strokeWidth) / 2
         val centerX = size.width / 2
@@ -319,7 +319,7 @@ private fun EfficiencyGauge(
     }
 
     Box(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -389,7 +389,6 @@ fun FuelEfficiencyCardCompact(
         FuelConsumptionAnalyzer.EfficiencyRating.AVERAGE -> colors.gaugeYellow
         FuelConsumptionAnalyzer.EfficiencyRating.POOR -> colors.gaugeOrange
         FuelConsumptionAnalyzer.EfficiencyRating.CRITICAL -> colors.gaugeRed
-        else -> colors.textSecondary
     }
 
     Surface(

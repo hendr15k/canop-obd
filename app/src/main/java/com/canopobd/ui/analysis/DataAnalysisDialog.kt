@@ -43,8 +43,10 @@ fun DataAnalysisDialog(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-            context.contentResolver.openInputStream(it)?.bufferedReader()?.use { reader ->
-                onImportCsv(reader.readText())
+            context.contentResolver.openInputStream(it)?.use { inputStream ->
+                inputStream.bufferedReader().use { reader ->
+                    onImportCsv(reader.readText())
+                }
             }
         }
     }

@@ -2,6 +2,8 @@ package com.canopobd.data.model
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import android.util.Log
 import org.json.JSONArray
 import java.net.URL
@@ -25,7 +27,9 @@ object UpdateChecker {
 
     fun getCurrentVersionCode(context: Context): Int {
         return try {
-            context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode.toInt()
+            PackageInfoCompat.getLongVersionCode(
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            ).toInt()
         } catch (e: PackageManager.NameNotFoundException) {
             0
         }

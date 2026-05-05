@@ -22,29 +22,11 @@ class UDSClient(private val connection: ELM327BTConnection) {
         private const val UDS_PHYSICAL_RESPONSE = 0x7E8
         private const val UDS_FUNCTIONAL_REQUEST = 0x7DF
         private const val UDS_FUNCTIONAL_RESPONSE = 0x7E8
-
-        private const val ISO_TP_SINGLE_FRAME = 0x00
-        private const val ISO_TP_FIRST_FRAME = 0x10
-        private const val ISO_TP_CONSECUTIVE_FRAME = 0x20
-        private const val ISO_TP_FLOW_CONTROL = 0x30
-
-        private const val SF_CAN_DL = 8
-        private const val SF_MAX_DATA = 7
-        private const val FF_MAX_DATA = 6
-        private const val CF_MAX_DATA = 7
     }
 
     private var currentSession: UDSSessionType = UDSSessionType.DEFAULT
     private var securityLevel: Int = 0
     private var testerPresentActive = false
-
-    private fun buildUDSFrame(serviceId: Int, data: ByteArray, isFunctional: Boolean = false): ByteArray {
-        val targetAddr = if (isFunctional) UDS_FUNCTIONAL_REQUEST else UDS_PHYSICAL_REQUEST
-        val frame = ByteArray(data.size + 1)
-        frame[0] = serviceId.toByte()
-        data.copyInto(frame, 1)
-        return frame
-    }
 
     private fun parseISOTPDelimiter(response: String): String {
         val cleaned = response.replace(" ", "").replace("\r", "").replace("\n", "").replace(">", "").trim()

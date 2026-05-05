@@ -23,8 +23,7 @@ import com.canopobd.data.protocol.Mode22Client
 import com.canopobd.data.protocol.Mode22DIDInfo
 import com.canopobd.data.protocol.DIDCategory
 import com.canopobd.ui.theme.LocalAppColors
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
 
@@ -46,6 +45,7 @@ fun Mode22BrowserDialog(
     var readValues by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
     var isReading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     val allDIDs = remember(selectedCategory) {
         if (selectedCategory != null) {
@@ -261,7 +261,7 @@ fun Mode22BrowserDialog(
                                 },
                                 onRead = {
                                     isReading = true
-                                    CoroutineScope(Dispatchers.IO).launch {
+                                    scope.launch {
                                         mode22Client.readDID(didInfo.code).collect { data ->
                                             if (data != null) {
                                                 val value = mode22Client.getParsedValue(didInfo.code, data)
@@ -288,7 +288,7 @@ fun Mode22BrowserDialog(
                             isReading = true
                             readValues = emptyMap()
                             val didsToRead = allDIDs.take(10).map { it.code }
-                            CoroutineScope(Dispatchers.IO).launch {
+                            scope.launch {
                                 mode22Client.readMultipleDIDs(didsToRead).collect { results ->
                                     results.forEach { (did, data) ->
                                         if (data != null) {

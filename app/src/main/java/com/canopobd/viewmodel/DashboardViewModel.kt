@@ -1,6 +1,7 @@
 package com.canopobd.viewmodel
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -32,8 +33,10 @@ import kotlin.math.sqrt
 
 @SuppressLint("MissingPermission")
 class DashboardViewModel private constructor(
-    private val context: Context
+    application: Application
 ) : ViewModel() {
+
+    private val context: Application = application
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val repository = OBDRepository(context, bluetoothManager?.adapter)
@@ -471,7 +474,7 @@ class DashboardViewModel private constructor(
         _showPowerCalculator.value = !_showPowerCalculator.value
         if (_showPowerCalculator.value) {
             val d = repository.obdData.value
-            _powerCalculation.value = com.canopobd.data.model.PowerCalculation.calculate(d.mafRate, d.rpm)
+            _powerCalculation.value = com.canopobd.data.model.PowerCalculation.calculate(d.mafRate, d.rpm, d.intakeTemp)
         }
     }
 
@@ -908,7 +911,7 @@ class DashboardViewModel private constructor(
         turboEfficiency.value = efficiencyFactor
 
         fuelRailPressure.value = data.fuelRailPressure
-        injectionQuantity.value = if (data.mafRate > 0 && data.rpm > 0) {
+        injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
             data.mafRate * 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
         } else 0.0
     }
@@ -1366,10 +1369,10 @@ class DashboardViewModel private constructor(
         repository.disconnect()
     }
 
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
+    class Factory(private val application: Application) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return DashboardViewModel(context.applicationContext) as T
+            return DashboardViewModel(application) as T
         }
     }
 }

@@ -41,10 +41,10 @@ import java.util.*
 @Composable
 fun ChainTensionerWarningCard(
     healthScore: Int,
+    modifier: Modifier = Modifier,
     lastCheckedTimestamp: Long = 0L,
     estimatedRemainingLifeKm: Int = 0,
     rattleDetected: Boolean = false,
-    modifier: Modifier = Modifier,
     onDiagnosticClick: (() -> Unit)? = null,
     colors: AppColors = LocalAppColors.current
 ) {

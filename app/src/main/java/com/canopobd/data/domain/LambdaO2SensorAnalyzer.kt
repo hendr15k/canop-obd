@@ -338,7 +338,8 @@ class LambdaO2SensorAnalyzer {
 
     private fun checkHeaterStatus(input: LambdaInput, isPostCat: Boolean): Boolean {
         if (input.engineRuntimeSeconds < HEATER_WARMUP_SECONDS) return true
-        return true
+        val voltage = if (isPostCat) input.o2VoltageB1S2 else input.o2VoltageB1S1
+        return voltage > 0 && input.coolantTemp > MIN_COOLANT_FOR_ANALYSIS
     }
 
     private fun calculateLambdaValue(voltage: Double): Double {

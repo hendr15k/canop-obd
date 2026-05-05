@@ -836,7 +836,7 @@ class OBDRepository(
                     currentL100km = l100km,
                     avgL100km = avgL100km,
                     currentKmL = kmL,
-                    avgKmL = 100.0 / avgL100km,
+                    avgKmL = if (avgL100km > 0.5) 100.0 / avgL100km else 0.0,
                     currentMpgUs = mpgUs,
                     avgMpgUs = 235.214583 / avgL100km,
                     currentMpgUk = mpgUk,

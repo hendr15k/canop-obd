@@ -2,7 +2,6 @@ package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * Kraftstoffsystem-Analyse fuer Opel Astra J 1.4 Turbo (A14NET)
@@ -330,8 +329,8 @@ class FuelSystemAnalyzer(
             // Bei hohem Kilometerstand: MAF/MAP-Korrelation pruefen
             totalKm >= CARBON_BUILDUP_HIGH_KM && mafRate > 0 && mapPressure > 0 -> {
                 val correlation = mafRate / mapPressure
-                if (correlation < 0.08) 70 // Schlechte Korrelation = Ablagerungen
-                else 40 + ((totalKm - CARBON_BUILDUP_HIGH_KM) / 50000.0 * 30).toInt().coerceAtMost(30)
+                val risk = if (correlation < 0.08) 70 else 40 + ((totalKm - CARBON_BUILDUP_HIGH_KM) / 50000.0 * 30).toInt().coerceAtMost(30)
+                risk
             }
             else -> 40
         }

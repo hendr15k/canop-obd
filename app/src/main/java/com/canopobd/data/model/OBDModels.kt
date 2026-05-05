@@ -687,13 +687,13 @@ data class PowerCalculation(
     val isValid: Boolean = false
 ) {
     companion object {
-        fun calculate(mafGS: Double, rpm: Double, veFactor: Double = 0.85): PowerCalculation {
+        fun calculate(mafGS: Double, rpm: Double, intakeTempC: Double = 25.0, veFactor: Double = 0.85): PowerCalculation {
             if (mafGS <= 0.0 || rpm <= 0.0 || rpm > 8000.0) {
                 return PowerCalculation()
             }
             val airFlowKgH = mafGS * 3600.0
             val airFlowKgs = airFlowKgH / 3600.0
-            val bmep = (airFlowKgs * 1.4 * 287.0 * (25.0 + 273.15)) / (0.85 * rpm * 0.5)
+            val bmep = (airFlowKgs * 1.4 * 287.0 * (intakeTempC + 273.15)) / (0.85 * rpm * 0.5)
             val torqueNm = (bmep * 0.5 * 0.002) * 1000.0
             val powerKw = (torqueNm * rpm) / 9549.0
             val hp = powerKw * 1.341
@@ -1018,8 +1018,12 @@ data class AstraJ14TurboCalibration(
     fun isMafIdleNormal(mafGs: Double): Boolean = mafGs in 2.0..5.0
     fun isCoolantNormal(temp: Double): Boolean = temp in 80.0..105.0
     fun isOilPressureNormal(pressureBar: Double, rpm: Double): Boolean {
-        return if (rpm < 1500) pressureBar >= minOilPressureIdle
-        else pressureBar >= minOilPressureRpm
+        val idleThreshold = minOilPressureIdle
+        val runningThreshold = minOilPressureRpm
+        val transitionRpm = 1500.0
+        val factor = ((rpm - transitionRpm).coerceIn(-transitionRpm, transitionRpm) + transitionRpm) / (2 * transitionRpm)
+        val interpolatedThreshold = idleThreshold + factor * (runningThreshold - idleThreshold)
+        return pressureBar >= interpolatedThreshold
     }
     fun getFuelTrimStatus(stft: Double, ltft: Double): FuelTrimStatus {
         val total = stft + ltft
@@ -1464,7 +1468,7 @@ data class BatteryData(
     val runTimeSeconds: Double = 0.0
 ) {
     val voltageStatus: BatteryVoltageStatus get() = when {
-        voltage >= 14.0 -> BatteryVoltageStatus.CHALGING
+        voltage >= 14.0 -> BatteryVoltageStatus.CHARGING
         voltage >= 12.6 -> BatteryVoltageStatus.GOOD
         voltage >= 12.0 -> BatteryVoltageStatus.LOW
         else -> BatteryVoltageStatus.CRITICAL
@@ -1490,7 +1494,7 @@ data class BatteryData(
 }
 
 enum class BatteryVoltageStatus(val label: String) {
-    CHALGING("Lädt"),
+    CHARGING("Lädt"),
     GOOD("Gut"),
     LOW("Niedrig"),
     CRITICAL("Kritisch")

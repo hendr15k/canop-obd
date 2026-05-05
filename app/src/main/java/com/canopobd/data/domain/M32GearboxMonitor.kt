@@ -227,7 +227,7 @@ class M32GearboxMonitor(
         if (rpmHistory.size < 10 || speedHistory.size < 10) return 0 to 70
 
         val expectedRatio = if (gear > 0 && gear in GEAR_RATIOS) {
-            GEAR_RATIOS[gear]!! * FINAL_DRIVE
+            GEAR_RATIOS.getValue(gear) * FINAL_DRIVE
         } else {
             // Verwende Durchschnitts-Verhaeltnis wenn Gang nicht bekannt
             GEAR_RATIOS.values.average() * FINAL_DRIVE

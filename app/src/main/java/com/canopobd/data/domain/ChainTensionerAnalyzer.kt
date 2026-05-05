@@ -1,8 +1,6 @@
 package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
-import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * Kettenstraffer-Analyse fuer Opel Astra J 1.4 Turbo (A14NET)
@@ -272,7 +270,7 @@ class ChainTensionerAnalyzer(
     private fun generateDiagnosis(health: ChainTensionerHealth, input: ChainTensionerInput): String {
         return when (health) {
             ChainTensionerHealth.HEALTHY -> {
-                "Steuerkette und hydraulischer Kettenspanner fonctionieren normal. " +
+                "Steuerkette und hydraulischer Kettenspanner funktionieren normal. " +
                         "Keine Anzeichen fuer Verschleiss."
             }
             ChainTensionerHealth.WEAR_DETECTED -> {

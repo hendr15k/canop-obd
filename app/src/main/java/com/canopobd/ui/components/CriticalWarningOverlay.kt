@@ -38,9 +38,9 @@ fun CriticalWarningOverlay(
     severity: WarningSeverity,
     message: String,
     recommendedAction: String,
+    modifier: Modifier = Modifier,
     isCritical: Boolean = true,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit
 ) {
     if (!isVisible) return
 
@@ -205,9 +205,9 @@ fun CriticalWarningOverlay(
     }
 }
 
-enum class WarningSeverity(val label: String, val colorHex: Long) {
-    CRITICAL("KRITISCH", 0xFFFF4444),
-    HIGH("HOCH", 0xFFFF8C00),
-    MEDIUM("MITTEL", 0xFFFFE066),
-    LOW("NIEDRIG", 0xFF06B6D4);
+enum class WarningSeverity(val label: String) {
+    CRITICAL("KRITISCH"),
+    HIGH("HOCH"),
+    MEDIUM("MITTEL"),
+    LOW("NIEDRIG");
 }

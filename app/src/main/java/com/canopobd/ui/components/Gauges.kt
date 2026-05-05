@@ -42,7 +42,8 @@ fun CircularGauge(
 ) {
     val colors = LocalAppColors.current
     val clampedValue = value.coerceIn(minValue, maxValue)
-    val fraction = (clampedValue - minValue) / (maxValue - minValue)
+    val range = (maxValue - minValue).coerceAtLeast(0.001f)
+    val fraction = (clampedValue - minValue) / range
 
     val animatedFraction by animateFloatAsState(
         targetValue = fraction,
@@ -265,10 +266,10 @@ fun GaugeRow(
 fun CompactGauge(
     value: Double,
     label: String,
+    modifier: Modifier = Modifier,
     unit: String = "",
     max: Double = 100.0,
-    color: Color = gaugeGreen,
-    modifier: Modifier = Modifier
+    color: Color = gaugeGreen
 ) {
     val colors = LocalAppColors.current
     val intensity = (value / max.coerceAtLeast(0.01)).toFloat().coerceIn(0f, 1f)

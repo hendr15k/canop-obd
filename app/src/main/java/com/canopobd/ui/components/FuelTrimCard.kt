@@ -191,7 +191,7 @@ private fun TrimGauge(
         else -> colors.gaugeGreen
     }
 
-    Canvas(modifier = modifier) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
         val barHeight = 20.dp.toPx()
         val centerY = size.height / 2
         val centerX = size.width / 2
@@ -246,7 +246,7 @@ private fun TrimGauge(
     }
 
     Box(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
         Row(

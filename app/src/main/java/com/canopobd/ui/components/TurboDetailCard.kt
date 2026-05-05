@@ -356,15 +356,15 @@ private fun TurboBoostGaugeSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Boost gauge bar
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(10.dp)
                 .clip(RoundedCornerShape(5.dp))
                 .background(colors.surfaceVariant)
         ) {
-            // Normal range indicator
+            val boxWidthDp = maxWidth
+
             val normalStart = ((normalBoost - 0.1) / maxBoost).coerceAtLeast(0.0)
             val normalEnd = ((normalBoost + 0.15) / maxBoost).coerceAtMost(1.0)
 
@@ -377,8 +377,8 @@ private fun TurboBoostGaugeSection(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .offset(x = (normalStart * maxBoost * 50).dp)
-                    .width(((normalEnd - normalStart) * 50).dp)
+                    .offset(x = (normalStart * boxWidthDp.value).dp)
+                    .width(((normalEnd - normalStart) * boxWidthDp.value).dp)
                     .background(colors.gaugeGreen.copy(alpha = 0.3f))
             )
 

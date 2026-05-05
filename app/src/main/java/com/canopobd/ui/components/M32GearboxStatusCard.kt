@@ -38,6 +38,7 @@ import com.canopobd.ui.theme.LocalAppColors
  */
 @Composable
 fun M32GearboxStatusCard(
+    modifier: Modifier = Modifier,
     gearboxTempCelsius: Double = 0.0,
     inputSpeedRpm: Double = 0.0,
     outputSpeedRpm: Double = 0.0,
@@ -45,7 +46,6 @@ fun M32GearboxStatusCard(
     lastFluidChangeKm: Int = 0,
     currentKm: Int = 0,
     gearRattleDetected: Boolean = false,
-    modifier: Modifier = Modifier,
     colors: AppColors = LocalAppColors.current
 ) {
     val healthStatus = remember(healthScore) { GearboxHealthStatus.fromScore(healthScore) }

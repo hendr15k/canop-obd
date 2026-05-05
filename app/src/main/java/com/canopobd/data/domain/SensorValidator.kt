@@ -1,6 +1,7 @@
 package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
+import kotlin.math.abs
 
 class SensorValidator(private val calibration: AstraJ14TurboCalibration) {
 
@@ -20,7 +21,7 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration) {
 
         // Rate of Change Check
         if (previousMaf != null) {
-            val change = kotlin.math.abs(maf - previousMaf)
+            val change = abs(maf - previousMaf)
             if (change > MAX_MAF_CHANGE) {
                 return ValidationResult.Suspicious("MAF-Sprung: ${"%.1f".format(change)} g/s")
             }

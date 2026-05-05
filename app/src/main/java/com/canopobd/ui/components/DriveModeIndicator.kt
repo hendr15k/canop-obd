@@ -93,7 +93,8 @@ fun DriveModeIndicator(
         CompactDriveModeIndicator(
             mode = detectedMode,
             color = animatedColor,
-            pulseAlpha = pulseAlpha
+            pulseAlpha = pulseAlpha,
+            modifier = modifier
         )
     } else {
         FullDriveModeIndicator(
@@ -114,7 +115,8 @@ fun DriveModeIndicator(
 private fun CompactDriveModeIndicator(
     mode: DriveMode,
     color: Color,
-    pulseAlpha: Float
+    pulseAlpha: Float,
+    modifier: Modifier = Modifier
 ) {
     val modeText = when (mode) {
         DriveMode.ECO -> "ECO"
@@ -129,6 +131,7 @@ private fun CompactDriveModeIndicator(
     }
 
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         color = color.copy(alpha = 0.15f),
         border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))

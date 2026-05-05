@@ -153,7 +153,7 @@ fun EmissionsStatusCard(
 
                     ReadinessStatRow(
                         label = stringResource(R.string.not_supported),
-                        value = (readiness.totalCount - readiness.supportedCount).toString(),
+                        value = (readiness.totalCount - readiness.supportedCount).coerceAtLeast(0).toString(),
                         color = colors.textDim,
                         colors = colors
                     )

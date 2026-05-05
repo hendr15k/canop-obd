@@ -869,7 +869,7 @@ class ELM327BTConnection(
     private fun parseVIN(response: String): String {
         val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
         if (hex.contains("ERROR") || hex.isEmpty()) return ""
-        val cleanHex = hex.drop(6)
+        val cleanHex = hex.drop(4)
         if (cleanHex.isEmpty()) return ""
         val chars = cleanHex.chunked(2).mapNotNull { byteStr ->
             if (byteStr.length == 2) {
@@ -1008,7 +1008,7 @@ class ELM327BTConnection(
                     for (byte in bits2) {
                         for (i in 7 downTo 0) {
                             if ((byte.toInt() and (1 shl i)) != 0) {
-                                val pidNum = 32 + supported.size - 32 + 1
+                                val pidNum = 33 + supported.size
                                 if (pidNum <= 64) supported.add("01%02X".format(pidNum))
                             }
                             if (supported.size >= 64) break

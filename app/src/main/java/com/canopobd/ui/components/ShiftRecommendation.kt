@@ -343,10 +343,10 @@ fun ShiftRecommendationDisplay(
     speed: Double,
     engineLoad: Double,
     throttle: Double,
+    modifier: Modifier = Modifier,
     calibration: ShiftRecommendationEngine.EngineCalibration = ShiftRecommendationEngine.A14NET_CALIBRATION,
     compactMode: Boolean = false,
-    onModeChange: ((ShiftRecommendationEngine.ShiftMode) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onModeChange: ((ShiftRecommendationEngine.ShiftMode) -> Unit)? = null
 ) {
     val recommendation = remember(rpm, speed, engineLoad, throttle, calibration) {
         ShiftRecommendationEngine.calculateRecommendation(
@@ -393,7 +393,7 @@ private fun CompactShiftIndicator(
         initialValue = 1f,
         targetValue = if (recommendation.shouldShift) 1.15f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(600, easing = EaseInOutSine),
+            animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseScale"
@@ -402,7 +402,7 @@ private fun CompactShiftIndicator(
         initialValue = 0.7f,
         targetValue = if (recommendation.shouldShift) 1f else 0.5f,
         animationSpec = infiniteRepeatable(
-            animation = tween(600, easing = EaseInOutSine),
+            animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseAlpha"
@@ -471,9 +471,9 @@ private fun CompactShiftIndicator(
 private fun FullShiftRecommendation(
     recommendation: ShiftRecommendationEngine.ShiftRecommendation,
     efficiency: Double,
+    modifier: Modifier = Modifier,
     onModeChange: ((ShiftRecommendationEngine.ShiftMode) -> Unit)?,
-    rpm: Double = 0.0,
-    modifier: Modifier = Modifier
+    rpm: Double = 0.0
 ) {
     val colors = LocalAppColors.current
 
@@ -483,7 +483,7 @@ private fun FullShiftRecommendation(
         initialValue = 1f,
         targetValue = if (recommendation.shiftNow) 1.08f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = EaseInOutSine),
+            animation = tween(500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseScale"
@@ -493,7 +493,7 @@ private fun FullShiftRecommendation(
         initialValue = 0.4f,
         targetValue = if (recommendation.shouldShift) 0.8f else 0.2f,
         animationSpec = infiniteRepeatable(
-            animation = tween(700, easing = EaseInOutSine),
+            animation = tween(700, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "glowAlpha"

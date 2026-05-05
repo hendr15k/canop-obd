@@ -10,8 +10,6 @@ import com.canopobd.data.protocol.Mode22DIDInfo
 import com.canopobd.data.protocol.DIDCategory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 data class TransmissionData(
     val gear: Int? = null,
@@ -48,16 +46,13 @@ data class ExtendedPIDData(
     val timestamp: Long = System.currentTimeMillis()
 ) {
     val boostBar: Double?
-        get() = boostPressureTarget?.let { (it - 100.0) / 100.0 }
+        get() = boostPressureTarget?.let { if (it > 0) (it - 100.0) / 100.0 else null }
 
     val relativeBoostBar: Double?
-        get() = boostPressureTarget?.let {
-            val absoluteBoost = it
-            absoluteBoost.let { boost -> (boost - 100.0) / 100.0 }
-        }
+        get() = boostPressureTarget?.let { if (it > 0) (it - 100.0) / 100.0 else null }
 
     val torquePercent: Double?
-        get() = engineTorque?.let { (it / 220.0) * 100.0 }
+        get() = engineTorque?.let { if (it > 0) (it / 220.0) * 100.0 else null }
 }
 
 data class TurboMonitoringData(

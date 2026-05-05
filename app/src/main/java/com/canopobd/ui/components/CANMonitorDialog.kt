@@ -69,7 +69,6 @@ fun CANMonitorDialog(
         }
     }
 
-    val messageCount by remember { mutableStateOf(0) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(isMonitoring) {
@@ -342,7 +341,7 @@ fun CANMonitorDialog(
                                 SuggestionChip(
                                     onClick = { filterText = id },
                                     label = {
-                                        Text("${id.substring(0, 3)}: ${name.take(10)}", fontSize = 10.sp)
+                                        Text("${id.take(3)}: ${name.take(10)}", fontSize = 10.sp)
                                     },
                                     colors = SuggestionChipDefaults.suggestionChipColors(
                                         containerColor = colors.surface,

@@ -39,7 +39,7 @@ fun BatteryHealthCard(
 ) {
     val voltageColor by animateColorAsState(
         targetValue = when (batteryData.voltageStatus) {
-            BatteryVoltageStatus.CHALGING -> colors.gaugeGreen
+            BatteryVoltageStatus.CHARGING -> colors.gaugeGreen
             BatteryVoltageStatus.GOOD -> colors.gaugeGreen
             BatteryVoltageStatus.LOW -> colors.gaugeOrange
             BatteryVoltageStatus.CRITICAL -> colors.gaugeRed
@@ -417,7 +417,7 @@ fun BatteryHealthCardCompact(
     colors: AppColors = LocalAppColors.current
 ) {
     val voltageColor = when (batteryData.voltageStatus) {
-        BatteryVoltageStatus.CHALGING -> colors.gaugeGreen
+        BatteryVoltageStatus.CHARGING -> colors.gaugeGreen
         BatteryVoltageStatus.GOOD -> colors.gaugeGreen
         BatteryVoltageStatus.LOW -> colors.gaugeOrange
         BatteryVoltageStatus.CRITICAL -> colors.gaugeRed

@@ -2,7 +2,6 @@ package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * Turbo-Effizienz-Analyse fuer BorgWarner KP39 (A14NET)
