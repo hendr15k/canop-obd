@@ -606,7 +606,7 @@ class OBDModelsTest {
         assertEquals(15000, MaintenanceType.OIL_CHANGE.defaultInterval)
         assertEquals(30000, MaintenanceType.TIRES.defaultInterval)
         assertEquals(60000, MaintenanceType.INSPECTION.defaultInterval)
-        assertEquals(6, MaintenanceType.entries.size)
+        assertEquals(10, MaintenanceType.entries.size)
     }
 
     @Test
