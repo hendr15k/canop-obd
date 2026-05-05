@@ -32,14 +32,17 @@ jobs:
 
       - name: Decode keystore
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > /tmp/release-key.jks
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" > /tmp/keystore.b64
+          base64 -d /tmp/keystore.b64 > /tmp/release-key.jks
+          rm /tmp/keystore.b64
 
       - name: Extract version from build.gradle.kts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: version
         run: |
-          VERSION_NAME=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
-          VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | sed 's/.*= \([0-9]*\).*/\1/')
+          VERSION_NAME=`grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/'`
+          VERSION_CODE=`grep 'versionCode' app/build.gradle.kts | sed 's/.*= \([0-9]*\).*/\1/'`
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
 
