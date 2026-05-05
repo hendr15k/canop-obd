@@ -4,11 +4,11 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Primary palette — automotive dark
-val canopoDark = Color(0xFF1A1A2E)
-val canopoSurface = Color(0xFF16213E)
+val canopoDark = Color(0xFF0D0D1A)
+val canopoSurface = Color(0xFF141428)
 val canopoPrimary = Color(0xFF0F4C75)
-val canopoAccent = Color(0xFF3282B8)
-val canopoHighlight = Color(0xFF00D9FF)
+val canopoAccent = Color(0xFF3A9BDC)
+val canopoHighlight = Color(0xFF00E5FF)
 
 // Gauge colors
 val gaugeRed = Color(0xFFFF4444)

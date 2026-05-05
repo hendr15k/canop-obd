@@ -851,23 +851,32 @@ private fun SecondaryGauge(
     isPercentage: Boolean = false
 ) {
     val colors = LocalAppColors.current
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(colors.surface)
-            .padding(12.dp)
+    val displayValue = if (isPercentage) abs(value).coerceIn(0.0, max) else value.coerceIn(0.0, max)
+    val intensity = (displayValue / max.coerceAtLeast(0.01)).toFloat().coerceIn(0f, 1f)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.06f + intensity * 0.08f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.12f + intensity * 0.15f))
     ) {
-        Text(
-            text = "%.0f%s".format(
-                if (isPercentage) abs(value).coerceIn(0.0, max) else value.coerceIn(0.0, max),
-                unit
-            ),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-        Text(text = label, fontSize = 10.sp, color = colors.textSecondary)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
+        ) {
+            Text(
+                text = "%.0f%s".format(displayValue, unit),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = color,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                color = colors.textSecondary,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
