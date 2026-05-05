@@ -318,4 +318,108 @@ class OBDModelsTest {
         assertEquals(500L, PollMode.NORMAL.pollInterval)
         assertEquals(2000L, PollMode.ECO.pollInterval)
     }
+
+    @Test
+    fun `ReadinessMonitor tracks completion correctly`() {
+        val empty = ReadinessMonitor()
+        assertFalse(empty.allComplete)
+        assertEquals(0, empty.completedCount)
+        assertEquals(11, empty.totalCount)
+
+        val allDone = ReadinessMonitor(
+            misfire = true, fuelSystem = true, comprehensiveComponent = true,
+            catalyst = true, heatedCatalyst = true, evapSystem = true,
+            secondaryAirSystem = true, acSystemRefrigerant = true,
+            oxygenSensor = true, oxygenSensorHeater = true, egrSystem = true
+        )
+        assertTrue(allDone.allComplete)
+        assertEquals(11, allDone.completedCount)
+    }
+
+    @Test
+    fun `ReadinessMonitor partial completion counts correctly`() {
+        val partial = ReadinessMonitor(misfire = true, fuelSystem = true, catalyst = true)
+        assertFalse(partial.allComplete)
+        assertEquals(3, partial.completedCount)
+    }
+
+    @Test
+    fun `AlertConfig has correct defaults`() {
+        val config = AlertConfig()
+        assertEquals(130f, config.speedWarning, 0.01f)
+        assertFalse(config.speedWarningEnabled)
+        assertTrue(config.coolantWarningEnabled)
+        assertTrue(config.fuelWarningEnabled)
+        assertEquals(6000f, config.rpmWarning, 0.01f)
+        assertEquals(11.5f, config.batteryLowWarning, 0.01f)
+    }
+
+    @Test
+    fun `FuelTrimAnalysis calculates total trim correctly`() {
+        val analysis = FuelTrimAnalysis(
+            stftB1 = 5.0, ltftB1 = 3.0,
+            stftB2 = -4.0, ltftB2 = -3.0,
+            totalTrimB1 = 8.0, totalTrimB2 = -7.0
+        )
+        assertEquals(8.0, analysis.totalTrimB1, 0.01)
+        assertEquals(-7.0, analysis.totalTrimB2, 0.01)
+        assertEquals("OK", analysis.statusB1)
+        assertEquals("OK", analysis.statusB2)
+    }
+
+    @Test
+    fun `FuelTrimAnalysis detects lean condition`() {
+        val analysis = FuelTrimAnalysis(
+            stftB1 = 8.0, ltftB1 = 5.0,
+            stftB2 = 0.0, ltftB2 = 0.0,
+            totalTrimB1 = 13.0, totalTrimB2 = 0.0
+        )
+        assertEquals(13.0, analysis.totalTrimB1, 0.01)
+        assertEquals("Mager (Lean)", analysis.statusB1)
+    }
+
+    @Test
+    fun `FuelTrimAnalysis detects rich condition`() {
+        val analysis = FuelTrimAnalysis(
+            stftB1 = 0.0, ltftB1 = 0.0,
+            stftB2 = -8.0, ltftB2 = -5.0,
+            totalTrimB1 = 0.0, totalTrimB2 = -13.0
+        )
+        assertEquals(-13.0, analysis.totalTrimB2, 0.01)
+        assertEquals("Fett (Rich)", analysis.statusB2)
+    }
+
+    @Test
+    fun `ActiveAlert stores type and message`() {
+        val alert = ActiveAlert(
+            type = AlertType.SPEED,
+            value = 150f,
+            threshold = 130f,
+            message = "Geschwindigkeit: 150 > 130"
+        )
+        assertEquals(AlertType.SPEED, alert.type)
+        assertEquals(150f, alert.value, 0.01f)
+        assertEquals("Geschwindigkeit: 150 > 130", alert.message)
+    }
+
+    @Test
+    fun `AlertType has all labels`() {
+        assertEquals(5, AlertType.entries.size)
+        assertNotNull(AlertType.SPEED.label)
+        assertNotNull(AlertType.COOLANT.label)
+        assertNotNull(AlertType.FUEL.label)
+        assertNotNull(AlertType.RPM.label)
+        assertNotNull(AlertType.BATTERY.label)
+    }
+
+    @Test
+    fun `CsvImportEntry stores all fields`() {
+        val entry = CsvImportEntry(
+            timestamp = 1000L, rpm = 2000.0, speed = 60.0,
+            coolantTemp = 90.0, throttle = 25.0, fuelLevel = 50.0, batteryVoltage = 13.5
+        )
+        assertEquals(1000L, entry.timestamp)
+        assertEquals(2000.0, entry.rpm, 0.001)
+        assertEquals(60.0, entry.speed, 0.001)
+    }
 }

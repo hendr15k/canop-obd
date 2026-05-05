@@ -168,7 +168,7 @@ fun SettingsDialog(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        InfoRow(label = stringResource(R.string.app_version), value = "1.1.0")
+                        InfoRow(label = stringResource(R.string.app_version), value = "1.3.0")
                         InfoRow(label = stringResource(R.string.obd_protocol), value = "ELM327")
                         InfoRow(label = stringResource(R.string.android_version), value = "API 26+")
                     }

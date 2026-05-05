@@ -8,6 +8,7 @@ import com.canopobd.data.model.DTCResponse
 import com.canopobd.data.model.DiagnosticTroubleCode
 import com.canopobd.data.model.FreezeFrame
 import com.canopobd.data.model.OBDPID
+import com.canopobd.data.model.ReadinessMonitor
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -458,6 +459,91 @@ class ELM327BTConnection(
         } catch (_: Exception) {
             emptyList()
         }
+    }
+
+    suspend fun readReadinessMonitor(): ReadinessMonitor = withContext(Dispatchers.IO) {
+        try {
+            val response = sendCommandWithTimeout("0101")
+            parseReadiness(response)
+        } catch (_: Exception) {
+            ReadinessMonitor()
+        }
+    }
+
+    private fun parseReadiness(response: String): ReadinessMonitor {
+        val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+        if (hex.contains("ERROR") || hex.isEmpty()) return ReadinessMonitor()
+        val dataHex = hex.drop(4)
+        if (dataHex.length < 8) return ReadinessMonitor()
+
+        val byteC = dataHex.substring(4, 6).toInt(16)
+        val byteD = dataHex.substring(6, 8).toInt(16)
+
+        return ReadinessMonitor(
+            misfire = (byteC and 0x01) != 0,
+            fuelSystem = (byteC and 0x02) != 0,
+            comprehensiveComponent = (byteC and 0x04) != 0,
+            catalyst = (byteC and 0x08) != 0,
+            heatedCatalyst = (byteC and 0x10) != 0,
+            evapSystem = (byteC and 0x20) != 0,
+            secondaryAirSystem = (byteC and 0x40) != 0,
+            acSystemRefrigerant = (byteC and 0x80) != 0,
+            oxygenSensor = (byteD and 0x01) != 0,
+            oxygenSensorHeater = (byteD and 0x02) != 0,
+            egrSystem = (byteD and 0x04) != 0
+        )
+    }
+
+    suspend fun readProtocol(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("ATDP")
+        } catch (_: Exception) {
+            "Unknown"
+        }
+    }
+
+    suspend fun scanSupportedPIDs(): List<String> = withContext(Dispatchers.IO) {
+        val supported = mutableListOf<String>()
+        try {
+            val response = sendCommandWithTimeout("0100")
+            val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+            if (hex.contains("ERROR") || hex.isEmpty()) return@withContext supported
+
+            val dataHex = hex.drop(4)
+            if (dataHex.length >= 8) {
+                val bits = dataHex.chunked(2).map { it.toInt(16).toByte() }
+                for (byte in bits) {
+                    for (i in 7 downTo 0) {
+                        if ((byte.toInt() and (1 shl i)) != 0) {
+                            val pidNum = supported.size + 1
+                            supported.add("01%02X".format(pidNum))
+                        }
+                        if (supported.size >= 32) break
+                    }
+                    if (supported.size >= 32) break
+                }
+            }
+
+            val response2 = sendCommandWithTimeout("0120")
+            val hex2 = response2.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+            if (!hex2.contains("ERROR") && hex2.isNotEmpty()) {
+                val dataHex2 = hex2.drop(4)
+                if (dataHex2.length >= 8) {
+                    val bits2 = dataHex2.chunked(2).map { it.toInt(16).toByte() }
+                    for (byte in bits2) {
+                        for (i in 7 downTo 0) {
+                            if ((byte.toInt() and (1 shl i)) != 0) {
+                                val pidNum = 32 + supported.size - 32 + 1
+                                if (pidNum <= 64) supported.add("01%02X".format(pidNum))
+                            }
+                            if (supported.size >= 64) break
+                        }
+                        if (supported.size >= 64) break
+                    }
+                }
+            }
+        } catch (_: Exception) { }
+        supported
     }
 
     fun disconnect() {

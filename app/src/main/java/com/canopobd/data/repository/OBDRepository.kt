@@ -114,6 +114,27 @@ class OBDRepository(
 
     private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
 
+    private val _readinessMonitor = MutableStateFlow(ReadinessMonitor())
+    val readinessMonitor: StateFlow<ReadinessMonitor> = _readinessMonitor.asStateFlow()
+
+    private val _detectedProtocol = MutableStateFlow("")
+    val detectedProtocol: StateFlow<String> = _detectedProtocol.asStateFlow()
+
+    private val _supportedPIDs = MutableStateFlow<List<String>>(emptyList())
+    val supportedPIDs: StateFlow<List<String>> = _supportedPIDs.asStateFlow()
+
+    private val _alertConfig = MutableStateFlow(AlertConfig())
+    val alertConfig: StateFlow<AlertConfig> = _alertConfig.asStateFlow()
+
+    private val _activeAlerts = MutableStateFlow<List<ActiveAlert>>(emptyList())
+    val activeAlerts: StateFlow<List<ActiveAlert>> = _activeAlerts.asStateFlow()
+
+    private val _freezeFrames = MutableStateFlow<List<FreezeFrame>>(emptyList())
+    val freezeFrames: StateFlow<List<FreezeFrame>> = _freezeFrames.asStateFlow()
+
+    private val _importedData = MutableStateFlow<List<CsvImportEntry>>(emptyList())
+    val importedData: StateFlow<List<CsvImportEntry>> = _importedData.asStateFlow()
+
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
@@ -125,6 +146,18 @@ class OBDRepository(
             _primaryGaugeIds.value = ids
         }
         _pollMode.value = PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
+        _alertConfig.value = AlertConfig(
+            speedWarning = prefs.getFloat("alert_speed", 130f),
+            speedWarningEnabled = prefs.getBoolean("alert_speed_on", false),
+            coolantWarning = prefs.getFloat("alert_coolant", 105f),
+            coolantWarningEnabled = prefs.getBoolean("alert_coolant_on", true),
+            fuelWarning = prefs.getFloat("alert_fuel", 15f),
+            fuelWarningEnabled = prefs.getBoolean("alert_fuel_on", true),
+            rpmWarning = prefs.getFloat("alert_rpm", 6000f),
+            rpmWarningEnabled = prefs.getBoolean("alert_rpm_on", false),
+            batteryLowWarning = prefs.getFloat("alert_battery", 11.5f),
+            batteryLowWarningEnabled = prefs.getBoolean("alert_battery_on", true)
+        )
     }
 
     fun getPairedDevices(): List<BluetoothDeviceInfo> {
@@ -336,6 +369,7 @@ class OBDRepository(
                     .apply()
 
                 recordConnectionSuccess()
+                checkAlerts()
                 if (_recordingActive.value) recordData()
                 delay(_pollRate.value)
             }
@@ -471,4 +505,116 @@ class OBDRepository(
     }
 
     fun clearRecordedData() { _recordedData.value = emptyList() }
+
+    private fun checkAlerts() {
+        val cfg = _alertConfig.value
+        val d = _obdData.value
+        val alerts = mutableListOf<ActiveAlert>()
+
+        if (cfg.speedWarningEnabled && d.speed > cfg.speedWarning) {
+            alerts.add(ActiveAlert(AlertType.SPEED, d.speed.toFloat(), cfg.speedWarning,
+                "Geschwindigkeit: %.0f > %.0f".format(d.speed, cfg.speedWarning)))
+        }
+        if (cfg.coolantWarningEnabled && d.coolantTemp > cfg.coolantWarning) {
+            alerts.add(ActiveAlert(AlertType.COOLANT, d.coolantTemp.toFloat(), cfg.coolantWarning,
+                "Kühlmittel: %.0f° > %.0f°".format(d.coolantTemp, cfg.coolantWarning)))
+        }
+        if (cfg.fuelWarningEnabled && d.fuelLevel < cfg.fuelWarning && d.fuelLevel > 0) {
+            alerts.add(ActiveAlert(AlertType.FUEL, d.fuelLevel.toFloat(), cfg.fuelWarning,
+                "Kraftstoff: %.0f%% < %.0f%%".format(d.fuelLevel, cfg.fuelWarning)))
+        }
+        if (cfg.rpmWarningEnabled && d.rpm > cfg.rpmWarning) {
+            alerts.add(ActiveAlert(AlertType.RPM, d.rpm.toFloat(), cfg.rpmWarning,
+                "Drehzahl: %.0f > %.0f".format(d.rpm, cfg.rpmWarning)))
+        }
+        if (cfg.batteryLowWarningEnabled && d.batteryVoltage > 0 && d.batteryVoltage < cfg.batteryLowWarning) {
+            alerts.add(ActiveAlert(AlertType.BATTERY, d.batteryVoltage.toFloat(), cfg.batteryLowWarning,
+                "Batterie: %.1fV < %.1fV".format(d.batteryVoltage, cfg.batteryLowWarning)))
+        }
+        _activeAlerts.value = alerts
+    }
+
+    fun setAlertConfig(config: AlertConfig) {
+        _alertConfig.value = config
+        prefs.edit()
+            .putFloat("alert_speed", config.speedWarning)
+            .putBoolean("alert_speed_on", config.speedWarningEnabled)
+            .putFloat("alert_coolant", config.coolantWarning)
+            .putBoolean("alert_coolant_on", config.coolantWarningEnabled)
+            .putFloat("alert_fuel", config.fuelWarning)
+            .putBoolean("alert_fuel_on", config.fuelWarningEnabled)
+            .putFloat("alert_rpm", config.rpmWarning)
+            .putBoolean("alert_rpm_on", config.rpmWarningEnabled)
+            .putFloat("alert_battery", config.batteryLowWarning)
+            .putBoolean("alert_battery_on", config.batteryLowWarningEnabled)
+            .apply()
+    }
+
+    fun readReadinessMonitor() {
+        val conn = connection ?: return
+        scope.launch {
+            _readinessMonitor.value = conn.readReadinessMonitor()
+        }
+    }
+
+    fun readProtocol() {
+        val conn = connection ?: return
+        scope.launch {
+            _detectedProtocol.value = conn.readProtocol()
+        }
+    }
+
+    fun scanSupportedPIDs() {
+        val conn = connection ?: return
+        scope.launch {
+            _supportedPIDs.value = conn.scanSupportedPIDs()
+        }
+    }
+
+    fun readFreezeFrames() {
+        val conn = connection ?: return
+        scope.launch {
+            _freezeFrames.value = conn.readFreezeFrames()
+        }
+    }
+
+    fun importCsvData(csvContent: String) {
+        val entries = mutableListOf<CsvImportEntry>()
+        val lines = csvContent.lines().drop(1)
+        for (line in lines) {
+            val parts = line.split(",")
+            if (parts.size >= 7) {
+                try {
+                    entries.add(CsvImportEntry(
+                        timestamp = parts[0].toLongOrNull() ?: 0L,
+                        rpm = parts[1].toDoubleOrNull() ?: 0.0,
+                        speed = parts[2].toDoubleOrNull() ?: 0.0,
+                        coolantTemp = parts[3].toDoubleOrNull() ?: 0.0,
+                        throttle = parts[4].toDoubleOrNull() ?: 0.0,
+                        fuelLevel = parts[5].toDoubleOrNull() ?: 0.0,
+                        batteryVoltage = parts[6].toDoubleOrNull() ?: 0.0
+                    ))
+                } catch (_: Exception) { }
+            }
+        }
+        _importedData.value = entries
+    }
+
+    fun clearImportedData() { _importedData.value = emptyList() }
+
+    fun getFuelTrimAnalysis(): FuelTrimAnalysis {
+        val d = _obdData.value
+        val stftB1 = d.shortTermFuelTrimB1
+        val ltftB1 = d.longTermFuelTrimB1
+        val stftB2 = d.shortTermFuelTrimB2
+        val ltftB2 = d.longTermFuelTrimB2
+        return FuelTrimAnalysis(
+            stftB1 = stftB1,
+            ltftB1 = ltftB1,
+            stftB2 = stftB2,
+            ltftB2 = ltftB2,
+            totalTrimB1 = stftB1 + ltftB1,
+            totalTrimB2 = stftB2 + ltftB2
+        )
+    }
 }

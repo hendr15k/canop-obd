@@ -313,3 +313,109 @@ data class BluetoothDeviceInfo(
     val name: String,
     val address: String
 )
+
+data class ReadinessMonitor(
+    val misfire: Boolean = false,
+    val fuelSystem: Boolean = false,
+    val comprehensiveComponent: Boolean = false,
+    val catalyst: Boolean = false,
+    val heatedCatalyst: Boolean = false,
+    val evapSystem: Boolean = false,
+    val secondaryAirSystem: Boolean = false,
+    val acSystemRefrigerant: Boolean = false,
+    val oxygenSensor: Boolean = false,
+    val oxygenSensorHeater: Boolean = false,
+    val egrSystem: Boolean = false
+) {
+    val allComplete: Boolean get() = misfire && fuelSystem && comprehensiveComponent &&
+            catalyst && heatedCatalyst && evapSystem && secondaryAirSystem &&
+            acSystemRefrigerant && oxygenSensor && oxygenSensorHeater && egrSystem
+
+    val completedCount: Int get() = listOf(
+        misfire, fuelSystem, comprehensiveComponent, catalyst, heatedCatalyst,
+        evapSystem, secondaryAirSystem, acSystemRefrigerant, oxygenSensor,
+        oxygenSensorHeater, egrSystem
+    ).count { it }
+
+    val totalCount: Int get() = 11
+}
+
+data class OBDProtocol(
+    val id: Int,
+    val name: String,
+    val description: String
+)
+
+val OBD_PROTOCOLS = listOf(
+    OBDProtocol(0, "AUTO", "Automatic"),
+    OBDProtocol(1, "SAE J1850 PWM", "PWM 41.6 kbaud"),
+    OBDProtocol(2, "SAE J1850 VPW", "VPW 10.4 kbaud"),
+    OBDProtocol(3, "ISO 9141-2", "5 baud init"),
+    OBDProtocol(4, "ISO 14230-4 KWP", "5 baud init"),
+    OBDProtocol(5, "ISO 14230-4 KWP", "Fast init"),
+    OBDProtocol(6, "ISO 15765-4 CAN", "11bit 500k"),
+    OBDProtocol(7, "ISO 15765-4 CAN", "29bit 500k"),
+    OBDProtocol(8, "ISO 15765-4 CAN", "11bit 250k"),
+    OBDProtocol(9, "ISO 15765-4 CAN", "29bit 250k"),
+    OBDProtocol(10, "SAE J1939 CAN", "29bit 250k"),
+    OBDProtocol(11, "USER1 CAN", "11bit 125k"),
+    OBDProtocol(12, "USER2 CAN", "11bit 50k")
+)
+
+data class AlertConfig(
+    val speedWarning: Float = 130f,
+    val speedWarningEnabled: Boolean = false,
+    val coolantWarning: Float = 105f,
+    val coolantWarningEnabled: Boolean = true,
+    val fuelWarning: Float = 15f,
+    val fuelWarningEnabled: Boolean = true,
+    val rpmWarning: Float = 6000f,
+    val rpmWarningEnabled: Boolean = false,
+    val batteryLowWarning: Float = 11.5f,
+    val batteryLowWarningEnabled: Boolean = true
+)
+
+data class ActiveAlert(
+    val type: AlertType,
+    val value: Float,
+    val threshold: Float,
+    val message: String
+)
+
+enum class AlertType(val label: String) {
+    SPEED("Geschwindigkeit"),
+    COOLANT("Kühlmitteltemperatur"),
+    FUEL("Kraftstoff"),
+    RPM("Drehzahl"),
+    BATTERY("Batterie")
+}
+
+data class CsvImportEntry(
+    val timestamp: Long,
+    val rpm: Double,
+    val speed: Double,
+    val coolantTemp: Double,
+    val throttle: Double,
+    val fuelLevel: Double,
+    val batteryVoltage: Double
+)
+
+data class FuelTrimAnalysis(
+    val stftB1: Double,
+    val ltftB1: Double,
+    val stftB2: Double,
+    val ltftB2: Double,
+    val totalTrimB1: Double,
+    val totalTrimB2: Double
+) {
+    val statusB1: String get() = when {
+        totalTrimB1 > 10.0 -> "Mager (Lean)"
+        totalTrimB1 < -10.0 -> "Fett (Rich)"
+        else -> "OK"
+    }
+    val statusB2: String get() = when {
+        totalTrimB2 > 10.0 -> "Mager (Lean)"
+        totalTrimB2 < -10.0 -> "Fett (Rich)"
+        else -> "OK"
+    }
+}

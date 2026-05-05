@@ -69,38 +69,7 @@ fun PIDDialog(
                             Triple("MAF Rate", "%.1f g/s".format(obdData.mafRate), gaugeGreen),
                             Triple("Fuel Pressure", "%.0f kPa".format(obdData.fuelPressure), gaugeYellow),
                             Triple("Intake Pressure", "%.0f kPa".format(obdData.intakePressure), gaugeGreen),
-                            Triple("Engine Runtime", "%.0f s".format(obdData.runTime), textSecondary)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = stringResource(R.string.pid_section_emissions))
-                    }
-                    items(
-                        listOf(
-                            Triple("Commanded EGR", "%.1f%%".format(obdData.commandedEGR), gaugeGreen),
-                            Triple("EGR Temperature", "%.0f%s".format(obdData.egrTemp, measurementUnit.tempUnit), gaugeYellow),
-                            Triple("Evap Purge", "%.1f%%".format(obdData.commandedEvapPurge), gaugeGreen),
-                            Triple("Barometric", "%.0f kPa".format(obdData.barometricPressure), gaugeGreen)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = stringResource(R.string.pid_section_motor))
-                    }
-                    items(
-                        listOf(
-                            Triple("Timing Advance", "%.1f°".format(obdData.timingAdvance), gaugeGreen),
-                            Triple("MAF Rate", "%.1f g/s".format(obdData.mafRate), gaugeGreen),
-                            Triple("Fuel Pressure", "%.0f kPa".format(obdData.fuelPressure), gaugeYellow),
-                            Triple("Intake Pressure", "%.0f kPa".format(obdData.intakePressure), gaugeGreen),
-                            Triple("Engine Runtime", "%.0f s".format(obdData.runTime), textSecondary),
+                            Triple("Engine Runtime", formatRuntime(obdData.runTime), textSecondary),
                             Triple("Fuel Rail Pressure", "%.0f kPa".format(obdData.fuelRailPressure), gaugeYellow),
                             Triple("Absolute Load Value", "%.0f%%".format(obdData.absoluteLoadValue), gaugeGreen)
                         )
@@ -132,27 +101,12 @@ fun PIDDialog(
                         listOf(
                             Triple("O2 B1S1 Voltage", "%.3f V".format(obdData.o2VoltageB1S1), gaugeYellow),
                             Triple("O2 B1S2 Voltage", "%.3f V".format(obdData.o2VoltageB1S2), gaugeYellow),
-                            Triple("Ctrl Module Voltage", "%.3f V".format(obdData.controlModuleVoltage), gaugeGreen)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = stringResource(R.string.pid_section_catalyst))
-                    }
-                    items(
-                        listOf(
-                            Triple("Catalyst Temp B1S1", "%.1f%s".format(obdData.catalystTemp, measurementUnit.tempUnit), gaugeOrange)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-                    items(
-                        listOf(
-                            Triple("O2 B1S1 Voltage", "%.3f V".format(obdData.o2VoltageB1S1), gaugeYellow),
-                            Triple("O2 B1S2 Voltage", "%.3f V".format(obdData.o2VoltageB1S2), gaugeYellow)
+                            Triple("Ctrl Module Voltage", "%.3f V".format(obdData.controlModuleVoltage), gaugeGreen),
+                            Triple("Fuel Air Ratio", "%.3f".format(obdData.fuelAirRatio), gaugeGreen),
+                            Triple("STFT Bank 1", "%+.1f%%".format(obdData.shortTermFuelTrimB1), gaugeYellow),
+                            Triple("LTFT Bank 1", "%+.1f%%".format(obdData.longTermFuelTrimB1), gaugeYellow),
+                            Triple("STFT Bank 2", "%+.1f%%".format(obdData.shortTermFuelTrimB2), gaugeYellow),
+                            Triple("LTFT Bank 2", "%+.1f%%".format(obdData.longTermFuelTrimB2), gaugeYellow)
                         )
                     ) { (label, value, color) ->
                         PIDRow(label = label, value = value, color = color)
@@ -209,4 +163,11 @@ private fun PIDRow(label: String, value: String, color: androidx.compose.ui.grap
             color = color
         )
     }
+}
+
+private fun formatRuntime(seconds: Double): String {
+    val h = (seconds / 3600).toInt()
+    val m = ((seconds % 3600) / 60).toInt()
+    val s = (seconds % 60).toInt()
+    return "%dh %02dm %02ds".format(h, m, s)
 }

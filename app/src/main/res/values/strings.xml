@@ -122,4 +122,47 @@
     <string name="poll_fast">Fast</string>
     <string name="poll_normal">Normal</string>
     <string name="poll_eco">Eco</string>
+
+    <!-- Readiness monitor -->
+    <string name="readiness_title">Readiness Monitor</string>
+    <string name="readiness_complete">Alle Tests bestanden</string>
+    <string name="readiness_progress">%d / %d Tests bestanden</string>
+    <string name="readiness_misfire">Misfire</string>
+    <string name="readiness_fuel_system">Kraftstoffsystem</string>
+    <string name="readiness_comprehensive">Komponenten</string>
+    <string name="readiness_catalyst">Katalysator</string>
+    <string name="readiness_heated_catalyst">Heizkatalysator</string>
+    <string name="readiness_evap">Verdunstung</string>
+    <string name="readiness_secondary_air">Sekundärluft</string>
+    <string name="readiness_ac">Klimaanlage</string>
+    <string name="readiness_o2_sensor">O2-Sensor</string>
+    <string name="readiness_o2_heater">O2-Sensor Heizung</string>
+    <string name="readiness_egr">Abgasrückführung</string>
+
+    <!-- Diagnostics -->
+    <string name="diagnostics_title">Diagnose</string>
+    <string name="diagnostics_protocol">Protokoll</string>
+    <string name="diagnostics_supported_pids">Unterstützte PIDs</string>
+    <string name="diagnostics_freeze_frames">Freeze Frames</string>
+    <string name="diagnostics_no_freeze_frames">Keine Freeze Frames</string>
+
+    <!-- Alerts -->
+    <string name="alerts_title">Warnungen</string>
+    <string name="alerts_speed">Geschwindigkeitswarnung</string>
+    <string name="alerts_coolant">Kühlmitteltemperatur</string>
+    <string name="alerts_fuel">Kraftstoff niedrig</string>
+    <string name="alerts_rpm">Drehzahlwarnung</string>
+    <string name="alerts_battery">Batterie niedrig</string>
+    <string name="alerts_threshold">Schwellenwert</string>
+    <string name="alerts_active">Aktive Warnungen</string>
+    <string name="alerts_none">Keine Warnungen</string>
+
+    <!-- Data Analysis -->
+    <string name="analysis_title">Datenanalyse</string>
+    <string name="analysis_import_csv">CSV Importieren</string>
+    <string name="analysis_fuel_trim">Kraftstoff-Trimm-Analyse</string>
+    <string name="analysis_imported">%d Einträge importiert</string>
+    <string name="analysis_no_data">Keine Daten</string>
+    <string name="analysis_total_trim">Gesamtkorrektur</string>
+    <string name="analysis_status">Status</string>
 </resources>

@@ -145,6 +145,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showCustomization by viewModel.showCustomization.collectAsState()
     val showHUDMode by viewModel.showHUDMode.collectAsState()
     val showTrendGraph by viewModel.showTrendGraph.collectAsState()
+    val showReadiness by viewModel.showReadiness.collectAsState()
+    val showDiagnostics by viewModel.showDiagnostics.collectAsState()
+    val showAlertSettings by viewModel.showAlertSettings.collectAsState()
+    val showDataAnalysis by viewModel.showDataAnalysis.collectAsState()
     val remoteServerRunning by viewModel.remoteServerRunning.collectAsState()
     val remoteServerIp by viewModel.remoteServerIp.collectAsState()
     val remoteServerPort by viewModel.remoteServerPort.collectAsState()
@@ -159,6 +163,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val isGPSTracking by viewModel.isGPSTracking.collectAsState()
     val currentTrip by viewModel.currentTrip.collectAsState()
     val trendHistory by viewModel.trendHistory.collectAsState()
+    val readinessMonitor by viewModel.readinessMonitor.collectAsState()
+    val detectedProtocol by viewModel.detectedProtocol.collectAsState()
+    val supportedPIDs by viewModel.supportedPIDs.collectAsState()
+    val freezeFrames by viewModel.freezeFrames.collectAsState()
+    val alertConfig by viewModel.alertConfig.collectAsState()
+    val activeAlerts by viewModel.activeAlerts.collectAsState()
+    val importedData by viewModel.importedData.collectAsState()
 
     DashboardScreen(
         connectionState = connectionState,
@@ -179,6 +190,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showCustomization = showCustomization,
         showHUDMode = showHUDMode,
         showTrendGraph = showTrendGraph,
+        showReadiness = showReadiness,
+        showDiagnostics = showDiagnostics,
+        showAlertSettings = showAlertSettings,
+        showDataAnalysis = showDataAnalysis,
         remoteServerRunning = remoteServerRunning,
         remoteServerIp = remoteServerIp,
         remoteServerPort = remoteServerPort,
@@ -193,6 +208,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         isGPSTracking = isGPSTracking,
         currentTrip = currentTrip,
         trendHistory = trendHistory,
+        readinessMonitor = readinessMonitor,
+        detectedProtocol = detectedProtocol,
+        supportedPIDs = supportedPIDs,
+        freezeFrames = freezeFrames,
+        alertConfig = alertConfig,
+        activeAlerts = activeAlerts,
+        importedData = importedData,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onToggleDevicePicker = viewModel::toggleDevicePicker,
@@ -206,6 +228,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleCustomization = viewModel::toggleCustomization,
         onToggleHUDMode = viewModel::toggleHUDMode,
         onToggleTrendGraph = viewModel::toggleTrendGraph,
+        onToggleReadiness = viewModel::toggleReadiness,
+        onToggleDiagnostics = viewModel::toggleDiagnostics,
+        onToggleAlertSettings = viewModel::toggleAlertSettings,
+        onToggleDataAnalysis = viewModel::toggleDataAnalysis,
         onStartRemoteServer = viewModel::startRemoteServer,
         onStopRemoteServer = viewModel::stopRemoteServer,
         onStartRecording = viewModel::startRecording,
@@ -224,6 +250,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onStopGPSTracking = viewModel::stopGPSTracking,
         onExportGPX = viewModel::exportTripToGPX,
         onExportKML = viewModel::exportTripToKML,
-        onClearGPSTrips = viewModel::clearGPSTripHistory
+        onClearGPSTrips = viewModel::clearGPSTripHistory,
+        onSetAlertConfig = viewModel::setAlertConfig,
+        onImportCsv = viewModel::importCsvData,
+        onClearImported = viewModel::clearImportedData,
+        onGetFuelTrimAnalysis = viewModel::getFuelTrimAnalysis
     )
 }

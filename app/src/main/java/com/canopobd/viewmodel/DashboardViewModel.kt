@@ -45,6 +45,14 @@ class DashboardViewModel private constructor(
     val tripHistory = repository.tripHistory
     val trendHistory = repository.trendHistory
 
+    val readinessMonitor = repository.readinessMonitor
+    val detectedProtocol = repository.detectedProtocol
+    val supportedPIDs = repository.supportedPIDs
+    val alertConfig = repository.alertConfig
+    val activeAlerts = repository.activeAlerts
+    val freezeFrames = repository.freezeFrames
+    val importedData = repository.importedData
+
     private val _showCustomization = MutableStateFlow(false)
     val showCustomization: StateFlow<Boolean> = _showCustomization.asStateFlow()
 
@@ -53,6 +61,18 @@ class DashboardViewModel private constructor(
 
     private val _showTrendGraph = MutableStateFlow(false)
     val showTrendGraph: StateFlow<Boolean> = _showTrendGraph.asStateFlow()
+
+    private val _showReadiness = MutableStateFlow(false)
+    val showReadiness: StateFlow<Boolean> = _showReadiness.asStateFlow()
+
+    private val _showDiagnostics = MutableStateFlow(false)
+    val showDiagnostics: StateFlow<Boolean> = _showDiagnostics.asStateFlow()
+
+    private val _showAlertSettings = MutableStateFlow(false)
+    val showAlertSettings: StateFlow<Boolean> = _showAlertSettings.asStateFlow()
+
+    private val _showDataAnalysis = MutableStateFlow(false)
+    val showDataAnalysis: StateFlow<Boolean> = _showDataAnalysis.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
@@ -150,6 +170,44 @@ class DashboardViewModel private constructor(
 
     fun toggleTrendGraph() {
         _showTrendGraph.value = !_showTrendGraph.value
+    }
+
+    fun toggleReadiness() {
+        _showReadiness.value = !_showReadiness.value
+        if (_showReadiness.value) repository.readReadinessMonitor()
+    }
+
+    fun toggleDiagnostics() {
+        _showDiagnostics.value = !_showDiagnostics.value
+        if (_showDiagnostics.value) {
+            repository.readProtocol()
+            repository.scanSupportedPIDs()
+            repository.readFreezeFrames()
+        }
+    }
+
+    fun toggleAlertSettings() {
+        _showAlertSettings.value = !_showAlertSettings.value
+    }
+
+    fun toggleDataAnalysis() {
+        _showDataAnalysis.value = !_showDataAnalysis.value
+    }
+
+    fun setAlertConfig(config: com.canopobd.data.model.AlertConfig) {
+        repository.setAlertConfig(config)
+    }
+
+    fun importCsvData(csvContent: String) {
+        repository.importCsvData(csvContent)
+    }
+
+    fun clearImportedData() {
+        repository.clearImportedData()
+    }
+
+    fun getFuelTrimAnalysis(): com.canopobd.data.model.FuelTrimAnalysis {
+        return repository.getFuelTrimAnalysis()
     }
 
     fun startGPSTracking() {

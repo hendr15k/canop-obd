@@ -32,8 +32,18 @@ import com.canopobd.ui.settings.SettingsDialog
 import com.canopobd.ui.theme.*
 import com.canopobd.ui.tripcomputer.TripComputerDialog
 import com.canopobd.ui.hud.HUDModeActivity
+import com.canopobd.ui.readiness.ReadinessMonitorDialog
+import com.canopobd.ui.diagnostics.DiagnosticsDialog
+import com.canopobd.ui.alerts.AlertSettingsDialog
+import com.canopobd.ui.analysis.DataAnalysisDialog
 import com.canopobd.data.model.GPSTrip
 import com.canopobd.data.model.OBDData
+import com.canopobd.data.model.ActiveAlert
+import com.canopobd.data.model.AlertConfig
+import com.canopobd.data.model.FreezeFrame
+import com.canopobd.data.model.FuelTrimAnalysis
+import com.canopobd.data.model.ReadinessMonitor
+import com.canopobd.data.model.CsvImportEntry
 import kotlin.math.abs
 
 @Composable
@@ -56,6 +66,10 @@ fun DashboardScreen(
     showCustomization: Boolean,
     showHUDMode: Boolean,
     showTrendGraph: Boolean,
+    showReadiness: Boolean,
+    showDiagnostics: Boolean,
+    showAlertSettings: Boolean,
+    showDataAnalysis: Boolean,
     remoteServerRunning: Boolean,
     remoteServerIp: String,
     remoteServerPort: Int,
@@ -70,6 +84,13 @@ fun DashboardScreen(
     isGPSTracking: Boolean,
     currentTrip: GPSTrip?,
     trendHistory: TrendHistory,
+    readinessMonitor: ReadinessMonitor,
+    detectedProtocol: String,
+    supportedPIDs: List<String>,
+    freezeFrames: List<FreezeFrame>,
+    alertConfig: AlertConfig,
+    activeAlerts: List<ActiveAlert>,
+    importedData: List<CsvImportEntry>,
     onConnect: (String) -> Unit,
     onDisconnect: () -> Unit,
     onToggleDevicePicker: () -> Unit,
@@ -83,6 +104,10 @@ fun DashboardScreen(
     onToggleCustomization: () -> Unit,
     onToggleHUDMode: () -> Unit,
     onToggleTrendGraph: () -> Unit,
+    onToggleReadiness: () -> Unit,
+    onToggleDiagnostics: () -> Unit,
+    onToggleAlertSettings: () -> Unit,
+    onToggleDataAnalysis: () -> Unit,
     onStartRemoteServer: (Int) -> Unit,
     onStopRemoteServer: () -> Unit,
     onStartRecording: () -> Unit,
@@ -102,6 +127,10 @@ fun DashboardScreen(
     onExportGPX: () -> String,
     onExportKML: () -> String,
     onClearGPSTrips: () -> Unit,
+    onSetAlertConfig: (AlertConfig) -> Unit,
+    onImportCsv: (String) -> Unit,
+    onClearImported: () -> Unit,
+    onGetFuelTrimAnalysis: () -> FuelTrimAnalysis,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -146,12 +175,22 @@ fun DashboardScreen(
                     onToggleDataLog = onToggleDataLog,
                     onTogglePIDScreen = onTogglePIDScreen,
                     onToggleDTCDialog = onToggleDTCDialog,
+                    onToggleReadiness = onToggleReadiness,
+                    onToggleDiagnostics = onToggleDiagnostics,
+                    onToggleAlertSettings = onToggleAlertSettings,
+                    onToggleDataAnalysis = onToggleDataAnalysis,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
+                    activeAlerts = activeAlerts,
                     onStartGPSTrack = onStartGPSTracking,
                     onStopGPSTrack = onStopGPSTracking
                 )
+
+                if (activeAlerts.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AlertBanner(alerts = activeAlerts, colors = colors)
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -315,6 +354,41 @@ fun DashboardScreen(
                 onDismiss = onToggleTrendGraph
             )
         }
+
+        if (showReadiness) {
+            ReadinessMonitorDialog(
+                readiness = readinessMonitor,
+                onDismiss = onToggleReadiness
+            )
+        }
+
+        if (showDiagnostics) {
+            DiagnosticsDialog(
+                protocol = detectedProtocol,
+                supportedPIDs = supportedPIDs,
+                freezeFrames = freezeFrames,
+                onDismiss = onToggleDiagnostics
+            )
+        }
+
+        if (showAlertSettings) {
+            AlertSettingsDialog(
+                alertConfig = alertConfig,
+                activeAlerts = activeAlerts,
+                onDismiss = onToggleAlertSettings,
+                onUpdateConfig = onSetAlertConfig
+            )
+        }
+
+        if (showDataAnalysis) {
+            DataAnalysisDialog(
+                importedData = importedData,
+                fuelTrimAnalysis = onGetFuelTrimAnalysis(),
+                onDismiss = onToggleDataAnalysis,
+                onImportCsv = onImportCsv,
+                onClearImported = onClearImported
+            )
+        }
     }
 }
 
@@ -435,9 +509,14 @@ private fun DashboardHeader(
     onToggleDataLog: () -> Unit,
     onTogglePIDScreen: () -> Unit,
     onToggleDTCDialog: () -> Unit,
+    onToggleReadiness: () -> Unit,
+    onToggleDiagnostics: () -> Unit,
+    onToggleAlertSettings: () -> Unit,
+    onToggleDataAnalysis: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
+    activeAlerts: List<ActiveAlert>,
     onStartGPSTrack: () -> Unit,
     onStopGPSTrack: () -> Unit
 ) {
@@ -507,6 +586,22 @@ private fun DashboardHeader(
             if (connectionState is OBDConnectionState.Connected) {
                 IconButton(onClick = onToggleHUDMode) {
                     Icon(Icons.Filled.Tv, contentDescription = "HUD Mode", tint = colors.gaugeCyan)
+                }
+                IconButton(onClick = onToggleReadiness) {
+                    Icon(Icons.Filled.Verified, contentDescription = "Readiness", tint = colors.gaugeGreen)
+                }
+                IconButton(onClick = onToggleDiagnostics) {
+                    Icon(Icons.Filled.Biotech, contentDescription = "Diagnostics", tint = colors.accent)
+                }
+                IconButton(onClick = onToggleDataAnalysis) {
+                    Icon(Icons.Filled.Analytics, contentDescription = "Analysis", tint = colors.accent)
+                }
+                IconButton(onClick = onToggleAlertSettings) {
+                    Icon(
+                        if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
+                        contentDescription = "Alerts",
+                        tint = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary
+                    )
                 }
                 IconButton(onClick = onToggleRemoteDialog) {
                     Icon(
@@ -584,6 +679,34 @@ private fun SecondaryGauge(
             color = color
         )
         Text(text = label, fontSize = 10.sp, color = colors.textSecondary)
+    }
+}
+
+@Composable
+private fun AlertBanner(alerts: List<ActiveAlert>, colors: AppColors) {
+    val alert = alerts.first()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = colors.gaugeRed.copy(alpha = 0.2f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.NotificationImportant,
+                contentDescription = "Alert",
+                tint = colors.gaugeRed,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = alert.message,
+                fontSize = 11.sp,
+                color = colors.gaugeRed
+            )
+        }
     }
 }
 
