@@ -1,4 +1,4 @@
-package com.canopobd
+﻿package com.canopobd
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -178,6 +178,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showPowerCalculator by viewModel.showPowerCalculator.collectAsState()
     val showDriveScore by viewModel.showDriveScore.collectAsState()
     val showShiftLight by viewModel.showShiftLight.collectAsState()
+    val showVehicleInfo by viewModel.showVehicleInfo.collectAsState()
+    val showKnownIssues by viewModel.showKnownIssues.collectAsState()
     val powerCalculation by viewModel.powerCalculation.collectAsState()
     val driveScore by viewModel.driveScore.collectAsState()
     val driveSession by viewModel.driveSession.collectAsState()
@@ -228,6 +230,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showPowerCalculator = showPowerCalculator,
         showDriveScore = showDriveScore,
         showShiftLight = showShiftLight,
+        showVehicleInfo = showVehicleInfo,
+        showKnownIssues = showKnownIssues,
         maintenanceItems = maintenanceItems,
         currentKm = currentKm,
         fuelEconomyData = fuelEconomyData,
@@ -310,6 +314,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onTogglePowerCalculator = viewModel::togglePowerCalculator,
         onToggleDriveScore = viewModel::toggleDriveScore,
         onToggleShiftLight = viewModel::toggleShiftLight,
+        onToggleVehicleInfo = viewModel::toggleVehicleInfo,
+        onToggleKnownIssues = viewModel::toggleKnownIssues,
         onUpdateShiftLightConfig = viewModel::updateShiftLightConfig,
         onResetDriveScore = viewModel::resetDriveScore
     )

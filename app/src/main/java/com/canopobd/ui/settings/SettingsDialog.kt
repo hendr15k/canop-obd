@@ -1,4 +1,4 @@
-package com.canopobd.ui.settings
+﻿package com.canopobd.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -168,7 +168,7 @@ fun SettingsDialog(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        InfoRow(label = stringResource(R.string.app_version), value = "1.3.0")
+                        InfoRow(label = stringResource(R.string.app_version), value = "1.6.0")
                         InfoRow(label = stringResource(R.string.obd_protocol), value = "ELM327")
                         InfoRow(label = stringResource(R.string.android_version), value = "API 26+")
                     }

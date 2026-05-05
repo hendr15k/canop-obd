@@ -1,4 +1,4 @@
-package com.canopobd.ui.dashboard
+﻿package com.canopobd.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -77,6 +77,8 @@ fun DashboardScreen(
     showPowerCalculator: Boolean,
     showDriveScore: Boolean,
     showShiftLight: Boolean,
+    showVehicleInfo: Boolean,
+    showKnownIssues: Boolean,
     maintenanceItems: List<com.canopobd.data.model.MaintenanceItem>,
     currentKm: Int,
     fuelEconomyData: com.canopobd.data.model.FuelEconomyData,
@@ -159,6 +161,8 @@ fun DashboardScreen(
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
+    onToggleVehicleInfo: () -> Unit,
+    onToggleKnownIssues: () -> Unit,
     onUpdateShiftLightConfig: (com.canopobd.data.model.ShiftLightConfig) -> Unit,
     onResetDriveScore: () -> Unit,
     modifier: Modifier = Modifier
@@ -216,6 +220,8 @@ fun DashboardScreen(
                     onTogglePowerCalculator = onTogglePowerCalculator,
                     onToggleDriveScore = onToggleDriveScore,
                     onToggleShiftLight = onToggleShiftLight,
+                    onToggleVehicleInfo = onToggleVehicleInfo,
+                    onToggleKnownIssues = onToggleKnownIssues,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
@@ -493,6 +499,19 @@ fun DashboardScreen(
                 onUpdateConfig = onUpdateShiftLightConfig
             )
         }
+
+        if (showVehicleInfo) {
+            com.canopobd.ui.vehicleinfo.VehicleInfoDialog(
+                vin = onGetStoredVin(),
+                onDismiss = onToggleVehicleInfo
+            )
+        }
+
+        if (showKnownIssues) {
+            com.canopobd.ui.knownissues.KnownIssuesDialog(
+                onDismiss = onToggleKnownIssues
+            )
+        }
     }
 }
 
@@ -626,6 +645,8 @@ private fun DashboardHeader(
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
+    onToggleVehicleInfo: () -> Unit,
+    onToggleKnownIssues: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -757,9 +778,15 @@ private fun DashboardHeader(
                 IconButton(onClick = onToggleDTCDialog) {
                     Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.fault_codes), tint = colors.gaugeYellow)
                 }
-                IconButton(onClick = onDisconnect) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.disconnect), tint = colors.gaugeRed)
-                }
+                    IconButton(onClick = onToggleVehicleInfo) {
+                        Icon(Icons.Filled.Info, contentDescription = "Fahrzeugprofil", tint = colors.accent)
+                    }
+                    IconButton(onClick = onToggleKnownIssues) {
+                        Icon(Icons.Filled.BugReport, contentDescription = "Typische Probleme", tint = colors.gaugeOrange)
+                    }
+                    IconButton(onClick = onDisconnect) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.disconnect), tint = colors.gaugeRed)
+                    }
             }
         }
     }
