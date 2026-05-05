@@ -123,6 +123,51 @@ enum class OBDPID(
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    BOOST_PRESSURE("0170", "Boost Pressure", "kPa", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 0.03125 else 0.0
+    }),
+    VGT_CONTROL("0171", "VGT Control", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    WASTEGATE_CONTROL("0172", "Wastegate Control", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    EXHAUST_PRESSURE("0173", "Exhaust Pressure", "kPa", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    TURBO_RPM("0174", "Turbo RPM", "rpm", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    CHARGE_AIR_COOLER_TEMP("0177", "Charge Air Cooler Temp", "°C", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
+    }),
+    EGT_BANK1("0178", "Exhaust Gas Temp B1", "°C", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    EGT_BANK2("0179", "Exhaust Gas Temp B2", "°C", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    FUEL_SYSTEM_STATUS("0103", "Fuel System Status", "", 2, { b ->
+        if (b.size >= 2) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    ACTUAL_TORQUE("0162", "Actual Torque", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
+    }),
+    DEMAND_TORQUE("0161", "Driver Demand Torque", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
+    }),
+    REFERENCE_TORQUE("0163", "Reference Torque", "Nm", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    ETHANOL_FUEL_PERCENT("0152", "Ethanol Fuel %", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    OIL_TEMP("015C", "Engine Oil Temperature", "°C", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
+    }),
+    TURBO_BOOST_VACUUM("0175", "Turbo Boost Vacuum", "kPa", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     });
 
     companion object {
@@ -165,7 +210,22 @@ data class OBDData(
     val throttleActuator: Double = 0.0,
     val hybridBatteryRemaining: Double = 0.0,
     val vin: String = "",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val boostPressure: Double = 0.0,
+    val vgtControl: Double = 0.0,
+    val wastegateControl: Double = 0.0,
+    val exhaustPressure: Double = 0.0,
+    val turboRpm: Double = 0.0,
+    val chargeAirCoolerTemp: Double = 0.0,
+    val egtBank1: Double = 0.0,
+    val egtBank2: Double = 0.0,
+    val fuelSystemStatus: Double = 0.0,
+    val actualTorque: Double = 0.0,
+    val demandTorque: Double = 0.0,
+    val referenceTorque: Double = 0.0,
+    val ethanolPercent: Double = 0.0,
+    val oilTemp: Double = 0.0,
+    val turboBoostVacuum: Double = 0.0
 )
 
 data class GaugeConfig(
@@ -486,7 +546,7 @@ data class MaintenanceItem(
 }
 
 enum class MaintenanceType(val label: String, val defaultInterval: Int) {
-    OIL_CHANGE("Ölwechsel", 15000),
+    OIL_CHANGE("��lwechsel", 15000),
     TIRES("Reifen", 30000),
     INSPECTION("TÜV / AU", 60000),
     BRAKE_PADS("Bremsbeläge", 20000),
@@ -611,6 +671,79 @@ enum class ColdStartPhase(val label: String, val description: String) {
     OPEN_LOOP("Schleifchenbetrieb", "Lambdaregelung aus"),
     CLOSED_LOOP("Geschlossener Regelkreis", "Motor betriebsbereit"),
     READY("Bereit", "Volle Leistung verfügbar")
+}
+
+data class AstraJ14TurboCalibration(
+    val redlineRpm: Int = 6500,
+    val maxBoostKpa: Double = 180.0,
+    val maxTorqueNm: Double = 200.0,
+    val maxPowerKw: Double = 103.0,
+    val maxEgtC: Double = 850.0,
+    val maxOilTempC: Double = 120.0,
+    val maxCoolantTempC: Double = 105.0,
+    val maxChargeAirTempC: Double = 65.0,
+    val idleRpm: Int = 750,
+    val maxTurboRpm: Int = 200000,
+    val oilCapacityLiters: Double = 4.5,
+    val turbochargerType: String = "BorgWarner K03",
+    val engineCode: String = "A14NET",
+    val fuelType: String = "Benzin (95/98)"
+) {
+    fun getBoostBar(): Double = boostKpa / 100.0
+    val boostKpa: Double get() = 100.0
+    val maxBoostBar: Double get() = 1.8
+
+    fun isRpmWarning(rpm: Double): Boolean = rpm >= redlineRpm * 0.9
+    fun isRpmRedline(rpm: Double): Boolean = rpm >= redlineRpm
+    fun isBoostWarning(boost: Double): Boolean = boost >= maxBoostBar * 0.85
+    fun isBoostOverboost(boost: Double): Boolean = boost >= maxBoostBar
+    fun isEgtWarning(egt: Double): Boolean = egt >= maxEgtC * 0.9
+    fun isEgtCritical(egt: Double): Boolean = egt >= maxEgtC
+
+    companion object {
+        val INSTANCE = AstraJ14TurboCalibration()
+        val SUPPORTED_TURBO_PIDS = listOf(
+            OBDPID.BOOST_PRESSURE, OBDPID.VGT_CONTROL, OBDPID.WASTEGATE_CONTROL,
+            OBDPID.TURBO_RPM, OBDPID.CHARGE_AIR_COOLER_TEMP,
+            OBDPID.EGT_BANK1, OBDPID.EGT_BANK2, OBDPID.OIL_TEMP,
+            OBDPID.ACTUAL_TORQUE, OBDPID.DEMAND_TORQUE, OBDPID.REFERENCE_TORQUE
+        )
+        val DASHBOARD_PRESET = DashboardPreset(
+            id = "astra_j_14_turbo",
+            name = "Opel Astra J 1.4 Turbo",
+            themeName = "CANOPO",
+            primaryGaugeIds = setOf("rpm", "boost", "coolant", "speed", "torque", "egt"),
+            createdAt = System.currentTimeMillis()
+        )
+        val RECOMMENDED_PIDS = listOf(
+            OBDPID.RPM, OBDPID.SPEED, OBDPID.COOLANT_TEMP, OBDPID.THROTTLE,
+            OBDPID.ENGINE_LOAD, OBDPID.BOOST_PRESSURE, OBDPID.EGT_BANK1,
+            OBDPID.CHARGE_AIR_COOLER_TEMP, OBDPID.FUEL_LEVEL, OBDPID.BATTERY_VOLTAGE,
+            OBDPID.MAF_RATE, OBDPID.ACTUAL_TORQUE, OBDPID.OIL_TEMP,
+            OBDPID.TIMING_ADVANCE, OBDPID.INTAKE_TEMP, OBDPID.ENGINE_FUEL_RATE
+        )
+        val ALERT_CONFIG = AlertConfig(
+            speedWarning = 180f,
+            speedWarningEnabled = false,
+            coolantWarning = 105f,
+            coolantWarningEnabled = true,
+            fuelWarning = 10f,
+            fuelWarningEnabled = true,
+            rpmWarning = 5850f,
+            rpmWarningEnabled = true,
+            batteryLowWarning = 11.8f,
+            batteryLowWarningEnabled = true
+        )
+        val MAINTENANCE_ITEMS = listOf(
+            MaintenanceItem(type = MaintenanceType.OIL_CHANGE, intervalKm = 15000),
+            MaintenanceItem(type = MaintenanceType.AIR_FILTER, intervalKm = 30000),
+            MaintenanceItem(type = MaintenanceType.TURBO_INSPECTION, intervalKm = 60000),
+            MaintenanceItem(type = MaintenanceType.COOLANT, intervalKm = 60000),
+            MaintenanceItem(type = MaintenanceType.BRAKE_PADS, intervalKm = 30000),
+            MaintenanceItem(type = MaintenanceType.SPARK_PLUGS, intervalKm = 30000),
+            MaintenanceItem(type = MaintenanceType.TURBO_BOOST_CHECK, intervalKm = 45000)
+        )
+    }
 }
 
 data class ColdStartState(
