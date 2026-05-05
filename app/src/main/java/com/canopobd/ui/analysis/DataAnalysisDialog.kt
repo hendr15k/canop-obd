@@ -152,7 +152,7 @@ private fun CsvImportTab(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.InsertDriveFile, contentDescription = null, tint = textDim, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Filled.Description, contentDescription = null, tint = textDim, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(stringResource(R.string.analysis_no_data), color = textSecondary, fontSize = 14.sp)
                 }

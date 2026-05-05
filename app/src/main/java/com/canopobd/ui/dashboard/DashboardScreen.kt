@@ -103,7 +103,7 @@ fun DashboardScreen(
     showTurboMonitor: Boolean,
     showTimingChainMonitor: Boolean,
     showCarProfile: Boolean,
-    showTurboCooldown: Boolean,
+    _showTurboCooldown: Boolean,
     turboCooldownState: TurboCoolDownState,
     maintenanceItems: List<com.canopobd.data.model.MaintenanceItem>,
     currentKm: Int,
@@ -193,7 +193,7 @@ fun DashboardScreen(
     onResetDriveScore: () -> Unit,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
-    onToggleCarProfile: () -> Unit,
+    _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
     onSelectCarProfile: (CarProfile) -> Unit,
     modifier: Modifier = Modifier
@@ -202,7 +202,6 @@ fun DashboardScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
 
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
@@ -268,7 +267,7 @@ fun DashboardScreen(
                     onToggleKnownIssues = onToggleKnownIssues,
                     onToggleTurboMonitor = onToggleTurboMonitor,
                     onToggleTimingChainMonitor = onToggleTimingChainMonitor,
-                    onToggleCarProfile = onToggleCarProfile,
+                    _onToggleCarProfile = _onToggleCarProfile,
                     onToggleTurboCooldown = onToggleTurboCooldown,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
@@ -503,7 +502,7 @@ fun DashboardScreen(
             }
             composable("car_profile") {
                 if (showCarProfile) {
-                    CarProfileDialog(currentProfile = carProfile, onSelectProfile = onSelectCarProfile, onDismiss = { onToggleCarProfile(); navController.popBackStack() })
+                    CarProfileDialog(currentProfile = carProfile, onSelectProfile = onSelectCarProfile, onDismiss = { _onToggleCarProfile(); navController.popBackStack() })
                 }
             }
         }
@@ -662,7 +661,7 @@ private fun DashboardHeader(
     onToggleKnownIssues: () -> Unit,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
-    onToggleCarProfile: () -> Unit,
+    _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
@@ -929,7 +928,6 @@ private fun QuickActionButton(
     color: Color,
     onClick: () -> Unit
 ) {
-    val colors = LocalAppColors.current
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),

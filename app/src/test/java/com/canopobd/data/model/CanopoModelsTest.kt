@@ -152,7 +152,6 @@ class CanopoModelsTest {
 
     @Test
     fun `TrendHistory has max 60 points`() {
-        val history = TrendHistory()
         assertEquals(60, TrendHistory.MAX_POINTS)
     }
 

@@ -251,7 +251,7 @@ private fun BoostPressureCard(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    listOf(0f, carProfile.normalBoostBar / maxGauge, carProfile.overboostBar / maxGauge, 1f).forEach { pos ->
+                    listOf(0f, carProfile.normalBoostBar / maxGauge, carProfile.overboostBar / maxGauge, 1f).forEach { _ ->
                         Box(
                             modifier = Modifier
                                 .width(1.dp)
@@ -278,8 +278,6 @@ private fun BoostPressureCard(
 @Composable
 private fun WastegateCard(turboData: TurboData, colors: com.canopobd.ui.theme.AppColors) {
     val wgd = turboData.wastegateDutyCycle
-    val atIdle = turboData.wastegateDutyAtIdle
-    val atMax = turboData.wastegateDutyMaxBoost
 
     Surface(
         modifier = Modifier.fillMaxWidth(),

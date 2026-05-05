@@ -328,7 +328,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onResetDriveScore = viewModel::resetDriveScore,
         onToggleTurboMonitor = viewModel::toggleTurboMonitor,
         onToggleTimingChainMonitor = viewModel::toggleTimingChainMonitor,
-        onToggleCarProfile = viewModel::toggleCarProfile,
+        _onToggleCarProfile = viewModel::toggleCarProfile,
         onToggleTurboCooldown = viewModel::toggleTurboCooldown,
         onSelectCarProfile = viewModel::selectCarProfile,
         carProfile = carProfile,
@@ -338,7 +338,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showTurboMonitor = showTurboMonitor,
         showTimingChainMonitor = showTimingChainMonitor,
         showCarProfile = showCarProfile,
-        showTurboCooldown = showTurboCooldown,
+        _showTurboCooldown = showTurboCooldown,
         turboCooldownState = turboCooldownState
     )
 }

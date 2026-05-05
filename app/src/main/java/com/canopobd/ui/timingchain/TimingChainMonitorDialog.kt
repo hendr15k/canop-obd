@@ -320,7 +320,7 @@ private fun ChainPhaseCard(chainState: TimingChainState, colors: AppColors) {
 }
 
 @Composable
-private fun ChainInfoCard(carProfile: CarProfile, colors: AppColors) {
+private fun ChainInfoCard(@Suppress("UNUSED_PARAMETER") carProfile: CarProfile, colors: AppColors) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),

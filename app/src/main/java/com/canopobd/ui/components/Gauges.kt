@@ -114,11 +114,6 @@ fun CircularGauge(
                 )
             }
 
-            val arcRect = androidx.compose.ui.geometry.Rect(
-                offset = Offset(center.x - radius, center.y - radius),
-                size = Size(radius * 2, radius * 2)
-            )
-
             val gradientColors = listOf(
                 glowColor.copy(alpha = 0.1f),
                 arcColor.copy(alpha = 0.4f),

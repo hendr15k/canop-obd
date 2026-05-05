@@ -25,7 +25,6 @@ fun VehicleInfoDialog(
     onDismiss: () -> Unit
 ) {
     val cal = AstraJ14TurboCalibration.INSTANCE
-    val colors = LocalAppColors.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -185,7 +184,6 @@ fun VehicleInfoDialog(
 
 @Composable
 private fun SectionHeader(title: String) {
-    val colors = LocalAppColors.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(6.dp),

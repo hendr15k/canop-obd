@@ -78,8 +78,6 @@ private fun ProfileCard(
     onClick: () -> Unit,
     colors: com.canopobd.ui.theme.AppColors
 ) {
-    val borderColor = if (isSelected) colors.accent else colors.surface
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
