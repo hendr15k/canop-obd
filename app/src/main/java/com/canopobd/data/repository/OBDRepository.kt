@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import com.canopobd.bluetooth.ELM327BTConnection
 import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.model.*
+import com.canopobd.gps.GPSTracker
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -64,6 +65,15 @@ class OBDRepository(
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
+    private val gpsTracker = GPSTracker(context)
+    val currentLocation = gpsTracker.currentLocation
+    val isGPSTracking = gpsTracker.isTracking
+    val currentTrip = gpsTracker.currentTrip
+    val tripHistory = gpsTracker.tripHistory
+
+    private val _trendHistory = MutableStateFlow(TrendHistory())
+    val trendHistory: StateFlow<TrendHistory> = _trendHistory.asStateFlow()
+
     private val _colorTheme = MutableStateFlow(ColorTheme.CANOPO)
     val colorTheme: StateFlow<ColorTheme> = _colorTheme.asStateFlow()
 
@@ -101,6 +111,8 @@ class OBDRepository(
         OBDPID.SHORT_TERM_FUEL_TRIM_BANK2, OBDPID.LONG_TERM_FUEL_TRIM_BANK2,
         OBDPID.FUEL_AIR_EQUIV_RATIO
     )
+
+    private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
 
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
@@ -191,11 +203,14 @@ class OBDRepository(
         reconnectJob?.cancel()
         reconnectJob = null
         stopRemoteServer()
+        stopGPSTracking()
         pollingJob?.cancel()
         connection?.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
         _dtcResponse.value = null
+        trendRecorder.clear()
+        _trendHistory.value = TrendHistory()
         saveTripData()
     }
 
@@ -303,6 +318,23 @@ class OBDRepository(
                     timestamp = now
                 )
 
+                trendRecorder.record(
+                    _obdData.value.rpm,
+                    _obdData.value.speed,
+                    _obdData.value.coolantTemp
+                )
+                _trendHistory.value = trendRecorder.getHistory()
+
+                val unit = _measurementUnit.value
+                prefs.edit()
+                    .putFloat("widget_rpm", _obdData.value.rpm.toFloat())
+                    .putFloat("widget_speed", unit.convertSpeed(_obdData.value.speed).toFloat())
+                    .putFloat("widget_coolant", unit.convertTemp(_obdData.value.coolantTemp).toFloat())
+                    .putFloat("widget_load", _obdData.value.engineLoad.toFloat())
+                    .putFloat("widget_fuel", _obdData.value.fuelLevel.toFloat())
+                    .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
+                    .apply()
+
                 recordConnectionSuccess()
                 if (_recordingActive.value) recordData()
                 delay(_pollRate.value)
@@ -378,6 +410,24 @@ class OBDRepository(
     fun setColorTheme(theme: ColorTheme) {
         _colorTheme.value = theme
         prefs.edit().putString("color_theme", theme.name).apply()
+    }
+
+    fun startGPSTracking() {
+        gpsTracker.startTracking()
+    }
+
+    fun stopGPSTracking() {
+        gpsTracker.stopTracking()
+    }
+
+    fun getGPSTripHistory(): List<GPSTrip> = gpsTracker.tripHistory.value
+
+    fun exportCurrentTripToGPX(): String = gpsTracker.exportToGPX()
+
+    fun exportCurrentTripToKML(): String = gpsTracker.exportToKML()
+
+    fun clearGPSTripHistory() {
+        gpsTracker.clearTripHistory()
     }
 
     fun setPrimaryGauges(ids: Set<String>) {

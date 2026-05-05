@@ -181,6 +181,41 @@ data class DashboardLayout(
     val gauges: List<GaugeConfig>
 )
 
+data class GPSLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val altitude: Double,
+    val speed: Float,
+    val bearing: Float,
+    val accuracy: Float,
+    val timestamp: Long
+)
+
+data class GPSTrip(
+    val id: String,
+    val startTime: Long,
+    val endTime: Long = 0L,
+    val locations: List<GPSLocation> = emptyList(),
+    val distanceKm: Double = 0.0,
+    val maxSpeedKmh: Double = 0.0,
+    val avgSpeedKmh: Double = 0.0
+)
+
+data class TrendPoint(
+    val timestamp: Long,
+    val value: Float
+)
+
+data class TrendHistory(
+    val rpm: List<TrendPoint> = emptyList(),
+    val speed: List<TrendPoint> = emptyList(),
+    val coolantTemp: List<TrendPoint> = emptyList()
+) {
+    companion object {
+        const val MAX_POINTS = 60
+    }
+}
+
 data class DiagnosticTroubleCode(
     val code: String,
     val description: String,

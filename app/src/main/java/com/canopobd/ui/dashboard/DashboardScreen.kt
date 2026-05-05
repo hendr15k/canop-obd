@@ -22,6 +22,7 @@ import com.canopobd.R
 import com.canopobd.data.model.*
 import com.canopobd.ui.components.CircularGauge
 import com.canopobd.ui.components.GaugeRow
+import com.canopobd.ui.components.LiveTrendGraphDialog
 import com.canopobd.ui.customization.DashboardCustomizationDialog
 import com.canopobd.ui.datalog.DataLogDialog
 import com.canopobd.ui.dtc.DTCDialog
@@ -30,6 +31,9 @@ import com.canopobd.ui.remote.RemoteServerDialog
 import com.canopobd.ui.settings.SettingsDialog
 import com.canopobd.ui.theme.*
 import com.canopobd.ui.tripcomputer.TripComputerDialog
+import com.canopobd.ui.hud.HUDModeActivity
+import com.canopobd.data.model.GPSTrip
+import com.canopobd.data.model.OBDData
 import kotlin.math.abs
 
 @Composable
@@ -50,6 +54,8 @@ fun DashboardScreen(
     showRemoteDialog: Boolean,
     showTripComputer: Boolean,
     showCustomization: Boolean,
+    showHUDMode: Boolean,
+    showTrendGraph: Boolean,
     remoteServerRunning: Boolean,
     remoteServerIp: String,
     remoteServerPort: Int,
@@ -61,6 +67,9 @@ fun DashboardScreen(
     colorTheme: ColorTheme,
     primaryGaugeIds: Set<String>,
     pollMode: PollMode,
+    isGPSTracking: Boolean,
+    currentTrip: GPSTrip?,
+    trendHistory: TrendHistory,
     onConnect: (String) -> Unit,
     onDisconnect: () -> Unit,
     onToggleDevicePicker: () -> Unit,
@@ -72,6 +81,8 @@ fun DashboardScreen(
     onToggleRemoteDialog: () -> Unit,
     onToggleTripComputer: () -> Unit,
     onToggleCustomization: () -> Unit,
+    onToggleHUDMode: () -> Unit,
+    onToggleTrendGraph: () -> Unit,
     onStartRemoteServer: (Int) -> Unit,
     onStopRemoteServer: () -> Unit,
     onStartRecording: () -> Unit,
@@ -86,6 +97,11 @@ fun DashboardScreen(
     onClearRecordedData: () -> Unit,
     onSetColorTheme: (ColorTheme) -> Unit,
     onSetPrimaryGauges: (Set<String>) -> Unit,
+    onStartGPSTracking: () -> Unit,
+    onStopGPSTracking: () -> Unit,
+    onExportGPX: () -> String,
+    onExportKML: () -> String,
+    onClearGPSTrips: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -121,15 +137,20 @@ fun DashboardScreen(
                     remoteServerRunning = remoteServerRunning,
                     remoteConnectedClients = remoteConnectedClients,
                     onToggleTripComputer = onToggleTripComputer,
+                    onToggleTrendGraph = onToggleTrendGraph,
                     onToggleSettings = onToggleSettings,
                     onToggleCustomization = onToggleCustomization,
+                    onToggleHUDMode = onToggleHUDMode,
                     onToggleDevicePicker = onToggleDevicePicker,
                     onToggleRemoteDialog = onToggleRemoteDialog,
                     onToggleDataLog = onToggleDataLog,
                     onTogglePIDScreen = onTogglePIDScreen,
                     onToggleDTCDialog = onToggleDTCDialog,
                     onDisconnect = onDisconnect,
-                    recordingActive = recordingActive
+                    recordingActive = recordingActive,
+                    isGPSTracking = isGPSTracking,
+                    onStartGPSTrack = onStartGPSTracking,
+                    onStopGPSTrack = onStopGPSTracking
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -176,6 +197,16 @@ fun DashboardScreen(
                             ConnectionQuality.POOR -> colors.gaugeRed
                             else -> colors.textSecondary
                         }
+                    )
+                }
+
+                if (isGPSTracking && currentTrip != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "GPS: %.1f km tracked".format(currentTrip.distanceKm),
+                        fontSize = 11.sp,
+                        color = colors.gaugeGreen,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
             }
@@ -248,8 +279,15 @@ fun DashboardScreen(
                 tripData = tripData,
                 measurementUnit = measurementUnit,
                 vin = onGetStoredVin(),
+                isGPSTracking = isGPSTracking,
+                currentTrip = currentTrip,
                 onDismiss = onToggleTripComputer,
-                onResetTrip = onResetTrip
+                onResetTrip = onResetTrip,
+                onStartGPSTrack = onStartGPSTracking,
+                onStopGPSTrack = onStopGPSTracking,
+                onExportGPX = onExportGPX,
+                onExportKML = onExportKML,
+                onClearGPS = onClearGPSTrips
             )
         }
 
@@ -260,6 +298,21 @@ fun DashboardScreen(
                 onDismiss = onToggleCustomization,
                 onThemeChange = onSetColorTheme,
                 onPrimaryGaugesChange = onSetPrimaryGauges
+            )
+        }
+
+        if (showHUDMode) {
+            HUDModeActivity(
+                obdData = obdData,
+                measurementUnit = measurementUnit,
+                onDismiss = onToggleHUDMode
+            )
+        }
+
+        if (showTrendGraph) {
+            LiveTrendGraphDialog(
+                trendHistory = trendHistory,
+                onDismiss = onToggleTrendGraph
             )
         }
     }
@@ -373,15 +426,20 @@ private fun DashboardHeader(
     remoteServerRunning: Boolean,
     remoteConnectedClients: Int,
     onToggleTripComputer: () -> Unit,
+    onToggleTrendGraph: () -> Unit,
     onToggleSettings: () -> Unit,
     onToggleCustomization: () -> Unit,
+    onToggleHUDMode: () -> Unit,
     onToggleDevicePicker: () -> Unit,
     onToggleRemoteDialog: () -> Unit,
     onToggleDataLog: () -> Unit,
     onTogglePIDScreen: () -> Unit,
     onToggleDTCDialog: () -> Unit,
     onDisconnect: () -> Unit,
-    recordingActive: Boolean
+    recordingActive: Boolean,
+    isGPSTracking: Boolean,
+    onStartGPSTrack: () -> Unit,
+    onStopGPSTrack: () -> Unit
 ) {
     val colors = LocalAppColors.current
     Row(
@@ -423,9 +481,19 @@ private fun DashboardHeader(
             }
         }
 
-        Row {
+                Row {
             IconButton(onClick = onToggleTripComputer) {
                 Icon(Icons.Filled.DirectionsCar, contentDescription = stringResource(R.string.trip_title), tint = colors.textSecondary)
+            }
+            IconButton(onClick = onToggleTrendGraph) {
+                Icon(Icons.Filled.ShowChart, contentDescription = "Trend", tint = colors.textSecondary)
+            }
+            IconButton(onClick = if (isGPSTracking) onStopGPSTrack else onStartGPSTrack) {
+                Icon(
+                    if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
+                    contentDescription = "GPS Track",
+                    tint = if (isGPSTracking) colors.gaugeGreen else colors.textSecondary
+                )
             }
             IconButton(onClick = onToggleCustomization) {
                 Icon(Icons.Filled.Dashboard, contentDescription = stringResource(R.string.customize_dashboard), tint = colors.accent)
@@ -437,6 +505,9 @@ private fun DashboardHeader(
                 Icon(Icons.Filled.Bluetooth, contentDescription = stringResource(R.string.bluetooth), tint = colors.accent)
             }
             if (connectionState is OBDConnectionState.Connected) {
+                IconButton(onClick = onToggleHUDMode) {
+                    Icon(Icons.Filled.Tv, contentDescription = "HUD Mode", tint = colors.gaugeCyan)
+                }
                 IconButton(onClick = onToggleRemoteDialog) {
                     Icon(
                         if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,

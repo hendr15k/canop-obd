@@ -39,8 +39,20 @@ class DashboardViewModel private constructor(
     val primaryGaugeIds: StateFlow<Set<String>> = repository.primaryGaugeIds
     val pollMode: StateFlow<PollMode> = repository.pollMode
 
+    val currentLocation = repository.currentLocation
+    val isGPSTracking = repository.isGPSTracking
+    val currentTrip = repository.currentTrip
+    val tripHistory = repository.tripHistory
+    val trendHistory = repository.trendHistory
+
     private val _showCustomization = MutableStateFlow(false)
     val showCustomization: StateFlow<Boolean> = _showCustomization.asStateFlow()
+
+    private val _showHUDMode = MutableStateFlow(false)
+    val showHUDMode: StateFlow<Boolean> = _showHUDMode.asStateFlow()
+
+    private val _showTrendGraph = MutableStateFlow(false)
+    val showTrendGraph: StateFlow<Boolean> = _showTrendGraph.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
@@ -130,6 +142,32 @@ class DashboardViewModel private constructor(
 
     fun toggleCustomization() {
         _showCustomization.value = !_showCustomization.value
+    }
+
+    fun toggleHUDMode() {
+        _showHUDMode.value = !_showHUDMode.value
+    }
+
+    fun toggleTrendGraph() {
+        _showTrendGraph.value = !_showTrendGraph.value
+    }
+
+    fun startGPSTracking() {
+        repository.startGPSTracking()
+    }
+
+    fun stopGPSTracking() {
+        repository.stopGPSTracking()
+    }
+
+    fun getGPSTripHistory(): List<com.canopobd.data.model.GPSTrip> = repository.getGPSTripHistory()
+
+    fun exportTripToGPX(): String = repository.exportCurrentTripToGPX()
+
+    fun exportTripToKML(): String = repository.exportCurrentTripToKML()
+
+    fun clearGPSTripHistory() {
+        repository.clearGPSTripHistory()
     }
 
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT) {

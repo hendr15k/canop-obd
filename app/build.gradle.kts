@@ -11,8 +11,8 @@ android {
         applicationId = "com.canopobd"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -73,6 +73,9 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Location
+    implementation("com.google.android.gms:play-services-location:21.1.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

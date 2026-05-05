@@ -143,6 +143,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showRemoteDialog by viewModel.showRemoteDialog.collectAsState()
     val showTripComputer by viewModel.showTripComputer.collectAsState()
     val showCustomization by viewModel.showCustomization.collectAsState()
+    val showHUDMode by viewModel.showHUDMode.collectAsState()
+    val showTrendGraph by viewModel.showTrendGraph.collectAsState()
     val remoteServerRunning by viewModel.remoteServerRunning.collectAsState()
     val remoteServerIp by viewModel.remoteServerIp.collectAsState()
     val remoteServerPort by viewModel.remoteServerPort.collectAsState()
@@ -154,6 +156,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val colorTheme by viewModel.colorTheme.collectAsState()
     val primaryGaugeIds by viewModel.primaryGaugeIds.collectAsState()
     val pollMode by viewModel.pollMode.collectAsState()
+    val isGPSTracking by viewModel.isGPSTracking.collectAsState()
+    val currentTrip by viewModel.currentTrip.collectAsState()
+    val trendHistory by viewModel.trendHistory.collectAsState()
 
     DashboardScreen(
         connectionState = connectionState,
@@ -172,6 +177,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showRemoteDialog = showRemoteDialog,
         showTripComputer = showTripComputer,
         showCustomization = showCustomization,
+        showHUDMode = showHUDMode,
+        showTrendGraph = showTrendGraph,
         remoteServerRunning = remoteServerRunning,
         remoteServerIp = remoteServerIp,
         remoteServerPort = remoteServerPort,
@@ -183,6 +190,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         colorTheme = colorTheme,
         primaryGaugeIds = primaryGaugeIds,
         pollMode = pollMode,
+        isGPSTracking = isGPSTracking,
+        currentTrip = currentTrip,
+        trendHistory = trendHistory,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onToggleDevicePicker = viewModel::toggleDevicePicker,
@@ -194,6 +204,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleRemoteDialog = viewModel::toggleRemoteDialog,
         onToggleTripComputer = viewModel::toggleTripComputer,
         onToggleCustomization = viewModel::toggleCustomization,
+        onToggleHUDMode = viewModel::toggleHUDMode,
+        onToggleTrendGraph = viewModel::toggleTrendGraph,
         onStartRemoteServer = viewModel::startRemoteServer,
         onStopRemoteServer = viewModel::stopRemoteServer,
         onStartRecording = viewModel::startRecording,
@@ -207,6 +219,11 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onGetExportData = viewModel::getExportData,
         onClearRecordedData = viewModel::clearRecordedData,
         onSetColorTheme = viewModel::setColorTheme,
-        onSetPrimaryGauges = viewModel::setPrimaryGauges
+        onSetPrimaryGauges = viewModel::setPrimaryGauges,
+        onStartGPSTracking = viewModel::startGPSTracking,
+        onStopGPSTracking = viewModel::stopGPSTracking,
+        onExportGPX = viewModel::exportTripToGPX,
+        onExportKML = viewModel::exportTripToKML,
+        onClearGPSTrips = viewModel::clearGPSTripHistory
     )
 }

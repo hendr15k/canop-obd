@@ -15,6 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,6 +27,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.TripData
+import com.canopobd.data.model.GPSTrip
 import com.canopobd.ui.theme.*
 import java.util.concurrent.TimeUnit
 
@@ -32,8 +36,15 @@ fun TripComputerDialog(
     tripData: TripData,
     measurementUnit: MeasurementUnit,
     vin: String,
+    isGPSTracking: Boolean,
+    currentTrip: GPSTrip?,
     onDismiss: () -> Unit,
-    onResetTrip: () -> Unit
+    onResetTrip: () -> Unit,
+    onStartGPSTrack: () -> Unit,
+    onStopGPSTrack: () -> Unit,
+    onExportGPX: () -> String,
+    onExportKML: () -> String,
+    onClearGPS: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -178,6 +189,78 @@ fun TripComputerDialog(
                             Text(stringResource(R.string.trip_reset))
                         }
                     }
+
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                    item { SectionTitle("GPS Track") }
+
+                    item {
+                        if (isGPSTracking && currentTrip != null) {
+                            GPSStatusCard(trip = currentTrip, onStop = onStopGPSTrack)
+                        } else {
+                            Button(
+                                onClick = onStartGPSTrack,
+                                colors = ButtonDefaults.buttonColors(containerColor = gaugeGreen),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Filled.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("GPS Track starten")
+                            }
+                        }
+                    }
+
+                    if (currentTrip != null && currentTrip.locations.isNotEmpty()) {
+                        item {
+                            val ctx = LocalContext.current
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val gpx = onExportGPX()
+                                        if (gpx.isNotBlank()) {
+                                            val file = File(ctx.cacheDir, "trip_${currentTrip.id}.gpx")
+                                            file.writeText(gpx)
+                                            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.provider", file)
+                                            ctx.startActivity(Intent(Intent.ACTION_SEND).apply {
+                                                type = "application/gpx+xml"
+                                                putExtra(Intent.EXTRA_STREAM, uri)
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }.let { Intent.createChooser(it, "Export GPX") })
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Filled.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("GPX", fontSize = 12.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        val kml = onExportKML()
+                                        if (kml.isNotBlank()) {
+                                            val file = File(ctx.cacheDir, "trip_${currentTrip.id}.kml")
+                                            file.writeText(kml)
+                                            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.provider", file)
+                                            ctx.startActivity(Intent(Intent.ACTION_SEND).apply {
+                                                type = "application/vnd.google-earth.kml+xml"
+                                                putExtra(Intent.EXTRA_STREAM, uri)
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }.let { Intent.createChooser(it, "Export KML") })
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Filled.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("KML", fontSize = 12.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = onClearGPS,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -275,4 +358,48 @@ private fun copyVin(context: Context, vin: String) {
     val clip = ClipData.newPlainText("VIN", vin)
     clipboard.setPrimaryClip(clip)
     Toast.makeText(context, context.getString(R.string.trip_copy_vin), Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+private fun GPSStatusCard(trip: GPSTrip, onStop: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = gaugeGreen.copy(alpha = 0.1f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocationOn, contentDescription = null, tint = gaugeGreen, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("GPS Tracking", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = gaugeGreen)
+                }
+                IconButton(onClick = onStop) {
+                    Icon(Icons.Filled.Stop, contentDescription = "Stop", tint = gaugeRed, modifier = Modifier.size(24.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("%.1f km".format(trip.distanceKm), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                    Text("Distance", fontSize = 10.sp, color = textSecondary)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("%.0f km/h".format(trip.maxSpeedKmh), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = gaugeOrange)
+                    Text("Max Speed", fontSize = 10.sp, color = textSecondary)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("${trip.locations.size}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = canopoAccent)
+                    Text("Points", fontSize = 10.sp, color = textSecondary)
+                }
+            }
+        }
+    }
 }

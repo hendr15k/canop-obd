@@ -266,4 +266,56 @@ class OBDModelsTest {
         assertEquals(1.0, stats.successRate, 0.001)
         assertEquals(ConnectionQuality.EXCELLENT, stats.quality)
     }
+
+    @Test
+    fun `GPSTrip stores location data`() {
+        val loc = GPSLocation(52.52, 13.405, 50.0, 50f, 0f, 5f, System.currentTimeMillis())
+        val trip = GPSTrip(
+            id = "TEST123",
+            startTime = 1000L,
+            endTime = 2000L,
+            locations = listOf(loc),
+            distanceKm = 1.5,
+            maxSpeedKmh = 80.0,
+            avgSpeedKmh = 60.0
+        )
+        assertEquals("TEST123", trip.id)
+        assertEquals(1, trip.locations.size)
+        assertEquals(52.52, trip.locations[0].latitude, 0.001)
+        assertEquals(1.5, trip.distanceKm, 0.001)
+        assertEquals(80.0, trip.maxSpeedKmh, 0.001)
+    }
+
+    @Test
+    fun `TrendHistory has max 60 points`() {
+        val history = TrendHistory()
+        assertEquals(60, TrendHistory.MAX_POINTS)
+        assertTrue(history.rpm.isEmpty())
+        assertTrue(history.speed.isEmpty())
+    }
+
+    @Test
+    fun `GPSLocation stores coordinates`() {
+        val loc = GPSLocation(48.8566, 2.3522, 35.0, 30f, 90f, 3f, 1000L)
+        assertEquals(48.8566, loc.latitude, 0.0001)
+        assertEquals(2.3522, loc.longitude, 0.0001)
+        assertEquals(35.0, loc.altitude, 0.001)
+        assertEquals(30f, loc.speed)
+        assertEquals(90f, loc.bearing)
+        assertEquals(3f, loc.accuracy)
+    }
+
+    @Test
+    fun `ColorTheme fromName returns correct theme`() {
+        assertEquals(ColorTheme.CANOPO, ColorTheme.fromName("CANOPO"))
+        assertEquals(ColorTheme.BLUE_STEEL, ColorTheme.fromName("BLUE_STEEL"))
+        assertEquals(ColorTheme.CANOPO, ColorTheme.fromName("NONEXISTENT"))
+    }
+
+    @Test
+    fun `PollMode has correct intervals`() {
+        assertEquals(50L, PollMode.FAST.pollInterval)
+        assertEquals(500L, PollMode.NORMAL.pollInterval)
+        assertEquals(2000L, PollMode.ECO.pollInterval)
+    }
 }
