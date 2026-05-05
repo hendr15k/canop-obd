@@ -7,10 +7,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.canopobd.bluetooth.RemoteBridge
+import com.canopobd.data.repository.CANRepository
+import com.canopobd.data.repository.TurboMonitoringData
+import com.canopobd.data.domain.BatteryHealthAnalyzer
 import com.canopobd.data.domain.DriveMode
 import com.canopobd.data.domain.DriveModeDetector
 import com.canopobd.data.domain.DriveScoreCalculator
+import com.canopobd.data.domain.EGRHealthAnalyzer
+import com.canopobd.data.domain.EmissionsReadinessAnalyzer
+import com.canopobd.data.domain.EVAPSystemAnalyzer
 import com.canopobd.data.domain.FuelTrimAnalyzer
+import com.canopobd.data.domain.LambdaO2SensorAnalyzer
+import com.canopobd.data.domain.SecondaryAirAnalyzer
 import com.canopobd.data.domain.WastegateHealthAnalyzer
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
@@ -218,6 +226,34 @@ class DashboardViewModel private constructor(
     val ecoScore = MutableStateFlow(0.0)
     val sportScore = MutableStateFlow(0.0)
     val drivingStyle = MutableStateFlow(DriveStyle.ECONOMICAL)
+
+    // Emissions Analyzer State
+    private val batteryAnalyzer = BatteryHealthAnalyzer()
+    private val egrAnalyzer = EGRHealthAnalyzer()
+    private val evapAnalyzer = EVAPSystemAnalyzer()
+    private val saiAnalyzer = SecondaryAirAnalyzer()
+    private val lambdaAnalyzer = LambdaO2SensorAnalyzer()
+    private val readinessAnalyzer = EmissionsReadinessAnalyzer()
+
+    val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
+    val batteryHealthScore = MutableStateFlow(100)
+    val batteryAnalysis = MutableStateFlow<BatteryHealthAnalyzer.BatteryAnalysis?>(null)
+
+    val egrHealth = MutableStateFlow(EGRHealth(EGRStatus.CLOSED, 0.0, 0.0, 100))
+    val egrAnalysis = MutableStateFlow<EGRHealthAnalyzer.EGRAnalysis?>(null)
+
+    val evapStatus = MutableStateFlow(EVAPStatus(0.0, 0.0, false, null))
+    val evapAnalysis = MutableStateFlow<EVAPSystemAnalyzer.EVAPAnalysis?>(null)
+
+    val saiStatus = MutableStateFlow(SAIStatus(false, 0L, 100))
+    val saiAnalysis = MutableStateFlow<SecondaryAirAnalyzer.SAIAnalysis?>(null)
+
+    val lambdaAnalysis = MutableStateFlow<LambdaO2SensorAnalyzer.LambdaAnalysis?>(null)
+
+    val emissionsReadiness = MutableStateFlow<EmissionsReadinessAnalyzer.ReadinessAnalysis?>(null)
+
+    private val _voltageHistory = MutableStateFlow<List<Double>>(emptyList())
+    private val _o2VoltageHistory = MutableStateFlow<List<Double>>(emptyList())
 
     // Warning System
     val criticalWarnings = MutableStateFlow<List<VehicleWarning>>(emptyList())
@@ -716,9 +752,130 @@ class DashboardViewModel private constructor(
             obdData.collect { data ->
                 if (data.rpm > 0) {
                     updateAllTurboMetrics(data)
+                    updateEmissionsAnalyzers(data)
                 }
             }
         }
+    }
+
+    // ========== Emissions Analyzers ==========
+
+    private fun updateEmissionsAnalyzers(data: OBDData) {
+        val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
+        val history = _voltageHistory.value.toMutableList()
+        if (data.batteryVoltage > 0) {
+            history.add(data.batteryVoltage)
+            if (history.size > 60) history.removeAt(0)
+            _voltageHistory.value = history
+        }
+
+        val o2History = _o2VoltageHistory.value.toMutableList()
+        if (data.o2VoltageB1S1 > 0) {
+            o2History.add(data.o2VoltageB1S1)
+            if (o2History.size > 60) o2History.removeAt(0)
+            _o2VoltageHistory.value = o2History
+        }
+
+        updateBatteryAnalysis(data, dtcCodes, history)
+        updateEGRAnalysis(data, dtcCodes)
+        updateEVAPAnalysis(data, dtcCodes)
+        updateSAIAnalysis(data, dtcCodes)
+        updateLambdaAnalysis(data, dtcCodes, o2History)
+    }
+
+    private fun updateBatteryAnalysis(data: OBDData, dtcCodes: List<String>, history: List<Double>) {
+        val input = BatteryHealthAnalyzer.BatteryInput(
+            voltageHistory = history,
+            currentVoltage = data.batteryVoltage,
+            engineRpm = data.rpm,
+            alternatorDuty = data.alternatorDuty,
+            controlModuleVoltage = data.controlModuleVoltage,
+            activeDTCs = dtcCodes,
+            coolantTemp = data.coolantTemp
+        )
+        val result = batteryAnalyzer.analyze(input)
+        batteryHealth.value = result.status
+        batteryHealthScore.value = result.healthScore
+        batteryAnalysis.value = result
+    }
+
+    private fun updateEGRAnalysis(data: OBDData, dtcCodes: List<String>) {
+        val input = EGRHealthAnalyzer.EGRInput(
+            commandedEGR = data.commandedEGR,
+            egrTemp = data.egrTemp,
+            engineLoad = data.engineLoad,
+            rpm = data.rpm,
+            coolantTemp = data.coolantTemp,
+            intakeTemp = data.intakeTemp,
+            mafRate = data.mafRate,
+            stftB1 = data.shortTermFuelTrimB1,
+            ltftB1 = data.longTermFuelTrimB1,
+            activeDTCs = dtcCodes
+        )
+        val result = egrAnalyzer.analyze(input)
+        egrHealth.value = result.health
+        egrAnalysis.value = result
+    }
+
+    private fun updateEVAPAnalysis(data: OBDData, dtcCodes: List<String>) {
+        val input = EVAPSystemAnalyzer.EVAPInput(
+            commandedEvapPurge = data.commandedEvapPurge,
+            fuelLevel = data.fuelLevel,
+            coolantTemp = data.coolantTemp,
+            engineRpm = data.rpm,
+            engineLoad = data.engineLoad,
+            activeDTCs = dtcCodes
+        )
+        val result = evapAnalyzer.analyze(input)
+        evapStatus.value = result.status
+        evapAnalysis.value = result
+    }
+
+    private fun updateSAIAnalysis(data: OBDData, dtcCodes: List<String>) {
+        val input = SecondaryAirAnalyzer.SAIInput(
+            saActive = data.commandedEGR > 5 && data.rpm < 2000,
+            engineRpm = data.rpm,
+            coolantTemp = data.coolantTemp,
+            intakeTemp = data.intakeTemp,
+            o2VoltageB1S1 = data.o2VoltageB1S1,
+            engineRuntimeSeconds = data.runTime,
+            activeDTCs = dtcCodes
+        )
+        val result = saiAnalyzer.analyze(input)
+        saiStatus.value = result.status
+        saiAnalysis.value = result
+    }
+
+    private fun updateLambdaAnalysis(data: OBDData, dtcCodes: List<String>, o2History: List<Double>) {
+        val input = LambdaO2SensorAnalyzer.LambdaInput(
+            o2VoltageB1S1 = data.o2VoltageB1S1,
+            o2VoltageB1S2 = data.o2VoltageB1S2,
+            fuelAirRatio = data.fuelAirRatio,
+            stftB1 = data.shortTermFuelTrimB1,
+            ltftB1 = data.longTermFuelTrimB1,
+            coolantTemp = data.coolantTemp,
+            engineLoad = data.engineLoad,
+            rpm = data.rpm,
+            catalystTemp = data.catalystTemp,
+            engineRuntimeSeconds = data.runTime,
+            activeDTCs = dtcCodes,
+            voltageHistoryB1S1 = o2History
+        )
+        val result = lambdaAnalyzer.analyze(input)
+        lambdaAnalysis.value = result
+    }
+
+    fun analyzeReadiness(readinessBits: Int): EmissionsReadinessAnalyzer.ReadinessAnalysis {
+        val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
+        val input = EmissionsReadinessAnalyzer.ReadinessInput(
+            readinessBits = readinessBits,
+            activeDTCs = dtcCodes,
+            engineRuntimeSeconds = obdData.value.runTime,
+            coolantTemp = obdData.value.coolantTemp
+        )
+        val result = readinessAnalyzer.analyze(input)
+        emissionsReadiness.value = result
+        return result
     }
 
     private fun updateAllTurboMetrics(data: OBDData) {

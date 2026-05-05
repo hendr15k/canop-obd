@@ -701,4 +701,89 @@
     <!-- CriticalWarningOverlay -->
     <string name="overlay_dismiss">Schließen</string>
     <string name="overlay_auto_dismiss">Automatisches Schließen in 10 Sekunden</string>
+
+    <!-- ReadinessMonitorCard -->
+    <string name="readiness_monitors">Readiness Monitore</string>
+    <string name="complete_short">bereit</string>
+    <string name="overall_progress">Gesamtfortschritt</string>
+    <string name="not_ready_short">Nicht bereit</string>
+    <string name="ready">Bereit</string>
+    <string name="mil_on_warning">MIL aktiv — %d Fehler</string>
+
+    <!-- LambdaO2SensorCard -->
+    <string name="lambda_o2_sensors">Lambda / O2 Sensoren</string>
+    <string name="pre_cat">Vorkat</string>
+    <string name="post_cat">Nachkat</string>
+    <string name="voltage">Spannung</string>
+    <string name="heater">Heizung</string>
+    <string name="active">An</string>
+    <string name="inactive">Aus</string>
+    <string name="voltage_history">Spannungsverlauf</string>
+    <string name="short_term_fuel_trim">STFT</string>
+    <string name="long_term_fuel_trim">LTFT</string>
+    <string name="total_trim">Gesamt</string>
+    <string name="lambda_short">λ</string>
+    <string name="cross_count_rate">%d Zyklen/s</string>
+
+    <!-- BatteryHealthCard -->
+    <string name="battery_health">Batterie</string>
+    <string name="charging">Lädt</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="alternator_duty">Lichtmaschine</string>
+    <string name="module_voltage">Modul-Spannung</string>
+    <string name="voltage_trend">Spannungsverlauf</string>
+
+    <!-- EGRHealthCard -->
+    <string name="egr_system">EGR-System</string>
+    <string name="egr_not_supported">EGR wird vom Fahrzeug nicht unterstützt</string>
+    <string name="command">Soll</string>
+    <string name="error">Fehler</string>
+    <string name="egr_position">Position</string>
+    <string name="egr_deviation">Abweichung</string>
+    <string name="egr_temp">Temperatur</string>
+    <string name="egr_health">EGR-Zustand</string>
+    <string name="critical">Kritisch</string>
+    <string name="warning">Warnung</string>
+    <string name="ok">OK</string>
+    <string name="egr_error_warning">Hohe EGR-Abweichung — Ventil oder Vakuumleitung prüfen</string>
+
+    <!-- EVAPSystemCard -->
+    <string name="evap_system">EVAP-System</string>
+    <string name="evap_not_supported">EVAP wird vom Fahrzeug nicht unterstützt</string>
+    <string name="purge_duty_cycle">Purge-Takt</string>
+    <string name="tank_pressure">Tankdruck</string>
+    <string name="pressure_high">Druck hoch</string>
+    <string name="pressure_low">Druck niedrig</string>
+    <string name="pressure_normal">Normal</string>
+    <string name="evap_leak_detected">Leck im Tanksystem erkannt!</string>
+    <string name="evap_leak_action">Tankdeckel und Leitungen prüfen</string>
+    <string name="evap_description">Das EVAP-System kontrolliert Benzindämpfe. Ein Leck kann die Emissionswerte verschlechtern.</string>
+
+    <!-- VehicleInfoCard -->
+    <string name="vehicle_info">Fahrzeuginformationen</string>
+    <string name="vin">VIN</string>
+    <string name="calibration_id">Kalibrierungs-ID</string>
+    <string name="cvn">CVN</string>
+    <string name="ecu_label">ECU</string>
+    <string name="version">Version</string>
+    <string name="protocol">Protokoll</string>
+    <string name="supported_modes">Unterstützte Modi</string>
+    <string name="modes">Modi</string>
+    <string name="manufacturer">Hersteller</string>
+    <string name="model_year">Baujahr</string>
+
+    <!-- EmissionsStatusCard -->
+    <string name="emissions_status">Emissionsstatus</string>
+    <string name="mil_active">MIL Aktiv</string>
+    <string name="ready_for_inspection">TÜV-bereit</string>
+    <string name="not_ready">Nicht bereit</string>
+    <string name="dtc_count_warning">%d gespeicherte Fehler</string>
+    <string name="inspection_hint">Alle Monitore bestanden — bereit für Abgasuntersuchung</string>
+    <string name="driving_cycle_required">Fahrtzyklus erforderlich</string>
+    <string name="incomplete_monitors_hint">%d Monitor(e) noch nicht abgeschlossen</string>
+    <string name="monitor_overview">Monitor-Übersicht</string>
+    <string name="incomplete">Offen</string>
+    <string name="not_supported">Nicht unterstützt</string>
+    <string name="complete">Bereit</string>
 </resources>

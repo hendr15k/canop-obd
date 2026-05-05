@@ -1390,3 +1390,244 @@ data class Mode22Data(
         return result
     }
 }
+
+enum class MonitorSupport(val label: String) {
+    COMPLETE("Bestanden"),
+    INCOMPLETE("Offen"),
+    NOT_SUPPORTED("Nicht unterstützt");
+
+    companion object {
+        fun fromBooleans(completed: Boolean, supported: Boolean): MonitorSupport = when {
+            !supported -> NOT_SUPPORTED
+            completed -> COMPLETE
+            else -> INCOMPLETE
+        }
+    }
+}
+
+data class ReadinessMonitorData(
+    val monitors: List<ReadinessMonitorEntry> = emptyList(),
+    val milOn: Boolean = false,
+    val dtcCount: Int = 0
+) {
+    val completedCount: Int get() = monitors.count { it.status == MonitorSupport.COMPLETE }
+    val incompleteCount: Int get() = monitors.count { it.status == MonitorSupport.INCOMPLETE }
+    val supportedCount: Int get() = monitors.count { it.status != MonitorSupport.NOT_SUPPORTED }
+    val totalCount: Int get() = monitors.size
+    val progressPercent: Float get() = if (supportedCount == 0) 0f else completedCount.toFloat() / supportedCount
+    val allComplete: Boolean get() = monitors.all { it.status == MonitorSupport.COMPLETE || it.status == MonitorSupport.NOT_SUPPORTED }
+    val hasIncompleteMonitors: Boolean get() = monitors.any { it.status == MonitorSupport.INCOMPLETE }
+}
+
+data class ReadinessMonitorEntry(
+    val name: String,
+    val status: MonitorSupport
+)
+
+data class LambdaSensorData(
+    val preCatVoltage: Double = 0.0,
+    val preCatLambda: Double = 0.0,
+    val preCatHeaterActive: Boolean = false,
+    val postCatVoltage: Double = 0.0,
+    val postCatLambda: Double = 0.0,
+    val postCatHeaterActive: Boolean = false,
+    val crossCountRate: Int = 0,
+    val voltageHistory: List<Float> = emptyList(),
+    val fuelTrimShort: Double = 0.0,
+    val fuelTrimLong: Double = 0.0
+) {
+    val preCatStatus: LambdaStatus get() = when {
+        preCatLambda in 0.95..1.05 -> LambdaStatus.IDEAL
+        preCatLambda in 0.85..1.15 -> LambdaStatus.OK
+        else -> LambdaStatus.DEVIATION
+    }
+    val postCatStatus: LambdaStatus get() = when {
+        postCatVoltage in 0.3..0.7 -> LambdaStatus.IDEAL
+        postCatVoltage in 0.1..0.9 -> LambdaStatus.OK
+        else -> LambdaStatus.DEVIATION
+    }
+}
+
+enum class LambdaStatus(val label: String) {
+    IDEAL("Ideal"),
+    OK("OK"),
+    DEVIATION("Abweichung")
+}
+
+data class BatteryData(
+    val voltage: Double = 0.0,
+    val controlModuleVoltage: Double = 0.0,
+    val estimatedSOC: Int = 0,
+    val isCharging: Boolean = false,
+    val voltageHistory: List<Float> = emptyList(),
+    val alternatorDuty: Double = 0.0,
+    val runTimeSeconds: Double = 0.0
+) {
+    val voltageStatus: BatteryVoltageStatus get() = when {
+        voltage >= 14.0 -> BatteryVoltageStatus.CHALGING
+        voltage >= 12.6 -> BatteryVoltageStatus.GOOD
+        voltage >= 12.0 -> BatteryVoltageStatus.LOW
+        else -> BatteryVoltageStatus.CRITICAL
+    }
+    val socStatus: SOCStatus get() = when {
+        estimatedSOC >= 70 -> SOCStatus.GOOD
+        estimatedSOC >= 40 -> SOCStatus.MODERATE
+        else -> SOCStatus.LOW
+    }
+    val trend: BatteryTrend get() {
+        if (voltageHistory.size < 3) return BatteryTrend.STABLE
+        val recent = voltageHistory.takeLast(3)
+        val avgRecent = recent.average()
+        val older = voltageHistory.dropLast(3).takeLast(3)
+        if (older.isEmpty()) return BatteryTrend.STABLE
+        val avgOlder = older.average()
+        return when {
+            avgRecent - avgOlder > 0.15 -> BatteryTrend.RISING
+            avgOlder - avgRecent > 0.15 -> BatteryTrend.FALLING
+            else -> BatteryTrend.STABLE
+        }
+    }
+}
+
+enum class BatteryVoltageStatus(val label: String) {
+    CHALGING("Lädt"),
+    GOOD("Gut"),
+    LOW("Niedrig"),
+    CRITICAL("Kritisch")
+}
+
+enum class SOCStatus(val label: String) {
+    GOOD("Gut"),
+    MODERATE("Mäßig"),
+    LOW("Niedrig")
+}
+
+enum class BatteryTrend(val label: String, val icon: String) {
+    RISING("Steigend", "+"),
+    FALLING("Fallend", "-"),
+    STABLE("Stabil", "=")
+}
+
+data class EGRData(
+    val commandedPercent: Double = 0.0,
+    val errorPercent: Double = 0.0,
+    val temperature: Double = 0.0,
+    val isSupported: Boolean = true
+) {
+    val valveStatus: EGRValveStatus get() = when {
+        !isSupported -> EGRValveStatus.NOT_SUPPORTED
+        errorPercent > 15.0 -> EGRValveStatus.ERROR_HIGH
+        errorPercent > 5.0 -> EGRValveStatus.WARNING
+        else -> EGRValveStatus.NORMAL
+    }
+}
+
+enum class EGRValveStatus(val label: String) {
+    NORMAL("Normal"),
+    WARNING("Warnung"),
+    ERROR_HIGH("Fehler"),
+    NOT_SUPPORTED("Nicht unterstützt")
+}
+
+data class EVAPData(
+    val purgeDutyCycle: Double = 0.0,
+    val tankPressure: Double = 0.0,
+    val leakDetected: Boolean = false,
+    val isSupported: Boolean = true
+) {
+    val systemStatus: EVAPSystemStatus get() = when {
+        !isSupported -> EVAPSystemStatus.NOT_SUPPORTED
+        leakDetected -> EVAPSystemStatus.LEAK_DETECTED
+        purgeDutyCycle > 0.0 -> EVAPSystemStatus.ACTIVE
+        else -> EVAPSystemStatus.STANDBY
+    }
+}
+
+enum class EVAPSystemStatus(val label: String) {
+    ACTIVE("Aktiv"),
+    STANDBY("Bereit"),
+    LEAK_DETECTED("Leck erkannt!"),
+    NOT_SUPPORTED("Nicht unterstützt")
+}
+
+data class VehicleInfoData(
+    val vin: String = "",
+    val calibrationId: String = "",
+    val ecuName: String = "",
+    val ecuVersion: String = "",
+    val cvn: String = "",
+    val cvnValid: Boolean = true,
+    val protocol: String = "",
+    val supportedModes: List<String> = emptyList()
+)
+
+enum class BatteryHealth(val label: String, val severity: Int) {
+    GOOD("Gut", 0),
+    FAIR("Befriedigend", 1),
+    POOR("Schlecht", 2),
+    CRITICAL("Kritisch", 3)
+}
+
+data class BatteryStatus(
+    val voltage: Double,
+    val soc: Int,
+    val health: BatteryHealth,
+    val isCharging: Boolean
+)
+
+enum class EGRStatus { CLOSED, OPEN, FAULT }
+
+data class EGRHealth(
+    val status: EGRStatus,
+    val flowRate: Double,
+    val errorPercent: Double,
+    val healthScore: Int
+)
+
+enum class LeakSize { SMALL, MEDIUM, LARGE }
+
+data class EVAPStatus(
+    val purgeDuty: Double,
+    val tankPressure: Double,
+    val hasLeak: Boolean,
+    val leakSize: LeakSize?
+)
+
+data class SAIStatus(
+    val isActive: Boolean,
+    val operationTimeSeconds: Long,
+    val healthScore: Int
+)
+
+enum class O2SensorType {
+    PRECAT_WIDEBAND,
+    POSTCAT_NARROWBAND
+}
+
+data class LambdaSensorStatus(
+    val sensor: O2SensorType,
+    val voltage: Double,
+    val lambda: Double?,
+    val heaterStatus: Boolean,
+    val healthScore: Int,
+    val crossCountRate: Double
+)
+
+enum class MonitorType(val label: String, val bitPosition: Int) {
+    MISFIRE("Zundaussetzer", 0),
+    FUEL_SYSTEM("Kraftstoffsystem", 1),
+    COMPONENTS("Komponenten", 2),
+    CATALYST("Katalysator", 3),
+    O2_SENSOR("O2-Sensor", 8),
+    O2_HEATER("O2-Heizung", 9),
+    EGR("EGR-System", 10),
+    EVAP("EVAP-System", 5),
+    SAI("Sekundaerluft", 6),
+    GPF("GPF-Filter", -1)
+}
+
+data class EmissionsReadinessMonitor(
+    val monitor: MonitorType,
+    val isComplete: Boolean,
+    val isSupported: Boolean
+)
