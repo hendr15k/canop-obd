@@ -679,30 +679,89 @@ enum class ColdStartPhase(val label: String, val description: String) {
 
 data class AstraJ14TurboCalibration(
     val redlineRpm: Int = 6500,
+    val rpmWarning: Int = 5850,
+    val idleRpm: Int = 750,
     val maxBoostKpa: Double = 180.0,
+    val maxBoostBar: Double = 1.0,
+    val overboostBar: Double = 1.2,
     val maxTorqueNm: Double = 200.0,
+    val overboostTorqueNm: Double = 220.0,
     val maxPowerKw: Double = 103.0,
+    val maxPowerHp: Double = 140.0,
     val maxEgtC: Double = 850.0,
     val maxOilTempC: Double = 120.0,
     val maxCoolantTempC: Double = 105.0,
     val maxChargeAirTempC: Double = 65.0,
-    val idleRpm: Int = 750,
+    val minOilPressureIdle: Double = 1.0,
+    val minOilPressureRpm: Double = 2.0,
     val maxTurboRpm: Int = 200000,
     val oilCapacityLiters: Double = 4.5,
-    val turbochargerType: String = "BorgWarner K03",
+    val turbochargerType: String = "BorgWarner K03 / IHI Twin-Scroll",
     val engineCode: String = "A14NET",
-    val fuelType: String = "Benzin (95/98)"
+    val gmEngineCode: String = "LUJ",
+    val fuelType: String = "Benzin (95 RON min / 98 empfohlen)",
+    val fuelTankLiters: Double = 56.0,
+    val batteryAh: Int = 70,
+    val alternatorV: Double = 14.0,
+    val coolantCapacity: Double = 5.7,
+    val sparkPlugType: String = "NGK LZKR6AP-11G / Bosch FR7HPP332",
+    val sparkPlugGap: Double = 0.7,
+    val sparkPlugTorque: String = "20-25 Nm",
+    val transmissionFluid: String = "Dexron VI ATF",
+    val engineFamily: String = "GM Family 0 Gen III",
+    val ecuType: String = "Bosch ME17.9.22 / Delco E78",
+    val compressionRatio: String = "9.5:1",
+    val displacement: String = "1364cc (1.4L)",
+    val boreStroke: String = "72.5mm x 82.6mm",
+    val valveConfig: String = "DOHC 16V, DCVCP Nockenwellen",
+    val emissionStandard: String = "Euro 5",
+    val fuelConsumptionCombined: Double = 6.0,
+    val fuelConsumptionUrban: Double = 7.8,
+    val fuelConsumptionExtraUrban: Double = 5.0,
+    val co2Emissions: Int = 139,
+    val topSpeed: Int = 207,
+    val accel0to100: Double = 9.9,
+    val recommendedOil: String = "Dexos2 5W-30",
+    val alternativeOil: String = "ACEA C3 5W-30 / A3/B4 5W-40",
+    val oilChangeIntervalKm: Int = 15000,
+    val airFilterIntervalKm: Int = 30000,
+    val sparkPlugIntervalKm: Int = 60000,
+    val coolantIntervalKm: Int = 80000,
+    val timingChainIntervalKm: Int = 150000,
+    val vvtSystem: String = "DCVCP (Dual Continuous Variable Cam Phasing)"
 ) {
-    fun getBoostBar(): Double = boostKpa / 100.0
-    val boostKpa: Double get() = 100.0
-    val maxBoostBar: Double get() = 1.8
-
-    fun isRpmWarning(rpm: Double): Boolean = rpm >= redlineRpm * 0.9
+    fun getBoostBar(pressureKpa: Double): Double = pressureKpa / 100.0
+    fun isRpmWarning(rpm: Double): Boolean = rpm >= rpmWarning
     fun isRpmRedline(rpm: Double): Boolean = rpm >= redlineRpm
     fun isBoostWarning(boost: Double): Boolean = boost >= maxBoostBar * 0.85
-    fun isBoostOverboost(boost: Double): Boolean = boost >= maxBoostBar
+    fun isBoostOverboost(boost: Double): Boolean = boost >= overboostBar
+    fun isBoostCritical(boost: Double): Boolean = boost >= maxBoostBar
     fun isEgtWarning(egt: Double): Boolean = egt >= maxEgtC * 0.9
     fun isEgtCritical(egt: Double): Boolean = egt >= maxEgtC
+    fun isOilTempWarning(temp: Double): Boolean = temp >= maxOilTempC * 0.9
+    fun isOilTempCritical(temp: Double): Boolean = temp >= maxOilTempC
+    fun isCoolantWarning(temp: Double): Boolean = temp >= maxCoolantTempC * 0.95
+    fun isCoolantCritical(temp: Double): Boolean = temp >= maxCoolantTempC
+    fun isChargeAirTempWarning(temp: Double): Boolean = temp >= maxChargeAirTempC * 0.9
+    fun getRpmPercent(rpm: Double): Double = (rpm / redlineRpm) * 100.0
+    fun getBoostPercent(boost: Double): Double = (boost / maxBoostBar) * 100.0
+
+    fun isMafNormal(mafGs: Double): Boolean = mafGs in 2.0..90.0
+    fun isMafIdleNormal(mafGs: Double): Boolean = mafGs in 2.0..5.0
+    fun isCoolantNormal(temp: Double): Boolean = temp in 80.0..105.0
+    fun isOilPressureNormal(pressureBar: Double, rpm: Double): Boolean {
+        return if (rpm < 1500) pressureBar >= minOilPressureIdle
+        else pressureBar >= minOilPressureRpm
+    }
+    fun getFuelTrimStatus(stft: Double, ltft: Double): FuelTrimStatus {
+        val total = stft + ltft
+        return when {
+            total > 15.0 -> FuelTrimStatus.LEAN
+            total < -15.0 -> FuelTrimStatus.RICH
+            kotlin.math.abs(total) > 10.0 -> FuelTrimStatus.WARNING
+            else -> FuelTrimStatus.NORMAL
+        }
+    }
 
     companion object {
         val INSTANCE = AstraJ14TurboCalibration()
@@ -710,13 +769,14 @@ data class AstraJ14TurboCalibration(
             OBDPID.BOOST_PRESSURE, OBDPID.VGT_CONTROL, OBDPID.WASTEGATE_CONTROL,
             OBDPID.TURBO_RPM, OBDPID.CHARGE_AIR_COOLER_TEMP,
             OBDPID.EGT_BANK1, OBDPID.EGT_BANK2, OBDPID.OIL_TEMP,
-            OBDPID.ACTUAL_TORQUE, OBDPID.DEMAND_TORQUE, OBDPID.REFERENCE_TORQUE
+            OBDPID.ACTUAL_TORQUE, OBDPID.DEMAND_TORQUE, OBDPID.REFERENCE_TORQUE,
+            OBDPID.FUEL_RAIL_PRESSURE, OBDPID.INTAKE_PRESSURE
         )
         val DASHBOARD_PRESET = DashboardPreset(
             id = "astra_j_14_turbo",
             name = "Opel Astra J 1.4 Turbo",
             themeName = "CANOPO",
-            primaryGaugeIds = setOf("rpm", "boost", "coolant", "speed", "torque", "egt"),
+            primaryGaugeIds = setOf("rpm", "boost", "coolant", "speed", "oil_temp", "charge_air"),
             createdAt = System.currentTimeMillis()
         )
         val RECOMMENDED_PIDS = listOf(
@@ -724,7 +784,10 @@ data class AstraJ14TurboCalibration(
             OBDPID.ENGINE_LOAD, OBDPID.BOOST_PRESSURE, OBDPID.EGT_BANK1,
             OBDPID.CHARGE_AIR_COOLER_TEMP, OBDPID.FUEL_LEVEL, OBDPID.BATTERY_VOLTAGE,
             OBDPID.MAF_RATE, OBDPID.ACTUAL_TORQUE, OBDPID.OIL_TEMP,
-            OBDPID.TIMING_ADVANCE, OBDPID.INTAKE_TEMP, OBDPID.ENGINE_FUEL_RATE
+            OBDPID.TIMING_ADVANCE, OBDPID.INTAKE_TEMP, OBDPID.ENGINE_FUEL_RATE,
+            OBDPID.WASTEGATE_CONTROL, OBDPID.INTAKE_PRESSURE, OBDPID.SHORT_TERM_FUEL_TRIM_BANK1,
+            OBDPID.LONG_TERM_FUEL_TRIM_BANK1, OBDPID.O2_VOLTAGE_B1S1, OBDPID.O2_VOLTAGE_B1S2,
+            OBDPID.BAROMETRIC_PRESSURE, OBDPID.FUEL_RAIL_PRESSURE
         )
         val ALERT_CONFIG = AlertConfig(
             speedWarning = 180f,
@@ -742,10 +805,19 @@ data class AstraJ14TurboCalibration(
             MaintenanceItem(type = MaintenanceType.OIL_CHANGE, intervalKm = 15000),
             MaintenanceItem(type = MaintenanceType.AIR_FILTER, intervalKm = 30000),
             MaintenanceItem(type = MaintenanceType.TURBO_INSPECTION, intervalKm = 60000),
-            MaintenanceItem(type = MaintenanceType.COOLANT, intervalKm = 60000),
+            MaintenanceItem(type = MaintenanceType.COOLANT, intervalKm = 80000),
             MaintenanceItem(type = MaintenanceType.BRAKE_PADS, intervalKm = 30000),
-            MaintenanceItem(type = MaintenanceType.SPARK_PLUGS, intervalKm = 30000),
+            MaintenanceItem(type = MaintenanceType.SPARK_PLUGS, intervalKm = 60000),
             MaintenanceItem(type = MaintenanceType.TURBO_BOOST_CHECK, intervalKm = 45000)
+        )
+        val KNOWN_ISSUES = listOf(
+            KnownIssue("Timing Chain", "Rattle auf Kaltstart, P0340/P1345", "80.000-150.000 km", "Olqualitat und regelmaige Olwechsel"),
+            KnownIssue("MAF Sensor", "Rauer Leerlauf, Leistungsverlust, P0100-P0103", "60.000-120.000 km", "MAF-Reiniger verwenden, Luftfilter prufen"),
+            KnownIssue("Wastegate", "Rasseln bei niedriger Drehzahl, P0234", "80.000-150.000 km", "Wastegate-Stellglied prufen"),
+            KnownIssue("PCV Ventil", "Olverbrauch, blauer Rauch, P1100", "60.000-100.000 km", "Zylinderkopfhaube ersetzen"),
+            KnownIssue("Kuhlmittel", "Uberhitzung, Kuhlmittelverlust", "80.000-150.000 km", "Wasserpumpe und Kuhlmittelkreislauf prufen"),
+            KnownIssue("Olverbrauch", "Olstand zwischen Wechseln, P0298", "100.000+ km", "Kolbenringe und Ventilschaftdichtungen prufen"),
+            KnownIssue("Drosselklappe", "Rauer Leerlauf, P2100/P2101", "60.000-120.000 km", "Drosselklappe reinigen und anlernen")
         )
     }
 }
@@ -756,16 +828,119 @@ data class ColdStartState(
     val coolantTempCurrent: Double = 0.0,
     val rpmStart: Double = 0.0,
     val elapsedSeconds: Long = 0L,
-    val isRunning: Boolean = false
+    val isRunning: Boolean = false,
+    val oilTempStart: Double = 0.0,
+    val oilTempCurrent: Double = 0.0,
+    val targetCoolantTemp: Double = 90.0,
+    val chargeAirTemp: Double = 0.0,
+    val engineLoad: Double = 0.0,
+    val fuelSystemStatus: FuelSystemState = FuelSystemState.UNKNOWN
 ) {
     val warmupProgress: Float get() = when {
         coolantTempCurrent <= 0.0 -> 0f
-        coolantTempCurrent >= 90.0 -> 1f
-        else -> ((coolantTempCurrent + 40.0) / 130.0).toFloat().coerceIn(0f, 1f)
+        coolantTempCurrent >= targetCoolantTemp -> 1f
+        else -> ((coolantTempCurrent + 40.0) / (targetCoolantTemp + 40.0)).toFloat().coerceIn(0f, 1f)
     }
     val estimatedTimeRemaining: Long get() = when {
         warmupProgress >= 1f -> 0L
         warmupProgress <= 0f -> 0L
         else -> ((1.0 - warmupProgress) * 300.0).toLong().coerceAtMost(300L)
     }
+    val isTurboWarm: Boolean get() = oilTempCurrent >= 60.0
+    val isReadyForBoost: Boolean get() = coolantTempCurrent >= 80.0 && oilTempCurrent >= 50.0
+    val turboWarmupPercent: Float get() = when {
+        oilTempCurrent <= 0.0 -> 0f
+        oilTempCurrent >= 90.0 -> 1f
+        else -> (oilTempCurrent / 90.0).toFloat().coerceIn(0f, 1f)
+    }
+}
+
+enum class FuelTrimStatus { NORMAL, WARNING, LEAN, RICH }
+
+data class KnownIssue(
+    val name: String,
+    val symptoms: String,
+    val typicalMileage: String,
+    val prevention: String
+)
+
+enum class FuelSystemState(val label: String) {
+    UNKNOWN("Unbekannt"),
+    OPEN_LOOP_NO_FAULT("Offene Schleife - kein Fehler"),
+    OPEN_LOOP_FAULT("Offene Schleife - Fehler"),
+    CLOSED_LOOP("Geschlossene Schleife"),
+    OPEN_LOOP_ENGINE_OFF("Schleife offen - Motor aus")
+}
+
+data class TurboHealthMonitor(
+    val boostPressureKpa: Double = 0.0,
+    val wastegatePosition: Double = 0.0,
+    val turboRpm: Double = 0.0,
+    val chargeAirTempC: Double = 0.0,
+    val intakeAirTempC: Double = 0.0,
+    val ambientTempC: Double = 0.0,
+    val barometricPressureKpa: Double = 100.0,
+    val targetBoostKpa: Double = 100.0,
+    val sampleCount: Int = 0
+) {
+    val boostBar: Double get() = boostPressureKpa / 100.0
+    val baroBar: Double get() = barometricPressureKpa / 100.0
+    val relativeBoostBar: Double get() = boostBar - baroBar
+    val overboostBar: Double get() = relativeBoostBar - 1.0
+    val boostDeviationPercent: Double get() = if (targetBoostKpa > 0) ((boostPressureKpa - targetBoostKpa) / targetBoostKpa) * 100.0 else 0.0
+    val isOverboost: Boolean get() = overboostBar > 0.2
+    val isUnderboost: Boolean get() = relativeBoostBar < 0.8 && sampleCount > 10
+    val wastegateHealth: WastegateHealth get() = when {
+        wastegatePosition < 5.0 -> WastegateHealth.STUCK_CLOSED
+        wastegatePosition > 95.0 -> WastegateHealth.STUCK_OPEN
+        isUnderboost && wastegatePosition > 70.0 -> WastegateHealth.WASTEGATE_LEAK
+        isOverboost && wastegatePosition < 30.0 -> WastegateHealth.WASTEGATE_STUCK
+        else -> WastegateHealth.HEALTHY
+    }
+    val turboHealthStatus: TurboHealthStatus get() = when {
+        isOverboost -> TurboHealthStatus.OVERBOOST
+        isUnderboost -> TurboHealthStatus.UNDERBOOST
+        wastegateHealth != WastegateHealth.HEALTHY -> TurboHealthStatus.WASTEGATE_ISSUE
+        chargeAirTempC > 65.0 -> TurboHealthStatus.INTERCOOLER_EFFICIENCY
+        else -> TurboHealthStatus.HEALTHY
+    }
+    val chargeAirEfficiencyPercent: Float get() = when {
+        intakeAirTempC <= ambientTempC -> 100f
+        chargeAirTempC > ambientTempC + 30 -> 0f
+        else -> ((1.0 - ((chargeAirTempC - ambientTempC) / 30.0)) * 100).toFloat().coerceIn(0f, 100f)
+    }
+}
+
+enum class WastegateHealth(val label: String, val severity: Int) {
+    HEALTHY("Gesund", 0),
+    WASTEGATE_LEAK("Wastegate undicht", 2),
+    WASTEGATE_STUCK("Wastegate klemmt", 3),
+    STUCK_CLOSED("Wastegate geschlossen", 3),
+    STUCK_OPEN("Wastegate offen", 3)
+}
+
+enum class TurboHealthStatus(val label: String, val colorHex: Long) {
+    HEALTHY("Turbo OK", 0xFF44FF88),
+    OVERBOOST("Uberladung!", 0xFFFF4444),
+    UNDERBOOST("Unterladung!", 0xFFFF8C00),
+    WASTEGATE_ISSUE("Wastegate-Problem", 0xFFFFE066),
+    INTERCOOLER_EFFICIENCY("Ladeluftkuhler-Problem", 0xFFFFAB40)
+}
+
+data class DTCDetails(
+    val code: String,
+    val description: String,
+    val system: String,
+    val severity: DTCSeverity,
+    val possibleCauses: List<String>,
+    val recommendedActions: List<String>,
+    val isAstraJCommon: Boolean = false,
+    val relatedCodes: List<String> = emptyList()
+)
+
+enum class DTCSeverity(val label: String, val colorHex: Long) {
+    INFO("Info", 0xFF42A5F5),
+    WARNING("Warnung", 0xFFFFE066),
+    CRITICAL("Kritisch", 0xFFFF4444),
+    PERFORMANCE("Leistung", 0xFFFF8C00)
 }

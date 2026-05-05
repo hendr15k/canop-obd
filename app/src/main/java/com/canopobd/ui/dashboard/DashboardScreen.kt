@@ -58,6 +58,8 @@ import com.canopobd.ui.turbo.TurboMonitorDialog
 import com.canopobd.ui.timingchain.TimingChainMonitorDialog
 import com.canopobd.ui.turbo.TurboCoolDownBanner
 import com.canopobd.data.model.TurboCoolDownState
+import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
+import com.canopobd.ui.knownissues.KnownIssuesDialog
 import kotlin.math.abs
 
 @Composable
@@ -91,6 +93,8 @@ fun DashboardScreen(
     showPowerCalculator: Boolean,
     showDriveScore: Boolean,
     showShiftLight: Boolean,
+    showVehicleInfo: Boolean,
+    showKnownIssues: Boolean,
     carProfile: CarProfile,
     turboData: TurboData,
     oilData: OilData,
@@ -182,6 +186,8 @@ fun DashboardScreen(
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
+    onToggleVehicleInfo: () -> Unit,
+    onToggleKnownIssues: () -> Unit,
     onUpdateShiftLightConfig: (com.canopobd.data.model.ShiftLightConfig) -> Unit,
     onResetDriveScore: () -> Unit,
     onToggleTurboMonitor: () -> Unit,
@@ -257,6 +263,8 @@ fun DashboardScreen(
                     onTogglePowerCalculator = onTogglePowerCalculator,
                     onToggleDriveScore = onToggleDriveScore,
                     onToggleShiftLight = onToggleShiftLight,
+                    onToggleVehicleInfo = onToggleVehicleInfo,
+                    onToggleKnownIssues = onToggleKnownIssues,
                     onToggleTurboMonitor = onToggleTurboMonitor,
                     onToggleTimingChainMonitor = onToggleTimingChainMonitor,
                     onToggleCarProfile = onToggleCarProfile,
@@ -365,264 +373,136 @@ fun DashboardScreen(
             }
         }
 
-        NavHost(
-            navController = navController,
-            startDestination = "dashboard"
-        ) {
+        NavHost(navController = navController, startDestination = "dashboard") {
             composable("dashboard") {}
             composable("device_picker") {
                 if (showDevicePicker) {
-                    DevicePickerDialog(
-                        devices = devices,
-                        onSelect = onConnect,
-                        onDismiss = { onToggleDevicePicker(); navController.popBackStack() }
-                    )
+                    DevicePickerDialog(devices = devices, onSelect = onConnect, onDismiss = { onToggleDevicePicker(); navController.popBackStack() })
                 }
             }
             composable("dtc") {
                 if (showDTCDialog) {
-                    DTCDialog(
-                        dtcResponse = dtcResponse,
-                        onDismiss = { onToggleDTCDialog(); navController.popBackStack() },
-                        onClearDTCs = onClearDTCs
-                    )
+                    DTCDialog(dtcResponse = dtcResponse, onDismiss = { onToggleDTCDialog(); navController.popBackStack() }, onClearDTCs = onClearDTCs)
                 }
             }
             composable("settings") {
                 if (showSettings) {
-                    SettingsDialog(
-                        pollRate = pollRate,
-                        measurementUnit = measurementUnit,
-                        autoReconnect = autoReconnect,
-                        pollMode = pollMode,
-                        onDismiss = { onToggleSettings(); navController.popBackStack() },
-                        onPollRateChange = onSetPollRate,
-                        onUnitChange = onSetMeasurementUnit,
-                        onAutoReconnectChange = onSetAutoReconnect,
-                        onPollModeChange = onSetPollMode
-                    )
+                    SettingsDialog(pollRate = pollRate, measurementUnit = measurementUnit, autoReconnect = autoReconnect, pollMode = pollMode, onDismiss = { onToggleSettings(); navController.popBackStack() }, onPollRateChange = onSetPollRate, onUnitChange = onSetMeasurementUnit, onAutoReconnectChange = onSetAutoReconnect, onPollModeChange = onSetPollMode)
                 }
             }
             composable("data_log") {
                 if (showDataLog) {
-                    DataLogDialog(
-                        recordedData = recordedData,
-                        isRecording = recordingActive,
-                        onDismiss = { onToggleDataLog(); navController.popBackStack() },
-                        onStartRecording = onStartRecording,
-                        onStopRecording = onStopRecording,
-                        onClearData = onClearRecordedData,
-                        onExportData = onGetExportData
-                    )
+                    DataLogDialog(recordedData = recordedData, isRecording = recordingActive, onDismiss = { onToggleDataLog(); navController.popBackStack() }, onStartRecording = onStartRecording, onStopRecording = onStopRecording, onClearData = onClearRecordedData, onExportData = onGetExportData)
                 }
             }
             composable("pids") {
                 if (showPIDScreen) {
-                    PIDDialog(
-                        obdData = obdData,
-                        measurementUnit = measurementUnit,
-                        onDismiss = { onTogglePIDScreen(); navController.popBackStack() }
-                    )
+                    PIDDialog(obdData = obdData, measurementUnit = measurementUnit, onDismiss = { onTogglePIDScreen(); navController.popBackStack() })
                 }
             }
             composable("remote_server") {
                 if (showRemoteDialog) {
-                    RemoteServerDialog(
-                        isRunning = remoteServerRunning,
-                        serverIp = remoteServerIp,
-                        serverPort = remoteServerPort,
-                        connectedClients = remoteConnectedClients,
-                        onDismiss = { onToggleRemoteDialog(); navController.popBackStack() },
-                        onStartServer = onStartRemoteServer,
-                        onStopServer = onStopRemoteServer
-                    )
+                    RemoteServerDialog(isRunning = remoteServerRunning, serverIp = remoteServerIp, serverPort = remoteServerPort, connectedClients = remoteConnectedClients, onDismiss = { onToggleRemoteDialog(); navController.popBackStack() }, onStartServer = onStartRemoteServer, onStopServer = onStopRemoteServer)
                 }
             }
             composable("trip_computer") {
                 if (showTripComputer) {
-                    TripComputerDialog(
-                        tripData = tripData,
-                        measurementUnit = measurementUnit,
-                        vin = onGetStoredVin(),
-                        isGPSTracking = isGPSTracking,
-                        currentTrip = currentTrip,
-                        onDismiss = { onToggleTripComputer(); navController.popBackStack() },
-                        onResetTrip = onResetTrip,
-                        onStartGPSTrack = onStartGPSTracking,
-                        onStopGPSTrack = onStopGPSTracking,
-                        onExportGPX = onExportGPX,
-                        onExportKML = onExportKML,
-                        onClearGPS = onClearGPSTrips
-                    )
+                    TripComputerDialog(tripData = tripData, measurementUnit = measurementUnit, vin = onGetStoredVin(), isGPSTracking = isGPSTracking, currentTrip = currentTrip, onDismiss = { onToggleTripComputer(); navController.popBackStack() }, onResetTrip = onResetTrip, onStartGPSTrack = onStartGPSTracking, onStopGPSTrack = onStopGPSTracking, onExportGPX = onExportGPX, onExportKML = onExportKML, onClearGPS = onClearGPSTrips)
                 }
             }
             composable("customization") {
                 if (showCustomization) {
-                    DashboardCustomizationDialog(
-                        currentTheme = colorTheme,
-                        primaryGaugeIds = primaryGaugeIds,
-                        onDismiss = { onToggleCustomization(); navController.popBackStack() },
-                        onThemeChange = onSetColorTheme,
-                        onPrimaryGaugesChange = onSetPrimaryGauges
-                    )
+                    DashboardCustomizationDialog(currentTheme = colorTheme, primaryGaugeIds = primaryGaugeIds, onDismiss = { onToggleCustomization(); navController.popBackStack() }, onThemeChange = onSetColorTheme, onPrimaryGaugesChange = onSetPrimaryGauges)
                 }
             }
             composable("hud") {
                 if (showHUDMode) {
-                    HUDModeActivity(
-                        obdData = obdData,
-                        measurementUnit = measurementUnit,
-                        onDismiss = { onToggleHUDMode(); navController.popBackStack() }
-                    )
+                    HUDModeActivity(obdData = obdData, measurementUnit = measurementUnit, onDismiss = { onToggleHUDMode(); navController.popBackStack() })
                 }
             }
             composable("trend_graph") {
                 if (showTrendGraph) {
-                    LiveTrendGraphDialog(
-                        trendHistory = trendHistory,
-                        onDismiss = { onToggleTrendGraph(); navController.popBackStack() }
-                    )
+                    LiveTrendGraphDialog(trendHistory = trendHistory, onDismiss = { onToggleTrendGraph(); navController.popBackStack() })
                 }
             }
             composable("readiness") {
                 if (showReadiness) {
-                    ReadinessMonitorDialog(
-                        readiness = readinessMonitor,
-                        onDismiss = { onToggleReadiness(); navController.popBackStack() }
-                    )
+                    ReadinessMonitorDialog(readiness = readinessMonitor, onDismiss = { onToggleReadiness(); navController.popBackStack() })
                 }
             }
             composable("diagnostics") {
                 if (showDiagnostics) {
-                    DiagnosticsDialog(
-                        protocol = detectedProtocol,
-                        supportedPIDs = supportedPIDs,
-                        freezeFrames = freezeFrames,
-                        onDismiss = { onToggleDiagnostics(); navController.popBackStack() }
-                    )
+                    DiagnosticsDialog(protocol = detectedProtocol, supportedPIDs = supportedPIDs, freezeFrames = freezeFrames, onDismiss = { onToggleDiagnostics(); navController.popBackStack() })
                 }
             }
             composable("alerts") {
                 if (showAlertSettings) {
-                    AlertSettingsDialog(
-                        alertConfig = alertConfig,
-                        activeAlerts = activeAlerts,
-                        onDismiss = { onToggleAlertSettings(); navController.popBackStack() },
-                        onUpdateConfig = onSetAlertConfig
-                    )
+                    AlertSettingsDialog(alertConfig = alertConfig, activeAlerts = activeAlerts, onDismiss = { onToggleAlertSettings(); navController.popBackStack() }, onUpdateConfig = onSetAlertConfig)
                 }
             }
             composable("data_analysis") {
                 if (showDataAnalysis) {
-                    DataAnalysisDialog(
-                        importedData = importedData,
-                        fuelTrimAnalysis = onGetFuelTrimAnalysis(),
-                        onDismiss = { onToggleDataAnalysis(); navController.popBackStack() },
-                        onImportCsv = onImportCsv,
-                        onClearImported = onClearImported
-                    )
+                    DataAnalysisDialog(importedData = importedData, fuelTrimAnalysis = onGetFuelTrimAnalysis(), onDismiss = { onToggleDataAnalysis(); navController.popBackStack() }, onImportCsv = onImportCsv, onClearImported = onClearImported)
                 }
             }
             composable("fuel_economy") {
                 if (showFuelEconomy) {
-                    com.canopobd.ui.fuel.FuelEconomyDialog(
-                        fuelEconomyData = fuelEconomyData,
-                        onDismiss = { onToggleFuelEconomy(); navController.popBackStack() }
-                    )
+                    com.canopobd.ui.fuel.FuelEconomyDialog(fuelEconomyData = fuelEconomyData, onDismiss = { onToggleFuelEconomy(); navController.popBackStack() })
                 }
             }
             composable("maintenance") {
                 if (showMaintenance) {
-                    com.canopobd.ui.maintenance.MaintenanceDialog(
-                        maintenanceItems = maintenanceItems,
-                        currentKm = currentKm,
-                        onDismiss = { onToggleMaintenance(); navController.popBackStack() },
-                        onUpdateItem = onSetMaintenanceItem,
-                        onResetItem = onResetMaintenanceItem
-                    )
+                    com.canopobd.ui.maintenance.MaintenanceDialog(maintenanceItems = maintenanceItems, currentKm = currentKm, onDismiss = { onToggleMaintenance(); navController.popBackStack() }, onUpdateItem = onSetMaintenanceItem, onResetItem = onResetMaintenanceItem)
                 }
             }
             composable("performance_test") {
                 if (showPerformanceTest) {
-                    com.canopobd.ui.performance.PerformanceTestDialog(
-                        testState = performanceTestState,
-                        onDismiss = { onTogglePerformanceTest(); navController.popBackStack() },
-                        onStartTest = onStartPerfTest,
-                        onStopTest = onStopPerfTest
-                    )
+                    com.canopobd.ui.performance.PerformanceTestDialog(testState = performanceTestState, onDismiss = { onTogglePerformanceTest(); navController.popBackStack() }, onStartTest = onStartPerfTest, onStopTest = onStopPerfTest)
                 }
             }
             composable("trip_history") {
                 if (showTripHistory) {
-                    com.canopobd.ui.triphistory.TripHistoryDialog(
-                        trips = tripHistory,
-                        onDismiss = { onToggleTripHistory(); navController.popBackStack() },
-                        onClearHistory = onClearTripHistory
-                    )
+                    com.canopobd.ui.triphistory.TripHistoryDialog(trips = tripHistory, onDismiss = { onToggleTripHistory(); navController.popBackStack() }, onClearHistory = onClearTripHistory)
                 }
             }
             composable("power_calculator") {
                 if (showPowerCalculator) {
-                    com.canopobd.ui.power.PowerCalculatorDialog(
-                        calculation = powerCalculation,
-                        rpm = obdData.rpm,
-                        maf = obdData.mafRate,
-                        onDismiss = { onTogglePowerCalculator(); navController.popBackStack() }
-                    )
+                    com.canopobd.ui.power.PowerCalculatorDialog(calculation = powerCalculation, rpm = obdData.rpm, maf = obdData.mafRate, onDismiss = { onTogglePowerCalculator(); navController.popBackStack() })
                 }
             }
             composable("drive_score") {
                 if (showDriveScore) {
-                    com.canopobd.ui.drivescore.DriveScoreDialog(
-                        score = driveScore,
-                        sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000,
-                        harshAccels = driveSession.harshAccels,
-                        harshBrakes = driveSession.harshBrakes,
-                        idleTimeSeconds = driveSession.idleTimeSeconds,
-                        avgRpm = driveSession.avgRpm,
-                        avgThrottle = driveSession.avgThrottle,
-                        avgSpeed = driveSession.avgSpeed,
-                        onDismiss = { onToggleDriveScore(); navController.popBackStack() },
-                        onResetScore = onResetDriveScore
-                    )
+                    com.canopobd.ui.drivescore.DriveScoreDialog(score = driveScore, sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000, harshAccels = driveSession.harshAccels, harshBrakes = driveSession.harshBrakes, idleTimeSeconds = driveSession.idleTimeSeconds, avgRpm = driveSession.avgRpm, avgThrottle = driveSession.avgThrottle, avgSpeed = driveSession.avgSpeed, onDismiss = { onToggleDriveScore(); navController.popBackStack() }, onResetScore = onResetDriveScore)
                 }
             }
             composable("shift_light") {
                 if (showShiftLight) {
-                    com.canopobd.ui.shiftlight.ShiftLightDialog(
-                        config = shiftLightConfig,
-                        currentRpm = obdData.rpm,
-                        onDismiss = { onToggleShiftLight(); navController.popBackStack() },
-                        onUpdateConfig = onUpdateShiftLightConfig
-                    )
+                    com.canopobd.ui.shiftlight.ShiftLightDialog(config = shiftLightConfig, currentRpm = obdData.rpm, onDismiss = { onToggleShiftLight(); navController.popBackStack() }, onUpdateConfig = onUpdateShiftLightConfig)
+                }
+            }
+            composable("vehicle_info") {
+                if (showVehicleInfo) {
+                    VehicleInfoDialog(vin = onGetStoredVin(), onDismiss = { onToggleVehicleInfo(); navController.popBackStack() })
+                }
+            }
+            composable("known_issues") {
+                if (showKnownIssues) {
+                    KnownIssuesDialog(onDismiss = { onToggleKnownIssues(); navController.popBackStack() })
                 }
             }
             composable("turbo_monitor") {
                 if (showTurboMonitor) {
-                    TurboMonitorDialog(
-                        turboData = turboData,
-                        oilData = oilData,
-                        carProfile = carProfile,
-                        onDismiss = { onToggleTurboMonitor(); navController.popBackStack() }
-                    )
+                    TurboMonitorDialog(turboData = turboData, oilData = oilData, carProfile = carProfile, onDismiss = { onToggleTurboMonitor(); navController.popBackStack() })
                 }
             }
             composable("timing_chain_monitor") {
                 if (showTimingChainMonitor) {
-                    TimingChainMonitorDialog(
-                        chainState = timingChainState,
-                        carProfile = carProfile,
-                        onDismiss = { onToggleTimingChainMonitor(); navController.popBackStack() }
-                    )
+                    TimingChainMonitorDialog(chainState = timingChainState, carProfile = carProfile, onDismiss = { onToggleTimingChainMonitor(); navController.popBackStack() })
                 }
             }
             composable("car_profile") {
                 if (showCarProfile) {
-                    CarProfileDialog(
-                        currentProfile = carProfile,
-                        onSelectProfile = onSelectCarProfile,
-                        onDismiss = { onToggleCarProfile(); navController.popBackStack() }
-                    )
+                    CarProfileDialog(currentProfile = carProfile, onSelectProfile = onSelectCarProfile, onDismiss = { onToggleCarProfile(); navController.popBackStack() })
                 }
             }
         }
@@ -777,6 +657,8 @@ private fun DashboardHeader(
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
+    onToggleVehicleInfo: () -> Unit,
+    onToggleKnownIssues: () -> Unit,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
     onToggleCarProfile: () -> Unit,
@@ -873,7 +755,13 @@ private fun DashboardHeader(
                 IconButton(onClick = { onToggleShiftLight(); navController.navigate("shift_light") }) {
                     Icon(Icons.Filled.LightMode, contentDescription = "Schaltblitz", tint = colors.gaugeOrange)
                 }
-                IconButton(onClick = { onToggleTurboMonitor(); navController.navigate("turbo_monitor") }) {
+                IconButton(onClick = onToggleVehicleInfo) {
+                    Icon(Icons.Filled.Info, contentDescription = "Fahrzeugprofil", tint = colors.highlight)
+                }
+                IconButton(onClick = onToggleKnownIssues) {
+                    Icon(Icons.Filled.BugReport, contentDescription = "Bekannte Probleme", tint = colors.gaugeYellow)
+                }
+                IconButton(onClick = onToggleTurboMonitor) {
                     Icon(Icons.Filled.Air, contentDescription = "Turbo", tint = colors.accent)
                 }
                 IconButton(onClick = { onToggleTimingChainMonitor(); navController.navigate("timing_chain_monitor") }) {

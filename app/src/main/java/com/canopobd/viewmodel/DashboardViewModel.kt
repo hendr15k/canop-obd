@@ -111,6 +111,12 @@ class DashboardViewModel private constructor(
     private val _showShiftLight = MutableStateFlow(false)
     val showShiftLight: StateFlow<Boolean> = _showShiftLight.asStateFlow()
 
+    private val _showVehicleInfo = MutableStateFlow(false)
+    val showVehicleInfo: StateFlow<Boolean> = _showVehicleInfo.asStateFlow()
+
+    private val _showKnownIssues = MutableStateFlow(false)
+    val showKnownIssues: StateFlow<Boolean> = _showKnownIssues.asStateFlow()
+
     private val _powerCalculation = MutableStateFlow(com.canopobd.data.model.PowerCalculation())
     val powerCalculation: StateFlow<com.canopobd.data.model.PowerCalculation> = _powerCalculation.asStateFlow()
 
@@ -379,6 +385,14 @@ class DashboardViewModel private constructor(
 
     fun toggleShiftLight() {
         _showShiftLight.value = !_showShiftLight.value
+    }
+
+    fun toggleVehicleInfo() {
+        _showVehicleInfo.value = !_showVehicleInfo.value
+    }
+
+    fun toggleKnownIssues() {
+        _showKnownIssues.value = !_showKnownIssues.value
     }
 
     fun toggleTurboMonitor() {

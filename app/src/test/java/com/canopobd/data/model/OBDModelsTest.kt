@@ -1,4 +1,4 @@
-package com.canopobd.data.model
+﻿package com.canopobd.data.model
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -545,9 +545,9 @@ class OBDModelsTest {
 
     @Test
     fun `OBDPID THROTTLE_ACTUATOR formula returns percentage`() {
-        val bytes = byteArrayOf(0x80.toByte(), 0x00.toByte())
+        val bytes = byteArrayOf(0x80.toByte())
         val result = OBDPID.THROTTLE_ACTUATOR.formula(bytes)
-        assertEquals(12850.2, result, 1.0)
+        assertEquals(50.2, result, 1.0)
     }
 
     @Test
