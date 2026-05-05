@@ -390,6 +390,110 @@
 
 ---
 
+## 18. BCM/UEC/REC Codierungs-Referenz
+
+### Steuergeräte-Module
+
+| Modul | Adresse | Hauptfunktion |
+|-------|---------|---------------|
+| **UEC** | 0x09 | Underhood Electrical Center - Motornahes |
+| **REC** | 0x2E | Rear Electrical Center - Heckelektronik |
+| **BCM** | 0xFF | Body Control Module - Karosserieelektronik |
+| **IPC** | 0x83 | Instrument Panel Cluster - Kombiinstrument |
+| **CIM** | 0x7E | Column Integration Module - Lenksäule |
+
+### BCM Kalibrierungs-Kanäle
+
+| Kanal | Bereich | Standard | Beschreibung |
+|-------|---------|---------|--------------|
+| `Speed Dependent Locking` | 0-1 | 0 | Auto-Verriegelung 12km/h |
+| `Selective Door Unlock` | 0-1 | 1 | Einzelentriegelung |
+| `Windows Comfort Closing` | 0-1 | 0 | Komfortschließen |
+| `Windows Comfort Opening` | 0-1 | 0 | Komfortöffnen |
+| `Power Folding Mirrors` | 0-1 | 0 | Spiegelanklappung |
+| `Crash Unlock Relay` | 0-1 | 1 | Crash-Entriegelung |
+| `Acoustic Lock Confirmation` | 0-3 | 3 | Akustische Quittung |
+
+### UEC Kalibrierungs-Kanäle
+
+| Kanal | Bereich | Standard | Beschreibung |
+|-------|---------|---------|--------------|
+| `Daytime Running Light` | 0-5 | 1 | Tagfahrlicht Variante |
+| `DRL with Parking Light` | 0-1 | 0 | DRL mit Standlicht |
+| `Coming Home` | 0-5 | 2 | Coming Home Zeit |
+| `Leaving Home` | 0-1 | 0 | Leaving Home |
+| `Fog Lamps Front` | 0-1 | 0 | Nebelscheinwerfer |
+| `Fog as DRL` | 0-1 | 0 | Nebelscheinwerfer als TFL |
+| `Check Control` | 0-1 | 1 | Check-Control |
+| `Rain/Light Sensor` | 0-1 | 1 | Regen/Licht-Sensor |
+
+### REC Kalibrierungs-Kanäle
+
+| Kanal | Bereich | Standard | Beschreibung |
+|-------|---------|---------|--------------|
+| `Emergency Brake Light` | 0-1 | 0 | Adaptives Bremslicht |
+| `Rear Wiper Reverse` | 0-1 | 1 | Heckwischer Rückwärtsgang |
+| `Ambient Light Color` | 1-6 | 1 | Ambientefarbe |
+
+### IPC Kalibrierungs-Kanäle
+
+| Kanal | Bereich | Standard | Beschreibung |
+|-------|---------|---------|--------------|
+| `Driver Information Center` | 0-1 | 1 | DIC vorhanden |
+| `Board Computer` | 0-1 | 1 | Bordcomputer |
+| `Instant MPG Display` | 0-1 | 1 | Momentanverbrauch |
+| `Average MPG Display` | 0-1 | 1 | Durchschnittsverbrauch |
+| `Fuel Range Display` | 0-1 | 1 | Reichweite |
+| `Outside Temperature` | 0-1 | 1 | Außentemperatur |
+| `Oil Temperature Display` | 0-1 | 0 | Öltemperatur |
+| `ECO Index Display` | 0-1 | 1 | ECO-Index |
+| `Turbo Boost Gauge` | 0-1 | 0 | Ladedruck-Anzeige |
+| `Overspeed Warning` | 0-1 | 1 | Geschwindigkeitswarnung |
+
+---
+
+## 19. Getriebe M32 - Schaltpunkte
+
+### Gangübersetzung
+
+| Gang | Übersetzung | Km/h bei 1000 U/min |
+|------|-------------|---------------------|
+| 1 | 39:11 (3.545) | 8.3 km/h |
+| 2 | 21:13 (1.615) | 18.2 km/h |
+| 3 | 14:11 (1.273) | 23.1 km/h |
+| 4 | 11:11 (1.000) | 29.4 km/h |
+| 5 | 9:11 (0.818) | 35.9 km/h |
+| 6 | 7:11 (0.636) | 46.2 km/h |
+| Rückwärts | 38:9 (4.222) | - |
+
+### Optimaler Schaltbereich
+
+| Gangwechsel | RPM-Bereich | Empfehlung |
+|-------------|-------------|------------|
+| 1 → 2 | 3000-4000 | 3500 RPM |
+| 2 → 3 | 3000-4000 | 3500 RPM |
+| 3 → 4 | 3000-4500 | 3500 RPM |
+| 4 → 5 | 2800-3500 | 3000 RPM |
+| 5 → 6 | 2500-3200 | 2800 RPM |
+
+---
+
+## 20. Sensor-Abgleichwerte (Idle)
+
+### Leerlauf-Kalibrierung (Motor warm, 750 U/min)
+
+| Parameter | Sollwert | Toleranz | Prüfbedingung |
+|-----------|----------|----------|--------------|
+| Drosselklappe | 2-5% | ±1% | Leerlauf |
+| STFT | -5 bis +5% | ±2% | Leerlauf |
+| LTFT | -5 bis +5% | ±2% | Leerlauf |
+| Zündzeitpunkt | 6-12° | ±2° | Leerlauf |
+| Lambdaspannung | 0.1-0.9V | - | Schwingend |
+| Öldruck | 1.0-2.0 bar | ±0.3 | Leerlauf |
+| Wastegate Duty | 85-95% | ±5% | Leerlauf |
+
+---
+
 ## Quellen
 
 - Bosch ME17.9.22 Technische Dokumentation
@@ -397,3 +501,6 @@
 - SAE J1979 (OBD-II Standard)
 - SAE J2190 (Mode 22 Herstellerdiagnose)
 - CANOPO-ODB App Kalibrierungsdatenbank
+- VXOC Forum - Astra J Coding
+- Hidplanet.lv - OP-COM Coding Guide
+- MOTOR-TALK.de - Opel Astra J Forum
