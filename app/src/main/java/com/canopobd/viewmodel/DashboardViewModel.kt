@@ -155,6 +155,9 @@ class DashboardViewModel private constructor(
     private val _currentKm = MutableStateFlow(0)
     val currentKm: StateFlow<Int> = _currentKm.asStateFlow()
 
+    private var lastMaintenanceCheckTime = 0L
+    private val sessionNotifiedMaintenance = mutableMapOf<String, Pair<Int, MaintenanceNotificationManager.Urgency>>()
+
     private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
     val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
 
@@ -498,6 +501,8 @@ class DashboardViewModel private constructor(
 
     fun disconnect() {
         checkMaintenanceNotifications()
+        sessionNotifiedMaintenance.clear()
+        lastMaintenanceCheckTime = 0L
         repository.disconnect()
     }
 
@@ -514,7 +519,22 @@ class DashboardViewModel private constructor(
         val currentKm = _currentKm.value
         val reminders = notificationManager.checkMaintenanceReminders(entities, currentKm)
         if (reminders.isNotEmpty()) {
-            notificationManager.showAllReminders(reminders)
+            val toShow = reminders.filter { reminder ->
+                val prev = sessionNotifiedMaintenance[reminder.type]
+                val shouldShow = when {
+                    prev == null -> true
+                    reminder.urgency.ordinal > prev.second.ordinal -> true
+                    prev.first - reminder.remainingKm > 500 -> true
+                    else -> false
+                }
+                if (shouldShow) {
+                    sessionNotifiedMaintenance[reminder.type] = Pair(reminder.remainingKm, reminder.urgency)
+                }
+                shouldShow
+            }
+            if (toShow.isNotEmpty()) {
+                notificationManager.showAllReminders(toShow)
+            }
         }
     }
 
@@ -1496,9 +1516,16 @@ class DashboardViewModel private constructor(
     private fun startWarningMonitoring() {
         viewModelScope.launch {
             obdData.collect { data ->
+                _currentKm.value = data.distanceWithMil.toInt()
                 if (data.rpm > 0) {
                     val warnings = checkCriticalWarnings(data)
                     criticalWarnings.value = warnings
+                }
+                val now = System.currentTimeMillis()
+                if (connectionState.value is OBDConnectionState.Connected &&
+                    now - lastMaintenanceCheckTime >= 60_000) {
+                    lastMaintenanceCheckTime = now
+                    checkMaintenanceNotifications()
                 }
             }
         }

@@ -3,6 +3,7 @@ package com.canopobd.ui.dashboard
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -15,8 +16,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.canopobd.data.domain.DriveStyleAnalyzer
+import com.canopobd.data.domain.DrivingEfficiencyScorer
+import com.canopobd.data.domain.FuelSystemAnalyzer
 import com.canopobd.data.domain.OilHealthPredictor
 import com.canopobd.data.domain.ValidationResult
 import com.canopobd.ui.theme.AppColors
@@ -319,5 +324,166 @@ fun ValidationBadge(
             color = color,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
+    }
+}
+
+@Composable
+fun ScoreChip(label: String, value: Int, color: Color) {
+    Surface(shape = RoundedCornerShape(4.dp), color = color.copy(alpha = 0.15f)) {
+        Text(
+            text = "$label: $value",
+            fontSize = 9.sp,
+            color = color,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+        )
+    }
+}
+
+@Composable
+fun DriveStyleCard(
+    analysis: DriveStyleAnalyzer.DriveStyleAnalysis,
+    colors: AppColors,
+    modifier: Modifier = Modifier
+) {
+    val styleColor = when (analysis.driveStyle) {
+        DriveStyleAnalyzer.DriveStyle.ECO -> colors.gaugeGreen
+        DriveStyleAnalyzer.DriveStyle.BALANCED -> colors.gaugeYellow
+        DriveStyleAnalyzer.DriveStyle.SPORTLICH -> colors.gaugeOrange
+        DriveStyleAnalyzer.DriveStyle.AGGRESSIV -> colors.gaugeRed
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Fahrstil", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = colors.textPrimary)
+                Surface(shape = RoundedCornerShape(4.dp), color = styleColor.copy(alpha = 0.2f)) {
+                    Text(
+                        analysis.driveStyle.label,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = styleColor,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                ScoreChip("Eco", analysis.ecoScore, colors.gaugeGreen)
+                ScoreChip("Sport", analysis.sportScore, colors.gaugeOrange)
+                ScoreChip("Verschleiss", analysis.wearScore, if (analysis.wearScore > 60) colors.gaugeRed else colors.gaugeYellow)
+            }
+        }
+    }
+}
+
+@Composable
+fun EfficiencyCard(
+    score: DrivingEfficiencyScorer.EfficiencyScore,
+    colors: AppColors,
+    modifier: Modifier = Modifier
+) {
+    val grade = DrivingEfficiencyScorer().getEfficiencyGrade(score.overall)
+    val gradeColor = when (grade) {
+        'A' -> colors.gaugeGreen
+        'B' -> Color(0xFF8BC34A)
+        'C' -> colors.gaugeYellow
+        'D' -> colors.gaugeOrange
+        else -> colors.gaugeRed
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Effizienz", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = colors.textPrimary)
+                Text(
+                    "$grade (${score.overall})",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = gradeColor
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (score.tips.isNotEmpty()) {
+                Text(
+                    score.tips.first(),
+                    fontSize = 10.sp,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FuelSystemCard(
+    analysis: FuelSystemAnalyzer.FuelSystemAnalysis,
+    colors: AppColors,
+    modifier: Modifier = Modifier
+) {
+    val healthColor = when (analysis.health) {
+        FuelSystemAnalyzer.FuelSystemHealth.HEALTHY -> colors.gaugeGreen
+        FuelSystemAnalyzer.FuelSystemHealth.DEGRADED -> colors.gaugeYellow
+        FuelSystemAnalyzer.FuelSystemHealth.CRITICAL -> colors.gaugeRed
+        FuelSystemAnalyzer.FuelSystemHealth.UNKNOWN -> colors.textSecondary
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Kraftstoff", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = colors.textPrimary)
+                Surface(shape = RoundedCornerShape(4.dp), color = healthColor.copy(alpha = 0.2f)) {
+                    Text(
+                        analysis.health.label,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = healthColor,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (analysis.detectedIssues.isNotEmpty()) {
+                Text(
+                    analysis.detectedIssues.first().label,
+                    fontSize = 10.sp,
+                    color = healthColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Text(
+                    "Score: ${analysis.healthScore}",
+                    fontSize = 10.sp,
+                    color = colors.textSecondary,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }

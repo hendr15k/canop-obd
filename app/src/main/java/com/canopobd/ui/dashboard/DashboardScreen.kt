@@ -75,6 +75,9 @@ import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
 import com.canopobd.ui.knownissues.KnownIssuesDialog
 import com.canopobd.ui.dashboard.OilHealthCard
 import com.canopobd.ui.dashboard.SensorValidationCard
+import com.canopobd.ui.dashboard.DriveStyleCard
+import com.canopobd.ui.dashboard.EfficiencyCard
+import com.canopobd.ui.dashboard.FuelSystemCard
 import com.canopobd.ui.coding.AstraJCodingDialog
 import com.canopobd.data.model.AstraJCodingModels
 import kotlin.math.abs
@@ -212,6 +215,9 @@ fun DashboardScreen(
     onResetDriveScore: () -> Unit,
     oilHealthPrediction: OilHealthPredictor.OilHealthPredictionResult,
     sensorValidationResult: ValidationResult,
+    driveStyleResult: com.canopobd.data.domain.DriveStyleAnalyzer.DriveStyleAnalysis,
+    drivingEfficiencyResult: com.canopobd.data.domain.DrivingEfficiencyScorer.EfficiencyScore,
+    fuelSystemResult: com.canopobd.data.domain.FuelSystemAnalyzer.FuelSystemAnalysis,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
     _onToggleCarProfile: () -> Unit,
@@ -345,6 +351,29 @@ fun DashboardScreen(
                     )
                     SensorValidationCard(
                         validationResult = sensorValidationResult,
+                        colors = colors,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DriveStyleCard(
+                        analysis = driveStyleResult,
+                        colors = colors,
+                        modifier = Modifier.weight(1f)
+                    )
+                    EfficiencyCard(
+                        score = drivingEfficiencyResult,
+                        colors = colors,
+                        modifier = Modifier.weight(1f)
+                    )
+                    FuelSystemCard(
+                        analysis = fuelSystemResult,
                         colors = colors,
                         modifier = Modifier.weight(1f)
                     )

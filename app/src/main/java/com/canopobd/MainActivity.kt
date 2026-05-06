@@ -205,6 +205,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val turboCooldownState by viewModel.turboCooldownState.collectAsState()
     val oilHealthPrediction by viewModel.oilHealthPrediction.collectAsState()
     val sensorValidationResult by viewModel.sensorValidationResult.collectAsState()
+    val driveStyleResult by viewModel.driveStyleResult.collectAsState()
+    val drivingEfficiencyResult by viewModel.drivingEfficiencyResult.collectAsState()
+    val fuelSystemResult by viewModel.fuelSystemResult.collectAsState()
 
     // Extended Feature State
     val showExtendedGearbox by viewModel.showExtendedGearbox.collectAsState()
@@ -396,6 +399,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onResetDriveScore = viewModel::resetDriveScore,
         oilHealthPrediction = oilHealthPrediction,
         sensorValidationResult = sensorValidationResult,
+        driveStyleResult = driveStyleResult,
+        drivingEfficiencyResult = drivingEfficiencyResult,
+        fuelSystemResult = fuelSystemResult,
         onToggleTurboMonitor = viewModel::toggleTurboMonitor,
         onToggleTimingChainMonitor = viewModel::toggleTimingChainMonitor,
         _onToggleCarProfile = viewModel::toggleCarProfile,

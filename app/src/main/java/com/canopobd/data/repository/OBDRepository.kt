@@ -505,7 +505,8 @@ class OBDRepository(
                         turboTurbineInletTemp = results[OBDPID.TURBO_TURBINE_INLET_TEMP],
                         turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
                         vin = storedVin,
-                        timestamp = now
+                        timestamp = now,
+                        distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                     )
 
                     mode22Counter++

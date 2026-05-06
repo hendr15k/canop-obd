@@ -388,7 +388,8 @@ data class OBDData(
     val vvtExhaustMode22: Double = 0.0,
     val fuelConsumptionInstant: Double = 0.0,
     val fuelConsumptionAverage: Double = 0.0,
-    val afrRatioMode22: Double = 0.0
+    val afrRatioMode22: Double = 0.0,
+    val distanceWithMil: Double = 0.0
 )
 
 data class GaugeConfig(
