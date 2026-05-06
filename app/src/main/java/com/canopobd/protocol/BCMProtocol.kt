@@ -299,6 +299,267 @@ object BCMProtocol {
         const val TPMS_RESET = 0x0302
         const val OIL_RESET = 0x0303
         const val INSPECTION_RESET = 0x0304
+        const val BRAKE_Pedal_RESET = 0x0305
+        const val CLUTCH_RESET = 0x0306
+    }
+
+    // DTC (Diagnostic Trouble Codes) Services
+    object DTC {
+        // Mode 03 - Read DTCs
+        const val MODE_READ = 0x03
+        // Mode 07 - Read Pending DTCs
+        const val MODE_PENDING = 0x07
+        // Mode 0A - Read Permanent DTCs
+        const val MODE_PERMANENT = 0x0A
+        // Mode 04 - Clear DTCs
+        const val MODE_CLEAR = 0x04
+        
+        // DTC Status Byte Masks
+        const val STATUS_MALFUNCTION = 0x01
+        const val STATUS_PENDING = 0x08
+        const val STATUS_PERMANENT = 0x20
+        
+        fun buildClearDTCs() = "04"
+        fun buildReadDTCs() = "03"
+        fun buildReadPendingDTCs() = "07"
+        fun buildReadPermanentDTCs() = "0A"
+    }
+
+    // Mode 01 PIDs (Live Data)
+    object Mode01 {
+        const val SUPPORTED_PIDS = 0x00
+        const val DTC_STATUS = 0x01
+        const val FUEL_SYSTEM_STATUS = 0x03
+        const val ENGINE_LOAD = 0x04
+        const val COOLANT_TEMP = 0x05
+        const val FUEL_PRESSURE = 0x0A
+        const val INTAKE_MAP = 0x0B
+        const val ENGINE_RPM = 0x0C
+        const val VEHICLE_SPEED = 0x0D
+        const val TIMING_ADVANCE = 0x0E
+        const val INTAKE_TEMP = 0x0F
+        const val MAF_RATE = 0x10
+        const val THROTTLE_POSITION = 0x11
+        const val O2_VOLTAGE = 0x14
+        const val O2_VOLTAGE_B1S2 = 0x15
+        const val O2_VOLTAGE_B1S3 = 0x16
+        const val O2_VOLTAGE_B1S4 = 0x17
+        const val FUEL_LEVEL = 0x2F
+        const val COMMANDED_EGR = 0x2C
+        const val EGR_ERROR = 0x2D
+        const val COMMANDED_EVAP = 0x2E
+        const val FUEL_TANK_LEVEL = 0x2F
+        const val ABSOLUTE_LOAD = 0x43
+        const val RELATIVE_THROTTLE = 0x45
+        const val AMBIENT_TEMP = 0x46
+        const val ABSOLUTE_THROTTLE_B = 0x47
+        const val ABSOLUTE_THROTTLE_C = 0x48
+        const val ACC_PEDAL_D = 0x49
+        const val ACC_PEDAL_E = 0x4A
+        const val ACC_PEDAL_F = 0x4B
+        const val THROTTLE_ACTUATOR = 0x4C
+        const val RUN_TIME = 0x1F
+        const val DISTANCE_MIL = 0x21
+        const val DTC_CNT = 0x22
+        const val FUEL_RAIL_PRESSURE = 0x59
+        
+        val PID_NAMES = mapOf(
+            SUPPORTED_PIDS to "Supported PIDs",
+            DTC_STATUS to "DTC Status",
+            FUEL_SYSTEM_STATUS to "Fuel System Status",
+            ENGINE_LOAD to "Engine Load (%)",
+            COOLANT_TEMP to "Coolant Temp (°C)",
+            FUEL_PRESSURE to "Fuel Pressure (kPa)",
+            INTAKE_MAP to "Intake Manifold Pressure (kPa)",
+            ENGINE_RPM to "Engine RPM",
+            VEHICLE_SPEED to "Vehicle Speed (km/h)",
+            TIMING_ADVANCE to "Timing Advance (°)",
+            INTAKE_TEMP to "Intake Air Temp (°C)",
+            MAF_RATE to "MAF Air Flow Rate (g/s)",
+            THROTTLE_POSITION to "Throttle Position (%)",
+            FUEL_LEVEL to "Fuel Tank Level (%)",
+            COMMANDED_EGR to "Commanded EGR (%)",
+            EGR_ERROR to "EGR Error (%)",
+            RUN_TIME to "Engine Run Time (s)",
+            DISTANCE_MIL to "Distance with MIL (km)"
+        )
+        
+        fun buildPID(pid: Int): String = "01" + String.format("%02X", pid)
+    }
+
+    // Climate Control (HVAC)
+    object Climate {
+        const val CMD_PREFIX = 0x2EFF11
+        const val AC_ON = 0x01
+        const val AC_OFF = 0x00
+        const val AUTO_MODE = 0x02
+        const val DEFROST_FRONT = 0x04
+        const val DEFROST_REAR = 0x08
+        const val DEFROST_MIRROR = 0x10
+        const val RECIRCULATION = 0x20
+        const val AC_COMPRESSOR = 0x40
+        const val BLOWER_SPEED_1 = 0x01
+        const val BLOWER_SPEED_2 = 0x02
+        const val BLOWER_SPEED_3 = 0x03
+        const val BLOWER_SPEED_4 = 0x04
+        const val BLOWER_SPEED_5 = 0x05
+        const val BLOWER_SPEED_MAX = 0x06
+        
+        // Temperature (16 = 16°C, 32 = 32°C)
+        const val TEMP_16C = 0x10
+        const val TEMP_18C = 0x12
+        const val TEMP_20C = 0x14
+        const val TEMP_22C = 0x16
+        const val TEMP_24C = 0x18
+        const val TEMP_26C = 0x1A
+        const val TEMP_28C = 0x1C
+        
+        // Zone selections
+        const val ZONE_DRIVER = 0x01
+        const val ZONE_PASSENGER = 0x02
+        const val ZONE_REAR = 0x04
+        const val ZONE_ALL = 0x07
+        
+        fun acOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_ON.toByte())
+        fun acOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_OFF.toByte())
+        fun defrostFrontFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), DEFROST_FRONT.toByte())
+        fun defrostRearFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), DEFROST_REAR.toByte())
+        fun defrostAllFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), (DEFROST_FRONT or DEFROST_REAR or DEFROST_MIRROR).toByte())
+        fun blowerSpeedFrame(speed: Int) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), (0x80 or speed.coerceIn(0, 6)).toByte())
+        fun temperatureFrame(temp: Int) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), temp.coerceIn(16, 32).toByte())
+        fun autoModeFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AUTO_MODE.toByte())
+    }
+
+    // TPMS (Tire Pressure Monitoring System)
+    object TPMS {
+        const val ROUTINE_RESET = 0x0302
+        const val ROUTINE_LEARN = 0x0307
+        
+        // Tire Pressure Thresholds (kPa)
+        const val PRESSURE_LOW = 200  // ~29 psi
+        const val PRESSURE_NORMAL = 230  // ~33 psi
+        const val PRESSURE_HIGH = 250  // ~36 psi
+        
+        fun buildTPMSResetFrame() = "310302"
+        fun buildTPMSLearnFrame() = "310307"
+    }
+
+    // IPC (Instrument Panel Cluster) Controls
+    object IPC {
+        // IPC CAN IDs
+        const val IPC_TX = "7C3"
+        const val IPC_RX = "7CB"
+        
+        // IPC DIDs
+        const val CLUSTER_CONFIG = 0xC100
+        const val ODOMETER = 0xC200
+        const val SERVICE_REMINDER = 0xC300
+        const val UNITS_CONFIG = 0xC400
+        
+        // Service Interval DIDs
+        const val OIL_LIFE_DISTANCE = 0xD001
+        const val OIL_LIFE_TIME = 0xD002
+        const val INSPECTION_DISTANCE = 0xD003
+        const val INSPECTION_TIME = 0xD004
+        
+        // Unit Settings
+        const val UNITS_METRIC = 0x01
+        const val UNITS_IMPERIAL = 0x02
+        const val UNITS_US = 0x03
+        
+        fun buildOdometerRead() = "22" + String.format("%02X%02X", (ODOMETER shr 8) and 0xFF, ODOMETER and 0xFF)
+        fun buildUnitsRead() = "22" + String.format("%02X%02X", (UNITS_CONFIG shr 8) and 0xFF, UNITS_CONFIG and 0xFF)
+        fun buildUnitsWrite(units: Int) = "2E" + String.format("%02X%02X%02X", (UNITS_CONFIG shr 8) and 0xFF, UNITS_CONFIG and 0xFF, units)
+    }
+
+    // Vehicle Configuration
+    object VehicleConfig {
+        const val MODEL_OPEL_ASTRA_J = "ASTRA_J"
+        const val MODEL_OPEL_INSIGNIA = "INSIGNIA"
+        const val MODEL_VAUXHALL_ASTRA = "VAUXHALL_ASTRA"
+        
+        // VIN Structure
+        const val VIN_OFFSET_COUNTRY = 1
+        const val VIN_OFFSET_MANUFACTURER = 2
+        const val VIN_OFFSET_MODEL_YEAR = 9
+        const val VIN_OFFSET_PLANT = 10
+        
+        // Country Codes
+        const val COUNTRY_USA = "1"
+        const val COUNTRY_CANADA = "2"
+        const val COUNTRY_GERMANY = "W"
+        const val COUNTRY_UK = "V"
+        
+        // Manufacturer Codes
+        const val MFR_OPEL = "A"  // Opel/Vauxhall
+        const val MFR_GM = "G"    // General Motors
+        
+        fun parseVIN(vin: String): Map<String, String> {
+            if (vin.length != 17) return emptyMap()
+            return mapOf(
+                "country" to vin[0].toString(),
+                "manufacturer" to vin.substring(1, 3),
+                "modelYear" to vin[9].toString(),
+                "plant" to vin[10].toString(),
+                "serial" to vin.substring(11, 17)
+            )
+        }
+        
+        fun getYearCode(year: Char): Int {
+            return when (year) {
+                'A' -> 2010
+                'B' -> 2011
+                'C' -> 2012
+                'D' -> 2013
+                'E' -> 2014
+                'F' -> 2015
+                'G' -> 2016
+                'H' -> 2017
+                'J' -> 2018
+                'K' -> 2019
+                'L' -> 2020
+                'M' -> 2021
+                'N' -> 2022
+                'P' -> 2023
+                'R' -> 2024
+                else -> 0
+            }
+        }
+    }
+
+    // Oil Reset Service
+    object OilReset {
+        const val ROUTINE_ID = 0x0303
+        const val SERVICE_TYPE = 0xD800
+        
+        fun buildOilResetFrame() = "310303"
+        fun buildInspectionResetFrame() = "310304"
+    }
+
+    // Readiness Monitor Status
+    object Readiness {
+        const val PID = 0x01
+        
+        const val MISFIRE = 0
+        const val FUEL_SYSTEM = 1
+        const val COMPONENTS = 2
+        const val IGNITION = 3
+        const val EMISSIONS = 4
+        const val EVAP = 5
+        const val O2_HEATER = 6
+        const val O2_SENSOR = 7
+        const val EGR = 8
+        
+        val MONITOR_NAMES = listOf(
+            "Misfire", "Fuel System", "Components", "Ignition",
+            "Emissions", "Evaporative System", "O2 Heater", "O2 Sensor", "EGR/VVT System"
+        )
+        
+        fun buildReadinessRequest() = "0101"
+        
+        fun parseReadiness(data: Int): List<Boolean> {
+            return (0..8).map { shift -> (data shr shift) and 1 == 0 }
+        }
     }
 
     private fun hexToBytes(hex: String): ByteArray {
@@ -456,6 +717,28 @@ data class BCMCommand(
             "WINDOW_REAR_RIGHT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00000000", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64646464", BCMCommandType.UDS_WRITE)
+            
+            // Klima
+            "CLIMATE_AC_ON" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "01", BCMCommandType.UDS_WRITE)
+            "CLIMATE_AC_OFF" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "00", BCMCommandType.UDS_WRITE)
+            "CLIMATE_DEFROST_FRONT" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "04", BCMCommandType.UDS_WRITE)
+            "CLIMATE_DEFROST_REAR" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "08", BCMCommandType.UDS_WRITE)
+            "CLIMATE_DEFROST_ALL" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "1C", BCMCommandType.UDS_WRITE)
+            "CLIMATE_AUTO" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "02", BCMCommandType.UDS_WRITE)
+            
+            // TPMS
+            "TPMS_RESET" -> BCMCommand(0, "310302", BCMCommandType.NONE)
+            
+            // Oil/Inspection Reset
+            "OIL_RESET" -> BCMCommand(0, "310303", BCMCommandType.NONE)
+            "INSPECTION_RESET" -> BCMCommand(0, "310304", BCMCommandType.NONE)
+            
+            // DTCs
+            "DTC_READ" -> BCMCommand(0, "03", BCMCommandType.NONE)
+            "DTC_READ_PENDING" -> BCMCommand(0, "07", BCMCommandType.NONE)
+            "DTC_CLEAR" -> BCMCommand(0, "04", BCMCommandType.NONE)
+            "DTC_READ_PERMANENT" -> BCMCommand(0, "0A", BCMCommandType.NONE)
+            
             else -> null
         }
     }

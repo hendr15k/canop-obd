@@ -1535,6 +1535,257 @@ class ELM327BTConnection(
             "ERROR: ${e.message}"
         }
     }
+
+    // =========================================================================
+    // EXTENDED DTC OPERATIONS (Mode 03, 07, 0A)
+    // =========================================================================
+    
+    suspend fun readPermanentDTCs(): DTCResponse = withContext(Dispatchers.IO) {
+        val codes = mutableListOf<DiagnosticTroubleCode>()
+        val pendingCodes = mutableListOf<DiagnosticTroubleCode>()
+        
+        try {
+            val response = sendCommandWithTimeout("0A")
+            val dtcs = parseDTCCodes(response, false)
+            codes.addAll(dtcs)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read permanent DTCs: ${e.message}")
+        }
+        
+        DTCResponse(codes, pendingCodes)
+    }
+    
+    suspend fun readAllDTCs(): DTCResponse = withContext(Dispatchers.IO) {
+        val codes = mutableListOf<DiagnosticTroubleCode>()
+        val pendingCodes = mutableListOf<DiagnosticTroubleCode>()
+        
+        try {
+            val stored = sendCommandWithTimeout("03")
+            codes.addAll(parseDTCCodes(stored, false))
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read stored DTCs: ${e.message}")
+        }
+        
+        try {
+            val pending = sendCommandWithTimeout("07")
+            pendingCodes.addAll(parseDTCCodes(pending, true))
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read pending DTCs: ${e.message}")
+        }
+        
+        try {
+            val permanent = sendCommandWithTimeout("0A")
+            codes.addAll(parseDTCCodes(permanent, false))
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read permanent DTCs: ${e.message}")
+        }
+        
+        DTCResponse(codes, pendingCodes)
+    }
+    
+    suspend fun getDTCStatusInfo(): Map<String, Any> = withContext(Dispatchers.IO) {
+        val info = mutableMapOf<String, Any>()
+        
+        try {
+            val response = sendCommandWithTimeout("0101")
+            val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+            
+            if (!hex.contains("ERROR") && hex.length >= 10) {
+                val dtcStatus = hex.substring(6, 8).toInt(16)
+                info["dtcCount"] = (dtcStatus and 0x7F)
+                info["milOn"] = (dtcStatus and 0x80) != 0
+                info[" ignitionType"] = when ((dtcStatus shr 6) and 0x03) {
+                    1 -> "Compression"
+                    2 -> "Spark"
+                    else -> "Unknown"
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to get DTC status info: ${e.message}")
+        }
+        
+        info
+    }
+    
+    // =========================================================================
+    // SERVICE RESET FUNCTIONS (TPMS, Oil, Inspection)
+    // =========================================================================
+    
+    suspend fun tpmsReset(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("310302")
+            delay(500)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "TPMS reset failed: ${e.message}")
+            false
+        }
+    }
+    
+    suspend fun oilReset(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("310303")
+            delay(500)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Oil reset failed: ${e.message}")
+            false
+        }
+    }
+    
+    suspend fun inspectionReset(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("310304")
+            delay(500)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Inspection reset failed: ${e.message}")
+            false
+        }
+    }
+    
+    suspend fun resetAdaptives(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("310201")
+            delay(500)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Reset adaptives failed: ${e.message}")
+            false
+        }
+    }
+    
+    // =========================================================================
+    // CLIMATE/HVAC CONTROL
+    // =========================================================================
+    
+    suspend fun climateACOn(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EFF1101")
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    suspend fun climateACOff(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EFF1100")
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    suspend fun climateDefrostFront(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EFF1104")
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    suspend fun climateDefrostRear(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EFF1108")
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    suspend fun climateDefrostAll(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EFF111C")
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    suspend fun climateBlowerSpeed(speed: Int): String = withContext(Dispatchers.IO) {
+        try {
+            val s = speed.coerceIn(0, 6)
+            sendCommandWithTimeout("2EFF11%02X".format(0x80 or s))
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    // =========================================================================
+    // VEHICLE CONFIGURATION
+    // =========================================================================
+    
+    suspend fun readOdometer(): Double? = withContext(Dispatchers.IO) {
+        try {
+            val response = sendCommandWithTimeout("22C200")
+            parseOdometerResponse(response)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read odometer: ${e.message}")
+            null
+        }
+    }
+    
+    private fun parseOdometerResponse(response: String): Double? {
+        val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+        if (hex.contains("ERROR") || hex.isEmpty() || !hex.startsWith("62C2")) return null
+        
+        val dataHex = hex.drop(6)
+        if (dataHex.length < 6) return null
+        
+        return try {
+            val a = dataHex.substring(0, 2).toInt(16)
+            val b = dataHex.substring(2, 4).toInt(16)
+            val c = dataHex.substring(4, 6).toInt(16)
+            ((a * 256 + b) * 256 + c) / 10.0
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    suspend fun setUnitsMetric(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EC40001")
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    suspend fun setUnitsImperial(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("2EC40002")
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    // =========================================================================
+    // DATA LOGGING
+    // =========================================================================
+    
+    suspend fun logSessionData(durationMs: Long, pids: List<OBDPID>): List<Map<String, Double>> = withContext(Dispatchers.IO) {
+        val logs = mutableListOf<Map<String, Double>>()
+        val startTime = System.currentTimeMillis()
+        val interval = 500L
+        
+        while (System.currentTimeMillis() - startTime < durationMs) {
+            val snapshot = mutableMapOf<String, Double>()
+            pids.forEach { pid ->
+                requestPID(pid)?.let { snapshot[pid.code] = it }
+            }
+            logs.add(snapshot)
+            delay(interval)
+        }
+        
+        logs
+    }
+    
+    suspend fun exportSessionToCSV(logs: List<Map<String, Double>>, pids: List<OBDPID>): String = withContext(Dispatchers.IO) {
+        val sb = StringBuilder()
+        sb.appendLine("Timestamp,${pids.joinToString(",") { it.name }}")
+        logs.forEachIndexed { index, log ->
+            sb.appendLine("${index * 500},${pids.joinToString(",") { log[it.code]?.toString() ?: "" }}")
+        }
+        sb.toString()
+    }
     
     /**
      * Set the CAN protocol to ISO 15765-4 (for direct CAN frames)
