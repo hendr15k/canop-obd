@@ -236,6 +236,12 @@ class DashboardViewModel private constructor(
     private val _showComfortControl = MutableStateFlow(false)
     val showComfortControl: StateFlow<Boolean> = _showComfortControl.asStateFlow()
 
+    private val _showQuickActions = MutableStateFlow(false)
+    val showQuickActions: StateFlow<Boolean> = _showQuickActions.asStateFlow()
+
+    private val _showVehicleProfileManager = MutableStateFlow(false)
+    val showVehicleProfileManager: StateFlow<Boolean> = _showVehicleProfileManager.asStateFlow()
+
     private val _showCodingDialog = MutableStateFlow(false)
     val showCodingDialog: StateFlow<Boolean> = _showCodingDialog.asStateFlow()
     private val _codingResult = MutableStateFlow<AstraJCodingModels.CodingResult?>(null)
@@ -771,6 +777,8 @@ class DashboardViewModel private constructor(
     fun toggleExtendedFuel() { _showExtendedFuel.value = !_showExtendedFuel.value }
     fun toggleExtendedMaintenance() { _showExtendedMaintenance.value = !_showExtendedMaintenance.value }
     fun toggleComfortControl() { _showComfortControl.value = !_showComfortControl.value }
+    fun toggleQuickActions() { _showQuickActions.value = !_showQuickActions.value }
+    fun toggleVehicleProfileManager() { _showVehicleProfileManager.value = !_showVehicleProfileManager.value }
 
     fun toggleCodingDialog() { _showCodingDialog.value = !_showCodingDialog.value }
 
@@ -779,6 +787,25 @@ class DashboardViewModel private constructor(
             val action = BCMCommandMapper.actionToATCommand(command.action.name, command.value)
             if (action != null) {
                 repository.sendRawCommand(action)
+            }
+        }
+    }
+
+    fun executeQuickAction(actionId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            when (actionId) {
+                "dtc_clear" -> repository.clearDTCs()
+                "dtc_read" -> repository.readDTCs()
+                "vin_read" -> repository.getStoredVin()
+                "tpms_reset" -> repository.sendRawCommand("310302")
+                "oil_reset" -> repository.sendRawCommand("310303")
+                "inspection_reset" -> repository.sendRawCommand("310304")
+                else -> {
+                    val atCmd = BCMCommandMapper.actionToATCommand(actionId.uppercase())
+                    if (atCmd != null) {
+                        repository.sendRawCommand(atCmd)
+                    }
+                }
             }
         }
     }

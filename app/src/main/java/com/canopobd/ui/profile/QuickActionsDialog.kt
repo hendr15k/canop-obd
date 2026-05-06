@@ -42,39 +42,40 @@ fun QuickActionsDialog(
         listOf(
             // Diagnostics
             QuickAction("dtc_read", "Fehler-Codes", "DTCs lesen", Icons.Filled.Warning, "Diagnose") { onNavigateTo("dtc") },
-            QuickAction("dtc_clear", "Fehler loeschen", "DTCs loeschen", Icons.Filled.Delete, "Diagnose") { onExecuteAction("DTC_CLEAR") },
+            QuickAction("dtc_clear", "Fehler loeschen", "DTCs loeschen", Icons.Filled.Delete, "Diagnose") { onExecuteAction("dtc_clear") },
             QuickAction("readiness", "Readiness Status", "Pruefstatus abfragen", Icons.Filled.CheckCircle, "Diagnose") { onNavigateTo("readiness") },
             
             // Comfort
-            QuickAction("unlock", "Entriegeln", "Fahrzeug entriegeln", Icons.Filled.LockOpen, "Komfort") { onExecuteAction("UNLOCK") },
-            QuickAction("lock", "Verriegeln", "Fahrzeug verriegeln", Icons.Filled.Lock, "Komfort") { onExecuteAction("LOCK") },
-            QuickAction("windows_down", "Fenster auf", "Alle Fenster oeffnen", Icons.Filled.Window, "Komfort") { onExecuteAction("WINDOW_ALL_DOWN") },
-            QuickAction("windows_up", "Fenster zu", "Alle Fenster schliessen", Icons.Filled.Window, "Komfort") { onExecuteAction("WINDOW_ALL_UP") },
-            QuickAction("sunroof_open", "Sunroof auf", "Schiebedach oeffnen", Icons.Filled.Roofing, "Komfort") { onExecuteAction("SUNROOF_OPEN") },
-            QuickAction("mirror_fold", "Spiegel klappen", "Spiegel einklappen", Icons.Filled.SwapHoriz, "Komfort") { onExecuteAction("MIRROR_FOLD") },
+            QuickAction("unlock", "Entriegeln", "Fahrzeug entriegeln", Icons.Filled.LockOpen, "Komfort") { onExecuteAction("unlock") },
+            QuickAction("lock", "Verriegeln", "Fahrzeug verriegeln", Icons.Filled.Lock, "Komfort") { onExecuteAction("lock") },
+            QuickAction("windows_down", "Fenster auf", "Alle Fenster oeffnen", Icons.Filled.Window, "Komfort") { onExecuteAction("window_all_down") },
+            QuickAction("windows_up", "Fenster zu", "Alle Fenster schliessen", Icons.Filled.Window, "Komfort") { onExecuteAction("window_all_up") },
+            QuickAction("sunroof_open", "Sunroof auf", "Schiebedach oeffnen", Icons.Filled.Roofing, "Komfort") { onExecuteAction("sunroof_open") },
+            QuickAction("mirror_fold", "Spiegel klappen", "Spiegel einklappen", Icons.Filled.SwapHoriz, "Komfort") { onExecuteAction("mirror_fold") },
             
             // Lighting
-            QuickAction("lights_on", "Parklichter an", "Parklichter einschalten", Icons.Filled.LightMode, "Beleuchtung") { onExecuteAction("PARKING_LIGHTS_ON") },
-            QuickAction("lights_off", "Parklichter aus", "Parklichter ausschalten", Icons.Filled.DarkMode, "Beleuchtung") { onExecuteAction("PARKING_LIGHTS_OFF") },
-            QuickAction("coming_home", "Coming Home", "Coming Home aktivieren", Icons.Filled.Home, "Beleuchtung") { onExecuteAction("COMING_HOME_ON") },
-            QuickAction("fog_on", "Nebelschluss", "Nebelschlussleuchte an", Icons.Filled.Highlight, "Beleuchtung") { onExecuteAction("FOG_LIGHTS_ON") },
+            QuickAction("lights_on", "Parklichter an", "Parklichter einschalten", Icons.Filled.LightMode, "Beleuchtung") { onExecuteAction("parking_lights_on") },
+            QuickAction("lights_off", "Parklichter aus", "Parklichter ausschalten", Icons.Filled.DarkMode, "Beleuchtung") { onExecuteAction("parking_lights_off") },
+            QuickAction("coming_home", "Coming Home", "Coming Home aktivieren", Icons.Filled.Home, "Beleuchtung") { onExecuteAction("coming_home_on") },
+            QuickAction("fog_on", "Nebelschluss", "Nebelschlussleuchte an", Icons.Filled.Highlight, "Beleuchtung") { onExecuteAction("fog_lights_on") },
             
             // Heating
-            QuickAction("rear_heat", "Heckscheibe", "Heckscheibenheizung", Icons.Filled.ChevronLeft, "Heizung") { onExecuteAction("REAR_HEATING_ON") },
-            QuickAction("seat_heat_1", "Sitzheizung", "Fahrersitz Stufe 1", Icons.Filled.Chair, "Heizung") { onExecuteAction("SEAT_DRIVER_HEAT_1") },
-            QuickAction("steering_heat", "Lenkrad", "Lenkradheizung", Icons.Filled.PanTool, "Heizung") { onExecuteAction("STEERING_HEATING_1") },
-            QuickAction("climate_defrost", "Defrost", "Alle Enteisungen", Icons.Filled.AcUnit, "Heizung") { onExecuteAction("CLIMATE_DEFROST_ALL") },
+            QuickAction("rear_heat", "Heckscheibe", "Heckscheibenheizung", Icons.Filled.ChevronLeft, "Heizung") { onExecuteAction("rear_heating_on") },
+            QuickAction("seat_heat_1", "Sitzheizung", "Fahrersitz Stufe 1", Icons.Filled.Chair, "Heizung") { onExecuteAction("seat_driver_heat_1") },
+            QuickAction("steering_heat", "Lenkrad", "Lenkradheizung", Icons.Filled.PanTool, "Heizung") { onExecuteAction("steering_heating_1") },
+            QuickAction("climate_defrost", "Defrost", "Alle Enteisungen", Icons.Filled.AcUnit, "Heizung") { onExecuteAction("climate_defrost_all") },
             
             // Service
-            QuickAction("tpms_reset", "TPMS Reset", "Reifendruck zuruecksetzen", Icons.Filled.TireRepair, "Service") { onExecuteAction("TPMS_RESET") },
-            QuickAction("oil_reset", "Oel Reset", "Oelwechsel zuruecksetzen", Icons.Filled.OilBarrel, "Service") { onExecuteAction("OIL_RESET") },
-            QuickAction("wiper_test", "Wischer", "Testwischanlage", Icons.Filled.WaterDrop, "Service") { onExecuteAction("WIPER_LOW") },
-            QuickAction("horn", "Hupe", "Testhupen", Icons.Filled.VolumeUp, "Service") { onExecuteAction("HORN") },
+            QuickAction("tpms_reset", "TPMS Reset", "Reifendruck zuruecksetzen", Icons.Filled.TireRepair, "Service") { onExecuteAction("tpms_reset") },
+            QuickAction("oil_reset", "Oel Reset", "Oelwechsel zuruecksetzen", Icons.Filled.OilBarrel, "Service") { onExecuteAction("oil_reset") },
+            QuickAction("wiper_test", "Wischer", "Testwischanlage", Icons.Filled.WaterDrop, "Service") { onExecuteAction("wiper_low") },
+            QuickAction("horn", "Hupe", "Testhupen", Icons.Filled.VolumeUp, "Service") { onExecuteAction("horn") },
             
             // Data
             QuickAction("vin_read", "VIN lesen", "Fahrzeug-ID abfragen", Icons.Filled.Badge, "Daten") { onNavigateTo("vin") },
             QuickAction("protocol", "Protokoll", "CAN-Protokoll info", Icons.Filled.Memory, "Daten") { onNavigateTo("protocol") },
             QuickAction("supported_pids", "PIDs scannen", "Unterstuetzte PIDs", Icons.Filled.Search, "Daten") { onNavigateTo("pids") },
+            QuickAction("datalog_export", "Export CSV", "Session exportieren", Icons.Filled.Download, "Daten") { onNavigateTo("datalog_export") },
             
             // Quick Access
             QuickAction("dashboard", "Dashboard", "Hauptbildschirm", Icons.Filled.Dashboard, "Navigation") { onNavigateTo("dashboard") },

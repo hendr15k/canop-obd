@@ -28,6 +28,7 @@ import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
 import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.ui.update.UpdateDialog
+import com.canopobd.ui.profile.SavedProfile
 import com.canopobd.viewmodel.DashboardViewModel
 
 class MainActivity : ComponentActivity() {
@@ -274,6 +275,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showExtendedFuel by viewModel.showExtendedFuel.collectAsState()
     val showExtendedMaintenance by viewModel.showExtendedMaintenance.collectAsState()
     val showComfortControl by viewModel.showComfortControl.collectAsState()
+    val showQuickActions by viewModel.showQuickActions.collectAsState()
+    val showVehicleProfileManager by viewModel.showVehicleProfileManager.collectAsState()
     val showCodingDialog by viewModel.showCodingDialog.collectAsState()
     val codingInProgress by viewModel.codingInProgress.collectAsState()
     val codingResult by viewModel.codingResult.collectAsState()
@@ -491,6 +494,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showExtendedMaintenance = showExtendedMaintenance,
         showComfortControl = showComfortControl,
         onToggleExtendedGearbox = viewModel::toggleExtendedGearbox,
+        showQuickActions = showQuickActions,
+        showVehicleProfileManager = showVehicleProfileManager,
+        onToggleQuickActions = viewModel::toggleQuickActions,
+        onToggleVehicleProfileManager = viewModel::toggleVehicleProfileManager,
+        onExecuteQuickAction = viewModel::executeQuickAction,
+        onLoadProfile = { profile -> },
+        currentVehicleProfile = null,
         onToggleExtendedTurbo = viewModel::toggleExtendedTurbo,
         onToggleExtendedFuel = viewModel::toggleExtendedFuel,
         onToggleExtendedMaintenance = viewModel::toggleExtendedMaintenance,

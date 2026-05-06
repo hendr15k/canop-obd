@@ -82,6 +82,9 @@ import com.canopobd.ui.dashboard.EVAPAnalyzerCard
 import com.canopobd.ui.dashboard.TurboAnalyzerCard
 import com.canopobd.ui.coding.AstraJCodingDialog
 import com.canopobd.data.model.AstraJCodingModels
+import com.canopobd.ui.profile.QuickActionsDialog
+import com.canopobd.ui.profile.VehicleProfileManagerDialog
+import com.canopobd.ui.profile.SavedProfile
 import kotlin.math.abs
 
 @Composable
@@ -255,6 +258,13 @@ fun DashboardScreen(
     onToggleExtendedMaintenance: () -> Unit,
     onToggleComfortControl: () -> Unit,
     onSendBCMCommand: (ComfortCommand) -> Unit,
+    showQuickActions: Boolean,
+    showVehicleProfileManager: Boolean,
+    onToggleQuickActions: () -> Unit,
+    onToggleVehicleProfileManager: () -> Unit,
+    onExecuteQuickAction: (String) -> Unit,
+    onLoadProfile: (SavedProfile) -> Unit,
+    currentVehicleProfile: com.canopobd.data.model.VehicleProfile?,
     showCodingDialog: Boolean,
     codingInProgress: Boolean,
     codingResult: com.canopobd.data.model.AstraJCodingModels.CodingResult?,
@@ -341,6 +351,8 @@ fun DashboardScreen(
                         onToggleTurboCooldown = onToggleTurboCooldown,
                         onToggleComfortControl = onToggleComfortControl,
                         onToggleCodingDialog = onToggleCodingDialog,
+                        onToggleQuickActions = onToggleQuickActions,
+                        onToggleVehicleProfileManager = onToggleVehicleProfileManager,
                         onDisconnect = onDisconnect,
                         recordingActive = recordingActive,
                         isGPSTracking = isGPSTracking,
@@ -637,6 +649,41 @@ fun DashboardScreen(
                 onClearResult = onClearCodingResult
             )
         }
+        if (showQuickActions) {
+            QuickActionsDialog(
+                onDismiss = onToggleQuickActions,
+                onExecuteAction = { actionId ->
+                    onExecuteQuickAction(actionId)
+                    onToggleQuickActions()
+                },
+                onNavigateTo = { destination ->
+                    onToggleQuickActions()
+                    when (destination) {
+                        "dtc" -> onToggleDTCDialog()
+                        "readiness" -> onToggleReadiness()
+                        "dashboard" -> {}
+                        "settings" -> onToggleSettings()
+                        "maintenance" -> onToggleMaintenance()
+                        "vehicle_info" -> onToggleVehicleInfo()
+                        "datalog_export" -> onToggleDataLog()
+                        else -> {}
+                    }
+                }
+            )
+        }
+        if (showVehicleProfileManager) {
+            VehicleProfileManagerDialog(
+                onDismiss = onToggleVehicleProfileManager,
+                onLoadProfile = { profile ->
+                    onLoadProfile(profile)
+                    onToggleVehicleProfileManager()
+                },
+                onExportProfile = { profile ->
+                    onToggleVehicleProfileManager()
+                },
+                currentProfile = currentVehicleProfile
+            )
+        }
     }
 }
 
@@ -797,6 +844,8 @@ private fun DashboardHeader(
     onToggleTurboCooldown: () -> Unit,
     onToggleComfortControl: () -> Unit,
     onToggleCodingDialog: () -> Unit,
+    onToggleQuickActions: () -> Unit,
+    onToggleVehicleProfileManager: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -955,6 +1004,12 @@ private fun DashboardHeader(
                     onClick = onToggleSettings
                 )
                 QuickActionButton(
+                    icon = Icons.Filled.FlashOn,
+                    label = "Quick",
+                    color = colors.gaugeOrange,
+                    onClick = onToggleQuickActions
+                )
+                QuickActionButton(
                     icon = Icons.Filled.Bluetooth,
                     label = stringResource(R.string.bluetooth),
                     color = colors.accent,
@@ -984,6 +1039,12 @@ private fun DashboardHeader(
                         label = stringResource(R.string.dashboard_vehicle_profile),
                         color = colors.highlight,
                         onClick = _onToggleCarProfile
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.DirectionsCar,
+                        label = "Profile",
+                        color = colors.gaugeGreen,
+                        onClick = onToggleVehicleProfileManager
                     )
                     QuickActionButton(
                         icon = Icons.Filled.BugReport,

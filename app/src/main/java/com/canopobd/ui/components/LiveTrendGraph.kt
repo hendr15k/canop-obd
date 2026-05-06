@@ -333,3 +333,93 @@ class TrendRecorder(private val maxPoints: Int = 60) {
         _chargeAirTempHistory.clear()
     }
 }
+
+data class MultiLineData(
+    val series: List<TrendPoint>,
+    val label: String,
+    val unit: String,
+    val color: Color,
+    val maxValue: Float
+)
+
+@Composable
+fun MultiLineTrendChart(
+    dataSeries: List<MultiLineData>,
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalAppColors.current
+    
+    Column(modifier = modifier) {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = colors.textPrimary
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            dataSeries.forEach { series ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(series.color, RoundedCornerShape(4.dp))
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = series.label,
+                        fontSize = 10.sp,
+                        color = colors.textSecondary
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .background(colors.surfaceCard, RoundedCornerShape(8.dp))
+        ) {
+            val width = size.width
+            val height = size.height
+            val padding = 8.dp.toPx()
+            val chartWidth = width - padding * 2
+            val chartHeight = height - padding * 2
+            
+            dataSeries.forEach { data ->
+                if (data.series.size < 2) return@forEach
+                
+                val maxVal = data.maxValue.coerceAtLeast(1f)
+                val path = Path()
+                var isFirst = true
+                
+                data.series.forEachIndexed { index, point ->
+                    val x = padding + (index.toFloat() / (data.series.size - 1).coerceAtLeast(1)) * chartWidth
+                    val y = padding + chartHeight - (point.value.coerceIn(0f, maxVal) / maxVal) * chartHeight
+                    
+                    if (isFirst) {
+                        path.moveTo(x, y)
+                        isFirst = false
+                    } else {
+                        path.lineTo(x, y)
+                    }
+                }
+                
+                drawPath(
+                    path = path,
+                    color = data.color,
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
