@@ -281,6 +281,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val codingResult by viewModel.codingResult.collectAsState()
     val emulatorMode by viewModel.emulatorMode.collectAsState()
 
+    // TPMS & Climate State
+    val showTPMSDialog by viewModel.showTPMSDialog.collectAsState()
+    val showClimateControl by viewModel.showClimateControl.collectAsState()
+
     // Safety & ECO State
     val showSafetySystems by viewModel.showSafetySystems.collectAsState()
     val safetySummary by viewModel.safetySummary.collectAsState()
@@ -333,6 +337,22 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
             tips = ecoTips,
             onDismiss = viewModel::dismissEcoScore,
             onSetFuelPrice = viewModel::setFuelPrice
+        )
+    }
+
+    if (showTPMSDialog) {
+        com.canopobd.ui.tpms.TPMSDialog(
+            onTPMSReset = viewModel::onTPMSReset,
+            onDismiss = viewModel::toggleTPMSDialog,
+            isConnected = connectionState == com.canopobd.data.model.OBDConnectionState.Connected
+        )
+    }
+
+    if (showClimateControl) {
+        com.canopobd.ui.climate.ClimateControlDialog(
+            initialState = com.canopobd.ui.climate.ClimateState(),
+            onCommand = viewModel::onSendClimateCommand,
+            onDismiss = viewModel::toggleClimateControl
         )
     }
 
@@ -510,6 +530,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleCodingDialog = viewModel::toggleCodingDialog,
         onApplyCodingOption = viewModel::applyCodingOption,
         onClearCodingResult = viewModel::clearCodingResult,
+        showTPMSDialog = showTPMSDialog,
+        onToggleTPMSDialog = viewModel::toggleTPMSDialog,
+        onTPMSReset = viewModel::onTPMSReset,
+        showClimateControl = showClimateControl,
+        onToggleClimateControl = viewModel::toggleClimateControl,
+        onSendClimateCommand = viewModel::onSendClimateCommand,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
         emulatorMode = emulatorMode,

@@ -85,6 +85,9 @@ import com.canopobd.data.model.AstraJCodingModels
 import com.canopobd.ui.profile.QuickActionsDialog
 import com.canopobd.ui.profile.VehicleProfileManagerDialog
 import com.canopobd.ui.profile.SavedProfile
+import com.canopobd.ui.tpms.TPMSDialog
+import com.canopobd.ui.climate.ClimateControlDialog
+import com.canopobd.ui.climate.ClimateCommand
 import kotlin.math.abs
 
 @Composable
@@ -273,6 +276,12 @@ fun DashboardScreen(
     appThemeMode: com.canopobd.data.model.AppThemeMode,
     onSetAppThemeMode: (com.canopobd.data.model.AppThemeMode) -> Unit,
     onSetEmulatorMode: (Boolean) -> Unit,
+    showTPMSDialog: Boolean,
+    onToggleTPMSDialog: () -> Unit,
+    onTPMSReset: () -> Unit,
+    showClimateControl: Boolean,
+    onToggleClimateControl: () -> Unit,
+    onSendClimateCommand: (com.canopobd.ui.climate.ClimateCommand) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -646,6 +655,20 @@ fun DashboardScreen(
                 onDismiss = onToggleCodingDialog,
                 onApplyOption = onApplyCodingOption,
                 onClearResult = onClearCodingResult
+            )
+        }
+        if (showTPMSDialog) {
+            TPMSDialog(
+                onTPMSReset = onTPMSReset,
+                onDismiss = onToggleTPMSDialog,
+                isConnected = connectionState == OBDConnectionState.Connected
+            )
+        }
+        if (showClimateControl) {
+            ClimateControlDialog(
+                initialState = com.canopobd.ui.climate.ClimateState(),
+                onCommand = onSendClimateCommand,
+                onDismiss = onToggleClimateControl
             )
         }
         if (showQuickActions) {

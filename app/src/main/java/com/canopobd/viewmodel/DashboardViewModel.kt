@@ -247,6 +247,12 @@ class DashboardViewModel private constructor(
     private val _codingResult = MutableStateFlow<AstraJCodingModels.CodingResult?>(null)
     val codingResult: StateFlow<AstraJCodingModels.CodingResult?> = _codingResult.asStateFlow()
     private val _codingInProgress = MutableStateFlow(false)
+
+    private val _showTPMSDialog = MutableStateFlow(false)
+    val showTPMSDialog: StateFlow<Boolean> = _showTPMSDialog.asStateFlow()
+
+    private val _showClimateControl = MutableStateFlow(false)
+    val showClimateControl: StateFlow<Boolean> = _showClimateControl.asStateFlow()
     val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
@@ -781,6 +787,29 @@ class DashboardViewModel private constructor(
     fun toggleVehicleProfileManager() { _showVehicleProfileManager.value = !_showVehicleProfileManager.value }
 
     fun toggleCodingDialog() { _showCodingDialog.value = !_showCodingDialog.value }
+
+    fun toggleTPMSDialog() { _showTPMSDialog.value = !_showTPMSDialog.value }
+    fun toggleClimateControl() { _showClimateControl.value = !_showClimateControl.value }
+
+    fun onTPMSReset() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.sendRawCommand("310302")
+        }
+    }
+
+    fun onSendClimateCommand(command: com.canopobd.ui.climate.ClimateCommand) {
+        viewModelScope.launch(Dispatchers.IO) {
+            when (command) {
+                com.canopobd.ui.climate.ClimateCommand.AC_ON -> repository.sendRawCommand("310302")
+                com.canopobd.ui.climate.ClimateCommand.AC_OFF -> repository.sendRawCommand("310302")
+                com.canopobd.ui.climate.ClimateCommand.AUTO_MODE -> repository.sendRawCommand("310302")
+                com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT -> repository.sendRawCommand("310302")
+                com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR -> repository.sendRawCommand("310302")
+                com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS -> repository.sendRawCommand("310302")
+                else -> Log.d(TAG, "Climate command: $command")
+            }
+        }
+    }
 
     fun onSendBCMCommand(command: ComfortCommand) {
         viewModelScope.launch(Dispatchers.IO) {
