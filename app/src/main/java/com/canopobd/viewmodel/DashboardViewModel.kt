@@ -38,6 +38,8 @@ class DashboardViewModel private constructor(
 
     private val context: Application = application
     private val turboViewModel = TurboViewModel(application)
+    private val safetyViewModel = SafetyViewModel(application)
+    private val ecoScoreViewModel = EcoScoreViewModel(application)
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val repository = OBDRepository(context, bluetoothManager?.adapter)
@@ -166,6 +168,20 @@ class DashboardViewModel private constructor(
     val showTurboMonitor: StateFlow<Boolean> get() = turboViewModel.showTurboMonitor
     val showTurboCooldown: StateFlow<Boolean> get() = turboViewModel.showTurboCooldown
     val turboCooldownState: StateFlow<com.canopobd.data.model.TurboCoolDownState> get() = turboViewModel.turboCooldownState
+
+    // Safety System State
+    val showSafetySystems: StateFlow<Boolean> get() = safetyViewModel.showSafetySystems
+    val safetySummary: StateFlow<com.canopobd.data.model.SafetySummary> get() = safetyViewModel.safetySummary
+    val safetyDTCs: StateFlow<List<com.canopobd.data.model.SafetyDtc>> get() = safetyViewModel.safetyDTCs
+
+    // ECO Score State
+    val showEcoScoreDialog: StateFlow<Boolean> get() = ecoScoreViewModel.showEcoScore
+    val ecoScoreData: StateFlow<com.canopobd.data.model.EcoScoreData> get() = ecoScoreViewModel.ecoScore
+    val co2Data: StateFlow<com.canopobd.data.model.CO2Data> get() = ecoScoreViewModel.co2Data
+    val fuelCostData: StateFlow<com.canopobd.data.model.FuelCostData> get() = ecoScoreViewModel.fuelCost
+    val rangeEstimation: StateFlow<com.canopobd.data.model.RangeEstimation> get() = ecoScoreViewModel.rangeEstimation
+    val drivingStyleAnalysis: StateFlow<com.canopobd.data.model.DrivingStyleAnalysis> get() = ecoScoreViewModel.drivingStyle
+    val ecoTips: StateFlow<List<com.canopobd.data.model.EcoTip>> get() = ecoScoreViewModel.tips
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
@@ -514,6 +530,13 @@ class DashboardViewModel private constructor(
     fun toggleTurboCooldown() {
         turboViewModel.toggleTurboCooldown()
     }
+
+    fun toggleSafetySystems() { safetyViewModel.toggleSafetySystems() }
+    fun dismissSafetySystems() { safetyViewModel.dismissSafetySystems() }
+
+    fun toggleEcoScore() { ecoScoreViewModel.toggleEcoScore() }
+    fun dismissEcoScore() { ecoScoreViewModel.dismissEcoScore() }
+    fun setFuelPrice(price: Double) { ecoScoreViewModel.setFuelPrice(price) }
 
     fun selectCarProfile(profile: com.canopobd.data.model.CarProfile) {
         _carProfileState.value = profile

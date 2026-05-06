@@ -202,11 +202,43 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showTurboCooldown by viewModel.showTurboCooldown.collectAsState()
     val turboCooldownState by viewModel.turboCooldownState.collectAsState()
 
+    // Safety & ECO State
+    val showSafetySystems by viewModel.showSafetySystems.collectAsState()
+    val safetySummary by viewModel.safetySummary.collectAsState()
+    val showEcoScoreDialog by viewModel.showEcoScoreDialog.collectAsState()
+    val ecoScoreData by viewModel.ecoScoreData.collectAsState()
+    val co2Data by viewModel.co2Data.collectAsState()
+    val fuelCostData by viewModel.fuelCostData.collectAsState()
+    val rangeEstimation by viewModel.rangeEstimation.collectAsState()
+    val drivingStyleAnalysis by viewModel.drivingStyleAnalysis.collectAsState()
+    val ecoTips by viewModel.ecoTips.collectAsState()
+
     if (showUpdateDialog && availableUpdate != null) {
         UpdateDialog(
             update = availableUpdate!!,
             onDismiss = viewModel::dismissUpdateDialog,
             onSkipVersion = viewModel::skipUpdateVersion
+        )
+    }
+
+    if (showSafetySystems) {
+        com.canopobd.ui.safety.SafetySystemsDialog(
+            safetySummary = safetySummary,
+            onDismiss = viewModel::dismissSafetySystems
+        )
+    }
+
+    if (showEcoScoreDialog) {
+        com.canopobd.ui.ecoscore.EcoScoreDialog(
+            ecoScore = ecoScoreData,
+            co2Data = co2Data,
+            fuelCost = fuelCostData,
+            rangeEstimation = rangeEstimation,
+            efficiency = com.canopobd.data.model.FuelEfficiencyMetrics(),
+            drivingStyle = drivingStyleAnalysis,
+            tips = ecoTips,
+            onDismiss = viewModel::dismissEcoScore,
+            onSetFuelPrice = viewModel::setFuelPrice
         )
     }
 

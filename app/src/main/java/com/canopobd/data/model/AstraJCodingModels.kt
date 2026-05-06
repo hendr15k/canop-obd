@@ -760,6 +760,125 @@ object AstraJSecurityCoding {
     )
 }
 
+object AstraJVersteckteFeaturesCoding {
+
+    private val hiddenOptions = listOf(
+        AstraJCodingModels.CodingOption(
+            id = "needle_sweep",
+            module = AstraJCodingModels.Module.IPC,
+            channel = "Gauge Sweep",
+            displayName = "Nadelsweep (Baron Mode)",
+            description = "Nadeln fahren beim Einschalten über den ganzen Bereich und wieder zurück",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Deaktiviert"),
+                AstraJCodingModels.CodingValue("1", "Aktiviert")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "esp_sport_mode",
+            module = AstraJCodingModels.Module.CIM,
+            channel = "ESP Sport Mode",
+            displayName = "ESP Sport-Modus",
+            description = "ESP im Sport-Modus mit reduzierter Eingriffsschwelle",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Standard"),
+                AstraJCodingModels.CodingValue("1", "Sport (reduziert)"),
+                AstraJCodingModels.CodingValue("2", "ESC Off (nur für Profis)")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "speed_warning",
+            module = AstraJCodingModels.Module.IPC,
+            channel = "Speed Warning",
+            displayName = "Geschwindigkeitswarnung",
+            description = "Akustische Warnung bei Überschreitung einer Geschwindigkeit",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Deaktiviert"),
+                AstraJCodingModels.CodingValue("1", "120 km/h"),
+                AstraJCodingModels.CodingValue("2", "140 km/h"),
+                AstraJCodingModels.CodingValue("3", "160 km/h"),
+                AstraJCodingModels.CodingValue("4", "180 km/h"),
+                AstraJCodingModels.CodingValue("5", "200 km/h"),
+                AstraJCodingModels.CodingValue("6", "220 km/h"),
+                AstraJCodingModels.CodingValue("7", "250 km/h")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "ambient_color",
+            module = AstraJCodingModels.Module.BCM,
+            channel = "Ambient Lighting Color",
+            displayName = "Ambientebeleuchtung Farbe",
+            description = "Farbe der Innenbeleuchtung (Ambiente)",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Blau (Standard)"),
+                AstraJCodingModels.CodingValue("1", "Weiß"),
+                AstraJCodingModels.CodingValue("2", "Rot"),
+                AstraJCodingModels.CodingValue("3", "Grün"),
+                AstraJCodingModels.CodingValue("4", "Orange"),
+                AstraJCodingModels.CodingValue("5", "Lila")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "rain_sensor_sensitivity",
+            module = AstraJCodingModels.Module.BCM,
+            channel = "Rain Sensor Sensitivity",
+            displayName = "Regensensor Empfindlichkeit",
+            description = "Empfindlichkeit des Regensensors für automatische Scheibenwischer",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Niedrig"),
+                AstraJCodingModels.CodingValue("1", "Mittel"),
+                AstraJCodingModels.CodingValue("2", "Hoch"),
+                AstraJCodingModels.CodingValue("3", "Sehr hoch")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "rear_wiper_speed",
+            module = AstraJCodingModels.Module.BCM,
+            channel = "Rear Wiper Speed",
+            displayName = "Heckwischer Geschwindigkeit",
+            description = "Intervall/Tempo des Heckwischers anpassen",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Langsam"),
+                AstraJCodingModels.CodingValue("1", "Mittel"),
+                AstraJCodingModels.CodingValue("2", "Schnell"),
+                AstraJCodingModels.CodingValue("3", "Intervall langsam"),
+                AstraJCodingModels.CodingValue("4", "Intervall schnell")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "mirror_fold_lock",
+            module = AstraJCodingModels.Module.BCM,
+            channel = "Mirror Fold on Lock",
+            displayName = "Spiegel einklappen bei Verriegelung",
+            description = "Seitenspiegel automatisch einklappen bei Verriegelung",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Deaktiviert"),
+                AstraJCodingModels.CodingValue("1", "Aktiviert")
+            )
+        ),
+        AstraJCodingModels.CodingOption(
+            id = "drl_mode",
+            module = AstraJCodingModels.Module.UEC,
+            channel = "DRL Mode",
+            displayName = "Tagfahrlicht-Modus",
+            description = "Modus des Tagfahrlichts (DRL)",
+            values = listOf(
+                AstraJCodingModels.CodingValue("0", "Deaktiviert"),
+                AstraJCodingModels.CodingValue("1", "Scheinwerfer (niedrige Leistung)"),
+                AstraJCodingModels.CodingValue("2", "Separate LED-Leiste"),
+                AstraJCodingModels.CodingValue("3", "Nebelscheinwerfer")
+            )
+        )
+    )
+
+    fun getCategory() = AstraJCodingModels.CodingCategory(
+        id = "hidden_features",
+        displayName = "Versteckte Features",
+        icon = "Build",
+        options = hiddenOptions
+    )
+}
+
 object AstraJCodingRepository {
 
     fun getAllCategories(): List<AstraJCodingModels.CodingCategory> = listOf(
@@ -769,7 +888,8 @@ object AstraJCodingRepository {
         AstraJIPCCoding.getCategory(),
         AstraJInfotainmentCoding.getCategory(),
         AstraJFahrdynamikCoding.getCategory(),
-        AstraJSecurityCoding.getCategory()
+        AstraJSecurityCoding.getCategory(),
+    AstraJVersteckteFeaturesCoding.getCategory()
     )
 
     fun getCategoryById(id: String): AstraJCodingModels.CodingCategory? =

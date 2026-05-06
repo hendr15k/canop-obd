@@ -240,6 +240,56 @@ enum class OBDPID(
     }),
     CATALYST_TEMP_B2S2("0155", "Catalyst Temp B2S2", "°C", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+
+    // GM Mode 22 (Service $22) - Opel/Astra J spezifische DataIdentifiers
+    ENGINE_TORQUE_MODE22("221001", "Motor-Drehmoment (Mode22)", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128).toDouble() else 0.0
+    }),
+    REQUESTED_TORQUE_MODE22("221002", "Angefordertes Drehmoment (Mode22)", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128).toDouble() else 0.0
+    }),
+    BOOST_PRESSURE_ACTUAL_MODE22("221008", "Boost-Druck Ist (Mode22)", "kPa", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    BOOST_PRESSURE_TARGET_MODE22("221009", "Boost-Druck Soll (Mode22)", "kPa", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    WASTEGATE_POSITION_MODE22("22100A", "Wastegate-Position (Mode22)", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    TURBO_RPM_MODE22("22100B", "Turbo-Drehzahl (Mode22)", "rpm", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    OIL_TEMP_MODE22("22100C", "Motoröl-Temperatur (Mode22)", "°C", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
+    }),
+    COOLANT_TEMP_MODE22("22100D", "Kühlmittel-Temperatur (Mode22)", "°C", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
+    }),
+    INTAKE_AIR_TEMP_MODE22("22100E", "Ansaugluft-Temperatur (Mode22)", "°C", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 40).toDouble() else 0.0
+    }),
+    FUEL_RAIL_PRESSURE_MODE22("22100F", "Einspritzdruck (Mode22)", "kPa", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 10.0 else 0.0
+    }),
+    INJECTOR_PULSE_WIDTH("221010", "Einspritzdauer (Mode22)", "ms", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 100.0 else 0.0
+    }),
+    VVT_INTAKE_MODE22("221015", "VVT-Ansaugseite (Mode22)", "°", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128).toDouble() else 0.0
+    }),
+    VVT_EXHAUST_MODE22("221016", "VVT-Auslassseite (Mode22)", "°", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128).toDouble() else 0.0
+    }),
+    FUEL_CONSUMPTION_INSTANT("221018", "Kraftstoffverbrauch aktuell (Mode22)", "L/h", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
+    }),
+    FUEL_CONSUMPTION_AVERAGE("22101A", "Kraftstoffverbrauch Ø (Mode22)", "L/100km", 2, { b ->
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 10.0 else 0.0
+    }),
+    AFR_RATIO_MODE22("22101F", "Luft-Kraftstoff-Verhältnis (Mode22)", "", 2, { b ->
+        if (b.size >= 2) 2.0 * (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 65536.0 else 0.0
     });
 
     companion object {
@@ -321,7 +371,24 @@ data class OBDData(
     val warmupCatalyst: Double = 0.0,
     val catalystTempB1S2: Double = 0.0,
     val catalystTempB2S1: Double = 0.0,
-    val catalystTempB2S2: Double = 0.0
+    val catalystTempB2S2: Double = 0.0,
+    // GM Mode 22 (Service $22) - Erweiterte Opel-spezifische Werte
+    val engineTorqueMode22: Double = 0.0,
+    val requestedTorqueMode22: Double = 0.0,
+    val boostPressureActualMode22: Double = 0.0,
+    val boostPressureTargetMode22: Double = 0.0,
+    val wastegatePositionMode22: Double = 0.0,
+    val turboRpmMode22: Double = 0.0,
+    val oilTempMode22: Double = 0.0,
+    val coolantTempMode22: Double = 0.0,
+    val intakeAirTempMode22: Double = 0.0,
+    val fuelRailPressureMode22: Double = 0.0,
+    val injectorPulseWidth: Double = 0.0,
+    val vvtIntakeMode22: Double = 0.0,
+    val vvtExhaustMode22: Double = 0.0,
+    val fuelConsumptionInstant: Double = 0.0,
+    val fuelConsumptionAverage: Double = 0.0,
+    val afrRatioMode22: Double = 0.0
 )
 
 data class GaugeConfig(

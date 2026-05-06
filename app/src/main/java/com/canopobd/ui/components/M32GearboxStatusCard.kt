@@ -32,6 +32,7 @@ import com.canopobd.ui.theme.LocalAppColors
  * Zeigt:
  * - Getriebetemperatur (falls verfügbar)
  * - Input/Output-Speed-Verhältnis
+ * - Gangerkennung (RPM/Speed-Verhältnis)
  * - Gesundheitsindikatoren
  * - Wartungsintervall
  * - Deutsche Warnmeldungen
@@ -46,7 +47,9 @@ fun M32GearboxStatusCard(
     lastFluidChangeKm: Int = 0,
     currentKm: Int = 0,
     gearRattleDetected: Boolean = false,
-    colors: AppColors = LocalAppColors.current
+    colors: AppColors = LocalAppColors.current,
+    currentRpm: Double = 0.0,
+    vehicleSpeedKmh: Double = 0.0
 ) {
     val healthStatus = remember(healthScore) { GearboxHealthStatus.fromScore(healthScore) }
     val healthColor = remember(healthStatus) { healthStatus.color(colors) }
@@ -73,6 +76,20 @@ fun M32GearboxStatusCard(
 
     val gearRatio = remember(inputSpeedRpm, outputSpeedRpm) {
         if (outputSpeedRpm > 0) inputSpeedRpm / outputSpeedRpm else 0.0
+    }
+
+    // Gangerkennung über RPM/Speed-Verhältnis (Getrag M32)
+    val detectedGear = remember(currentRpm, vehicleSpeedKmh) {
+        detectM32Gear(currentRpm, vehicleSpeedKmh)
+    }
+
+    val gearDisplayText = remember(detectedGear) {
+        when (detectedGear) {
+            0 -> "N"
+            -1 -> "R"
+            in 1..6 -> "$detectedGear. Gang"
+            else -> "–"
+        }
     }
 
     val maintenanceInfo = remember(lastFluidChangeKm, currentKm) {
@@ -384,3 +401,51 @@ private data class MaintenanceInfo(
     val text: String,
     val color: Color
 )
+
+/**
+ * Getrag M32 Gangverhältnisse (Astra J 1.4 Turbo)
+ * Final Drive: 4.056
+ * Reifenumfang: 205/55R16 ≈ 1.995m
+ */
+private object M32GearRatios {
+    const val FINAL_DRIVE = 4.056
+    val RATIOS = floatArrayOf(
+        3.192f,  // 1. Gang
+        1.938f,  // 2. Gang
+        1.357f,  // 3. Gang
+        1.034f,  // 4. Gang
+        0.825f,  // 5. Gang
+        0.693f   // 6. Gang
+    )
+    const val TIRE_CIRCUMFERENCE_M = 1.995f  // 205/55 R16
+    const val TOLERANCE = 0.15f  // 15% Toleranz
+}
+
+/**
+ * Erkennt den aktuellen Gang basierend auf RPM und Geschwindigkeit.
+ * Gibt 0 für Neutral, -1 für Rückwärtsgang, 1-6 für die Gänge zurück.
+ */
+private fun detectM32Gear(rpm: Double, speedKmh: Double): Int {
+    if (speedKmh < 3.0 || rpm < 600) return 0  // Steht oder im Leerlauf
+
+    val speedMs = speedKmh / 3.6f
+
+    for (i in M32GearRatios.RATIOS.indices) {
+        val overallRatio = M32GearRatios.RATIOS[i] * M32GearRatios.FINAL_DRIVE
+        val theoreticalRpm = speedMs * overallRatio * 60f / M32GearRatios.TIRE_CIRCUMFERENCE_M
+        val rpmDifference = kotlin.math.abs(rpm.toFloat() - theoreticalRpm) / theoreticalRpm
+
+        if (rpmDifference < M32GearRatios.TOLERANCE) {
+            return i + 1
+        }
+    }
+
+    // Rückwärtsgang-Schätzung
+    val reverseRatio = 3.250f  // Ungefähr
+    val reverseRpm = speedMs * reverseRatio * M32GearRatios.FINAL_DRIVE * 60f / M32GearRatios.TIRE_CIRCUMFERENCE_M
+    if (kotlin.math.abs(rpm.toFloat() - reverseRpm) / reverseRpm < M32GearRatios.TOLERANCE) {
+        return -1
+    }
+
+    return 0  // Unbekannter Gang (Kupplung gedrückt)
+}
