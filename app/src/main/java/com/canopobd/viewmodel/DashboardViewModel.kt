@@ -470,11 +470,22 @@ class DashboardViewModel private constructor(
     private val _dtcProcessingJob = MutableStateFlow<Job?>(null)
     private val _turboAnalysisJob = MutableStateFlow<Job?>(null)
 
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+
     init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val items = repository.loadMaintenanceItems()
+            val shiftConfig = repository.loadShiftLightConfig()
+            val profile = repository.loadCarProfile()
+            withContext(Dispatchers.Main) {
+                _maintenanceItems.value = items
+                _shiftLightConfig.value = shiftConfig
+                _carProfileState.value = profile
+                _isInitialized.value = true
+            }
+        }
         if (_permissionsGranted.value) refreshDevices()
-        _maintenanceItems.value = repository.loadMaintenanceItems()
-        _shiftLightConfig.value = repository.loadShiftLightConfig()
-        _carProfileState.value = repository.loadCarProfile()
         checkForUpdate()
         startTurboAnalysisCollection()
         startWarningMonitoring()

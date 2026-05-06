@@ -4,17 +4,21 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -34,20 +38,57 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         setContent {
             val colorTheme by viewModel.colorTheme.collectAsState()
             val appThemeMode by viewModel.appThemeMode.collectAsState()
+            val isInitialized by viewModel.isInitialized.collectAsState()
             val appColors = remember(colorTheme, appThemeMode) { colorTheme.toAppColors(appThemeMode) }
 
             CanopObdTheme(appColors = appColors, appThemeMode = appThemeMode) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = appColors.dark
-                ) {
-                    MainContent(viewModel = viewModel)
+                if (!isInitialized) {
+                    SplashScreen(appColors = appColors)
+                } else {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = appColors.dark
+                    ) {
+                        MainContent(viewModel = viewModel)
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SplashScreen(appColors: AppColors) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(appColors.dark),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "canop-obd",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = appColors.accent
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "OBD-II Diagnose",
+                fontSize = 14.sp,
+                color = appColors.textSecondary
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            CircularProgressIndicator(
+                color = appColors.accent,
+                modifier = Modifier.size(32.dp),
+                strokeWidth = 3.dp
+            )
         }
     }
 }
