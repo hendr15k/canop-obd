@@ -75,6 +75,8 @@ import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
 import com.canopobd.ui.knownissues.KnownIssuesDialog
 import com.canopobd.ui.dashboard.OilHealthCard
 import com.canopobd.ui.dashboard.SensorValidationCard
+import com.canopobd.ui.coding.AstraJCodingDialog
+import com.canopobd.data.model.AstraJCodingModels
 import kotlin.math.abs
 
 @Composable
@@ -226,6 +228,12 @@ fun DashboardScreen(
     onToggleExtendedMaintenance: () -> Unit,
     onToggleComfortControl: () -> Unit,
     onSendBCMCommand: (ComfortCommand) -> Unit,
+    showCodingDialog: Boolean,
+    codingInProgress: Boolean,
+    codingResult: com.canopobd.data.model.AstraJCodingModels.CodingResult?,
+    onToggleCodingDialog: () -> Unit,
+    onApplyCodingOption: (com.canopobd.data.model.AstraJCodingModels.CodingOption, com.canopobd.data.model.AstraJCodingModels.CodingValue) -> Unit,
+    onClearCodingResult: () -> Unit,
     appThemeMode: com.canopobd.data.model.AppThemeMode,
     onSetAppThemeMode: (com.canopobd.data.model.AppThemeMode) -> Unit,
     modifier: Modifier = Modifier
@@ -302,6 +310,7 @@ fun DashboardScreen(
                     _onToggleCarProfile = _onToggleCarProfile,
                     onToggleTurboCooldown = onToggleTurboCooldown,
                     onToggleComfortControl = onToggleComfortControl,
+                    onToggleCodingDialog = onToggleCodingDialog,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
@@ -636,6 +645,17 @@ fun DashboardScreen(
                     )
                 }
             }
+            composable("astra_j_coding") {
+                if (showCodingDialog) {
+                    AstraJCodingDialog(
+                        codingResult = codingResult,
+                        codingInProgress = codingInProgress,
+                        onDismiss = { onToggleCodingDialog(); navController.safePop() },
+                        onApplyOption = onApplyCodingOption,
+                        onClearResult = onClearCodingResult
+                    )
+                }
+            }
         }
     }
 }
@@ -795,6 +815,7 @@ private fun DashboardHeader(
     _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
     onToggleComfortControl: () -> Unit,
+    onToggleCodingDialog: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -974,6 +995,12 @@ private fun DashboardHeader(
                         label = "Komfort",
                         color = colors.gaugeCyan,
                         onClick = { onToggleComfortControl(); navController.navigate("comfort_control") }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.Code,
+                        label = "Codierung",
+                        color = colors.gaugeOrange,
+                        onClick = { onToggleCodingDialog(); navController.navigate("astra_j_coding") }
                     )
                     QuickActionButton(
                         icon = Icons.Filled.Air,

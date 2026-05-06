@@ -26,14 +26,27 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.canopobd.data.model.AstraJCodingModels
 import com.canopobd.data.model.AstraJCodingRepository
+import com.canopobd.ui.theme.*
 
 @Composable
 fun AstraJCodingDialog(
-    onDismiss: () -> Unit
+    codingResult: AstraJCodingModels.CodingResult?,
+    codingInProgress: Boolean,
+    onDismiss: () -> Unit,
+    onApplyOption: (AstraJCodingModels.CodingOption, AstraJCodingModels.CodingValue) -> Unit,
+    onClearResult: () -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf<AstraJCodingModels.CodingCategory?>(null) }
     var selectedOption by remember { mutableStateOf<AstraJCodingModels.CodingOption?>(null) }
     var showProfileDialog by remember { mutableStateOf(false) }
+    var pendingValue by remember { mutableStateOf<AstraJCodingModels.CodingValue?>(null) }
+
+    LaunchedEffect(codingResult) {
+        if (codingResult != null) {
+            kotlinx.coroutines.delay(3000)
+            onClearResult()
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -79,7 +92,11 @@ fun AstraJCodingDialog(
                         option != null -> {
                             CodingOptionDetail(
                                 option = option,
+                                codingResult = codingResult,
+                                codingInProgress = codingInProgress,
                                 onValueChange = { newValue ->
+                                    pendingValue = newValue
+                                    onApplyOption(option, newValue)
                                 }
                             )
                         }
@@ -361,15 +378,56 @@ private fun CodingOptionCard(
 @Composable
 private fun CodingOptionDetail(
     option: AstraJCodingModels.CodingOption,
+    codingResult: AstraJCodingModels.CodingResult?,
+    codingInProgress: Boolean,
     onValueChange: (AstraJCodingModels.CodingValue) -> Unit
 ) {
     var selectedValue by remember { mutableStateOf(option.currentValue ?: option.values.firstOrNull()) }
+
+    val resultColor = when {
+        codingResult == null -> androidx.compose.ui.graphics.Color.Unspecified
+        codingResult.success -> gaugeGreen
+        else -> gaugeRed
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        if (codingResult != null) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = resultColor.copy(alpha = 0.15f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (codingResult.success) Icons.Default.CheckCircle else Icons.Default.Error,
+                        contentDescription = null,
+                        tint = resultColor
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = if (codingResult.success) "Erfolgreich gespeichert!" else "Fehler",
+                            fontWeight = FontWeight.Bold,
+                            color = resultColor
+                        )
+                        Text(
+                            text = codingResult.error ?: codingResult.newValue.displayName,
+                            fontSize = 12.sp,
+                            color = resultColor.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -535,16 +593,25 @@ private fun CodingOptionDetail(
 
         Button(
             onClick = {
+                selectedValue?.let { onValueChange(it) }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = selectedValue != null
+            enabled = selectedValue != null && !codingInProgress
         ) {
-            Icon(
-                imageVector = Icons.Default.Save,
-                contentDescription = null
-            )
+            if (codingInProgress) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = null
+                )
+            }
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Codierung speichern")
+            Text(if (codingInProgress) "Wird gespeichert..." else "Codierung speichern")
         }
     }
 }

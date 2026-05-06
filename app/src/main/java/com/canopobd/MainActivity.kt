@@ -212,6 +212,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showExtendedFuel by viewModel.showExtendedFuel.collectAsState()
     val showExtendedMaintenance by viewModel.showExtendedMaintenance.collectAsState()
     val showComfortControl by viewModel.showComfortControl.collectAsState()
+    val showCodingDialog by viewModel.showCodingDialog.collectAsState()
+    val codingInProgress by viewModel.codingInProgress.collectAsState()
+    val codingResult by viewModel.codingResult.collectAsState()
 
     // Safety & ECO State
     val showSafetySystems by viewModel.showSafetySystems.collectAsState()
@@ -409,6 +412,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleExtendedMaintenance = viewModel::toggleExtendedMaintenance,
         onToggleComfortControl = viewModel::toggleComfortControl,
         onSendBCMCommand = viewModel::onSendBCMCommand,
+        showCodingDialog = showCodingDialog,
+        codingInProgress = codingInProgress,
+        codingResult = codingResult,
+        onToggleCodingDialog = viewModel::toggleCodingDialog,
+        onApplyCodingOption = viewModel::applyCodingOption,
+        onClearCodingResult = viewModel::clearCodingResult,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
         carProfile = carProfile,

@@ -43,6 +43,7 @@ import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
 import com.canopobd.data.domain.FuelSystemAnalyzer
 
+import android.util.Log
 import com.canopobd.data.model.*
 import com.canopobd.data.local.TripEntity
 import com.canopobd.data.local.MaintenanceEntity
@@ -65,6 +66,10 @@ class DashboardViewModel private constructor(
 
     init {
         notificationManager.createNotificationChannel()
+    }
+
+    companion object {
+        private const val TAG = "DashboardVM"
     }
 
     private val turboViewModel = TurboViewModel(application)
@@ -229,6 +234,13 @@ class DashboardViewModel private constructor(
 
     private val _showComfortControl = MutableStateFlow(false)
     val showComfortControl: StateFlow<Boolean> = _showComfortControl.asStateFlow()
+
+    private val _showCodingDialog = MutableStateFlow(false)
+    val showCodingDialog: StateFlow<Boolean> = _showCodingDialog.asStateFlow()
+    private val _codingResult = MutableStateFlow<AstraJCodingModels.CodingResult?>(null)
+    val codingResult: StateFlow<AstraJCodingModels.CodingResult?> = _codingResult.asStateFlow()
+    private val _codingInProgress = MutableStateFlow(false)
+    val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
@@ -729,14 +741,42 @@ class DashboardViewModel private constructor(
     fun toggleExtendedMaintenance() { _showExtendedMaintenance.value = !_showExtendedMaintenance.value }
     fun toggleComfortControl() { _showComfortControl.value = !_showComfortControl.value }
 
+    fun toggleCodingDialog() { _showCodingDialog.value = !_showCodingDialog.value }
+
     fun onSendBCMCommand(command: ComfortCommand) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val action = BCMCommandMapper.actionToATCommand(command.action.name, command.value)
             if (action != null) {
                 repository.sendRawCommand(action)
             }
         }
     }
+
+    fun applyCodingOption(option: AstraJCodingModels.CodingOption, value: AstraJCodingModels.CodingValue) {
+        _codingInProgress.value = true
+        _codingResult.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val moduleAddr = option.module.address
+                val hexValue = value.value
+                val cmd = "ATSH $moduleAddr; 2E${option.channel.replace(" ", "")}$hexValue; ATSH 7E0"
+                val response = repository.sendRawCommand(cmd)
+                val result = if (response != null && !response.contains("ERROR", ignoreCase = true) && !response.contains("NO DATA", ignoreCase = true)) {
+                    AstraJCodingModels.CodingResult(success = true, option = option, newValue = value)
+                } else {
+                    AstraJCodingModels.CodingResult(success = false, option = option, newValue = value, error = response ?: "Keine Antwort")
+                }
+                _codingResult.value = result
+            } catch (e: Exception) {
+                Log.w(TAG, "Coding write failed for ${option.id}", e)
+                _codingResult.value = AstraJCodingModels.CodingResult(success = false, option = option, newValue = value, error = e.message)
+            } finally {
+                _codingInProgress.value = false
+            }
+        }
+    }
+
+    fun clearCodingResult() { _codingResult.value = null }
 
     fun selectCarProfile(profile: com.canopobd.data.model.CarProfile) {
         _carProfileState.value = profile
@@ -1117,7 +1157,6 @@ class DashboardViewModel private constructor(
     private fun updateExtendedAnalyzers(data: OBDData) {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
 
-        // Oil Condition
         try {
             val oilInput = OilConditionMonitor.OilInput(
                 oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.coolantTemp,
@@ -1128,9 +1167,8 @@ class DashboardViewModel private constructor(
                 speed = data.speed
             )
             oilConditionResult.value = oilConditionMonitor.analyze(oilInput)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "OilConditionMonitor failed", e) }
 
-        // Oil Health Predictor
         try {
             val oilHealthInput = OilHealthPredictor.OilHealthInput(
                 oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp,
@@ -1150,14 +1188,12 @@ class DashboardViewModel private constructor(
                 oilConsumptionLPer1000Km = 0.0
             )
             oilHealthPrediction.value = oilHealthPredictor.analyze(oilHealthInput)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "OilHealthPredictor failed", e) }
 
-        // Sensor Validator
         try {
             sensorValidationResult.value = sensorValidator.validateMaf(data.mafRate)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "SensorValidator failed", e) }
 
-        // PCV Monitor
         try {
             val expectedMaf = data.rpm * 0.01
             val pcvInput = PCVMonitor.PCVInput(
@@ -1173,15 +1209,13 @@ class DashboardViewModel private constructor(
                 throttle = data.throttle
             )
             pcvResult.value = pcvMonitor.analyze(pcvInput)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "PCVMonitor failed", e) }
 
-        // Lambda Balance
         try {
             lambdaBalanceAnalyzer.addLambdaSample(data.fuelAirRatio.takeIf { it > 0 } ?: 1.0)
             lambdaBalanceData.value = lambdaBalanceAnalyzer.analyzeCurrentSequence()
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "LambdaBalanceAnalyzer failed", e) }
 
-        // Fuel Consumption
         try {
             if (data.speed > 5.0 && data.mafRate > 0) {
                 val l100km = fuelConsumptionAnalyzer.calculateFromMAF(data.mafRate, data.speed)
@@ -1190,9 +1224,8 @@ class DashboardViewModel private constructor(
                     avgL100km = if (l100km > 0) (fuelConsumptionData.value.avgL100km + l100km) / 2.0 else fuelConsumptionData.value.avgL100km
                 )
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "FuelConsumptionAnalyzer failed", e) }
 
-        // M32 Gearbox
         try {
             val m32Input = M32GearboxMonitor.GearboxInput(
                 rpmHistory = listOf(data.rpm),
@@ -1203,9 +1236,8 @@ class DashboardViewModel private constructor(
                 activeDTCs = dtcCodes
             )
             gearboxResult.value = m32GearboxMonitor.analyze(m32Input)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "M32GearboxMonitor failed", e) }
 
-        // Chain Tensioner
         try {
             val chainInput = ChainTensionerAnalyzer.ChainTensionerInput(
                 activeDTCs = dtcCodes,
@@ -1218,9 +1250,8 @@ class DashboardViewModel private constructor(
                 engineRuntimeSec = data.runTime
             )
             chainTensionerResult.value = chainTensionerAnalyzer.analyze(chainInput)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "ChainTensionerAnalyzer failed", e) }
 
-        // EGT Monitor
         try {
             val egtInput = EGTMonitor.EGTInput(
                 egtBank1 = data.egtBank1,
@@ -1229,9 +1260,8 @@ class DashboardViewModel private constructor(
                 coolantTemp = data.coolantTemp
             )
             egtResult.value = egtMonitor.analyze(egtInput)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "EGTMonitor failed", e) }
 
-        // Coolant System
         try {
             val coolantInput = CoolantSystemHealth.CoolantInput(
                 coolantTemp = data.coolantTemp,
@@ -1241,14 +1271,12 @@ class DashboardViewModel private constructor(
                 engineRuntimeSec = data.runTime
             )
             coolantResult.value = coolantHealthMonitor.analyze(coolantInput)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "CoolantSystemHealth failed", e) }
 
-        // Sensor Health
         try {
             sensorHealthSummary.value = sensorHealthMonitor.analyzeSensors(data)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "SensorHealthMonitor failed", e) }
 
-        // Wastegate Health
         try {
             val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
             val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
@@ -1263,9 +1291,8 @@ class DashboardViewModel private constructor(
                 rpm = data.rpm,
                 engineLoad = data.engineLoad
             )
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "WastegateHealthAnalyzer failed", e) }
 
-        // Build extended summary
         try {
             extendedAnalyzerData.value = ExtendedAnalyzerSummary(
                 oilHealth = oilConditionResult.value.condition.name,
@@ -1277,7 +1304,7 @@ class DashboardViewModel private constructor(
                 overallScore = calculateExtendedScore(),
                 criticalWarnings = buildExtendedWarnings()
             )
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w(TAG, "ExtendedAnalyzerSummary failed", e) }
     }
 
     private fun calculateExtendedScore(): Int {
