@@ -518,6 +518,92 @@ object BCMProtocol {
                 timestamp = System.currentTimeMillis()
             )
         }
+
+        fun parseTCMMessage(canId: String, data: ByteArray): TCMStatus? {
+            if (data.size < 8) return null
+            
+            return when (canId.uppercase()) {
+                "7E1", "7E9", "424", "426" -> parseTCMStatusByte(data)
+                else -> null
+            }
+        }
+        
+        private fun parseTCMStatusByte(data: ByteArray): TCMStatus {
+            val byte0 = data.getOrNull(0)?.toInt() ?: 0
+            val byte1 = data.getOrNull(1)?.toInt() ?: 0
+            val byte2 = data.getOrNull(2)?.toInt() ?: 0
+            val byte3 = data.getOrNull(3)?.toInt() ?: 0
+            val byte4 = data.getOrNull(4)?.toInt() ?: 0
+            val byte5 = data.getOrNull(5)?.toInt() ?: 0
+            val byte6 = data.getOrNull(6)?.toInt() ?: 0
+            
+            val gear = when (byte0 and 0x0F) {
+                0x01 -> 1
+                0x02 -> 2
+                0x03 -> 3
+                0x04 -> 4
+                0x05 -> 5
+                0x06 -> 6
+                else -> 0
+            }
+            
+            val oilTemp = if (byte1 in 1..200) byte1 - 40 else 0
+            val pressure = byte2 * 4
+            
+            return TCMStatus(
+                currentGear = gear,
+                oilTempCelsius = oilTemp,
+                pressureKpa = pressure,
+                inputShaftRpm = ((byte3.toInt() and 0xFF) * 256 + (byte4.toInt() and 0xFF)).toDouble(),
+                outputShaftRpm = ((byte5.toInt() and 0xFF) * 256 + (byte6.toInt() and 0xFF)).toDouble(),
+                clutchSlipping = (byte0 and 0x40) != 0,
+                transmissionError = (byte0 and 0x80) != 0,
+                sportMode = (byte0 and 0x20) != 0,
+                manualMode = (byte0 and 0x10) != 0,
+                timestamp = System.currentTimeMillis()
+            )
+        }
+
+        fun parseECMMessage(canId: String, data: ByteArray): ECMStatus? {
+            if (data.size < 8) return null
+            
+            return when (canId.uppercase()) {
+                "7E0", "7E8", "430", "432" -> parseECMStatusByte(data)
+                else -> null
+            }
+        }
+        
+        private fun parseECMStatusByte(data: ByteArray): ECMStatus {
+            val byte0 = data.getOrNull(0)?.toInt() ?: 0
+            val byte1 = data.getOrNull(1)?.toInt() ?: 0
+            val byte2 = data.getOrNull(2)?.toInt() ?: 0
+            val byte3 = data.getOrNull(3)?.toInt() ?: 0
+            val byte4 = data.getOrNull(4)?.toInt() ?: 0
+            val byte5 = data.getOrNull(5)?.toInt() ?: 0
+            val byte6 = data.getOrNull(6)?.toInt() ?: 0
+            
+            val rpm = ((byte0.toInt() and 0xFF) * 256 + (byte1.toInt() and 0xFF)).toDouble() / 4.0
+            val speed = ((byte2.toInt() and 0xFF) * 256 + (byte3.toInt() and 0xFF)).toDouble()
+            val coolant = if (byte4 in 1..200) byte4 - 40 else 0
+            val throttle = ((byte5.toInt() and 0xFF) * 100.0 / 255.0)
+            val load = ((byte6.toInt() and 0xFF) * 100.0 / 255.0)
+            
+            return ECMStatus(
+                rpm = rpm,
+                speedKmh = speed,
+                coolantTemp = coolant,
+                throttlePosition = throttle,
+                engineLoad = load,
+                fuelLevel = 0.0,
+                batteryVoltage = 0.0,
+                knockRetard = 0.0,
+                timingAdvance = 0.0,
+                fuelPressure = 0.0,
+                intakeTemp = 0,
+                mafRate = 0.0,
+                timestamp = System.currentTimeMillis()
+            )
+        }
     }
     
     data class HVACStatus(
@@ -555,6 +641,35 @@ object BCMProtocol {
         val rearRightTemp: Int = 0,
         val lowPressureWarning: Boolean = false,
         val systemError: Boolean = false,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+
+    data class TCMStatus(
+        val currentGear: Int = 0,
+        val oilTempCelsius: Int = 0,
+        val pressureKpa: Int = 0,
+        val inputShaftRpm: Double = 0.0,
+        val outputShaftRpm: Double = 0.0,
+        val clutchSlipping: Boolean = false,
+        val transmissionError: Boolean = false,
+        val sportMode: Boolean = false,
+        val manualMode: Boolean = false,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+
+    data class ECMStatus(
+        val rpm: Double = 0.0,
+        val speedKmh: Double = 0.0,
+        val coolantTemp: Int = 0,
+        val throttlePosition: Double = 0.0,
+        val engineLoad: Double = 0.0,
+        val fuelLevel: Double = 0.0,
+        val batteryVoltage: Double = 0.0,
+        val knockRetard: Double = 0.0,
+        val timingAdvance: Double = 0.0,
+        val fuelPressure: Double = 0.0,
+        val intakeTemp: Int = 0,
+        val mafRate: Double = 0.0,
         val timestamp: Long = System.currentTimeMillis()
     )
 

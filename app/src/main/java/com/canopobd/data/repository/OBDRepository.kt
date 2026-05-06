@@ -232,6 +232,31 @@ class OBDRepository(
     private val _climateReading = MutableStateFlow(ClimateReading())
     val climateReading: StateFlow<ClimateReading> = _climateReading.asStateFlow()
 
+    data class TCMReading(
+        val currentGear: Int = 0,
+        val oilTempCelsius: Int = 0,
+        val pressureKpa: Int = 0,
+        val inputShaftRpm: Double = 0.0,
+        val outputShaftRpm: Double = 0.0,
+        val sportMode: Boolean = false,
+        val manualMode: Boolean = false,
+        val transmissionError: Boolean = false,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+    private val _tcmReading = MutableStateFlow(TCMReading())
+    val tcmReading: StateFlow<TCMReading> = _tcmReading.asStateFlow()
+
+    data class ECMReading(
+        val rpm: Double = 0.0,
+        val speedKmh: Double = 0.0,
+        val coolantTemp: Int = 0,
+        val throttlePosition: Double = 0.0,
+        val engineLoad: Double = 0.0,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+    private val _ecmReading = MutableStateFlow(ECMReading())
+    val ecmReading: StateFlow<ECMReading> = _ecmReading.asStateFlow()
+
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
@@ -1253,8 +1278,49 @@ class OBDRepository(
             )
             Log.d("OBDRepository", "Updated TPMS from CAN: FL=${tpms.frontLeftPSI}psi, FR=${tpms.frontRightPSI}psi")
         }
+
+        val tcmParsed = try {
+            com.canopobd.protocol.BCMProtocol.CANParser.parseTCMMessage(canId, data)
+        } catch (e: Exception) {
+            null
+        }
+
+        tcmParsed?.let { tcm ->
+            _tcmReading.value = TCMReading(
+                currentGear = tcm.currentGear,
+                oilTempCelsius = tcm.oilTempCelsius,
+                pressureKpa = tcm.pressureKpa,
+                inputShaftRpm = tcm.inputShaftRpm,
+                outputShaftRpm = tcm.outputShaftRpm,
+                sportMode = tcm.sportMode,
+                manualMode = tcm.manualMode,
+                transmissionError = tcm.transmissionError,
+                timestamp = tcm.timestamp
+            )
+            Log.d("OBDRepository", "Updated TCM from CAN: Gear=${tcm.currentGear}, OilTemp=${tcm.oilTempCelsius}°C")
+        }
+
+        val ecmParsed = try {
+            com.canopobd.protocol.BCMProtocol.CANParser.parseECMMessage(canId, data)
+        } catch (e: Exception) {
+            null
+        }
+
+        ecmParsed?.let { ecm ->
+            _ecmReading.value = ECMReading(
+                rpm = ecm.rpm,
+                speedKmh = ecm.speedKmh,
+                coolantTemp = ecm.coolantTemp,
+                throttlePosition = ecm.throttlePosition,
+                engineLoad = ecm.engineLoad,
+                timestamp = ecm.timestamp
+            )
+            Log.d("OBDRepository", "Updated ECM from CAN: RPM=${ecm.rpm.toInt()}, Speed=${ecm.speedKmh.toInt()}km/h")
+        }
     }
 
     fun getLastClimateReading(): ClimateReading = _climateReading.value
     fun getLastTPMSReading(): TPMSReading = _tpmsReading.value
+    fun getLastTCMReading(): TCMReading = _tcmReading.value
+    fun getLastECMReading(): ECMReading = _ecmReading.value
 }

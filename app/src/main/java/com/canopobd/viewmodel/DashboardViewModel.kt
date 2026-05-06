@@ -82,6 +82,8 @@ class DashboardViewModel private constructor(
     val connectionState: StateFlow<OBDConnectionState> = repository.connectionState
     val climateReading = repository.climateReading
     val tpmsReading = repository.tpmsReading
+    val tcmReading = repository.tcmReading
+    val ecmReading = repository.ecmReading
     val obdData: StateFlow<OBDData> = repository.obdData
     val dtcResponse: StateFlow<DTCResponse?> = repository.dtcResponse
     val recordingActive: StateFlow<Boolean> = repository.recordingActive
