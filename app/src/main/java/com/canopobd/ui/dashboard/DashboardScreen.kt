@@ -688,6 +688,8 @@ fun DashboardScreen(
                         "maintenance" -> onToggleMaintenance()
                         "vehicle_info" -> onToggleVehicleInfo()
                         "datalog_export" -> onToggleDataLog()
+                        "tpms" -> onToggleTPMSDialog()
+                        "climate" -> onToggleClimateControl()
                         else -> {}
                     }
                 }

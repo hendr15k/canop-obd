@@ -67,9 +67,11 @@ fun QuickActionsDialog(
             
             // Service
             QuickAction("tpms_reset", "TPMS Reset", "Reifendruck zuruecksetzen", Icons.Filled.TireRepair, "Service") { onExecuteAction("tpms_reset") },
+            QuickAction("tpms_monitor", "TPMS Monitor", "Reifendruck anzeigen", Icons.Filled.Speed, "Service") { onNavigateTo("tpms") },
             QuickAction("oil_reset", "Oel Reset", "Oelwechsel zuruecksetzen", Icons.Filled.OilBarrel, "Service") { onExecuteAction("oil_reset") },
             QuickAction("wiper_test", "Wischer", "Testwischanlage", Icons.Filled.WaterDrop, "Service") { onExecuteAction("wiper_low") },
             QuickAction("horn", "Hupe", "Testhupen", Icons.Filled.Campaign, "Service") { onExecuteAction("horn") },
+            QuickAction("climate_control", "Klima", "Klimasteuerung", Icons.Filled.AcUnit, "Service") { onNavigateTo("climate") },
             
             // Data
             QuickAction("vin_read", "VIN lesen", "Fahrzeug-ID abfragen", Icons.Filled.Badge, "Daten") { onNavigateTo("vin") },
