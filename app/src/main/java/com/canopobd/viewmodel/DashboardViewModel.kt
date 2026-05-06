@@ -444,8 +444,9 @@ class DashboardViewModel private constructor(
     fun onPermissionsGranted() {
         _permissionsGranted.value = true
         refreshDevices()
-        repository.getLastDevice()?.let { addr ->
-            if (repository.autoReconnect.value) connect(addr)
+        val addr = repository.getLastDevice()
+        if (addr != null && repository.autoReconnect.value) {
+            viewModelScope.launch { connect(addr) }
         }
     }
 
@@ -624,8 +625,10 @@ class DashboardViewModel private constructor(
     fun togglePowerCalculator() {
         _showPowerCalculator.value = !_showPowerCalculator.value
         if (_showPowerCalculator.value) {
-            val d = repository.obdData.value
-            _powerCalculation.value = com.canopobd.data.model.PowerCalculation.calculate(d.mafRate, d.rpm, d.intakeTemp)
+            viewModelScope.launch {
+                val d = repository.obdData.value
+                _powerCalculation.value = com.canopobd.data.model.PowerCalculation.calculate(d.mafRate, d.rpm, d.intakeTemp)
+            }
         }
     }
 

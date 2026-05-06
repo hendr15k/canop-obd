@@ -169,10 +169,11 @@ fun UpdateDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
 
-                if (downloadedFile != null) {
+                val file = downloadedFile
+                if (file != null) {
                     Button(
                         onClick = {
-                            installApk(context, downloadedFile!!)
+                            installApk(context, file)
                             onDismiss()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = colors.accent),

@@ -220,9 +220,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val drivingStyleAnalysis by viewModel.drivingStyleAnalysis.collectAsState()
     val ecoTips by viewModel.ecoTips.collectAsState()
 
-    if (showUpdateDialog && availableUpdate != null) {
+    val update = availableUpdate
+    if (showUpdateDialog && update != null) {
         UpdateDialog(
-            update = availableUpdate!!,
+            update = update,
             onDismiss = viewModel::dismissUpdateDialog,
             onSkipVersion = viewModel::skipUpdateVersion
         )

@@ -48,8 +48,9 @@ fun Mode22BrowserDialog(
     val scope = rememberCoroutineScope()
 
     val allDIDs = remember(selectedCategory) {
-        if (selectedCategory != null) {
-            mode22Client.getDIDsByCategory(selectedCategory!!)
+        val cat = selectedCategory
+        if (cat != null) {
+            mode22Client.getDIDsByCategory(cat)
         } else {
             mode22Client.getAllDIDCategories().flatMap { mode22Client.getDIDsByCategory(it) }
         }

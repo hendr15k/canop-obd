@@ -583,7 +583,7 @@ fun DashboardScreen(
                     ExtendedMaintenanceDialog(
                         currentKm = currentKm,
                         onDismiss = { onToggleExtendedMaintenance(); navController.popBackStack() },
-                        onCompleteService = { type, km -> onSetMaintenanceItem(com.canopobd.data.model.MaintenanceType.valueOf(type), km, 15000) }
+                        onCompleteService = { type, km, interval -> onSetMaintenanceItem(com.canopobd.data.model.MaintenanceType.valueOf(type), km, interval) }
                     )
                 }
             }

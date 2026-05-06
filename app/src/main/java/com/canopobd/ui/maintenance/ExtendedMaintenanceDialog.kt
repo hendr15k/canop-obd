@@ -82,7 +82,7 @@ import kotlin.math.roundToInt
 fun ExtendedMaintenanceDialog(
     currentKm: Int,
     onDismiss: () -> Unit,
-    onCompleteService: (String, Int) -> Unit = { _, _ -> }
+    onCompleteService: (String, Int, Int) -> Unit = { _, _, _ -> }
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Service-Plan", "Nächste Wartung", "Kosten", "Erinnerungen")
@@ -245,14 +245,14 @@ private fun SummaryChip(count: Int, label: String, color: Color) {
 private fun ServicePlanTab(
     services: List<ServiceEntry>,
     currentKm: Int,
-    onCompleteService: (String, Int) -> Unit
+    onCompleteService: (String, Int, Int) -> Unit
 ) {
     LazyColumn {
         itemsIndexed(services) { index, service ->
             ServiceEntryCard(
                 service = service,
                 currentKm = currentKm,
-                onComplete = { onCompleteService(service.id, currentKm) }
+                onComplete = { onCompleteService(service.id, currentKm, service.intervalKm) }
             )
             if (index < services.lastIndex) {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -357,8 +357,9 @@ private fun ServiceEntryCard(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            val progressValue = ((currentKm - service.lastServiceKm).toFloat() /
-                    service.intervalKm.toFloat()).coerceIn(0f, 1f)
+            val progressValue = if (service.intervalKm > 0) {
+                    ((currentKm - service.lastServiceKm).toFloat() / service.intervalKm.toFloat()).coerceIn(0f, 1f)
+                } else 0f
             LinearProgressIndicator(
                 progress = progressValue,
                 modifier = Modifier

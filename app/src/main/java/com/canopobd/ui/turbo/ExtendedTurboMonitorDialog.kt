@@ -1070,7 +1070,9 @@ private fun ChargeAirTempCard(
                     .clip(RoundedCornerShape(5.dp))
                     .background(colors.surfaceVariant)
             ) {
-                val normalized = (chargeAirTemp / (maxTemp * 1.2)).toFloat().coerceIn(0f, 1f)
+                val normalized = if (maxTemp > 0) {
+                    (chargeAirTemp / (maxTemp * 1.2)).toFloat().coerceIn(0f, 1f)
+                } else 0f
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()

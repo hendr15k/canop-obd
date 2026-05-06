@@ -844,7 +844,7 @@ private fun FuelHistorySection(
                             }
                         }
                     }
-                    if (entry != history.last()) {
+                    if (history.isNotEmpty() && entry != history.last()) {
                         Divider(
                             color = borderSubtle.copy(alpha = 0.5f),
                             thickness = 0.5.dp,
