@@ -407,12 +407,16 @@ object AstraJCodingRepository {
         AstraJKomfortCoding.getCategory(),
         AstraJMotorCoding.getCategory(),
         AstraJIPCCoding.getCategory(),
+        AstraJIPCExtendedCoding.getCategory(),
         AstraJInfotainmentCoding.getCategory(),
+        AstraJInfotainmentExtendedCoding.getCategory(),
         AstraJFahrdynamikCoding.getCategory(),
+        AstraJABSESPCoding.getCategory(),
         AstraJSecurityCoding.getCategory(),
         AstraJSitzkomfortCoding.getCategory(),
         AstraJKlimaCoding.getCategory(),
         AstraJGetriebeCoding.getCategory(),
+        AstraJTCMCoding.getCategory(),
         AstraJParkenCoding.getCategory(),
         AstraJAnhaengerCoding.getCategory(),
         AstraJBremseCoding.getCategory(),
@@ -423,6 +427,9 @@ object AstraJCodingRepository {
         AstraJReifenCoding.getCategory(),
         AstraJDiagnoseCoding.getCategory(),
         AstraJWartungCoding.getCategory(),
+        AstraJMotorExtendedCoding.getCategory(),
+        AstraJBCMExtendedCoding.getCategory(),
+        AstraJAirbagCoding.getCategory(),
         AstraJVersteckteFeaturesCoding.getCategory()
     )
 
@@ -482,4 +489,113 @@ object AstraJCodingRepository {
             "dry_braking" to "1"
         ))
     )
+}
+
+object AstraJIPCExtendedCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("temp_unit_celsius", AstraJCodingModels.Module.IPC, "Temperature Unit", "Temperatureinheit", "Celsius oder Fahrenheit anzeigen", listOf(AstraJCodingModels.CodingValue("0","Celsius (C)"),AstraJCodingModels.CodingValue("1","Fahrenheit (F)")), subcategory="Einheiten", riskLevel=1, tags=listOf("temperatur","einheit","celsius","fahrenheit")),
+        AstraJCodingModels.CodingOption("speed_unit_kmh", AstraJCodingModels.Module.IPC, "Speed Unit", "Geschwindigkeitseinheit", "km/h oder mph anzeigen", listOf(AstraJCodingModels.CodingValue("0","km/h"),AstraJCodingModels.CodingValue("1","mph")), subcategory="Einheiten", riskLevel=1, tags=listOf("geschwindigkeit","kmh","mph","einheit")),
+        AstraJCodingModels.CodingOption("fuel_unit_liter", AstraJCodingModels.Module.IPC, "Fuel Unit", "Kraftstoffeinheit", "Liter oder Gallone anzeigen", listOf(AstraJCodingModels.CodingValue("0","Liter (L)"),AstraJCodingModels.CodingValue("1","Gallone (US)")), subcategory="Einheiten", riskLevel=1, tags=listOf("kraftstoff","liter","gallone","einheit")),
+        AstraJCodingModels.CodingOption("pressure_unit_bar", AstraJCodingModels.Module.IPC, "Pressure Unit", "Druckeinheit", "Bar, PSI oder kPa anzeigen", listOf(AstraJCodingModels.CodingValue("0","Bar"),AstraJCodingModels.CodingValue("1","PSI"),AstraJCodingModels.CodingValue("2","kPa")), subcategory="Einheiten", riskLevel=1, tags=listOf("druck","bar","psi","kpa","einheit")),
+        AstraJCodingModels.CodingOption("date_format", AstraJCodingModels.Module.IPC, "Date Format", "Datumsformat", "Datumsanzeige-Format", listOf(AstraJCodingModels.CodingValue("0","TT.MM.JJJJ"),AstraJCodingModels.CodingValue("1","MM/TT/JJJJ"),AstraJCodingModels.CodingValue("2","JJJJ-MM-TT")), subcategory="Einstellungen", riskLevel=1, tags=listOf("datum","format","einstellung")),
+        AstraJCodingModels.CodingOption("clock_format", AstraJCodingModels.Module.IPC, "Clock Format", "Uhrzeitformat", "12h oder 24h anzeigen", listOf(AstraJCodingModels.CodingValue("0","24-Stunden"),AstraJCodingModels.CodingValue("1","12-Stunden AM/PM")), subcategory="Einstellungen", riskLevel=1, tags=listOf("uhr","zeit","12h","24h","format")),
+        AstraJCodingModels.CodingOption("oil_life_ipc", AstraJCodingModels.Module.IPC, "Oil Life IPC", "Oellebensdauer Anzeige", "Oellebensdauer im Display", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Service", riskLevel=1, tags=listOf("oel","lebensdauer","service","anzeige")),
+        AstraJCodingModels.CodingOption("inspection_due", AstraJCodingModels.Module.IPC, "Inspection Due", "Inspektionsanzeige", "Nächste Inspektion anzeigen", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Service", riskLevel=1, tags=listOf("inspektion","service","anzeige")),
+        AstraJCodingModels.CodingOption("odometer_display", AstraJCodingModels.Module.IPC, "Odometer Display", "Kilometerstandanzeige", "Gesamtkilometerstand anzeigen", listOf(AstraJCodingModels.CodingValue("0","Meilen"),AstraJCodingModels.CodingValue("1","Kilometer")), subcategory="Anzeige", riskLevel=1, tags=listOf("kilometer","tacho","anzeige","display")),
+        AstraJCodingModels.CodingOption("illumination_day", AstraJCodingModels.Module.IPC, "Illumination Day", "Tacho-Beleuchtung Tag", "Skalenbeleuchtung bei Tag", listOf(AstraJCodingModels.CodingValue("0","20%"),AstraJCodingModels.CodingValue("1","40%"),AstraJCodingModels.CodingValue("2","60%"),AstraJCodingModels.CodingValue("3","80%"),AstraJCodingModels.CodingValue("4","100%")), subcategory="Beleuchtung", riskLevel=1, tags=listOf("beleuchtung","tacho","tag","display")),
+        AstraJCodingModels.CodingOption("illumination_night", AstraJCodingModels.Module.IPC, "Illumination Night", "Tacho-Beleuchtung Nacht", "Skalenbeleuchtung bei Nacht", listOf(AstraJCodingModels.CodingValue("0","20%"),AstraJCodingModels.CodingValue("1","40%"),AstraJCodingModels.CodingValue("2","60%"),AstraJCodingModels.CodingValue("3","80%"),AstraJCodingModels.CodingValue("4","100%")), subcategory="Beleuchtung", riskLevel=1, tags=listOf("beleuchtung","tacho","nacht","display")),
+        AstraJCodingModels.CodingOption("seatbelt_warning", AstraJCodingModels.Module.IPC, "Seatbelt Warning", "Gurtwarnung", "Akustische Gurtwarnung", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Warnungen", riskLevel=1, tags=listOf("gurt","warnung","sicherheit","akustik")),
+        AstraJCodingModels.CodingOption("fuel_reserve_warning", AstraJCodingModels.Module.IPC, "Fuel Reserve Warning", "Reservetankanzeige", "Warnung bei niedrigem Tankstand", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Warnungen", riskLevel=1, tags=listOf("tank","reserve","warnung","kraftstoff")),
+        AstraJCodingModels.CodingOption("door_open_warning", AstraJCodingModels.Module.IPC, "Door Open Warning", "Tür-offen-Warnung", "Warnung bei offener Tür", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Warnungen", riskLevel=1, tags=listOf("tuer","warnung","anzeige","sicherheit")),
+        AstraJCodingModels.CodingOption("coolant_temp_gauge", AstraJCodingModels.Module.IPC, "Coolant Temp Gauge", "Kühlmitteltemperaturanzeige", "Kühlmitteltemperatur im Tacho", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Anzeige", riskLevel=1, tags=listOf("kuehlmittel","temperatur","tacho","anzeige")),
+        AstraJCodingModels.CodingOption("shift_up Indicator", AstraJCodingModels.Module.IPC, "Shift Up Indicator", "Schaltempfehlung", "Empfehlung zum Hochschalten", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Anzeige", riskLevel=1, tags=listOf("schalten","empfehlung","gang","anzeige")),
+        AstraJCodingModels.CodingOption("auto_dimming_ipc", AstraJCodingModels.Module.IPC, "Auto Dimming IPC", "Automatische Abdunkelung", "Automatische Tacho-Abdunkelung", listOf(AstraJCodingModels.CodingValue("0","Manuell"),AstraJCodingModels.CodingValue("1","Automatisch")), subcategory="Beleuchtung", riskLevel=1, tags=listOf("dimmung","automatisch","tacho","lichtsensor")),
+        AstraJCodingModels.CodingOption("key_reminder", AstraJCodingModels.Module.IPC, "Key Reminder", "Schlüssel-Erinnerung", "Erinnerung bei vergessenem Schlüssel", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Erinnerungen", riskLevel=1, tags=listOf("schluessel","erinnerung","anzeige"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("ipc_extended","IPC & Anzeigen","Dashboard",opts)
+}
+
+object AstraJABSESPCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("abs_operation", AstraJCodingModels.Module.ABS, "ABS Operation", "ABS Betrieb", "ABS-System Betriebsmodus", listOf(AstraJCodingModels.CodingValue("0","Standard"),AstraJCodingModels.CodingValue("1","Sport")), subcategory="ABS", riskLevel=2, tags=listOf("abs","bremse","betrieb")),
+        AstraJCodingModels.CodingOption("ebd_operation", AstraJCodingModels.Module.ABS, "EBD Operation", "EBD Betrieb", "Elektronische Bremskraftverteilung", listOf(AstraJCodingModels.CodingValue("0","Standard"),AstraJCodingModels.CodingValue("1","Verbessert")), subcategory="EBD", riskLevel=2, tags=listOf("ebd","bremse","verteilung")),
+        AstraJCodingModels.CodingOption("brake_assist_abs", AstraJCodingModels.Module.ABS, "Brake Assist ABS", "BA Betrieb", "Bremsassistent-Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Normal"),AstraJCodingModels.CodingValue("2","Sensibel")), subcategory="Bremsassistent", riskLevel=2, tags=listOf("ba","bremsassistent","sicherheit")),
+        AstraJCodingModels.CodingOption("hdc_operation", AstraJCodingModels.Module.ABS, "HDC Operation", "HDC Betrieb", "Hill Descent Control Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="HDC", riskLevel=2, tags=listOf("hdc","bergab","fahrassistent")),
+        AstraJCodingModels.CodingOption("tcs_operation", AstraJCodingModels.Module.ABS, "TCS Operation", "ASR Betrieb", "Antriebsschlupfregelung Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aktiv"),AstraJCodingModels.CodingValue("1","Deaktivierbar")), subcategory="ASR", riskLevel=2, tags=listOf("tcs","asr","traktion","schlupf")),
+        AstraJCodingModels.CodingOption("ess_operation", AstraJCodingModels.Module.ABS, "ESS Operation", "ESS Betrieb", "Emergency Stop Signal Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="ESS", riskLevel=1, tags=listOf("ess","notbremsung","bremslicht","sicherheit")),
+        AstraJCodingModels.CodingOption("rsc_operation", AstraJCodingModels.Module.ABS, "RSC Operation", "RSC Betrieb", "Roll Stability Control Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="RSC", riskLevel=2, tags=listOf("rsc","stabilitaet","rollen")),
+        AstraJCodingModels.CodingOption("baw_operation", AstraJCodingModels.Module.ABS, "BAW Operation", "BAW Betrieb", "Brake Assistant Warning Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="BAW", riskLevel=1, tags=listOf("baw","bremsassistent","warnung")),
+        AstraJCodingModels.CodingOption("hsa_operation", AstraJCodingModels.Module.ABS, "HSA Operation", "HSA Betrieb", "Hill Start Assist Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="HSA", riskLevel=1, tags=listOf("hsa","berganfahrt","assistent")),
+        AstraJCodingModels.CodingOption("sls_operation", AstraJCodingModels.Module.ABS, "SLS Operation", "SLS Betrieb", "Steering Line Lock Betrieb", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="SLS", riskLevel=2, tags=listOf("sls","lenkung","sperre"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("abs_esp","ABS & ESP Systeme","DiscFull",opts)
+}
+
+object AstraJTCMCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("shift_schedule", AstraJCodingModels.Module.TCM, "Shift Schedule", "Schaltkennfeld", "Schaltkennfeld des Getriebes", listOf(AstraJCodingModels.CodingValue("0","Komfort"),AstraJCodingModels.CodingValue("1","Standard"),AstraJCodingModels.CodingValue("2","Sport")), subcategory="Schaltverhalten", riskLevel=2, tags=listOf("schalten","kennfeld","getriebe")),
+        AstraJCodingModels.CodingOption("clutch_adapt", AstraJCodingModels.Module.TCM, "Clutch Adaptation", "Kupplungsanpassung", "Kupplungsanpassungswerte", listOf(AstraJCodingModels.CodingValue("0","Reset"),AstraJCodingModels.CodingValue("1","Lernen")), subcategory="Kupplung", riskLevel=2, tags=listOf("kupplung","anpassung","m32","lernen")),
+        AstraJCodingModels.CodingOption("torque_convert_lock", AstraJCodingModels.Module.TCM, "Torque Converter Lock", "Drehmomentwandler-Schloss", "Drehmomentwandler-Schloss-Verhalten", listOf(AstraJCodingModels.CodingValue("0","Früh schließen"),AstraJCodingModels.CodingValue("1","Normal"),AstraJCodingModels.CodingValue("2","Spät schließen")), subcategory="Drehmomentwandler", riskLevel=2, tags=listOf("wandler","drehmoment","lock","schloss")),
+        AstraJCodingModels.CodingOption("shift_rpm", AstraJCodingModels.Module.TCM, "Shift RPM", "Schaltrpm", "Drehzahl beim Schalten", listOf(AstraJCodingModels.CodingValue("0","Niedrig"),AstraJCodingModels.CodingValue("1","Mittel"),AstraJCodingModels.CodingValue("2","Hoch")), subcategory="Schaltverhalten", riskLevel=2, tags=listOf("schalten","drehzahl","rpm","getriebe")),
+        AstraJCodingModels.CodingOption("launch_rpm", AstraJCodingModels.Module.TCM, "Launch RPM", "Anfahrdrehzahl", "Drehzahl beim Anfahren", listOf(AstraJCodingModels.CodingValue("0","1500 rpm"),AstraJCodingModels.CodingValue("1","2000 rpm"),AstraJCodingModels.CodingValue("2","2500 rpm"),AstraJCodingModels.CodingValue("3","3000 rpm")), subcategory="Anfahren", riskLevel=2, tags=listOf("anfahren","drehzahl","start","rpm")),
+        AstraJCodingModels.CodingOption("trans_oil_temp", AstraJCodingModels.Module.TCM, "Trans Oil Temp", "Getriebeöltemperatur", "Getriebeöltemperatur-Überwachung", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Überwachung", riskLevel=1, tags=listOf("getriebe","oel","temperatur","anzeige")),
+        AstraJCodingModels.CodingOption("adapt_reset", AstraJCodingModels.Module.TCM, "Adaptation Reset", "Adaptionswerte Reset", "Getriebeadaptionswerte zurücksetzen", listOf(AstraJCodingModels.CodingValue("0","Nein"),AstraJCodingModels.CodingValue("1","Ja")), subcategory="Wartung", riskLevel=2, tags=listOf("adapt","reset","getriebe","lernen")),
+        AstraJCodingModels.CodingOption("shift_pressure", AstraJCodingModels.Module.TCM, "Shift Pressure", "Schaltdruck", "Hydraulikdruck beim Schalten", listOf(AstraJCodingModels.CodingValue("0","Niedrig"),AstraJCodingModels.CodingValue("1","Mittel"),AstraJCodingModels.CodingValue("2","Hoch")), subcategory="Hydraulik", riskLevel=3, tags=listOf("druck","schalten","hydraulik","getriebe"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("tcm_extended","Getriebe TCM","Settings",opts)
+}
+
+object AstraJInfotainmentExtendedCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("display_brightness_auto", AstraJCodingModels.Module.ECU, "Display Brightness Auto", "Display-Helligkeit Auto", "Automatische Display-Helligkeit", listOf(AstraJCodingModels.CodingValue("0","Manuell"),AstraJCodingModels.CodingValue("1","Automatisch")), subcategory="Display", riskLevel=1, tags=listOf("display","helligkeit","automatisch")),
+        AstraJCodingModels.CodingOption("display_night_mode", AstraJCodingModels.Module.ECU, "Display Night Mode", "Nachtmodus Display", "Automatischer Nachtmodus", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Display", riskLevel=1, tags=listOf("nacht","display","dimmung")),
+        AstraJCodingModels.CodingOption("speed_volume_comp", AstraJCodingModels.Module.ECU, "Speed Volume Compensation", "Geschwindigkeits-Lautstärke", "Automatische Lautstärkeanpassung", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Niedrig"),AstraJCodingModels.CodingValue("2","Mittel"),AstraJCodingModels.CodingValue("3","Hoch"),AstraJCodingModels.CodingValue("4","Max")), subcategory="Audio", riskLevel=1, tags=listOf("lautstaerke","geschwindigkeit","audio","anpassung")),
+        AstraJCodingModels.CodingOption("bass_level", AstraJCodingModels.Module.DSP, "Bass Level", "Bass", "Basspegel des Equalizers", listOf(AstraJCodingModels.CodingValue("0","-7"),AstraJCodingModels.CodingValue("1","-5"),AstraJCodingModels.CodingValue("2","-3"),AstraJCodingModels.CodingValue("3","0"),AstraJCodingModels.CodingValue("4","+3"),AstraJCodingModels.CodingValue("5","+5"),AstraJCodingModels.CodingValue("6","+7")), subcategory="Audio", riskLevel=1, tags=listOf("bass","equalizer","audio")),
+        AstraJCodingModels.CodingOption("treble_level", AstraJCodingModels.Module.DSP, "Treble Level", "Höhen", "Höhenpegel des Equalizers", listOf(AstraJCodingModels.CodingValue("0","-7"),AstraJCodingModels.CodingValue("1","-5"),AstraJCodingModels.CodingValue("2","-3"),AstraJCodingModels.CodingValue("3","0"),AstraJCodingModels.CodingValue("4","+3"),AstraJCodingModels.CodingValue("5","+5"),AstraJCodingModels.CodingValue("6","+7")), subcategory="Audio", riskLevel=1, tags=listOf("treble","hoheen","equalizer","audio")),
+        AstraJCodingModels.CodingOption("fader_balance", AstraJCodingModels.Module.DSP, "Fader Balance", "Fader/Balance", "Verteilung vorne/hinten/l/r", listOf(AstraJCodingModels.CodingValue("0","Vorne +5"),AstraJCodingModels.CodingValue("1","Vorne +2"),AstraJCodingModels.CodingValue("2","Mitte"),AstraJCodingModels.CodingValue("3","Hinten +2"),AstraJCodingModels.CodingValue("4","Hinten +5")), subcategory="Audio", riskLevel=1, tags=listOf("fader","balance","audio")),
+        AstraJCodingModels.CodingOption("subwoofer_level", AstraJCodingModels.Module.DSP, "Subwoofer Level", "Subwoofer-Pegel", "Subwoofer-Lautstärke", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Niedrig"),AstraJCodingModels.CodingValue("2","Mittel"),AstraJCodingModels.CodingValue("3","Hoch")), subcategory="Audio", riskLevel=1, tags=listOf("subwoofer","bass","audio")),
+        AstraJCodingModels.CodingOption("bt_autoconnect", AstraJCodingModels.Module.ECU, "BT Auto Connect", "BT Automatik-Verbindung", "Bluetooth automatisch verbinden", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Bluetooth", riskLevel=1, tags=listOf("bluetooth","auto","verbindung")),
+        AstraJCodingModels.CodingOption("bt_a2dp_streaming", AstraJCodingModels.Module.ECU, "BT A2DP Streaming", "BT Audio-Streaming", "Bluetooth A2DP Musikstreaming", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Bluetooth", riskLevel=1, tags=listOf("bluetooth","a2dp","streaming","audio")),
+        AstraJCodingModels.CodingOption("usb_volume", AstraJCodingModels.Module.ECU, "USB Volume", "USB-Lautstärke", "Relative USB-Quell-Lautstärke", listOf(AstraJCodingModels.CodingValue("0","-6"),AstraJCodingModels.CodingValue("1","-3"),AstraJCodingModels.CodingValue("2","0"),AstraJCodingModels.CodingValue("3","+3"),AstraJCodingModels.CodingValue("4","+6")), subcategory="USB", riskLevel=1, tags=listOf("usb","lautstaerke","audio")),
+        AstraJCodingModels.CodingOption("aux_volume", AstraJCodingModels.Module.ECU, "AUX Volume", "AUX-Lautstärke", "Relative AUX-Quell-Lautstärke", listOf(AstraJCodingModels.CodingValue("0","-6"),AstraJCodingModels.CodingValue("1","-3"),AstraJCodingModels.CodingValue("2","0"),AstraJCodingModels.CodingValue("3","+3"),AstraJCodingModels.CodingValue("4","+6")), subcategory="AUX", riskLevel=1, tags=listOf("aux","lautstaerke","audio"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("infotainment_extended","Infotainment Erweitert","Radio",opts)
+}
+
+object AstraJMotorExtendedCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("engine_sound_enhancement", AstraJCodingModels.Module.ECU, "Engine Sound Enhancement", "Motorsound", "Motorsound im Innenraum", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Normal"),AstraJCodingModels.CodingValue("2","Sport")), subcategory="Sound", riskLevel=1, tags=listOf("sound","motor","innenraum")),
+        AstraJCodingModels.CodingOption("active_sound_gen", AstraJCodingModels.Module.ECU, "Active Sound Generator", "Aktiver Soundgenerator", "Aktiver Soundgenerator", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Normal"),AstraJCodingModels.CodingValue("2","Sport")), subcategory="Sound", riskLevel=1, tags=listOf("sound","generator","audio")),
+        AstraJCodingModels.CodingOption("cylinder_deact", AstraJCodingModels.Module.ECU, "Cylinder Deactivation", "Zylinderabschaltung", "Zylinderabschaltung ( AFM )", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Motor", riskLevel=2, tags=listOf("zylinder","afs","abschaltung","sprit")),
+        AstraJCodingModels.CodingOption("turbo_spool_tune", AstraJCodingModels.Module.ECU, "Turbo Spool Tuning", "Turbo Spool Tuning", "Turbolader-Ansprechverhalten", listOf(AstraJCodingModels.CodingValue("0","Standard"),AstraJCodingModels.CodingValue("1","Spontan"),AstraJCodingModels.CodingValue("2","Sanft")), subcategory="Turbo", riskLevel=2, tags=listOf("turbo","spool","ladedruck","ansprechen")),
+        AstraJCodingModels.CodingOption("vvt_tuning", AstraJCodingModels.Module.ECU, "VVT Tuning", "VVT Tuning", "Nockenwellenverstellung", listOf(AstraJCodingModels.CodingValue("0","Standard"),AstraJCodingModels.CodingValue("1","Früh"),AstraJCodingModels.CodingValue("2","Spät")), subcategory="VVT", riskLevel=2, tags=listOf("vvt","nockenwelle","steuerung")),
+        AstraJCodingModels.CodingOption("rev_limit", AstraJCodingModels.Module.ECU, "Rev Limit", "Drehzahlbegrenzung", "Motordrehzahl-Begrenzung", listOf(AstraJCodingModels.CodingValue("0","6500 rpm"),AstraJCodingModels.CodingValue("1","6800 rpm"),AstraJCodingModels.CodingValue("2","7000 rpm")), subcategory="Begrenzung", riskLevel=3, tags=listOf("drehzahl","begrenzung","rpm","motor")),
+        AstraJCodingModels.CodingOption("speed_limit", AstraJCodingModels.Module.ECU, "Speed Limit", "Geschwindigkeitsbegrenzung", "Fahrzeuggeschwindigkeit-Begrenzung", listOf(AstraJCodingModels.CodingValue("0","Keine"),AstraJCodingModels.CodingValue("1","180 km/h"),AstraJCodingModels.CodingValue("2","200 km/h"),AstraJCodingModels.CodingValue("3","220 km/h")), subcategory="Begrenzung", riskLevel=2, tags=listOf("geschwindigkeit","begrenzung","kmh")),
+        AstraJCodingModels.CodingOption("fuel_cut_limit", AstraJCodingModels.Module.ECU, "Fuel Cut Limit", "Schubabschaltung", "Schubabschaltung Verhalten", listOf(AstraJCodingModels.CodingValue("0","Standard"),AstraJCodingModels.CodingValue("1","Früh"),AstraJCodingModels.CodingValue("2","Spät")), subcategory="Kraftstoff", riskLevel=2, tags=listOf("schub","abschaltung","motor","bremse"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("motor_extended","Motor Erweitert","Engineering",opts)
+}
+
+object AstraJBCMExtendedCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("lock_unlock_sound", AstraJCodingModels.Module.BCM, "Lock Unlock Sound", "Verriegelungston", "Akustische Rückmeldung Ver-/Entriegelung", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Leise"),AstraJCodingModels.CodingValue("2","Normal"),AstraJCodingModels.CodingValue("3","Laut")), subcategory="Akustik", riskLevel=1, tags=listOf("akustik","piep","quittung","zv")),
+        AstraJCodingModels.CodingOption("unlock_sound_type", AstraJCodingModels.Module.BCM, "Unlock Sound Type", "Entriegelungston-Typ", "Art des Entriegelungstons", listOf(AstraJCodingModels.CodingValue("0","Kurz"),AstraJCodingModels.CodingValue("1","Doppelt"),AstraJCodingModels.CodingValue("2","Lang")), subcategory="Akustik", riskLevel=1, tags=listOf("akustik","ton","entriegelung","piep")),
+        AstraJCodingModels.CodingOption("flash_alarm", AstraJCodingModels.Module.BCM, "Flash Alarm", "Blinken bei Alarm", "Lichter blinken bei Alarmauslösung", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Alarmanlage", riskLevel=1, tags=listOf("alarm","blinken","licht","sicherheit")),
+        AstraJCodingModels.CodingOption("panic_alarm", AstraJCodingModels.Module.BCM, "Panic Alarm", "Panik-Alarm", "Panik-Funktion der Fernbedienung", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Alarmanlage", riskLevel=1, tags=listOf("panik","alarm","fernbedienung","sicherheit")),
+        AstraJCodingModels.CodingOption("passive_entry", AstraJCodingModels.Module.BCM, "Passive Entry", "Keyless Entry", "Keyless Entry Funktion", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Keyless", riskLevel=1, tags=listOf("keyless","entry","komfort","schluessel")),
+        AstraJCodingModels.CodingOption("passive_start", AstraJCodingModels.Module.BCM, "Passive Start", "Keyless Start", "Keyless Start Funktion", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Keyless", riskLevel=1, tags=listOf("keyless","start","komfort","schluessel")),
+        AstraJCodingModels.CodingOption("auto_unlock", AstraJCodingModels.Module.BCM, "Auto Unlock", "Auto-Entriegelung", "Automatische Entriegelung bei Motorstopp", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Bei Türe öffnen"),AstraJCodingModels.CodingValue("2","Bei Zündung aus")), subcategory="Zentralverriegelung", riskLevel=1, tags=listOf("entriegelung","auto","komfort","zv")),
+        AstraJCodingModels.CodingOption("boot_unlock", AstraJCodingModels.Module.BCM, "Boot Unlock", "Kofferraum-Entriegelung", "separate Kofferraum-Entriegelung", listOf(AstraJCodingModels.CodingValue("0","Mit ZV"),AstraJCodingModels.CodingValue("1","Separate Taste")), subcategory="Kofferraum", riskLevel=1, tags=listOf("kofferraum","entriegelung","komfort"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("bcm_extended","BCM Komfort Erweitert","DirectionsCar",opts)
+}
+
+object AstraJAirbagCoding {
+    private val opts = listOf(
+        AstraJCodingModels.CodingOption("passenger_airbag_off", AstraJCodingModels.Module.ECU, "Passenger Airbag Off", "Beifahrer-Airbag Aus", "Beifahrer-Airbag deaktiviert", listOf(AstraJCodingModels.CodingValue("0","Ein"),AstraJCodingModels.CodingValue("1","Aus (Kindersitz)")), subcategory="Airbag", riskLevel=4, tags=listOf("airbag","beifahrer","kindersitz","sicherheit"), hardwareRequired="Nur für Kindersitze verwenden!"),
+        AstraJCodingModels.CodingOption("side_airbag_off", AstraJCodingModels.Module.ECU, "Side Airbag Off", "Seiten-Airbag Aus", "Seiten-Airbags deaktiviert", listOf(AstraJCodingModels.CodingValue("0","Ein"),AstraJCodingModels.CodingValue("1","Aus")), subcategory="Airbag", riskLevel=4, tags=listOf("airbag","seite","sicherheit"), hardwareRequired="Nur auf eigene Verantwortung!"),
+        AstraJCodingModels.CodingOption("curtain_airbag_off", AstraJCodingModels.Module.ECU, "Curtain Airbag Off", "Vorhang-Airbag Aus", "Kopf-Airbags deaktiviert", listOf(AstraJCodingModels.CodingValue("0","Ein"),AstraJCodingModels.CodingValue("1","Aus")), subcategory="Airbag", riskLevel=4, tags=listOf("airbag","vorhang","kopf","sicherheit"), hardwareRequired="Nur auf eigene Verantwortung!"),
+        AstraJCodingModels.CodingOption("airbag_warning", AstraJCodingModels.Module.IPC, "Airbag Warning", "Airbag-Warnung", "Airbag-Warnleuchte anzeigen", listOf(AstraJCodingModels.CodingValue("0","Aus"),AstraJCodingModels.CodingValue("1","Ein")), subcategory="Airbag", riskLevel=1, tags=listOf("airbag","warnung","leuchte","anzeige"))
+    )
+    fun getCategory() = AstraJCodingModels.CodingCategory("airbag","Airbag Systeme","Security",opts)
 }
