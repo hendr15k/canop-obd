@@ -33,6 +33,9 @@ import com.canopobd.data.domain.TurboEfficiencyAnalyzer
 import com.canopobd.data.domain.BoostLeakDetector
 import com.canopobd.data.domain.WastegateHealthAnalyzer
 import com.canopobd.data.domain.SensorHealthMonitor
+import com.canopobd.data.domain.OilHealthPredictor
+import com.canopobd.data.domain.SensorValidator
+import com.canopobd.data.domain.ValidationResult
 import com.canopobd.protocol.BCMCommandMapper
 import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.notifications.MaintenanceNotificationManager
@@ -311,6 +314,8 @@ class DashboardViewModel private constructor(
     private val driveStyleAnalyzer = DriveStyleAnalyzer()
     private val drivingEfficiencyScorer = DrivingEfficiencyScorer()
     private val fuelSystemAnalyzer = FuelSystemAnalyzer()
+    private val oilHealthPredictor = OilHealthPredictor()
+    private val sensorValidator = SensorValidator(com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE)
 
     val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
     val batteryHealthScore = MutableStateFlow(100)
@@ -364,6 +369,14 @@ class DashboardViewModel private constructor(
         thermostatOpeningTemp = 0.0, waterPumpEfficiency = 0, leakProbability = 0,
         coolantTempStable = true, diagnosis = "", recommendation = "", detectedIssues = emptyList()
     ))
+    val oilHealthPrediction = MutableStateFlow(OilHealthPredictor.OilHealthPredictionResult(
+        prediction = OilHealthPredictor.OilHealthPrediction.UNKNOWN,
+        healthScore = 0, thermalStressIndex = 0.0, degradationPercent = 0.0,
+        effectiveOilAgeKm = 0.0, kmSinceOilChange = 0.0, recommendedChangeKm = 0,
+        recommendedChangeDays = 0, thermalLoadScore = 0, drivingPatternScore = 0,
+        consumptionScore = 0, diagnosis = "", recommendation = "", oilType = ""
+    ))
+    val sensorValidationResult: MutableStateFlow<ValidationResult> = MutableStateFlow(ValidationResult.Unavailable)
     val turboSpoolResult = MutableStateFlow(TurboSpoolAnalyzer.SpoolAnalysis(
         status = TurboSpoolAnalyzer.SpoolStatus.INSUFFICIENT_DATA, healthScore = 0,
         spoolTimeSeconds = 0.0, expectedSpoolTime = 0.0, spoolDeviation = 0.0,
@@ -1115,6 +1128,33 @@ class DashboardViewModel private constructor(
                 speed = data.speed
             )
             oilConditionResult.value = oilConditionMonitor.analyze(oilInput)
+        } catch (_: Exception) {}
+
+        // Oil Health Predictor
+        try {
+            val oilHealthInput = OilHealthPredictor.OilHealthInput(
+                oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp,
+                coolantTemp = data.coolantTemp,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad,
+                boostPressureKpa = data.boostPressure,
+                totalKm = currentKm.value.toDouble(),
+                lastOilChangeKm = _maintenanceItems.value.find { it.type == com.canopobd.data.model.MaintenanceType.OIL_CHANGE }?.lastServiceKm?.toDouble() ?: 0.0,
+                lastOilChangeTimestamp = _maintenanceItems.value.find { it.type == com.canopobd.data.model.MaintenanceType.OIL_CHANGE }?.lastServiceDate ?: 0L,
+                engineRuntimeSec = data.runTime,
+                drivingPattern = OilHealthPredictor.DrivingPattern.NORMAL,
+                timeAbove110C = 0.0,
+                timeAbove115C = 0.0,
+                timeAbove120C = 0.0,
+                shortTripCount = 0,
+                oilConsumptionLPer1000Km = 0.0
+            )
+            oilHealthPrediction.value = oilHealthPredictor.analyze(oilHealthInput)
+        } catch (_: Exception) {}
+
+        // Sensor Validator
+        try {
+            sensorValidationResult.value = sensorValidator.validateMaf(data.mafRate)
         } catch (_: Exception) {}
 
         // PCV Monitor

@@ -288,11 +288,11 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
 
     fun startTurboAnalysisCollection(obdDataFlow: kotlinx.coroutines.flow.Flow<OBDData>, carProfileFlow: kotlinx.coroutines.flow.Flow<CarProfile>) {
         viewModelScope.launch {
-            obdDataFlow.collect { data ->
+            kotlinx.coroutines.flow.combine(obdDataFlow, carProfileFlow) { data, carProfile ->
+                data to carProfile
+            }.collect { (data, carProfile) ->
                 if (data.rpm > 0) {
-                    carProfileFlow.collect { carProfile ->
-                        updateFromOBDDataWithDriveSession(data, carProfile, DriveSession())
-                    }
+                    updateFromOBDDataWithDriveSession(data, carProfile, DriveSession())
                 }
             }
         }
