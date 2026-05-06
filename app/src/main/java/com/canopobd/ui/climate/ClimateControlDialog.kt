@@ -41,14 +41,17 @@ enum class ClimateZone {
     DRIVER, PASSENGER, REAR, ALL
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun ClimateControlDialog(
     initialState: ClimateState = ClimateState(),
     onCommand: (ClimateCommand) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    externalState: ClimateState? = null,
+    onClimateStateChange: ((ClimateState) -> Unit)? = null
 ) {
     val colors = LocalAppColors.current
-    var climateState by remember { mutableStateOf(initialState) }
+    var localState by remember { mutableStateOf(externalState ?: initialState) }
     var selectedZone by remember { mutableStateOf(ClimateZone.ALL) }
 
     AlertDialog(
@@ -95,7 +98,7 @@ fun ClimateControlDialog(
                                 Text("Außentemperatur", color = colors.textDim, fontSize = 10.sp)
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     Text(
-                                        "${climateState.outsideTemp}",
+                                        "${localState.outsideTemp}",
                                         color = colors.textPrimary,
                                         fontSize = 32.sp,
                                         fontWeight = FontWeight.Bold
@@ -107,7 +110,7 @@ fun ClimateControlDialog(
                                 Text("Innentemperatur", color = colors.textDim, fontSize = 10.sp)
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     Text(
-                                        "${climateState.cabinTemp}",
+                                        "${localState.cabinTemp}",
                                         color = colors.gaugeCyan,
                                         fontSize = 24.sp,
                                         fontWeight = FontWeight.Bold
@@ -117,7 +120,7 @@ fun ClimateControlDialog(
                             }
                         }
 
-                        if (climateState.acCompressorActive) {
+                        if (localState.acCompressorActive) {
                             Row(
                                 modifier = Modifier.padding(top = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -167,22 +170,22 @@ fun ClimateControlDialog(
                         ) {
                             TemperatureControl(
                                 label = "Fahrer",
-                                temp = climateState.driverTemp,
+                                temp = localState.driverTemp,
                                 isActive = selectedZone == ClimateZone.DRIVER || selectedZone == ClimateZone.ALL,
                                 onIncrease = {
-                                    if (climateState.driverTemp < 30) {
-                                        climateState = climateState.copy(driverTemp = climateState.driverTemp + 1)
-                                        if (climateState.syncEnabled) {
-                                            climateState = climateState.copy(passengerTemp = climateState.passengerTemp + 1)
+                                    if (localState.driverTemp < 30) {
+                                        localState = localState.copy(driverTemp = localState.driverTemp + 1)
+                                        if (localState.syncEnabled) {
+                                            localState = localState.copy(passengerTemp = localState.passengerTemp + 1)
                                         }
                                         onCommand(ClimateCommand.SET_TEMP_DRIVER)
                                     }
                                 },
                                 onDecrease = {
-                                    if (climateState.driverTemp > 16) {
-                                        climateState = climateState.copy(driverTemp = climateState.driverTemp - 1)
-                                        if (climateState.syncEnabled) {
-                                            climateState = climateState.copy(passengerTemp = climateState.passengerTemp - 1)
+                                    if (localState.driverTemp > 16) {
+                                        localState = localState.copy(driverTemp = localState.driverTemp - 1)
+                                        if (localState.syncEnabled) {
+                                            localState = localState.copy(passengerTemp = localState.passengerTemp - 1)
                                         }
                                         onCommand(ClimateCommand.SET_TEMP_DRIVER)
                                     }
@@ -197,17 +200,17 @@ fun ClimateControlDialog(
                             )
                             TemperatureControl(
                                 label = "Beifahrer",
-                                temp = climateState.passengerTemp,
+                                temp = localState.passengerTemp,
                                 isActive = selectedZone == ClimateZone.PASSENGER || selectedZone == ClimateZone.ALL,
                                 onIncrease = {
-                                    if (climateState.passengerTemp < 30) {
-                                        climateState = climateState.copy(passengerTemp = climateState.passengerTemp + 1)
+                                    if (localState.passengerTemp < 30) {
+                                        localState = localState.copy(passengerTemp = localState.passengerTemp + 1)
                                         onCommand(ClimateCommand.SET_TEMP_PASSENGER)
                                     }
                                 },
                                 onDecrease = {
-                                    if (climateState.passengerTemp > 16) {
-                                        climateState = climateState.copy(passengerTemp = climateState.passengerTemp - 1)
+                                    if (localState.passengerTemp > 16) {
+                                        localState = localState.copy(passengerTemp = localState.passengerTemp - 1)
                                         onCommand(ClimateCommand.SET_TEMP_PASSENGER)
                                     }
                                 },
@@ -220,9 +223,9 @@ fun ClimateControlDialog(
                         ClimateToggle(
                             label = "Sync",
                             icon = Icons.Filled.Sync,
-                            isActive = climateState.syncEnabled,
+                            isActive = localState.syncEnabled,
                             onToggle = {
-                                climateState = climateState.copy(syncEnabled = !climateState.syncEnabled)
+                                localState = localState.copy(syncEnabled = !localState.syncEnabled)
                                 onCommand(ClimateCommand.TOGGLE_SYNC)
                             },
                             colors = colors,
@@ -245,19 +248,19 @@ fun ClimateControlDialog(
                         ) {
                             IconButton(
                                 onClick = {
-                                    if (climateState.fanSpeed > 0) {
-                                        climateState = climateState.copy(fanSpeed = climateState.fanSpeed - 1)
+                                    if (localState.fanSpeed > 0) {
+                                        localState = localState.copy(fanSpeed = localState.fanSpeed - 1)
                                         onCommand(ClimateCommand.FAN_SPEED_DOWN)
                                     }
                                 },
-                                enabled = climateState.fanSpeed > 0
+                                enabled = localState.fanSpeed > 0
                             ) {
                                 Icon(Icons.Filled.Remove, "Leiser", tint = colors.accent)
                             }
 
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 repeat(6) { index ->
-                                    val isActive = index < climateState.fanSpeed
+                                    val isActive = index < localState.fanSpeed
                                     Box(
                                         modifier = Modifier
                                             .size(width = 8.dp, height = (16 + index * 4).dp)
@@ -271,12 +274,12 @@ fun ClimateControlDialog(
 
                             IconButton(
                                 onClick = {
-                                    if (climateState.fanSpeed < 6) {
-                                        climateState = climateState.copy(fanSpeed = climateState.fanSpeed + 1)
+                                    if (localState.fanSpeed < 6) {
+                                        localState = localState.copy(fanSpeed = localState.fanSpeed + 1)
                                         onCommand(ClimateCommand.FAN_SPEED_UP)
                                     }
                                 },
-                                enabled = climateState.fanSpeed < 6
+                                enabled = localState.fanSpeed < 6
                             ) {
                                 Icon(Icons.Filled.Add, "Lauter", tint = colors.accent)
                             }
@@ -288,36 +291,36 @@ fun ClimateControlDialog(
                         ) {
                             ClimateButton(
                                 label = "Aus",
-                                isActive = climateState.fanSpeed == 0,
+                                isActive = localState.fanSpeed == 0,
                                 onClick = {
-                                    climateState = climateState.copy(fanSpeed = 0)
+                                    localState = localState.copy(fanSpeed = 0)
                                     onCommand(ClimateCommand.FAN_OFF)
                                 },
                                 colors = colors
                             )
                             ClimateButton(
                                 label = "1",
-                                isActive = climateState.fanSpeed == 1,
+                                isActive = localState.fanSpeed == 1,
                                 onClick = {
-                                    climateState = climateState.copy(fanSpeed = 1)
+                                    localState = localState.copy(fanSpeed = 1)
                                     onCommand(ClimateCommand.FAN_SPEED_1)
                                 },
                                 colors = colors
                             )
                             ClimateButton(
                                 label = "3",
-                                isActive = climateState.fanSpeed == 3,
+                                isActive = localState.fanSpeed == 3,
                                 onClick = {
-                                    climateState = climateState.copy(fanSpeed = 3)
+                                    localState = localState.copy(fanSpeed = 3)
                                     onCommand(ClimateCommand.FAN_SPEED_3)
                                 },
                                 colors = colors
                             )
                             ClimateButton(
                                 label = "Max",
-                                isActive = climateState.fanSpeed == 6,
+                                isActive = localState.fanSpeed == 6,
                                 onClick = {
-                                    climateState = climateState.copy(fanSpeed = 6)
+                                    localState = localState.copy(fanSpeed = 6)
                                     onCommand(ClimateCommand.FAN_MAX)
                                 },
                                 colors = colors
@@ -340,19 +343,19 @@ fun ClimateControlDialog(
                             ClimateToggle(
                                 label = "A/C",
                                 icon = Icons.Filled.AcUnit,
-                                isActive = climateState.isACEnabled,
+                                isActive = localState.isACEnabled,
                                 onToggle = {
-                                    climateState = climateState.copy(isACEnabled = !climateState.isACEnabled)
-                                    onCommand(if (climateState.isACEnabled) ClimateCommand.AC_ON else ClimateCommand.AC_OFF)
+                                    localState = localState.copy(isACEnabled = !localState.isACEnabled)
+                                    onCommand(if (localState.isACEnabled) ClimateCommand.AC_ON else ClimateCommand.AC_OFF)
                                 },
                                 colors = colors
                             )
                             ClimateToggle(
                                 label = "Auto",
                                 icon = Icons.Filled.AutoMode,
-                                isActive = climateState.isAutoMode,
+                                isActive = localState.isAutoMode,
                                 onToggle = {
-                                    climateState = climateState.copy(isAutoMode = !climateState.isAutoMode)
+                                    localState = localState.copy(isAutoMode = !localState.isAutoMode)
                                     onCommand(ClimateCommand.AUTO_MODE)
                                 },
                                 colors = colors
@@ -360,10 +363,10 @@ fun ClimateControlDialog(
                             ClimateToggle(
                                 label = "Umlauf",
                                 icon = Icons.Filled.Air,
-                                isActive = climateState.isRecirculation,
+                                isActive = localState.isRecirculation,
                                 onToggle = {
-                                    climateState = climateState.copy(isRecirculation = !climateState.isRecirculation)
-                                    onCommand(if (climateState.isRecirculation) ClimateCommand.RECIRC_ON else ClimateCommand.RECIRC_OFF)
+                                    localState = localState.copy(isRecirculation = !localState.isRecirculation)
+                                    onCommand(if (localState.isRecirculation) ClimateCommand.RECIRC_ON else ClimateCommand.RECIRC_OFF)
                                 },
                                 colors = colors
                             )
@@ -378,30 +381,30 @@ fun ClimateControlDialog(
                             ClimateToggle(
                                 label = "Front",
                                 icon = Icons.Filled.FrontHand,
-                                isActive = climateState.isFrontDefrost,
+                                isActive = localState.isFrontDefrost,
                                 onToggle = {
-                                    climateState = climateState.copy(isFrontDefrost = !climateState.isFrontDefrost)
-                                    onCommand(if (climateState.isFrontDefrost) ClimateCommand.DEFROST_FRONT else ClimateCommand.DEFROST_FRONT_OFF)
+                                    localState = localState.copy(isFrontDefrost = !localState.isFrontDefrost)
+                                    onCommand(if (localState.isFrontDefrost) ClimateCommand.DEFROST_FRONT else ClimateCommand.DEFROST_FRONT_OFF)
                                 },
                                 colors = colors
                             )
                             ClimateToggle(
                                 label = "Heck",
                                 icon = Icons.Filled.DirectionsCar,
-                                isActive = climateState.isRearDefrost,
+                                isActive = localState.isRearDefrost,
                                 onToggle = {
-                                    climateState = climateState.copy(isRearDefrost = !climateState.isRearDefrost)
-                                    onCommand(if (climateState.isRearDefrost) ClimateCommand.DEFROST_REAR else ClimateCommand.DEFROST_REAR_OFF)
+                                    localState = localState.copy(isRearDefrost = !localState.isRearDefrost)
+                                    onCommand(if (localState.isRearDefrost) ClimateCommand.DEFROST_REAR else ClimateCommand.DEFROST_REAR_OFF)
                                 },
                                 colors = colors
                             )
                             ClimateToggle(
                                 label = "Spiegel",
                                 icon = Icons.Filled.FlipToBack,
-                                isActive = climateState.isMirrorDefrost,
+                                isActive = localState.isMirrorDefrost,
                                 onToggle = {
-                                    climateState = climateState.copy(isMirrorDefrost = !climateState.isMirrorDefrost)
-                                    onCommand(if (climateState.isMirrorDefrost) ClimateCommand.DEFROST_MIRRORS else ClimateCommand.DEFROST_MIRRORS_OFF)
+                                    localState = localState.copy(isMirrorDefrost = !localState.isMirrorDefrost)
+                                    onCommand(if (localState.isMirrorDefrost) ClimateCommand.DEFROST_MIRRORS else ClimateCommand.DEFROST_MIRRORS_OFF)
                                 },
                                 colors = colors
                             )

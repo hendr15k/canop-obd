@@ -35,6 +35,7 @@ import com.canopobd.data.domain.OilHealthPredictor
 import com.canopobd.data.domain.SensorValidator
 import com.canopobd.data.domain.ValidationResult
 import com.canopobd.protocol.BCMCommandMapper
+import com.canopobd.protocol.BCMProtocol
 import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.notifications.MaintenanceNotificationManager
 import com.canopobd.data.domain.DriveStyleAnalyzer
@@ -253,6 +254,10 @@ class DashboardViewModel private constructor(
 
     private val _showClimateControl = MutableStateFlow(false)
     val showClimateControl: StateFlow<Boolean> = _showClimateControl.asStateFlow()
+
+    private val _climateState = MutableStateFlow(com.canopobd.ui.climate.ClimateState())
+    val climateState: StateFlow<com.canopobd.ui.climate.ClimateState> = _climateState.asStateFlow()
+
     val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
@@ -799,16 +804,138 @@ class DashboardViewModel private constructor(
 
     fun onSendClimateCommand(command: com.canopobd.ui.climate.ClimateCommand) {
         viewModelScope.launch(Dispatchers.IO) {
-            when (command) {
-                com.canopobd.ui.climate.ClimateCommand.AC_ON -> repository.sendRawCommand("310302")
-                com.canopobd.ui.climate.ClimateCommand.AC_OFF -> repository.sendRawCommand("310302")
-                com.canopobd.ui.climate.ClimateCommand.AUTO_MODE -> repository.sendRawCommand("310302")
-                com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT -> repository.sendRawCommand("310302")
-                com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR -> repository.sendRawCommand("310302")
-                com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS -> repository.sendRawCommand("310302")
-                else -> Log.d(TAG, "Climate command: $command")
+            val frame = when (command) {
+                is com.canopobd.ui.climate.ClimateCommand.AC_ON -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isACEnabled = true)
+                    _climateState.value = newState
+                    val frame = BCMProtocol.Climate.acOnFrame()
+                    bytesToHex(frame)
+                }
+                is com.canopobd.ui.climate.ClimateCommand.AC_OFF -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isACEnabled = false)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.AUTO_MODE -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isAutoMode = true, fanSpeed = 3)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.autoModeFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.RECIRC_ON -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isRecirculation = true)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.autoModeFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.RECIRC_OFF -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isRecirculation = false)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isFrontDefrost = true)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.defrostFrontFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT_OFF -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isFrontDefrost = false)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isRearDefrost = true)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.defrostRearFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR_OFF -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isRearDefrost = false)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isMirrorDefrost = true)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.defrostAllFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS_OFF -> {
+                    val current = _climateState.value
+                    val newState = current.copy(isMirrorDefrost = false)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.FAN_OFF -> {
+                    val current = _climateState.value
+                    val newState = current.copy(fanSpeed = 0)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.blowerSpeedFrame(0).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_UP -> {
+                    val current = _climateState.value
+                    val newSpeed = (current.fanSpeed + 1).coerceAtMost(6)
+                    val newState = current.copy(fanSpeed = newSpeed)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.blowerSpeedFrame(newSpeed).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_DOWN -> {
+                    val current = _climateState.value
+                    val newSpeed = (current.fanSpeed - 1).coerceAtLeast(0)
+                    val newState = current.copy(fanSpeed = newSpeed)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.blowerSpeedFrame(newSpeed).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_1 -> {
+                    val current = _climateState.value
+                    val newState = current.copy(fanSpeed = 1)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.blowerSpeedFrame(1).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_3 -> {
+                    val current = _climateState.value
+                    val newState = current.copy(fanSpeed = 3)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.blowerSpeedFrame(3).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.FAN_MAX -> {
+                    val current = _climateState.value
+                    val newState = current.copy(fanSpeed = 6)
+                    _climateState.value = newState
+                    BCMProtocol.Climate.blowerSpeedFrame(6).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.SET_TEMP_DRIVER -> {
+                    val current = _climateState.value
+                    BCMProtocol.Climate.temperatureFrame(current.driverTemp).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.SET_TEMP_PASSENGER -> {
+                    val current = _climateState.value
+                    BCMProtocol.Climate.temperatureFrame(current.passengerTemp).let { bytesToHex(it) }
+                }
+                is com.canopobd.ui.climate.ClimateCommand.TOGGLE_SYNC -> {
+                    val current = _climateState.value
+                    val newState = current.copy(syncEnabled = !current.syncEnabled)
+                    _climateState.value = newState
+                    Log.d(TAG, "Sync toggled: ${newState.syncEnabled}")
+                    null
+                }
             }
+            frame?.let { repository.sendRawCommand(it) }
         }
+    }
+
+    private fun bytesToHex(bytes: ByteArray): String {
+        return bytes.joinToString("") { "%02X".format(it) }
+    }
+
+    fun updateClimateState(state: com.canopobd.ui.climate.ClimateState) {
+        _climateState.value = state
     }
 
     fun onSendBCMCommand(command: ComfortCommand) {

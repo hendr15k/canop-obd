@@ -350,9 +350,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
 
     if (showClimateControl) {
         com.canopobd.ui.climate.ClimateControlDialog(
-            initialState = com.canopobd.ui.climate.ClimateState(),
+            initialState = viewModel.climateState.value,
             onCommand = viewModel::onSendClimateCommand,
-            onDismiss = viewModel::toggleClimateControl
+            onDismiss = viewModel::toggleClimateControl,
+            externalState = viewModel.climateState.value,
+            onClimateStateChange = { newState ->
+                viewModel.updateClimateState(newState)
+            }
         )
     }
 
