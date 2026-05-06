@@ -252,6 +252,7 @@
     <string name="readiness">Readiness</string>
     <string name="diagnostics">Diagnostics</string>
     <string name="analysis">Analysis</string>
+    <string name="gauges">Gauges</string>
     <string name="alerts">Alerts</string>
     <string name="fuel_trim_analysis_title">Kraftstoff-Trimm-Analyse</string>
     <string name="stft_bank1">STFT Bank 1</string>

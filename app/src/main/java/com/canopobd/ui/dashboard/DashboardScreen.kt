@@ -366,6 +366,14 @@ fun DashboardScreen(
                 }
 
                 item {
+                    SectionHeader(
+                        title = stringResource(R.string.analysis).uppercase(),
+                        icon = Icons.Filled.Analytics,
+                        colors = colors
+                    )
+                }
+
+                item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -440,6 +448,14 @@ fun DashboardScreen(
                 }
 
                 item {
+                    SectionHeader(
+                        title = stringResource(R.string.gauges).uppercase(),
+                        icon = Icons.Filled.Speed,
+                        colors = colors
+                    )
+                }
+
+                item {
                     val primaryIds = primaryGaugeIds.toList()
                     val primaryGaugeData = primaryIds.mapNotNull { id -> gaugeMap[id] }.take(3)
 
@@ -453,7 +469,8 @@ fun DashboardScreen(
                 item {
                     SecondaryGaugeGrid(
                         gaugeMap = gaugeMap,
-                        primaryIds = primaryGaugeIds
+                        primaryIds = primaryGaugeIds,
+                        colors = colors
                     )
                 }
 
@@ -681,20 +698,20 @@ private fun PrimaryGaugeRow(
         repeat(totalSlots) { slot ->
             val gauge = gauges.getOrNull(slot)
             if (gauge != null) {
-                CircularGauge(
+                    CircularGauge(
                     value = gauge.value,
                     minValue = gauge.minValue,
                     maxValue = gauge.maxValue,
                     label = gauge.label,
                     unit = gauge.unit,
                     accentColor = gauge.color,
-                    size = 130.dp
+                    size = 140.dp
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(130.dp)
-                        .clip(RoundedCornerShape(65.dp))
+                        .size(140.dp)
+                        .clip(RoundedCornerShape(70.dp))
                         .background(colors.surface.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -713,13 +730,14 @@ private fun PrimaryGaugeRow(
 @Composable
 private fun SecondaryGaugeGrid(
     gaugeMap: Map<String, GaugeItem>,
-    primaryIds: Set<String>
+    primaryIds: Set<String>,
+    colors: AppColors
 ) {
     val secondary = gaugeMap.entries
         .filter { it.key !in primaryIds }
         .take(6)
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         secondary.chunked(3).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1113,6 +1131,32 @@ private fun ConnectionQualityBadge(stats: ConnectionStats, colors: AppColors) {
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(text = stats.quality.label, fontSize = 10.sp, color = color)
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector? = null, colors: AppColors) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.textDim,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+        Text(
+            text = title,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = colors.textDim
+        )
     }
 }
 
