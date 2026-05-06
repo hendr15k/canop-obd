@@ -8,8 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.canopobd.bluetooth.RemoteBridge
-import com.canopobd.data.repository.CANRepository
-import com.canopobd.data.repository.TurboMonitoringData
 import com.canopobd.data.domain.BatteryHealthAnalyzer
 import com.canopobd.data.domain.DriveMode
 import com.canopobd.data.domain.DriveModeDetector
@@ -54,7 +52,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 @SuppressLint("MissingPermission")
 class DashboardViewModel private constructor(
@@ -156,7 +153,7 @@ class DashboardViewModel private constructor(
     val currentKm: StateFlow<Int> = _currentKm.asStateFlow()
 
     private var lastMaintenanceCheckTime = 0L
-    private val sessionNotifiedMaintenance = mutableMapOf<String, Pair<Int, MaintenanceNotificationManager.Urgency>>()
+    private val sessionNotifiedMaintenance = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, MaintenanceNotificationManager.Urgency>>()
 
     private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
     val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
@@ -331,6 +328,7 @@ class DashboardViewModel private constructor(
     private val fuelSystemAnalyzer = FuelSystemAnalyzer()
     private val oilHealthPredictor = OilHealthPredictor()
     private val sensorValidator = SensorValidator(com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE)
+    private val fuelTrimAnalyzer = FuelTrimAnalyzer()
 
     val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
     val batteryHealthScore = MutableStateFlow(100)
@@ -802,10 +800,6 @@ class DashboardViewModel private constructor(
         _carProfileState.value = profile
         repository.saveCarProfile(profile)
         _showCarProfile.value = false
-    }
-
-    private fun updateTurboData() {
-        turboViewModel.updateFromOBDData(repository.obdData.value, _carProfileState.value)
     }
 
     private fun updateTimingChainState() {
@@ -1558,8 +1552,7 @@ class DashboardViewModel private constructor(
 
     fun analyzeFuelSystem(): FuelSystemHealth {
         val data = repository.obdData.value
-        val analyzer = FuelTrimAnalyzer()
-        val status = analyzer.analyze(data.shortTermFuelTrimB1, data.longTermFuelTrimB1)
+        val status = fuelTrimAnalyzer.analyze(data.shortTermFuelTrimB1, data.longTermFuelTrimB1)
 
         val health = when {
             status.isLean -> FuelSystemHealth.LEAN

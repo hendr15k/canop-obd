@@ -391,27 +391,29 @@ class OBDRepository(
     }
 
     private fun recordConnectionSuccess() {
-        val s = _connectionStats.value
-        val newSuccess = s.successCount + 1
-        val newFailure = s.failureCount
-        val rate = newSuccess.toDouble() / (newSuccess + newFailure)
-        _connectionStats.value = s.copy(
-            successCount = newSuccess,
-            failureCount = newFailure,
-            quality = ConnectionQuality.fromSuccessRate(rate)
-        )
+        _connectionStats.update { s ->
+            val newSuccess = s.successCount + 1
+            val newFailure = s.failureCount
+            val rate = newSuccess.toDouble() / (newSuccess + newFailure)
+            s.copy(
+                successCount = newSuccess,
+                failureCount = newFailure,
+                quality = ConnectionQuality.fromSuccessRate(rate)
+            )
+        }
     }
 
     private fun recordConnectionFailure() {
-        val s = _connectionStats.value
-        val newSuccess = s.successCount
-        val newFailure = s.failureCount + 1
-        val rate = newSuccess.toDouble() / (newSuccess + newFailure)
-        _connectionStats.value = s.copy(
-            successCount = newSuccess,
-            failureCount = newFailure,
-            quality = ConnectionQuality.fromSuccessRate(rate)
-        )
+        _connectionStats.update { s ->
+            val newSuccess = s.successCount
+            val newFailure = s.failureCount + 1
+            val rate = newSuccess.toDouble() / (newSuccess + newFailure)
+            s.copy(
+                successCount = newSuccess,
+                failureCount = newFailure,
+                quality = ConnectionQuality.fromSuccessRate(rate)
+            )
+        }
     }
 
     private fun startPolling(conn: ELM327BTConnection) {
@@ -452,7 +454,7 @@ class OBDRepository(
                             avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
                             sampleCount = tripSamples,
                             totalFuelUsed = tripFuelUsedSum,
-                            avgFuelRate = if (tripSamples > 0) tripFuelUsedSum / ((now - tripStartTime) / 3_600_000.0.coerceAtLeast(0.001)) else 0.0,
+                            avgFuelRate = if (tripSamples > 0) tripFuelUsedSum / ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001) else 0.0,
                             fuelStartLevel = tripFuelStart,
                             fuelEndLevel = results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel,
                             vin = storedVin
@@ -531,7 +533,7 @@ class OBDRepository(
                                 turboBoostTarget = mode22Results[Mode22PIDs.TURBO_BOOST_TARGET] ?: m.turboBoostTarget,
                                 wastegateDuty = mode22Results[Mode22PIDs.WASTEGATE_DUTY] ?: m.wastegateDuty,
                                 turboSpeed = mode22Results[Mode22PIDs.TURBO_SPEED] ?: m.turboSpeed,
-                                engineTorque = mode22Results[Mode22PIDs.ENGINE_OIL_TEMP] ?: m.engineTorque,
+                                engineTorque = mode22Results[Mode22PIDs.ENGINE_TORQUE] ?: m.engineTorque,
                                 timestamp = System.currentTimeMillis()
                             )
                             // Update OBDData with Mode 22 values
@@ -884,10 +886,8 @@ class OBDRepository(
         }
     }
 
-    fun loadMaintenanceItemsFromRoom(): List<MaintenanceItem> {
-        val entities = kotlinx.coroutines.runBlocking {
-            maintenanceDao.getAllOnce()
-        }
+    suspend fun loadMaintenanceItemsFromRoom(): List<MaintenanceItem> {
+        val entities = maintenanceDao.getAllOnce()
         return entities.mapNotNull { entity ->
             MaintenanceType.entries.find { it.name == entity.type }?.let { type ->
                 MaintenanceItem(

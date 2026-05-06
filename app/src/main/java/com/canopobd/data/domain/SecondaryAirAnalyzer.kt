@@ -24,7 +24,7 @@ class SecondaryAirAnalyzer {
     )
 
     enum class SAIIssue(val label: String, val description: String) {
-        VALVE_STUCK_CLOSED("Ventil klemmt", "SAI-Ventil schliesst nicht"),
+        VALVE_STUCK_CLOSED("Ventil klemmt", "SAI-Ventil öffnet nicht"),
         VALVE_STUCK_OPEN("Ventil offen", "SAI-Ventil schliesst nicht"),
         PUMP_FAULT("Pumpenfehler", "Luftpumpe defekt"),
         RELAY_FAULT("Relaisfehler", "SAI-Relais defekt"),

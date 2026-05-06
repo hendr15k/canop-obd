@@ -118,8 +118,8 @@ enum class OBDPID(
     THROTTLE_C("015D", "Throttle C", "%", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
     }),
-    THROTTLE_ACTUATOR("005C", "Throttle Actuator", "%", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    THROTTLE_ACTUATOR("015C", "Throttle Actuator", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
@@ -169,8 +169,8 @@ enum class OBDPID(
     TURBO_BOOST_VACUUM("0175", "Turbo Boost Vacuum", "kPa", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    ACCELERATOR_POS_E("011B", "Accelerator Pedal E", "%", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    ACCELERATOR_POS_E("011B", "Accelerator Pedal E", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     ENGINE_RUNTIME_MIL("015F", "Engine Runtime MIL On", "s", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
@@ -1207,7 +1207,7 @@ data class AstraJ14TurboCalibration(
         val MAINTENANCE_INTERVALS = listOf(
             MaintenanceInterval(
                 item = MaintenanceType.OIL_CHANGE,
-                intervalKm = 30000,
+                intervalKm = 15000,
                 intervalMonths = 12,
                 specification = "Dexos2 5W-30",
                 capacity = "4.5L",
@@ -1226,8 +1226,8 @@ data class AstraJ14TurboCalibration(
             MaintenanceInterval(
                 item = MaintenanceType.TURBO_BOOST_CHECK,
                 intervalKm = 60000,
-                specification = "Kraftstofffilter",
-                notes = "Benzinfilter integriert in Tankpumpe"
+                specification = "Ladedruck-Prüfung",
+                notes = "Ladedrucksensor und Wastegate-Stellglied prüfen, O-Ring kontrollieren"
             ),
             MaintenanceInterval(
                 item = MaintenanceType.COOLANT,

@@ -271,7 +271,7 @@ fun DashboardScreen(
     val colors = LocalAppColors.current
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
+
 
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
@@ -738,8 +738,9 @@ fun DashboardScreen(
                         text = "Batt: %.1fV".format(obdData.batteryVoltage),
                         fontSize = 12.sp,
                         color = when {
+                            obdData.batteryVoltage in 12f..13.5f -> colors.gaugeGreen
+                            obdData.batteryVoltage in 11.5f..12f -> colors.gaugeOrange
                             obdData.batteryVoltage > 0 && obdData.batteryVoltage < 11.5f -> colors.gaugeRed
-                            obdData.batteryVoltage > 0 && obdData.batteryVoltage < 12f -> colors.gaugeOrange
                             else -> colors.textSecondary
                         }
                     )
@@ -1341,7 +1342,7 @@ private fun DashboardHeader(
                         icon = Icons.Filled.Info,
                         label = stringResource(R.string.dashboard_vehicle_profile),
                         color = colors.highlight,
-                        onClick = { _onToggleCarProfile(); navController.navigate("car_profile") }
+                        onClick = { _onToggleCarProfile(); navController.navigate("extended_car_profile") }
                     )
                     QuickActionButton(
                         icon = Icons.Filled.BugReport,
@@ -1407,7 +1408,7 @@ private fun DashboardHeader(
                         icon = if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
                         label = stringResource(R.string.alerts),
                         color = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary,
-                        onClick = { onToggleAlertSettings(); navController.navigate("alerts") }
+                        onClick = { onToggleAlertSettings(); navController.navigate("alert_settings") }
                     )
                     QuickActionButton(
                         icon = if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
@@ -1538,7 +1539,7 @@ private fun DevicePickerDialog(
                 Text(stringResource(R.string.no_paired_devices), color = colors.textSecondary)
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                    items(devices) { device ->
+                    items(devices, key = { it.address }) { device ->
                         DeviceListItem(
                             name = device.name,
                             address = device.address,
