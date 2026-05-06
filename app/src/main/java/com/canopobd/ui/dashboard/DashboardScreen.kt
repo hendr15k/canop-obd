@@ -78,6 +78,12 @@ import com.canopobd.ui.dashboard.SensorValidationCard
 import com.canopobd.ui.dashboard.DriveStyleCard
 import com.canopobd.ui.dashboard.EfficiencyCard
 import com.canopobd.ui.dashboard.FuelSystemCard
+import com.canopobd.ui.dashboard.SAIHealthCard
+import com.canopobd.ui.dashboard.EmissionsReadinessCard
+import com.canopobd.ui.dashboard.BatteryAnalyzerCard
+import com.canopobd.ui.dashboard.EGRAnalyzerCard
+import com.canopobd.ui.dashboard.EVAPAnalyzerCard
+import com.canopobd.ui.dashboard.TurboAnalyzerCard
 import com.canopobd.ui.coding.AstraJCodingDialog
 import com.canopobd.data.model.AstraJCodingModels
 import kotlin.math.abs
@@ -227,6 +233,15 @@ fun DashboardScreen(
     fuelConsumption: com.canopobd.data.domain.FuelConsumptionAnalyzer.FuelConsumptionData?,
     egtResult: com.canopobd.data.domain.EGTMonitor.EGTAnalysis?,
     sensorHealthSummary: com.canopobd.data.domain.SensorHealthMonitor.SensorHealthSummary?,
+    turboSpoolResult: com.canopobd.data.domain.TurboSpoolAnalyzer.SpoolAnalysis?,
+    turboEfficiencyResult: com.canopobd.data.domain.TurboEfficiencyAnalyzer.TurboEfficiencyAnalysis?,
+    boostLeakResult: com.canopobd.data.domain.BoostLeakDetector.BoostLeakAnalysis?,
+    wastegateResult: com.canopobd.data.domain.WastegateHealthAnalyzer.WastegateAnalysis?,
+    batteryAnalysis: com.canopobd.data.domain.BatteryHealthAnalyzer.BatteryAnalysis?,
+    egrAnalysis: com.canopobd.data.domain.EGRHealthAnalyzer.EGRAnalysis?,
+    evapAnalysis: com.canopobd.data.domain.EVAPSystemAnalyzer.EVAPAnalysis?,
+    saiAnalysis: com.canopobd.data.domain.SecondaryAirAnalyzer.SAIAnalysis?,
+    emissionsReadiness: com.canopobd.data.domain.EmissionsReadinessAnalyzer.ReadinessAnalysis?,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
     _onToggleCarProfile: () -> Unit,
@@ -405,6 +420,294 @@ fun DashboardScreen(
                     egtResult = egtResult,
                     sensorHealthSummary = sensorHealthSummary
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.MedicalServices,
+                                contentDescription = null,
+                                tint = colors.accent,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Systemdiagnose",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colors.textPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val batteryColor = when {
+                                batteryAnalysis == null -> colors.textSecondary
+                                batteryAnalysis.healthScore >= 80 -> colors.gaugeGreen
+                                batteryAnalysis.healthScore >= 50 -> colors.gaugeYellow
+                                else -> colors.gaugeRed
+                            }
+                            val egrColor = when {
+                                egrAnalysis == null -> colors.textSecondary
+                                egrAnalysis.healthScore >= 80 -> colors.gaugeGreen
+                                egrAnalysis.healthScore >= 50 -> colors.gaugeYellow
+                                else -> colors.gaugeRed
+                            }
+                            val evapColor = when {
+                                evapAnalysis == null -> colors.textSecondary
+                                evapAnalysis.healthScore >= 80 -> colors.gaugeGreen
+                                evapAnalysis.healthScore >= 50 -> colors.gaugeYellow
+                                else -> colors.gaugeRed
+                            }
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.BatteryChargingFull,
+                                            contentDescription = null,
+                                            tint = batteryColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Batterie", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "%.1fV".format(batteryAnalysis?.status?.voltage ?: 0.0),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = batteryColor,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = "${batteryAnalysis?.healthScore?.toInt() ?: 0}%",
+                                        fontSize = 9.sp,
+                                        color = batteryColor
+                                    )
+                                }
+                            }
+
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Eco,
+                                            contentDescription = null,
+                                            tint = egrColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("EGR", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "%.1f%%".format(egrAnalysis?.flowDeviation ?: 0.0),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = egrColor,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = "${egrAnalysis?.healthScore?.toInt() ?: 0}%",
+                                        fontSize = 9.sp,
+                                        color = egrColor
+                                    )
+                                }
+                            }
+
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Cloud,
+                                            contentDescription = null,
+                                            tint = evapColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("EVAP", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "%.1f%%".format(evapAnalysis?.purgeEfficiency ?: 0.0),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = evapColor,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = "${evapAnalysis?.healthScore?.toInt() ?: 0}%",
+                                        fontSize = 9.sp,
+                                        color = evapColor
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val saiColor = when {
+                                saiAnalysis == null -> colors.textSecondary
+                                saiAnalysis.healthScore >= 80 -> colors.gaugeGreen
+                                saiAnalysis.healthScore >= 50 -> colors.gaugeYellow
+                                else -> colors.gaugeRed
+                            }
+                            val emPct = if (emissionsReadiness != null) {
+                                if (emissionsReadiness.totalCount > 0) (emissionsReadiness.completedCount * 100) / emissionsReadiness.totalCount else 0
+                            } else 0
+                            val emColor = when {
+                                emissionsReadiness == null -> colors.textSecondary
+                                emPct >= 80 -> colors.gaugeGreen
+                                emPct >= 50 -> colors.gaugeYellow
+                                else -> colors.gaugeRed
+                            }
+                            val turboColor = when {
+                                turboSpoolResult == null && turboEfficiencyResult == null && boostLeakResult == null && wastegateResult == null -> colors.textSecondary
+                                else -> colors.gaugeGreen
+                            }
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Air,
+                                            contentDescription = null,
+                                            tint = saiColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("SAI", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (saiAnalysis?.status?.isActive == true) "Aktiv" else "Inaktiv",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = saiColor,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = "${saiAnalysis?.status?.operationTimeSeconds ?: 0}s",
+                                        fontSize = 9.sp,
+                                        color = colors.textSecondary
+                                    )
+                                    Text(
+                                        text = "${saiAnalysis?.healthScore?.toInt() ?: 0}%",
+                                        fontSize = 9.sp,
+                                        color = saiColor
+                                    )
+                                }
+                            }
+
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Verified,
+                                            contentDescription = null,
+                                            tint = emColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Abgas", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${emPct}%",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = emColor,
+                                        maxLines = 1
+                                    )
+                                    LinearProgressIndicator(
+                                        progress = emPct / 100f,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(3.dp)
+                                            .clip(RoundedCornerShape(2.dp)),
+                                        color = emColor,
+                                        trackColor = emColor.copy(alpha = 0.2f)
+                                    )
+                                }
+                            }
+
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Air,
+                                            contentDescription = null,
+                                            tint = turboColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Turbo", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(modifier = Modifier.size(4.dp).background(if (turboSpoolResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("Spool", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(modifier = Modifier.size(4.dp).background(if (turboEfficiencyResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("Effiz.", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(modifier = Modifier.size(4.dp).background(if (boostLeakResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("Leak", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(modifier = Modifier.size(4.dp).background(if (wastegateResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("WG", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

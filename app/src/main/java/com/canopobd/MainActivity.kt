@@ -217,6 +217,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val fuelConsumption by viewModel.fuelConsumptionData.collectAsState()
     val egtResult by viewModel.egtResult.collectAsState()
     val sensorHealthSummary by viewModel.sensorHealthSummary.collectAsState()
+    val turboSpoolResult by viewModel.turboSpoolResult.collectAsState()
+    val turboEfficiencyResult by viewModel.turboEfficiencyResult.collectAsState()
+    val boostLeakResult by viewModel.boostLeakResult.collectAsState()
+    val wastegateResult by viewModel.wastegateResult.collectAsState()
+    val batteryAnalysis by viewModel.batteryAnalysis.collectAsState()
+    val egrAnalysis by viewModel.egrAnalysis.collectAsState()
+    val evapAnalysis by viewModel.evapAnalysis.collectAsState()
+    val saiAnalysis by viewModel.saiAnalysis.collectAsState()
+    val emissionsReadiness by viewModel.emissionsReadiness.collectAsState()
 
     // Extended Feature State
     val showExtendedGearbox by viewModel.showExtendedGearbox.collectAsState()
@@ -420,6 +429,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         fuelConsumption = fuelConsumption,
         egtResult = egtResult,
         sensorHealthSummary = sensorHealthSummary,
+        turboSpoolResult = turboSpoolResult,
+        turboEfficiencyResult = turboEfficiencyResult,
+        boostLeakResult = boostLeakResult,
+        wastegateResult = wastegateResult,
+        batteryAnalysis = batteryAnalysis,
+        egrAnalysis = egrAnalysis,
+        evapAnalysis = evapAnalysis,
+        saiAnalysis = saiAnalysis,
+        emissionsReadiness = emissionsReadiness,
         onToggleTurboMonitor = viewModel::toggleTurboMonitor,
         onToggleTimingChainMonitor = viewModel::toggleTimingChainMonitor,
         _onToggleCarProfile = viewModel::toggleCarProfile,

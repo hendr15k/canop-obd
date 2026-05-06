@@ -1314,6 +1314,91 @@ class DashboardViewModel private constructor(
         } catch (e: Exception) { Log.w(TAG, "WastegateHealthAnalyzer failed", e) }
 
         try {
+            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
+            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
+            val targetBoostBar = calibration.normalBoostTargetBar
+
+            val boostLeakInput = BoostLeakDetector.BoostLeakInput(
+                boostActualBar = actualBoostBar,
+                boostTargetBar = targetBoostBar,
+                wastegateDuty = data.wastegateControl,
+                turboRpm = data.turboRpm,
+                chargeAirTemp = data.chargeAirCoolerTemp,
+                intakeTemp = data.intakeTemp,
+                mafRate = data.mafRate,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad,
+                throttle = data.throttle,
+                exhaustPressure = data.exhaustPressure,
+                stftB1 = data.shortTermFuelTrimB1,
+                ltftB1 = data.longTermFuelTrimB1
+            )
+            boostLeakResult.value = boostLeakDetector.analyze(boostLeakInput)
+        } catch (e: Exception) { Log.w(TAG, "BoostLeakDetector failed", e) }
+
+        try {
+            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
+            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
+            val targetBoostBar = calibration.normalBoostTargetBar
+
+            val turboEfficiencyInput = TurboEfficiencyAnalyzer.TurboInput(
+                boostActualBar = actualBoostBar,
+                boostTargetBar = targetBoostBar,
+                wastegateDuty = data.wastegateControl,
+                turboRpm = data.turboRpm,
+                egtBank1 = data.egtBank1,
+                egtBank2 = data.egtBank2,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad,
+                throttle = data.throttle,
+                chargeAirTemp = data.chargeAirCoolerTemp,
+                intakeTemp = data.intakeTemp,
+                coolantTemp = data.coolantTemp,
+                boostPressureKpa = absoluteBoostKpa,
+                wastegateControl = data.wastegateControl,
+                totalKm = currentKm.value.toDouble()
+            )
+            turboEfficiencyResult.value = turboEfficiencyAnalyzer.analyze(turboEfficiencyInput)
+        } catch (e: Exception) { Log.w(TAG, "TurboEfficiencyAnalyzer failed", e) }
+
+        try {
+            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
+            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
+            val targetBoostAt80 = calibration.normalBoostTargetBar
+
+            val spoolTime = if (data.throttle > 10 && data.rpm > 1500) {
+                2.0
+            } else if (data.throttle > 5 && data.rpm > 1000) {
+                3.0
+            } else {
+                0.0
+            }
+
+            val turboSpoolInput = TurboSpoolAnalyzer.SpoolInput(
+                throttleApplication = data.throttle,
+                boostAtThrottleApplication = actualBoostBar,
+                boostAt80Percent = targetBoostAt80,
+                targetBoostAt80 = targetBoostAt80,
+                spoolTimeSeconds = spoolTime,
+                wastegateDutyAtSpool = data.wastegateControl,
+                wastegateDutyIdle = wastegateDuty.value,
+                turboRpmAtSpool = data.turboRpm,
+                rpmAtThrottleApplication = data.rpm,
+                rpmAt80PercentBoost = data.rpm,
+                engineLoad = data.engineLoad,
+                intakeTemp = data.intakeTemp,
+                boostPressureKpa = absoluteBoostKpa
+            )
+            turboSpoolResult.value = turboSpoolAnalyzer.analyze(turboSpoolInput)
+        } catch (e: Exception) { Log.w(TAG, "TurboSpoolAnalyzer failed", e) }
+
+        try {
             extendedAnalyzerData.value = ExtendedAnalyzerSummary(
                 oilHealth = oilConditionResult.value.condition.name,
                 pcvHealth = pcvResult.value.health.name,
