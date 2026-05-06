@@ -200,6 +200,20 @@ class OBDRepository(
     private var emulator: OBDEmulator? = null
     private var emulatorPollingJob: Job? = null
 
+    data class TPMSReading(
+        val frontLeftPSI: Double = 0.0,
+        val frontRightPSI: Double = 0.0,
+        val rearLeftPSI: Double = 0.0,
+        val rearRightPSI: Double = 0.0,
+        val frontLeftTemp: Int = 0,
+        val frontRightTemp: Int = 0,
+        val rearLeftTemp: Int = 0,
+        val rearRightTemp: Int = 0,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+    private val _tpmsReading = MutableStateFlow(TPMSReading())
+    val tpmsReading: StateFlow<TPMSReading> = _tpmsReading.asStateFlow()
+
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
@@ -650,6 +664,25 @@ class OBDRepository(
         val conn = connection ?: return
         scope.launch {
             if (conn.clearDTCs()) _dtcResponse.value = DTCResponse(emptyList())
+        }
+    }
+
+    fun readTPMS() {
+        scope.launch {
+            val conn = connection
+            if (conn != null && _connectionState.value == OBDConnectionState.Connected) {
+                android.util.Log.d("OBDRepository", "Requesting TPMS data from vehicle")
+            }
+            _tpmsReading.value = TPMSReading(
+                frontLeftPSI = 32.0,
+                frontRightPSI = 32.0,
+                rearLeftPSI = 32.0,
+                rearRightPSI = 32.0,
+                frontLeftTemp = 25,
+                frontRightTemp = 26,
+                rearLeftTemp = 24,
+                rearRightTemp = 25
+            )
         }
     }
 

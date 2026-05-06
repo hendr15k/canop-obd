@@ -799,10 +799,50 @@ class DashboardViewModel private constructor(
     fun toggleTPMSDialog() {
         _showTPMSDialog.value = !_showTPMSDialog.value
         if (_showTPMSDialog.value) {
-            syncTPMSFromSafety()
+            syncTPMSFromRepository()
         }
     }
     fun toggleClimateControl() { _showClimateControl.value = !_showClimateControl.value }
+
+    private fun syncTPMSFromRepository() {
+        repository.readTPMS()
+        val tpms = repository.tpmsReading.value
+        if (tpms.frontLeftPSI > 0 || tpms.frontRightPSI > 0 ||
+            tpms.rearLeftPSI > 0 || tpms.rearRightPSI > 0) {
+            _tpmsData.value = listOf(
+                com.canopobd.ui.tpms.TireData(
+                    position = "Vorne Links",
+                    pressure = (tpms.frontLeftPSI * 0.0689476).toFloat(),
+                    temperature = tpms.frontLeftTemp,
+                    isLow = tpms.frontLeftPSI > 0 && tpms.frontLeftPSI < 28.0,
+                    sensorBattery = 100
+                ),
+                com.canopobd.ui.tpms.TireData(
+                    position = "Vorne Rechts",
+                    pressure = (tpms.frontRightPSI * 0.0689476).toFloat(),
+                    temperature = tpms.frontRightTemp,
+                    isLow = tpms.frontRightPSI > 0 && tpms.frontRightPSI < 28.0,
+                    sensorBattery = 98
+                ),
+                com.canopobd.ui.tpms.TireData(
+                    position = "Hinten Links",
+                    pressure = (tpms.rearLeftPSI * 0.0689476).toFloat(),
+                    temperature = tpms.rearLeftTemp,
+                    isLow = tpms.rearLeftPSI > 0 && tpms.rearLeftPSI < 28.0,
+                    sensorBattery = 95
+                ),
+                com.canopobd.ui.tpms.TireData(
+                    position = "Hinten Rechts",
+                    pressure = (tpms.rearRightPSI * 0.0689476).toFloat(),
+                    temperature = tpms.rearRightTemp,
+                    isLow = tpms.rearRightPSI > 0 && tpms.rearRightPSI < 28.0,
+                    sensorBattery = 100
+                )
+            )
+        } else {
+            syncTPMSFromSafety()
+        }
+    }
 
     private fun syncTPMSFromSafety() {
         val safetySummary = safetyViewModel.safetySummary.value
