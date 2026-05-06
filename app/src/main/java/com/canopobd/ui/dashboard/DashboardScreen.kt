@@ -218,6 +218,15 @@ fun DashboardScreen(
     driveStyleResult: com.canopobd.data.domain.DriveStyleAnalyzer.DriveStyleAnalysis,
     drivingEfficiencyResult: com.canopobd.data.domain.DrivingEfficiencyScorer.EfficiencyScore,
     fuelSystemResult: com.canopobd.data.domain.FuelSystemAnalyzer.FuelSystemAnalysis,
+    gearboxResult: com.canopobd.data.domain.M32GearboxMonitor.GearboxAnalysis?,
+    chainTensionerResult: com.canopobd.data.domain.ChainTensionerAnalyzer.ChainTensionerAnalysis?,
+    coolantResult: com.canopobd.data.domain.CoolantSystemHealth.CoolantAnalysis?,
+    oilConditionResult: com.canopobd.data.domain.OilConditionMonitor.OilAnalysis?,
+    pcvResult: com.canopobd.data.domain.PCVMonitor.PCVAnalysis?,
+    lambdaResult: com.canopobd.data.domain.LambdaBalanceAnalyzer.LambdaBalance?,
+    fuelConsumption: com.canopobd.data.domain.FuelConsumptionAnalyzer.FuelConsumptionData?,
+    egtResult: com.canopobd.data.domain.EGTMonitor.EGTAnalysis?,
+    sensorHealthSummary: com.canopobd.data.domain.SensorHealthMonitor.SensorHealthSummary?,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
     _onToggleCarProfile: () -> Unit,
@@ -378,6 +387,24 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                KnownIssuesCard(currentKm = currentKm)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AnalyzerSummaryRow(
+                    gearboxResult = gearboxResult,
+                    chainTensionerResult = chainTensionerResult,
+                    coolantResult = coolantResult,
+                    oilConditionResult = oilConditionResult,
+                    pcvResult = pcvResult,
+                    lambdaResult = lambdaResult,
+                    fuelConsumption = fuelConsumption,
+                    egtResult = egtResult,
+                    sensorHealthSummary = sensorHealthSummary
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 

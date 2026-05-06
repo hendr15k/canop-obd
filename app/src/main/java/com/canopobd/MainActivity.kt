@@ -208,6 +208,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val driveStyleResult by viewModel.driveStyleResult.collectAsState()
     val drivingEfficiencyResult by viewModel.drivingEfficiencyResult.collectAsState()
     val fuelSystemResult by viewModel.fuelSystemResult.collectAsState()
+    val gearboxResult by viewModel.gearboxResult.collectAsState()
+    val chainTensionerResult by viewModel.chainTensionerResult.collectAsState()
+    val coolantResult by viewModel.coolantResult.collectAsState()
+    val oilConditionResult by viewModel.oilConditionResult.collectAsState()
+    val pcvResult by viewModel.pcvResult.collectAsState()
+    val lambdaResult by viewModel.lambdaBalanceData.collectAsState()
+    val fuelConsumption by viewModel.fuelConsumptionData.collectAsState()
+    val egtResult by viewModel.egtResult.collectAsState()
+    val sensorHealthSummary by viewModel.sensorHealthSummary.collectAsState()
 
     // Extended Feature State
     val showExtendedGearbox by viewModel.showExtendedGearbox.collectAsState()
@@ -402,6 +411,15 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         driveStyleResult = driveStyleResult,
         drivingEfficiencyResult = drivingEfficiencyResult,
         fuelSystemResult = fuelSystemResult,
+        gearboxResult = gearboxResult,
+        chainTensionerResult = chainTensionerResult,
+        coolantResult = coolantResult,
+        oilConditionResult = oilConditionResult,
+        pcvResult = pcvResult,
+        lambdaResult = lambdaResult,
+        fuelConsumption = fuelConsumption,
+        egtResult = egtResult,
+        sensorHealthSummary = sensorHealthSummary,
         onToggleTurboMonitor = viewModel::toggleTurboMonitor,
         onToggleTimingChainMonitor = viewModel::toggleTimingChainMonitor,
         _onToggleCarProfile = viewModel::toggleCarProfile,
