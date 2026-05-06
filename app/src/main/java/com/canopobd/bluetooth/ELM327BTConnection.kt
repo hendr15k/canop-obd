@@ -11,8 +11,11 @@ import com.canopobd.data.model.FreezeFrame
 import com.canopobd.data.model.OBDPID
 import com.canopobd.data.model.ReadinessMonitor
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -1322,5 +1325,233 @@ class ELM327BTConnection(
         
         Log.i(TAG, "Mode 22 discovery complete: ${discovered.size} PIDs supported")
         discovered
+    }
+
+    // =========================================================================
+    // ATMA - MONITOR ALL (Passive CAN Listening)
+    // =========================================================================
+
+    /**
+     * Start ATMA (Monitor All) mode - listens to ALL CAN traffic passively
+     * Returns raw CAN frames from the bus
+     */
+    suspend fun startATMA(): Flow<String> = flow {
+        try {
+            sendCommand("ATMA")
+            delay(100)
+            while (true) {
+                val response = sendCommandWithTimeout("")
+                if (response.isNotBlank() && !response.contains("ERROR")) {
+                    emit(response)
+                }
+                delay(50)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "ATMA error: ${e.message}")
+        }
+    }.flowOn(Dispatchers.IO)
+
+    /**
+     * Stop ATMA mode
+     */
+    suspend fun stopATMA() {
+        try {
+            sendCommand("")
+            delay(100)
+            sendCommand("ATZ")
+            delay(500)
+        } catch (e: Exception) {
+            Log.w(TAG, "Stop ATMA error: ${e.message}")
+        }
+    }
+
+    /**
+     * Send a raw CAN frame directly
+     * @param canId 11-bit or 29-bit CAN ID (hex)
+     * @param data Up to 8 bytes of data (hex)
+     */
+    suspend fun sendCANFrameDirect(canId: String, data: String): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommand("ATH1")
+            delay(50)
+            val command = "${canId.uppercase()}$data".replace(" ", "")
+            val response = sendCommandWithTimeout(command)
+            sendCommand("ATH0")
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "sendCANFrameDirect error: ${e.message}")
+            "ERROR: ${e.message}"
+        }
+    }
+
+    /**
+     * Set CAN protocol and bus speed
+     * @param speed "6"=500k, "A"=125k, "0"=Auto
+     */
+    suspend fun setCANProtocol(speed: String): Boolean {
+        return try {
+            sendCommand("ATSP$speed")
+            delay(100)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "setCANProtocol error: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Enable/disable adaptive timing
+     */
+    suspend fun setAdaptiveTiming(enabled: Boolean): Boolean {
+        return try {
+            sendCommand(if (enabled) "ATAT1" else "ATAT0")
+            delay(50)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Set CAN filter to accept specific ID range
+     */
+    suspend fun setCANFilter(filter: String, mask: String): Boolean {
+        return try {
+            sendCommand("ATCF$filter")
+            delay(50)
+            sendCommand("ATCM$mask")
+            delay(50)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Reset CAN filters to accept all
+     */
+    suspend fun resetCANFilters(): Boolean {
+        return try {
+            sendCommand("ATCF000")
+            delay(50)
+            sendCommand("ATCM7FF")
+            delay(50)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Send UDS Diagnostic Session Control
+     * @param sessionType 0x01=Default, 0x02=Programming, 0x03=Extended, 0x0D=Custom
+     */
+    suspend fun udsSessionControl(sessionType: Int): String = withContext(Dispatchers.IO) {
+        try {
+            val cmd = "10%02X".format(sessionType)
+            sendCommandWithTimeout(cmd)
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+
+    /**
+     * Send UDS Tester Present to keep session alive
+     */
+    suspend fun udsTesterPresent(): String = withContext(Dispatchers.IO) {
+        try {
+            sendCommandWithTimeout("3E00")
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+
+    /**
+     * Read data by identifier (UDS 0x22)
+     * @param did 4-character hex DID (e.g., "F190" for VIN)
+     */
+    suspend fun udsReadDataById(did: String): String = withContext(Dispatchers.IO) {
+        try {
+            val cmd = "22${did.uppercase()}"
+            sendCommandWithTimeout(cmd)
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+
+    /**
+     * Security Access (UDS 0x27) - Step 1: Request seed
+     * @param level Odd number (1, 3, 5, 7, 9, 11...)
+     */
+    suspend fun udsSecurityAccessRequestSeed(level: Int): String = withContext(Dispatchers.IO) {
+        try {
+            val cmd = "27%02X".format(level)
+            sendCommandWithTimeout(cmd)
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+
+    /**
+     * Security Access (UDS 0x27) - Step 2: Send key
+     * @param level Same as request (level+1)
+     * @param key Hex key from seed algorithm
+     */
+    suspend fun udsSecurityAccessSendKey(level: Int, key: String): String = withContext(Dispatchers.IO) {
+        try {
+            val cmd = "27%02X$key".format(level + 1)
+            sendCommandWithTimeout(cmd)
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+
+    // =========================================================================
+    // DIRECT CAN FRAME SENDING (for comfort functions like windows, locks)
+    // =========================================================================
+    
+    /**
+     * Send a raw CAN frame directly to the vehicle CAN bus.
+     * This is used for comfort functions like window control, central locking, etc.
+     * 
+     * @param canId The 3-digit hex CAN ID (e.g., "752" for BMF/BSI)
+     * @param dataBytes Array of data bytes to send (max 8 bytes)
+     * @return Response string from the adapter
+     */
+    suspend fun sendDirectCANFrame(canId: String, dataBytes: ByteArray): String = withContext(Dispatchers.IO) {
+        try {
+            val hexId = canId.uppercase().replace(" ", "").replace("0X", "")
+            val hexData = dataBytes.joinToString("") { "%02X".format(it) }
+            val command = "$hexId$hexData"
+            
+            Log.d(TAG, "Sending direct CAN frame: ID=$canId, Data=${dataBytes.joinToString(" ") { "%02X".format(it) }}")
+            
+            val response = sendCommandWithTimeout(command)
+            Log.d(TAG, "Direct CAN response: $response")
+            
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "sendDirectCANFrame error: ${e.message}")
+            "ERROR: ${e.message}"
+        }
+    }
+    
+    /**
+     * Set the CAN protocol to ISO 15765-4 (for direct CAN frames)
+     * This is required before sending direct CAN frames
+     */
+    suspend fun setISO15765Protocol(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            sendCommand("ATSP6")
+            delay(100)
+            sendCommand("ATAT1")
+            delay(50)
+            sendCommand("ATH0")
+            delay(50)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "setISO15765Protocol error: ${e.message}")
+            false
+        }
     }
 }

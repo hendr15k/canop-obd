@@ -15,11 +15,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.ui.theme.LocalAppColors
 import com.canopobd.ui.theme.AppColors
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class ComfortState(
     val centralLock: Boolean = true,
@@ -64,7 +68,65 @@ enum class ComfortAction {
     LEAVING_HOME_ON, LEAVING_HOME_OFF,
     CORNERING_LIGHT_ON, CORNERING_LIGHT_OFF,
     DRL_MODE_AUTO, DRL_MODE_ON, DRL_MODE_OFF,
-    WIPER_OFF, WIPER_LOW, WIPER_MEDIUM, WIPER_HIGH, WIPER_AUTO
+    WIPER_OFF, WIPER_LOW, WIPER_MEDIUM, WIPER_HIGH, WIPER_AUTO,
+    CUSTOM_CAN_FRAME,
+    CUSTOM_CAN_ID,
+    CUSTOM_CAN_DATA
+}
+
+object WindowCommands {
+    // Opel Astra J Window Control CAN IDs (PSA/Stellantis Architecture)
+    // Based on research from arduino-psa-diag project
+    
+    // CAN IDs:
+    // 74B (PORTEC) - Door Control Unit (handles windows)
+    // 752 (BMF/BSI) - Body Module (central locking, comfort)
+    // 76B (BCM) - Body Control Module
+    
+    const val CAN_ID_PORTEC = "74B"  // Door Control Unit
+    const val CAN_ID_BMF = "752"     // Body Module
+    const val CAN_ID_BCM = "76B"    // Body Control Module
+    
+    // Window Commands Format: 2E FF 02 [Window] [Direction]
+    // 2E = UDS Write Data
+    // FF 02 = Window Status DID
+    // [Window] = 01-04 for individual windows, 00 for all
+    // [Direction] = 00 up, 64 (100%) down, FF stop
+    
+    const val WINDOW_DRIVER_DOWN = "2E FF 02 01 64"
+    const val WINDOW_DRIVER_UP = "2E FF 02 01 00"
+    const val WINDOW_DRIVER_STOP = "2E FF 02 01 FF"
+    
+    const val WINDOW_PASSENGER_DOWN = "2E FF 02 02 64"
+    const val WINDOW_PASSENGER_UP = "2E FF 02 02 00"
+    const val WINDOW_PASSENGER_STOP = "2E FF 02 02 FF"
+    
+    const val WINDOW_REAR_LEFT_DOWN = "2E FF 02 03 64"
+    const val WINDOW_REAR_LEFT_UP = "2E FF 02 03 00"
+    const val WINDOW_REAR_LEFT_STOP = "2E FF 02 03 FF"
+    
+    const val WINDOW_REAR_RIGHT_DOWN = "2E FF 02 04 64"
+    const val WINDOW_REAR_RIGHT_UP = "2E FF 02 04 00"
+    const val WINDOW_REAR_RIGHT_STOP = "2E FF 02 04 FF"
+    
+    const val WINDOW_ALL_DOWN = "2E FF 02 00 64"
+    const val WINDOW_ALL_UP = "2E FF 02 00 00"
+    
+    // Central Lock Commands (BMF - 752)
+    const val LOCK_ALL = "2E FF 01 1F"
+    const val UNLOCK_ALL = "2E FF 01 0F"
+    const val UNLOCK_DRIVER = "2E FF 01 01"
+    
+    // Mirror Commands (BMF - 752)
+    const val MIRROR_FOLD = "2E FF 03 04"
+    const val MIRROR_UNFOLD = "2E FF 03 05"
+    
+    fun parseHexData(hexString: String): ByteArray {
+        return hexString.split(" ")
+            .filter { it.isNotEmpty() }
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
+    }
 }
 
 @Composable
@@ -229,6 +291,37 @@ fun ComfortControlDialog(
                             }
                             onCommand(ComfortCommand(action))
                             comfortState = comfortState.copy(wiperSpeed = newSpeed)
+                        },
+                        colors = colors
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    WindowControlInfoCard(colors = colors)
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    WindowControlSimulatorCard(
+                        onCommand = { action ->
+                            onCommand(ComfortCommand(action))
+                        },
+                        onSendRealFrame = { canId, data ->
+                            onCommand(ComfortCommand(ComfortAction.CUSTOM_CAN_FRAME, mapOf("canId" to canId, "data" to data)))
+                        },
+                        colors = colors
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CANFrameSenderCard(
+                        onSend = { canId, data ->
+                            onCommand(ComfortCommand(ComfortAction.CUSTOM_CAN_FRAME, mapOf("canId" to canId, "data" to data)))
+                        },
+                        onSendRealFrame = { canId, data ->
+                            onCommand(ComfortCommand(ComfortAction.CUSTOM_CAN_FRAME, mapOf("canId" to canId, "data" to data)))
                         },
                         colors = colors
                     )
@@ -655,5 +748,559 @@ private fun updateWindowState(state: ComfortState, action: ComfortAction, value:
             driverWindow = 0f, passengerWindow = 0f, rearLeftWindow = 0f, rearRightWindow = 0f
         )
         else -> state
+    }
+}
+
+@Composable
+private fun WindowControlInfoCard(colors: AppColors) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.gaugeCyan.copy(alpha = 0.1f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.gaugeCyan.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Info,
+                    contentDescription = null,
+                    tint = colors.gaugeCyan,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "FENSTERSTEUERUNG HINWEIS",
+                    color = colors.gaugeCyan,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Die Fenstersteuerung ist eine Komfortfunktion und wird NICHT über Standard-OBD-II gesteuert.",
+                color = colors.textSecondary,
+                fontSize = 11.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Für echte Fenstersteuerung wird benötigt:",
+                color = colors.textPrimary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                listOf(
+                    "Direkter Zugriff auf Komfort-CAN (125 kbit/s)",
+                    "BMF/BSI ECU Freischaltung (Seed/Key)",
+                    "Spezieller CAN-Adapter (z.B. PCAN)"
+                ).forEach { text ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("•", color = colors.gaugeCyan, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text, color = colors.textSecondary, fontSize = 11.sp)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = colors.gaugeOrange.copy(alpha = 0.15f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.Warning,
+                        contentDescription = null,
+                        tint = colors.gaugeOrange,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Diese App simuliert die UI für Entwicklungszwecke. CAN-Monitor zeigt aktive CAN-Nachrichten.",
+                        color = colors.gaugeOrange,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WindowControlSimulatorCard(
+    onCommand: (ComfortAction) -> Unit,
+    onSendRealFrame: (canId: String, data: ByteArray) -> Unit,
+    colors: AppColors
+) {
+    var activeLedDriver by remember { mutableStateOf(false) }
+    var activeLedPassenger by remember { mutableStateOf(false) }
+    var activeLedRearLeft by remember { mutableStateOf(false) }
+    var activeLedRearRight by remember { mutableStateOf(false) }
+    var isSending by remember { mutableStateOf(false) }
+    var lastCommand by remember { mutableStateOf("") }
+    var isConnected by remember { mutableStateOf(false) }
+    var blinkState by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Fenster-Simulator",
+                    color = colors.textPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (isConnected) colors.gaugeGreen else colors.gaugeOrange)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        if (isConnected) "Verbunden" else "Nicht verbunden",
+                        color = if (isConnected) colors.gaugeGreen else colors.gaugeOrange,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                SimulatorWindowButton(
+                    label = "Fahrer",
+                    isActive = activeLedDriver,
+                    isSending = isSending && blinkState,
+                    onClick = {
+                        activeLedDriver = true
+                        isSending = true
+                        lastCommand = "Fahrer Runter"
+                        onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_DRIVER_DOWN))
+                        onCommand(ComfortAction.WINDOW_DRIVER_DOWN)
+                    },
+                    colors = colors
+                )
+                SimulatorWindowButton(
+                    label = "Beifahrer",
+                    isActive = activeLedPassenger,
+                    isSending = isSending && blinkState,
+                    onClick = {
+                        activeLedPassenger = true
+                        isSending = true
+                        lastCommand = "Beifahrer Runter"
+                        onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_PASSENGER_DOWN))
+                        onCommand(ComfortAction.WINDOW_PASSENGER_DOWN)
+                    },
+                    colors = colors
+                )
+                SimulatorWindowButton(
+                    label = "Hinten L",
+                    isActive = activeLedRearLeft,
+                    isSending = isSending && blinkState,
+                    onClick = {
+                        activeLedRearLeft = true
+                        isSending = true
+                        lastCommand = "Hinten L Runter"
+                        onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_LEFT_DOWN))
+                        onCommand(ComfortAction.WINDOW_REAR_LEFT_DOWN)
+                    },
+                    colors = colors
+                )
+                SimulatorWindowButton(
+                    label = "Hinten R",
+                    isActive = activeLedRearRight,
+                    isSending = isSending && blinkState,
+                    onClick = {
+                        activeLedRearRight = true
+                        isSending = true
+                        lastCommand = "Hinten R Runter"
+                        onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_RIGHT_DOWN))
+                        onCommand(ComfortAction.WINDOW_REAR_RIGHT_DOWN)
+                    },
+                    colors = colors
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = {
+                        activeLedDriver = true
+                        activeLedPassenger = true
+                        activeLedRearLeft = true
+                        activeLedRearRight = true
+                        isSending = true
+                        lastCommand = "Alle Runter"
+                        onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_DRIVER_DOWN))
+                        GlobalScope.launch {
+                            delay(100)
+                            onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_PASSENGER_DOWN))
+                        }
+                        GlobalScope.launch {
+                            delay(200)
+                            onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_LEFT_DOWN))
+                        }
+                        GlobalScope.launch {
+                            delay(300)
+                            onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_RIGHT_DOWN))
+                        }
+                        onCommand(ComfortAction.WINDOW_ALL_DOWN)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.secondary),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Filled.KeyboardArrowDown, null, modifier = Modifier.size(16.dp))
+                    Text("Alle Runter", fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        activeLedDriver = true
+                        activeLedPassenger = true
+                        activeLedRearLeft = true
+                        activeLedRearRight = true
+                        isSending = true
+                        lastCommand = "Alle Hoch"
+                        onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_DRIVER_UP))
+                        GlobalScope.launch {
+                            delay(100)
+                            onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_PASSENGER_UP))
+                        }
+                        GlobalScope.launch {
+                            delay(200)
+                            onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_LEFT_UP))
+                        }
+                        GlobalScope.launch {
+                            delay(300)
+                            onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_RIGHT_UP))
+                        }
+                        onCommand(ComfortAction.WINDOW_ALL_UP)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Filled.KeyboardArrowUp, null, modifier = Modifier.size(16.dp))
+                    Text("Alle Hoch", fontSize = 11.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = colors.dark,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Letzter Befehl:",
+                            color = colors.textDim,
+                            fontSize = 10.sp
+                        )
+                        Text(
+                            lastCommand.ifEmpty { "---" },
+                            color = colors.gaugeGreen,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "CAN-ID:",
+                            color = colors.textDim,
+                            fontSize = 10.sp
+                        )
+                        Text(
+                            WindowCommands.CAN_ID_PORTEC,
+                            color = colors.gaugeCyan,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Status:",
+                            color = colors.textDim,
+                            fontSize = 10.sp
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isSending && blinkState) colors.gaugeGreen else colors.textDim)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                if (isSending && blinkState) "Senden..." else "Bereit",
+                                color = if (isSending && blinkState) colors.gaugeGreen else colors.textDim,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(isSending) {
+        if (isSending) {
+            repeat(6) {
+                delay(100)
+                blinkState = !blinkState
+            }
+            isSending = false
+            blinkState = false
+            activeLedDriver = false
+            activeLedPassenger = false
+            activeLedRearLeft = false
+            activeLedRearRight = false
+        }
+    }
+}
+
+@Composable
+private fun SimulatorWindowButton(
+    label: String,
+    isActive: Boolean,
+    isSending: Boolean = false,
+    onClick: () -> Unit,
+    colors: AppColors
+) {
+    val ledColor by animateColorAsState(
+        if (isSending) colors.gaugeGreen 
+        else if (isActive) colors.gaugeGreen 
+        else colors.textDim,
+        label = "led"
+    )
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            onClick = onClick,
+            shape = RoundedCornerShape(8.dp),
+            color = if (isSending || isActive) colors.gaugeGreen.copy(alpha = 0.2f) else colors.surfaceElevated,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (isSending || isActive) colors.gaugeGreen else colors.borderSubtle
+            ),
+            modifier = Modifier.size(60.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Filled.CarRental,
+                    contentDescription = label,
+                    tint = if (isSending || isActive) colors.gaugeGreen else colors.textDim,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            label,
+            color = colors.textSecondary,
+            fontSize = 9.sp
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(ledColor)
+        )
+    }
+}
+
+@Composable
+private fun CANFrameSenderCard(
+    onSend: (String, String) -> Unit,
+    onSendRealFrame: (canId: String, data: ByteArray) -> Unit,
+    colors: AppColors
+) {
+    var canId by remember { mutableStateOf("752") }
+    var canData by remember { mutableStateOf("02 10 03") }
+    var responseText by remember { mutableStateOf<String?>(null) }
+    var isSending by remember { mutableStateOf(false) }
+    var blinkState by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "CAN-Frame Sender",
+                    color = colors.textPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (isSending && blinkState) colors.gaugeGreen else colors.textDim)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        if (isSending) "Senden..." else "Bereit",
+                        color = if (isSending && blinkState) colors.gaugeGreen else colors.textDim,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "CAN-ID (hex)",
+                        color = colors.textDim,
+                        fontSize = 10.sp
+                    )
+                    OutlinedTextField(
+                        value = canId,
+                        onValueChange = { canId = it.uppercase().filter { c -> c.isDigit() || c in 'A'..'F' }.take(3) },
+                        textStyle = TextStyle(
+                            color = colors.textPrimary,
+                            fontSize = 14.sp
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colors.accent,
+                            unfocusedBorderColor = colors.borderSubtle,
+                            focusedContainerColor = colors.dark,
+                            unfocusedContainerColor = colors.dark
+                        )
+                    )
+                }
+                Column(modifier = Modifier.weight(2f)) {
+                    Text(
+                        "Daten (hex, space getrennt)",
+                        color = colors.textDim,
+                        fontSize = 10.sp
+                    )
+                    OutlinedTextField(
+                        value = canData,
+                        onValueChange = { canData = it.uppercase().filter { c -> c.isDigit() || c in 'A'..'F' || c == ' ' }.take(47) },
+                        textStyle = TextStyle(
+                            color = colors.textPrimary,
+                            fontSize = 14.sp
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colors.accent,
+                            unfocusedBorderColor = colors.borderSubtle,
+                            focusedContainerColor = colors.dark,
+                            unfocusedContainerColor = colors.dark
+                        )
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    isSending = true
+                    responseText = "Sende CAN-ID: $canId, Daten: $canData"
+                    onSend(canId, canData)
+                    val byteData = canData.split(" ")
+                        .filter { it.isNotEmpty() }
+                        .map { it.toInt(16).toByte() }
+                        .toByteArray()
+                    onSendRealFrame(canId, byteData)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSending) colors.gaugeGreen else colors.accent
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Filled.Send,
+                    null,
+                    tint = if (isSending) colors.dark else Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "SENDEN",
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSending) colors.dark else Color.White
+                )
+            }
+            if (responseText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = colors.gaugeGreen.copy(alpha = 0.1f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = colors.gaugeGreen,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            responseText!!,
+                            color = colors.gaugeGreen,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(isSending) {
+        if (isSending) {
+            repeat(6) {
+                delay(100)
+                blinkState = !blinkState
+            }
+            isSending = false
+            blinkState = false
+        }
     }
 }

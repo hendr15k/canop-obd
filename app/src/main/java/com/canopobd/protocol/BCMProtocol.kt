@@ -47,11 +47,25 @@ object BCMProtocol {
 
     object Window {
         const val CMD_PREFIX = 0x2EFF02
+        
+        const val CAN_ID_PORTEC = "74B"
+        const val CAN_ID_BMF = "752"
+        
         fun openDriver() = hexToBytes("2EFF0264")
         fun closeDriver() = hexToBytes("2EFF0200")
         fun stopDriver() = hexToBytes("2EFF02FF")
+        fun openPassenger() = hexToBytes("2EFF0264")
+        fun closePassenger() = hexToBytes("2EFF0200")
+        fun openRearLeft() = hexToBytes("2EFF0264")
+        fun closeRearLeft() = hexToBytes("2EFF0200")
+        fun openRearRight() = hexToBytes("2EFF0264")
+        fun closeRearRight() = hexToBytes("2EFF0200")
         fun openAll() = hexToBytes("2EFF0264646464")
         fun closeAll() = hexToBytes("2EFF0200000000")
+        
+        fun buildDirectFrame(windowByte: Int, direction: Int): ByteArray {
+            return byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x02.toByte(), windowByte.toByte(), direction.toByte())
+        }
     }
 
     object Mirror {
@@ -157,7 +171,7 @@ data class BCMCommand(
     val type: BCMCommandType
 )
 
-object BCMCommandMapper {
+    object BCMCommandMapper {
 
     fun mapToCommand(action: String, value: Any? = null): BCMCommand? {
         return when (action.uppercase()) {
@@ -185,6 +199,18 @@ object BCMCommandMapper {
             "LEAVING_HOME_ON" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, String.format("%02X", BCMProtocol.Lighting.LEAVING_HOME_ENABLE), BCMCommandType.UDS_WRITE)
             "LEAVING_HOME_OFF" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, String.format("%02X", BCMProtocol.Lighting.LEAVING_HOME_DISABLE), BCMCommandType.UDS_WRITE)
             "READ_STATUS" -> BCMCommand(BCMProtocol.DIDs.DOOR_LOCK_STATUS, "", BCMCommandType.UDS_READ)
+            "WINDOW_DRIVER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
+            "WINDOW_DRIVER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
+            "WINDOW_DRIVER_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
+            "WINDOW_PASSENGER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
+            "WINDOW_PASSENGER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
+            "WINDOW_PASSENGER_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_LEFT_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_LEFT_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_LEFT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_RIGHT_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_RIGHT_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_RIGHT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00000000", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64646464", BCMCommandType.UDS_WRITE)
             else -> null
