@@ -58,6 +58,7 @@ fun AstraJCodingDialog(
                             onDismiss()
                         }
                     },
+                    option = selectedOption,
                     onDismiss = onDismiss
                 )
 
@@ -292,6 +293,7 @@ private fun CodingCategoryDetail(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CodingOptionCard(
     option: AstraJCodingModels.CodingOption,
