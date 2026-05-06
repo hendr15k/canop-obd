@@ -52,6 +52,8 @@ import com.canopobd.data.model.FuelTrimAnalysis
 import com.canopobd.data.model.ReadinessMonitor
 import com.canopobd.data.model.CsvImportEntry
 import com.canopobd.data.model.CarProfile
+import com.canopobd.data.domain.OilHealthPredictor
+import com.canopobd.data.domain.ValidationResult
 import com.canopobd.data.model.TurboData
 import com.canopobd.data.model.OilData
 import com.canopobd.data.model.TimingChainState
@@ -71,6 +73,8 @@ import com.canopobd.ui.turbo.TurboCoolDownDialog
 import com.canopobd.data.model.TurboCoolDownState
 import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
 import com.canopobd.ui.knownissues.KnownIssuesDialog
+import com.canopobd.ui.dashboard.OilHealthCard
+import com.canopobd.ui.dashboard.SensorValidationCard
 import kotlin.math.abs
 
 @Composable
@@ -204,6 +208,8 @@ fun DashboardScreen(
     onToggleKnownIssues: () -> Unit,
     onUpdateShiftLightConfig: (com.canopobd.data.model.ShiftLightConfig) -> Unit,
     onResetDriveScore: () -> Unit,
+    oilHealthPrediction: OilHealthPredictor.OilHealthPredictionResult,
+    sensorValidationResult: ValidationResult,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
     _onToggleCarProfile: () -> Unit,
@@ -314,6 +320,24 @@ fun DashboardScreen(
                     TurboCoolDownBanner(
                         coolDownState = turboCooldownState,
                         onDismiss = onToggleTurboCooldown
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OilHealthCard(
+                        prediction = oilHealthPrediction,
+                        colors = colors,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SensorValidationCard(
+                        validationResult = sensorValidationResult,
+                        colors = colors,
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
