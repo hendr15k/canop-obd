@@ -537,6 +537,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showTPMSDialog = showTPMSDialog,
         onToggleTPMSDialog = viewModel::toggleTPMSDialog,
         onTPMSReset = viewModel::onTPMSReset,
+        tpmsData = viewModel.tpmsData.value,
         showClimateControl = showClimateControl,
         onToggleClimateControl = viewModel::toggleClimateControl,
         onSendClimateCommand = viewModel::onSendClimateCommand,

@@ -279,6 +279,7 @@ fun DashboardScreen(
     showTPMSDialog: Boolean,
     onToggleTPMSDialog: () -> Unit,
     onTPMSReset: () -> Unit,
+    tpmsData: List<com.canopobd.ui.tpms.TireData>?,
     showClimateControl: Boolean,
     onToggleClimateControl: () -> Unit,
     onSendClimateCommand: (com.canopobd.ui.climate.ClimateCommand) -> Unit,
@@ -661,7 +662,8 @@ fun DashboardScreen(
             TPMSDialog(
                 onTPMSReset = onTPMSReset,
                 onDismiss = onToggleTPMSDialog,
-                isConnected = connectionState == OBDConnectionState.Connected
+                isConnected = connectionState == OBDConnectionState.Connected,
+                tireData = tpmsData
             )
         }
         if (showClimateControl) {

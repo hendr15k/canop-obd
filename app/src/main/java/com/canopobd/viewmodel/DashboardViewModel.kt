@@ -252,6 +252,9 @@ class DashboardViewModel private constructor(
     private val _showTPMSDialog = MutableStateFlow(false)
     val showTPMSDialog: StateFlow<Boolean> = _showTPMSDialog.asStateFlow()
 
+    private val _tpmsData = MutableStateFlow<List<com.canopobd.ui.tpms.TireData>>(emptyList())
+    val tpmsData: StateFlow<List<com.canopobd.ui.tpms.TireData>> = _tpmsData.asStateFlow()
+
     private val _showClimateControl = MutableStateFlow(false)
     val showClimateControl: StateFlow<Boolean> = _showClimateControl.asStateFlow()
 
@@ -793,8 +796,48 @@ class DashboardViewModel private constructor(
 
     fun toggleCodingDialog() { _showCodingDialog.value = !_showCodingDialog.value }
 
-    fun toggleTPMSDialog() { _showTPMSDialog.value = !_showTPMSDialog.value }
+    fun toggleTPMSDialog() {
+        _showTPMSDialog.value = !_showTPMSDialog.value
+        if (_showTPMSDialog.value) {
+            syncTPMSFromSafety()
+        }
+    }
     fun toggleClimateControl() { _showClimateControl.value = !_showClimateControl.value }
+
+    private fun syncTPMSFromSafety() {
+        val safetySummary = safetyViewModel.safetySummary.value
+        val tpms = safetySummary.tpmsData
+        _tpmsData.value = listOf(
+            com.canopobd.ui.tpms.TireData(
+                position = "Vorne Links",
+                pressure = (tpms.frontLeftPressure * 0.0689476).toFloat(),
+                temperature = 25,
+                isLow = tpms.frontLeftPressure > 0 && tpms.frontLeftPressure < 28.0,
+                sensorBattery = 100
+            ),
+            com.canopobd.ui.tpms.TireData(
+                position = "Vorne Rechts",
+                pressure = (tpms.frontRightPressure * 0.0689476).toFloat(),
+                temperature = 26,
+                isLow = tpms.frontRightPressure > 0 && tpms.frontRightPressure < 28.0,
+                sensorBattery = 98
+            ),
+            com.canopobd.ui.tpms.TireData(
+                position = "Hinten Links",
+                pressure = (tpms.rearLeftPressure * 0.0689476).toFloat(),
+                temperature = 24,
+                isLow = tpms.rearLeftPressure > 0 && tpms.rearLeftPressure < 28.0,
+                sensorBattery = 95
+            ),
+            com.canopobd.ui.tpms.TireData(
+                position = "Hinten Rechts",
+                pressure = (tpms.rearRightPressure * 0.0689476).toFloat(),
+                temperature = 25,
+                isLow = tpms.rearRightPressure > 0 && tpms.rearRightPressure < 28.0,
+                sensorBattery = 100
+            )
+        )
+    }
 
     fun onTPMSReset() {
         viewModelScope.launch(Dispatchers.IO) {
