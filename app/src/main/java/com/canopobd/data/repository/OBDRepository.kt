@@ -6,6 +6,8 @@ import android.util.Log
 import android.content.Context
 import android.content.SharedPreferences
 import com.canopobd.bluetooth.ELM327BTConnection
+import com.canopobd.bluetooth.Mode22PIDs
+import com.canopobd.bluetooth.Mode22TurboData
 import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.local.AlertConfigDao
 import com.canopobd.data.local.AlertConfigEntity
@@ -183,6 +185,11 @@ class OBDRepository(
     private val _importedData = MutableStateFlow<List<CsvImportEntry>>(emptyList())
     val importedData: StateFlow<List<CsvImportEntry>> = _importedData.asStateFlow()
 
+    private val _mode22Data = MutableStateFlow(Mode22TurboData())
+    val mode22Data: StateFlow<Mode22TurboData> = _mode22Data.asStateFlow()
+
+    private var mode22Counter = 0
+
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
@@ -328,6 +335,29 @@ class OBDRepository(
         _dtcResponse.value = null
         trendRecorder.clear()
         _trendHistory.value = TrendHistory()
+        // Save trip to Room Database
+                    val trip = _tripData.value
+                    if (trip.distanceKm > 0.1) {
+                        scope.launch {
+                            try {
+                                tripDao.insert(
+                                    TripEntity(
+                                        startTime = tripStartTime,
+                                        endTime = System.currentTimeMillis(),
+                                        distanceKm = trip.distanceKm.toFloat(),
+                                        avgSpeedKmh = trip.avgSpeedKmh.toFloat(),
+                                        maxSpeedKmh = trip.maxSpeedKmh.toFloat(),
+                                        avgRpm = trip.avgRpm,
+                                        maxRpm = trip.maxRpm,
+                                        fuelUsedLiters = trip.totalFuelUsed.toFloat(),
+                                        vin = storedVin
+                                    )
+                                )
+                            } catch (e: Exception) {
+                                Log.e("OBDRepository", "Failed to save trip to Room: ${e.message}")
+                            }
+                        }
+                    }
         saveTripData()
     }
 
@@ -466,6 +496,45 @@ class OBDRepository(
                         vin = storedVin,
                         timestamp = now
                     )
+
+                    mode22Counter++
+                    if (mode22Counter >= 5) {
+                        mode22Counter = 0
+                        try {
+                            val mode22Results = conn.readMultipleMode22PIDs(
+                                listOf(
+                                    Mode22PIDs.TURBO_BOOST_ACTUAL,
+                                    Mode22PIDs.TURBO_BOOST_TARGET,
+                                    Mode22PIDs.WASTEGATE_DUTY,
+                                    Mode22PIDs.TURBO_SPEED,
+                                    Mode22PIDs.ENGINE_OIL_TEMP,
+                                    Mode22PIDs.TRANS_FLUID_TEMP,
+                                    Mode22PIDs.WIDEBAND_LAMBDA_B1,
+                                    Mode22PIDs.KNOCK_RETARD
+                                )
+                            )
+                            val m = _mode22Data.value
+                            _mode22Data.value = m.copy(
+                                turboBoostActual = mode22Results[Mode22PIDs.TURBO_BOOST_ACTUAL] ?: m.turboBoostActual,
+                                turboBoostTarget = mode22Results[Mode22PIDs.TURBO_BOOST_TARGET] ?: m.turboBoostTarget,
+                                wastegateDuty = mode22Results[Mode22PIDs.WASTEGATE_DUTY] ?: m.wastegateDuty,
+                                turboSpeed = mode22Results[Mode22PIDs.TURBO_SPEED] ?: m.turboSpeed,
+                                engineTorque = mode22Results[Mode22PIDs.ENGINE_OIL_TEMP] ?: m.engineTorque,
+                                timestamp = System.currentTimeMillis()
+                            )
+                            // Update OBDData with Mode 22 values
+                            val current = _obdData.value
+                            _obdData.value = current.copy(
+                                turboRpmMode22 = mode22Results[Mode22PIDs.TURBO_SPEED] ?: current.turboRpmMode22,
+                                boostPressureTargetMode22 = mode22Results[Mode22PIDs.TURBO_BOOST_TARGET] ?: current.boostPressureTargetMode22,
+                                wastegatePositionMode22 = mode22Results[Mode22PIDs.WASTEGATE_DUTY] ?: current.wastegatePositionMode22,
+                                boostPressureActualMode22 = mode22Results[Mode22PIDs.TURBO_BOOST_ACTUAL] ?: current.boostPressureActualMode22,
+                                oilTempMode22 = mode22Results[Mode22PIDs.ENGINE_OIL_TEMP] ?: current.oilTempMode22
+                            )
+                        } catch (e: Exception) {
+                            Log.w("OBDRepository", "Mode 22 polling failed: ${e.message}")
+                        }
+                    }
 
                 if (now - lastTrendRecordTime >= trendRecordInterval) {
                     trendRecorder.record(

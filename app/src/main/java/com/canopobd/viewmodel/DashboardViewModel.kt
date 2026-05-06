@@ -20,6 +20,22 @@ import com.canopobd.data.domain.EVAPSystemAnalyzer
 import com.canopobd.data.domain.FuelTrimAnalyzer
 import com.canopobd.data.domain.LambdaO2SensorAnalyzer
 import com.canopobd.data.domain.SecondaryAirAnalyzer
+import com.canopobd.data.domain.OilConditionMonitor
+import com.canopobd.data.domain.PCVMonitor
+import com.canopobd.data.domain.LambdaBalanceAnalyzer
+import com.canopobd.data.domain.FuelConsumptionAnalyzer
+import com.canopobd.data.domain.M32GearboxMonitor
+import com.canopobd.data.domain.ChainTensionerAnalyzer
+import com.canopobd.data.domain.EGTMonitor
+import com.canopobd.data.domain.CoolantSystemHealth
+import com.canopobd.data.domain.TurboSpoolAnalyzer
+import com.canopobd.data.domain.TurboEfficiencyAnalyzer
+import com.canopobd.data.domain.BoostLeakDetector
+import com.canopobd.data.domain.WastegateHealthAnalyzer
+import com.canopobd.data.domain.SensorHealthMonitor
+import com.canopobd.data.domain.DriveStyleAnalyzer
+import com.canopobd.data.domain.DrivingEfficiencyScorer
+import com.canopobd.data.domain.FuelSystemAnalyzer
 
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.OBDRepository
@@ -267,6 +283,23 @@ class DashboardViewModel private constructor(
     private val lambdaAnalyzer = LambdaO2SensorAnalyzer()
     private val readinessAnalyzer = EmissionsReadinessAnalyzer()
 
+    private val oilConditionMonitor = OilConditionMonitor()
+    private val pcvMonitor = PCVMonitor()
+    private val lambdaBalanceAnalyzer = LambdaBalanceAnalyzer()
+    private val fuelConsumptionAnalyzer = FuelConsumptionAnalyzer()
+    private val m32GearboxMonitor = M32GearboxMonitor()
+    private val chainTensionerAnalyzer = ChainTensionerAnalyzer()
+    private val egtMonitor = EGTMonitor()
+    private val coolantHealthMonitor = CoolantSystemHealth()
+    private val turboSpoolAnalyzer = TurboSpoolAnalyzer()
+    private val turboEfficiencyAnalyzer = TurboEfficiencyAnalyzer()
+    private val boostLeakDetector = BoostLeakDetector()
+    private val wastegateHealthAnalyzer = WastegateHealthAnalyzer()
+    private val sensorHealthMonitor = SensorHealthMonitor()
+    private val driveStyleAnalyzer = DriveStyleAnalyzer()
+    private val drivingEfficiencyScorer = DrivingEfficiencyScorer()
+    private val fuelSystemAnalyzer = FuelSystemAnalyzer()
+
     val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
     val batteryHealthScore = MutableStateFlow(100)
     val batteryAnalysis = MutableStateFlow<BatteryHealthAnalyzer.BatteryAnalysis?>(null)
@@ -283,6 +316,96 @@ class DashboardViewModel private constructor(
     val lambdaAnalysis = MutableStateFlow<LambdaO2SensorAnalyzer.LambdaAnalysis?>(null)
 
     val emissionsReadiness = MutableStateFlow<EmissionsReadinessAnalyzer.ReadinessAnalysis?>(null)
+
+    // Extended Analyzer States
+    val oilConditionResult = MutableStateFlow(OilConditionMonitor.OilAnalysis(
+        condition = OilConditionMonitor.OilCondition.UNKNOWN, healthScore = 0,
+        oilLifeRemaining = 0.0, remainingKm = 0, remainingDays = 0,
+        temperatureHealth = 0, pressureHealth = 0, contaminationRisk = 0,
+        diagnosis = "", recommendation = "", oilType = ""
+    ))
+    val pcvResult = MutableStateFlow(PCVMonitor.PCVAnalysis(
+        health = PCVMonitor.PCVHealth.UNKNOWN, healthScore = 0, mafDeviation = 0.0,
+        totalTrimDeviation = 0.0, oilConsumptionStatus = "", diagnosis = "", recommendation = ""
+    ))
+    val lambdaBalanceData = MutableStateFlow(LambdaBalanceAnalyzer.LambdaBalance())
+    val fuelConsumptionData = MutableStateFlow(FuelConsumptionAnalyzer.FuelConsumptionData())
+    val gearboxResult = MutableStateFlow(M32GearboxMonitor.GearboxAnalysis(
+        health = M32GearboxMonitor.GearboxHealth.UNKNOWN, healthScore = 0,
+        detectedIssues = emptyList(), shiftQualityScore = 0, rpmSpeedRatioAnomaly = 0,
+        bearingWearIndicator = 0, oilConditionScore = 0, diagnosis = "", recommendation = ""
+    ))
+    val chainTensionerResult = MutableStateFlow(ChainTensionerAnalyzer.ChainTensionerAnalysis(
+        health = ChainTensionerAnalyzer.ChainTensionerHealth.UNKNOWN, healthScore = 0,
+        dtcPenalty = 0, rattlePenalty = 0, rpmStabilityPenalty = 0, timingVariancePenalty = 0,
+        diagnosis = "", recommendation = "", chainElongationEstimate = ""
+    ))
+    val egtResult = MutableStateFlow(EGTMonitor.EGTAnalysis(
+        status = EGTMonitor.EGTStatus.NO_DATA, healthScore = 0,
+        trend = EGTMonitor.EGTTrend.STABLE, thermalStressIndex = 0.0,
+        thermalStressHours = 0.0, cylinderBalance = 0.0, estimatedEgtMax = 0.0,
+        egtDeviation = 0.0, diagnosis = "", recommendation = "", warningFlags = emptyList()
+    ))
+    val coolantResult = MutableStateFlow(CoolantSystemHealth.CoolantAnalysis(
+        status = CoolantSystemHealth.CoolantSystemStatus.UNKNOWN, healthScore = 0,
+        thermostatState = CoolantSystemHealth.ThermostatState.UNKNOWN,
+        thermostatOpeningTemp = 0.0, waterPumpEfficiency = 0, leakProbability = 0,
+        coolantTempStable = true, diagnosis = "", recommendation = "", detectedIssues = emptyList()
+    ))
+    val turboSpoolResult = MutableStateFlow(TurboSpoolAnalyzer.SpoolAnalysis(
+        status = TurboSpoolAnalyzer.SpoolStatus.INSUFFICIENT_DATA, healthScore = 0,
+        spoolTimeSeconds = 0.0, expectedSpoolTime = 0.0, spoolDeviation = 0.0,
+        wastegateResponse = 0.0, turboAcceleration = 0.0, diagnosis = "",
+        recommendation = "", trendIndicator = TurboSpoolAnalyzer.SpoolTrend.UNKNOWN
+    ))
+    val turboEfficiencyResult = MutableStateFlow(TurboEfficiencyAnalyzer.TurboEfficiencyAnalysis(
+        efficiency = TurboEfficiencyAnalyzer.TurboEfficiency.GOOD, healthScore = 0,
+        boostEfficiency = 0.0, responseTimeScore = 0, wastegateHealthScore = 0,
+        egtTrendScore = 0, intercoolerEfficiency = 0.0, boostDeviation = 0.0,
+        diagnosis = "", recommendation = ""
+    ))
+    val boostLeakResult = MutableStateFlow(BoostLeakDetector.BoostLeakAnalysis(
+        severity = BoostLeakDetector.LeakSeverity.UNKNOWN,
+        likelyLocation = BoostLeakDetector.LeakLocation.UNKNOWN, healthScore = -1,
+        boostDeviationPercent = 0.0, turboBoostCorrelation = 0.0,
+        tempDeltaAnomaly = 0.0, mafDeviation = 0.0, confidencePercent = 0,
+        diagnosis = "", recommendation = "", detectedIndicators = emptyList()
+    ))
+    val wastegateResult = MutableStateFlow(WastegateHealthAnalyzer.WastegateAnalysis(
+        condition = WastegateHealthAnalyzer.WastegateCondition.UNKNOWN,
+        currentDutyPercent = 0.0, avgDutyPercent = 0.0, boostDeviation = 0.0,
+        healthScore = 0, diagnosis = "", recommendation = ""
+    ))
+    val sensorHealthSummary = MutableStateFlow(SensorHealthMonitor.SensorHealthSummary(
+        overallHealthScore = 0, overallStatus = SensorHealthMonitor.HealthStatus.UNKNOWN,
+        sensorHealths = emptyMap(), criticalIssues = emptyList(), recommendations = emptyList()
+    ))
+    val driveStyleResult = MutableStateFlow(DriveStyleAnalyzer.DriveStyleAnalysis(
+        driveStyle = DriveStyleAnalyzer.DriveStyle.BALANCED, ecoScore = 0, sportScore = 0,
+        wearScore = 0, rpmDistribution = DriveStyleAnalyzer.RPMDistribution(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        throttleSmoothness = 0, brakingPattern = 0, overboostFrequency = 0.0,
+        shiftQuality = 0, feedback = "", detailedFeedback = emptyList()
+    ))
+    val drivingEfficiencyResult = MutableStateFlow(DrivingEfficiencyScorer.EfficiencyScore())
+    val fuelSystemResult = MutableStateFlow(FuelSystemAnalyzer.FuelSystemAnalysis(
+        health = FuelSystemAnalyzer.FuelSystemHealth.UNKNOWN, healthScore = 0,
+        detectedIssues = emptyList(), fuelRailPressureDeviation = 0.0,
+        trimHealthScore = 0, injectorHealthScore = 0, carbonBuildupRisk = 0,
+        diagnosis = "", recommendation = ""
+    ))
+
+    data class ExtendedAnalyzerSummary(
+        val oilHealth: String = "Unbekannt",
+        val pcvHealth: String = "Unbekannt",
+        val chainHealth: String = "Unbekannt",
+        val gearboxHealth: String = "Unbekannt",
+        val coolantHealth: String = "Unbekannt",
+        val boostLeakRisk: String = "Unbekannt",
+        val overallScore: Int = 0,
+        val criticalWarnings: List<String> = emptyList()
+    )
+
+    val extendedAnalyzerData = MutableStateFlow(ExtendedAnalyzerSummary())
 
     private val _voltageHistory = MutableStateFlow<List<Double>>(emptyList())
     private val _o2VoltageHistory = MutableStateFlow<List<Double>>(emptyList())
@@ -782,6 +905,7 @@ class DashboardViewModel private constructor(
                 if (data.rpm > 0) {
                     updateAllTurboMetrics(data)
                     updateEmissionsAnalyzers(data)
+                    updateExtendedAnalyzers(data)
                 }
             }
         }
@@ -905,6 +1029,168 @@ class DashboardViewModel private constructor(
         val result = readinessAnalyzer.analyze(input)
         emissionsReadiness.value = result
         return result
+    }
+
+    // ========== Extended Analyzers ==========
+
+    private fun updateExtendedAnalyzers(data: OBDData) {
+        val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
+
+        // Oil Condition
+        try {
+            val oilInput = OilConditionMonitor.OilInput(
+                oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.coolantTemp,
+                oilPressure = 0.0,
+                coolantTemp = data.coolantTemp,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad,
+                speed = data.speed
+            )
+            oilConditionResult.value = oilConditionMonitor.analyze(oilInput)
+        } catch (_: Exception) {}
+
+        // PCV Monitor
+        try {
+            val expectedMaf = data.rpm * 0.01
+            val pcvInput = PCVMonitor.PCVInput(
+                activeDTCs = dtcCodes,
+                mafRate = data.mafRate,
+                mafExpectedAtRpm = expectedMaf,
+                stft = data.shortTermFuelTrimB1,
+                ltft = data.longTermFuelTrimB1,
+                intakeManifoldPressure = data.intakePressure,
+                rpm = data.rpm,
+                coolantTemp = data.coolantTemp,
+                engineLoad = data.engineLoad,
+                throttle = data.throttle
+            )
+            pcvResult.value = pcvMonitor.analyze(pcvInput)
+        } catch (_: Exception) {}
+
+        // Lambda Balance
+        try {
+            lambdaBalanceAnalyzer.addLambdaSample(data.fuelAirRatio.takeIf { it > 0 } ?: 1.0)
+            lambdaBalanceData.value = lambdaBalanceAnalyzer.analyzeCurrentSequence()
+        } catch (_: Exception) {}
+
+        // Fuel Consumption
+        try {
+            if (data.speed > 5.0 && data.mafRate > 0) {
+                val l100km = fuelConsumptionAnalyzer.calculateFromMAF(data.mafRate, data.speed)
+                fuelConsumptionData.value = fuelConsumptionData.value.copy(
+                    instantL100km = l100km,
+                    avgL100km = if (l100km > 0) (fuelConsumptionData.value.avgL100km + l100km) / 2.0 else fuelConsumptionData.value.avgL100km
+                )
+            }
+        } catch (_: Exception) {}
+
+        // M32 Gearbox
+        try {
+            val m32Input = M32GearboxMonitor.GearboxInput(
+                rpmHistory = listOf(data.rpm),
+                speedHistory = listOf(data.speed),
+                gearPosition = 0,
+                clutchPosition = 0.0,
+                transmissionTemp = 0.0,
+                activeDTCs = dtcCodes
+            )
+            gearboxResult.value = m32GearboxMonitor.analyze(m32Input)
+        } catch (_: Exception) {}
+
+        // Chain Tensioner
+        try {
+            val chainInput = ChainTensionerAnalyzer.ChainTensionerInput(
+                activeDTCs = dtcCodes,
+                coldStartRattleDurationSec = 0.0,
+                idleRpmVariance = 0.0,
+                timingAdvanceVariance = 0.0,
+                currentRpm = data.rpm,
+                timingAdvance = data.timingAdvance,
+                coolantTemp = data.coolantTemp,
+                engineRuntimeSec = data.runTime
+            )
+            chainTensionerResult.value = chainTensionerAnalyzer.analyze(chainInput)
+        } catch (_: Exception) {}
+
+        // EGT Monitor
+        try {
+            val egtInput = EGTMonitor.EGTInput(
+                egtBank1 = data.egtBank1,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad,
+                coolantTemp = data.coolantTemp
+            )
+            egtResult.value = egtMonitor.analyze(egtInput)
+        } catch (_: Exception) {}
+
+        // Coolant System
+        try {
+            val coolantInput = CoolantSystemHealth.CoolantInput(
+                coolantTemp = data.coolantTemp,
+                intakeTemp = data.intakeTemp,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad,
+                engineRuntimeSec = data.runTime
+            )
+            coolantResult.value = coolantHealthMonitor.analyze(coolantInput)
+        } catch (_: Exception) {}
+
+        // Sensor Health
+        try {
+            sensorHealthSummary.value = sensorHealthMonitor.analyzeSensors(data)
+        } catch (_: Exception) {}
+
+        // Wastegate Health
+        try {
+            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
+            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+            val boostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
+            val targetBoostBar = calibration.normalBoostTargetBar
+            wastegateResult.value = wastegateHealthAnalyzer.analyze(
+                wastegateDuty = wastegateDuty.value,
+                avgWastegateDuty = wastegateDuty.value,
+                targetBoost = targetBoostBar,
+                actualBoost = boostBar,
+                rpm = data.rpm,
+                engineLoad = data.engineLoad
+            )
+        } catch (_: Exception) {}
+
+        // Build extended summary
+        try {
+            extendedAnalyzerData.value = ExtendedAnalyzerSummary(
+                oilHealth = oilConditionResult.value.condition.name,
+                pcvHealth = pcvResult.value.health.name,
+                chainHealth = chainTensionerResult.value.health.name,
+                gearboxHealth = gearboxResult.value.health.name,
+                coolantHealth = coolantResult.value.status.name,
+                boostLeakRisk = boostLeakResult.value.severity.name,
+                overallScore = calculateExtendedScore(),
+                criticalWarnings = buildExtendedWarnings()
+            )
+        } catch (_: Exception) {}
+    }
+
+    private fun calculateExtendedScore(): Int {
+        var score = 100
+        if (oilConditionResult.value.condition != OilConditionMonitor.OilCondition.EXCELLENT &&
+            oilConditionResult.value.condition != OilConditionMonitor.OilCondition.UNKNOWN) score -= 15
+        if (pcvResult.value.health != PCVMonitor.PCVHealth.HEALTHY) score -= 15
+        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) score -= 20
+        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) score -= 15
+        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) score -= 10
+        return score.coerceIn(0, 100)
+    }
+
+    private fun buildExtendedWarnings(): List<String> {
+        val warnings = mutableListOf<String>()
+        if (oilConditionResult.value.condition == OilConditionMonitor.OilCondition.CRITICAL) warnings.add("Ölwechsel dringend erforderlich!")
+        if (pcvResult.value.health == PCVMonitor.PCVHealth.PLUGGED) warnings.add("PCV-Ventil verstopft!")
+        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) warnings.add("Steuerkette kritisch!")
+        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) warnings.add("Getriebe M32 kritisch!")
+        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) warnings.add("Kühlsystem Überhitzung!")
+        return warnings
     }
 
     private fun updateAllTurboMetrics(data: OBDData) {
