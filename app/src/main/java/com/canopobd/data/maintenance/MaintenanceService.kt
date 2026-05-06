@@ -2,6 +2,7 @@ package com.canopobd.data.maintenance
 
 import com.canopobd.data.model.MaintenanceType
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -20,9 +21,9 @@ import kotlin.math.roundToInt
 class MaintenanceService {
     
     private val reminders = ConcurrentHashMap<String, MaintenanceReminder>()
-    private val oilTempHistory = mutableListOf<OilTempHistoryEntry>()
-    private val fuelConsumptionHistory = mutableListOf<FuelConsumptionEntry>()
-    private val notifications = mutableListOf<MaintenanceReminderNotification>()
+    private val oilTempHistory = CopyOnWriteArrayList<OilTempHistoryEntry>()
+    private val fuelConsumptionHistory = CopyOnWriteArrayList<FuelConsumptionEntry>()
+    private val notifications = CopyOnWriteArrayList<MaintenanceReminderNotification>()
     
     companion object {
         const val MAX_OIL_TEMP_ENTRIES = 1000

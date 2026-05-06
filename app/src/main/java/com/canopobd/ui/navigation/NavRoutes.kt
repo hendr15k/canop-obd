@@ -24,7 +24,7 @@ sealed class NavRoute(val route: String) {
     data object ShiftLight : NavRoute("shift_light")
     data object TurboMonitor : NavRoute("turbo_monitor")
     data object TimingChainMonitor : NavRoute("timing_chain_monitor")
-    data object CarProfile : NavRoute("car_profile")
+    data object CarProfile : NavRoute("extended_car_profile")
     data object TurboCooldown : NavRoute("turbo_cooldown")
     data object DevicePicker : NavRoute("device_picker")
     data object AstraJCoding : NavRoute("astra_j_coding")

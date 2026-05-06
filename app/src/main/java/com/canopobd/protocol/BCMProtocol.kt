@@ -120,10 +120,10 @@ object BCMProtocol {
     fun parseStringResponse(response: String?): String? {
         if (response == null) return null
         val clean = response.replace(" ", "").replace("\r", "").replace("\n", "")
-        if (clean.contains("ERROR") || clean.length < 6) return null
+        if (clean.contains("ERROR") || clean.length < 8) return null
         val dataStart = clean.indexOf("62")
         if (dataStart < 0) return null
-        val hexData = clean.substring(dataStart + 2)
+        val hexData = clean.substring(dataStart + 6)
         return try {
             (0 until hexData.length step 2)
                 .filter { it + 2 <= hexData.length }
@@ -138,10 +138,10 @@ object BCMProtocol {
     fun parseByteResponse(response: String?): Int? {
         if (response == null) return null
         val clean = response.replace(" ", "").replace("\r", "").replace("\n", "")
-        if (clean.contains("ERROR") || clean.length < 8) return null
+        if (clean.contains("ERROR") || clean.length < 10) return null
         val dataStart = clean.indexOf("62")
         if (dataStart < 0) return null
-        return try { clean.substring(dataStart + 6, dataStart + 8).toInt(16) } catch (_: Exception) { null }
+        return try { clean.substring(dataStart + 8, dataStart + 10).toInt(16) } catch (_: Exception) { null }
     }
 }
 

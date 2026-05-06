@@ -114,7 +114,7 @@ fun KnownIssuesCard(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(upcoming.take(5)) { item ->
+                    items(upcoming.take(5), key = { it.component }) { item ->
                         CompactIssueChip(item, currentKm)
                     }
                 }
@@ -132,7 +132,7 @@ fun KnownIssuesCard(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    items(issues.take(3)) { issue ->
+                    items(issues.take(3), key = { it.name }) { issue ->
                         KnownIssueChip(issue)
                     }
                 }

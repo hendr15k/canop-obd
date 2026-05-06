@@ -811,22 +811,23 @@ class ELM327BTConnection(
         val output = outputStream ?: throw IOException("Not connected")
         val input = inputStream ?: throw IOException("Not connected")
 
-        try { while (input.available() > 0) input.read(ByteArray(64)) } catch (e: Exception) { Log.v(TAG, "Buffer clear warning: ${e.message}") }
+        val clearBuffer = ByteArray(64)
+        try { while (input.available() > 0) input.read(clearBuffer) } catch (e: Exception) { Log.v(TAG, "Buffer clear warning: ${e.message}") }
 
         output.write("$cmd\r".toByteArray())
         output.flush()
 
         val deadline = System.currentTimeMillis() + COMMAND_TIMEOUT_MS
         val responseBuilder = StringBuilder()
+        val readBuffer = ByteArray(256)
 
         while (System.currentTimeMillis() < deadline) {
             if (input.available() > 0) {
-                val buffer = ByteArray(256)
                 val bytesRead = withContext(Dispatchers.IO) {
-                    input.read(buffer)
+                    input.read(readBuffer)
                 }
                 if (bytesRead > 0) {
-                    responseBuilder.append(String(buffer, 0, bytesRead, Charsets.US_ASCII))
+                    responseBuilder.append(String(readBuffer, 0, bytesRead, Charsets.US_ASCII))
                     if (responseBuilder.contains(">")) break
                 }
             } else {
@@ -841,7 +842,7 @@ class ELM327BTConnection(
         val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
         if (hex.contains("ERROR") || hex.isEmpty()) return null
 
-        val dataHex = hex.drop(2)
+        val dataHex = hex.drop(4)
         if (dataHex.length < pid.byteCount * 2) return null
 
         val bytes = ByteArray(pid.byteCount) { i ->
@@ -864,8 +865,6 @@ class ELM327BTConnection(
 
     suspend fun readVIN(): String = withContext(Dispatchers.IO) {
         try {
-            sendCommand("0902")
-            delay(200)
             val response = sendCommandWithTimeout("0902")
             parseVIN(response)
         } catch (e: Exception) {
@@ -917,14 +916,14 @@ class ELM327BTConnection(
                         }
                         val speedResp = sendCommandWithTimeout("020D")
                         if (!speedResp.contains("ERROR")) {
-                            val speedHex = speedResp.replace(" ", "").drop(4)
+                            val speedHex = speedResp.replace(" ", "").drop(6)
                             if (speedHex.length >= 2) {
                                 data["Speed"] = speedHex.substring(0, 2).toInt(16).toDouble()
                             }
                         }
                         val coolResp = sendCommandWithTimeout("0205")
                         if (!coolResp.contains("ERROR")) {
-                            val coolHex = coolResp.replace(" ", "").drop(4)
+                            val coolHex = coolResp.replace(" ", "").drop(6)
                             if (coolHex.length >= 2) {
                                 data["Coolant"] = (coolHex.substring(0, 2).toInt(16) - 40).toDouble()
                             }
@@ -995,15 +994,13 @@ class ELM327BTConnection(
             val dataHex = hex.drop(4)
             if (dataHex.length >= 8) {
                 val bits = dataHex.chunked(2).map { it.toInt(16).toByte() }
-                for (byte in bits) {
+                for ((byteIdx, byte) in bits.withIndex()) {
                     for (i in 7 downTo 0) {
                         if ((byte.toInt() and (1 shl i)) != 0) {
-                            val pidNum = supported.size + 1
+                            val pidNum = byteIdx * 8 + (7 - i) + 1
                             supported.add("01%02X".format(pidNum))
                         }
-                        if (supported.size >= 32) break
                     }
-                    if (supported.size >= 32) break
                 }
             }
 
@@ -1013,15 +1010,13 @@ class ELM327BTConnection(
                 val dataHex2 = hex2.drop(4)
                 if (dataHex2.length >= 8) {
                     val bits2 = dataHex2.chunked(2).map { it.toInt(16).toByte() }
-                    for (byte in bits2) {
+                    for ((byteIdx, byte) in bits2.withIndex()) {
                         for (i in 7 downTo 0) {
                             if ((byte.toInt() and (1 shl i)) != 0) {
-                                val pidNum = 33 + supported.size
-                                if (pidNum <= 64) supported.add("01%02X".format(pidNum))
+                                val pidNum = 0x20 + byteIdx * 8 + (7 - i) + 1
+                                if (pidNum <= 0x40) supported.add("01%02X".format(pidNum))
                             }
-                            if (supported.size >= 64) break
                         }
-                        if (supported.size >= 64) break
                     }
                 }
             }
@@ -1032,6 +1027,7 @@ class ELM327BTConnection(
     }
 
     fun disconnect() {
+        _isConnected.value = false
         scope.cancel()
         try {
             socket?.close()
@@ -1041,7 +1037,6 @@ class ELM327BTConnection(
         socket = null
         inputStream = null
         outputStream = null
-        _isConnected.value = false
         Log.i(TAG, "Disconnected")
     }
 

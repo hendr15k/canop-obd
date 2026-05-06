@@ -833,7 +833,9 @@ data class DriveSession(
     val rpmSamples: Double = 0.0,
     val rpmSampleCount: Int = 0,
     val throttleSamples: Double = 0.0,
+    val throttleSampleCount: Int = 0,
     val speedSamples: Double = 0.0,
+    val speedSampleCount: Int = 0,
     val avgBoostBar: Double = 0.0,
     val maxBoostBar: Double = 0.0,
     val boostSamples: Double = 0.0,
@@ -1658,34 +1660,34 @@ enum class BatteryHealth(val label: String, val severity: Int) {
 }
 
 data class BatteryStatus(
-    val voltage: Double,
-    val soc: Int,
-    val health: BatteryHealth,
-    val isCharging: Boolean
+    val voltage: Double = 0.0,
+    val soc: Int = 0,
+    val health: BatteryHealth = BatteryHealth.GOOD,
+    val isCharging: Boolean = false
 )
 
 enum class EGRStatus { CLOSED, OPEN, FAULT }
 
 data class EGRHealth(
-    val status: EGRStatus,
-    val flowRate: Double,
-    val errorPercent: Double,
-    val healthScore: Int
+    val status: EGRStatus = EGRStatus.CLOSED,
+    val flowRate: Double = 0.0,
+    val errorPercent: Double = 0.0,
+    val healthScore: Int = 0
 )
 
 enum class LeakSize { SMALL, MEDIUM, LARGE }
 
 data class EVAPStatus(
-    val purgeDuty: Double,
-    val tankPressure: Double,
-    val hasLeak: Boolean,
-    val leakSize: LeakSize?
+    val purgeDuty: Double = 0.0,
+    val tankPressure: Double = 0.0,
+    val hasLeak: Boolean = false,
+    val leakSize: LeakSize? = null
 )
 
 data class SAIStatus(
-    val isActive: Boolean,
-    val operationTimeSeconds: Long,
-    val healthScore: Int
+    val isActive: Boolean = false,
+    val operationTimeSeconds: Long = 0L,
+    val healthScore: Int = 0
 )
 
 enum class O2SensorType {
@@ -1694,12 +1696,12 @@ enum class O2SensorType {
 }
 
 data class LambdaSensorStatus(
-    val sensor: O2SensorType,
-    val voltage: Double,
-    val lambda: Double?,
-    val heaterStatus: Boolean,
-    val healthScore: Int,
-    val crossCountRate: Double
+    val sensor: O2SensorType = O2SensorType.PRECAT_WIDEBAND,
+    val voltage: Double = 0.0,
+    val lambda: Double = 1.0,
+    val heaterStatus: Boolean = true,
+    val healthScore: Int = 0,
+    val crossCountRate: Double = 0.0
 )
 
 enum class MonitorType(val label: String, val bitPosition: Int) {
@@ -1717,6 +1719,6 @@ enum class MonitorType(val label: String, val bitPosition: Int) {
 
 data class EmissionsReadinessMonitor(
     val monitor: MonitorType,
-    val isComplete: Boolean,
-    val isSupported: Boolean
+    val isComplete: Boolean = false,
+    val isSupported: Boolean = true
 )

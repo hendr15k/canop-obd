@@ -162,20 +162,22 @@ class CANRepository(private val connection: ELM327BTConnection) {
         try {
             val dids = listOf("F4B0", "F4C0", "F4E0", "F4F1", "F480")
             mode22Client.readMultipleDIDs(dids).collect { results ->
-                val engineTorque = results["F4B0"]?.let { parseTorque(it) }
-                val boostTarget = results["F4C0"]?.let { parsePressure(it) }
-                val coolantTemp = results["F4E0"]?.let { parseTemperature(it) }
-                val batteryVoltage = results["F4F1"]?.let { parseVoltage(it) }
-                val fuelConsumption = results["F480"]?.let { parseFuelConsumption(it) }
+                if (results.isNotEmpty()) {
+                    val engineTorque = results["F4B0"]?.let { parseTorque(it) }
+                    val boostTarget = results["F4C0"]?.let { parsePressure(it) }
+                    val coolantTemp = results["F4E0"]?.let { parseTemperature(it) }
+                    val batteryVoltage = results["F4F1"]?.let { parseVoltage(it) }
+                    val fuelConsumption = results["F480"]?.let { parseFuelConsumption(it) }
 
-                _extendedPIDData.value = _extendedPIDData.value.copy(
-                    engineTorque = engineTorque,
-                    boostPressureTarget = boostTarget,
-                    coolantTemp = coolantTemp,
-                    batteryVoltage = batteryVoltage,
-                    fuelConsumption = fuelConsumption,
-                    timestamp = System.currentTimeMillis()
-                )
+                    _extendedPIDData.value = _extendedPIDData.value.copy(
+                        engineTorque = engineTorque,
+                        boostPressureTarget = boostTarget,
+                        coolantTemp = coolantTemp,
+                        batteryVoltage = batteryVoltage,
+                        fuelConsumption = fuelConsumption,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "updateExtendedPIDs error: ${e.message}")
@@ -186,17 +188,19 @@ class CANRepository(private val connection: ELM327BTConnection) {
         try {
             val dids = listOf("220001", "220002", "220003", "220004", "220005", "220006", "220007", "220008")
             mode22Client.readMultipleDIDs(dids).collect { results ->
-                _turboMonitoringData.value = TurboMonitoringData(
-                    engineTorque = results["220001"]?.let { parseTorque(it) } ?: 0.0,
-                    boostActual = results["220002"]?.let { parsePressure(it) } ?: 0.0,
-                    boostTarget = results["220003"]?.let { parsePressure(it) } ?: 0.0,
-                    wastegateDuty = results["220004"]?.let { parsePercent(it) } ?: 0.0,
-                    turboSpeed = results["220005"]?.let { parseSpeed(it) } ?: 0.0,
-                    turboInletTemp = results["220006"]?.let { parseTemperature(it) } ?: 0.0,
-                    turboOutletTemp = results["220007"]?.let { parseTemperature(it) } ?: 0.0,
-                    chargeAirTemp = results["220008"]?.let { parseTemperature(it) } ?: 0.0,
-                    timestamp = System.currentTimeMillis()
-                )
+                if (results.isNotEmpty()) {
+                    _turboMonitoringData.value = TurboMonitoringData(
+                        engineTorque = results["220001"]?.let { parseTorque(it) } ?: 0.0,
+                        boostActual = results["220002"]?.let { parsePressure(it) } ?: 0.0,
+                        boostTarget = results["220003"]?.let { parsePressure(it) } ?: 0.0,
+                        wastegateDuty = results["220004"]?.let { parsePercent(it) } ?: 0.0,
+                        turboSpeed = results["220005"]?.let { parseSpeed(it) } ?: 0.0,
+                        turboInletTemp = results["220006"]?.let { parseTemperature(it) } ?: 0.0,
+                        turboOutletTemp = results["220007"]?.let { parseTemperature(it) } ?: 0.0,
+                        chargeAirTemp = results["220008"]?.let { parseTemperature(it) } ?: 0.0,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "updateTurboData error: ${e.message}")
@@ -226,15 +230,16 @@ class CANRepository(private val connection: ELM327BTConnection) {
         mode22Client.readDID(gearDid).collect { data ->
             if (data != null && data.isNotEmpty()) {
                 val gear = data[0].toInt() and 0xFF
-                _transmissionData.value = TransmissionData(gear = gear)
+                val td = TransmissionData(gear = gear)
+                _transmissionData.value = td
+                emit(td)
+            } else {
+                emit(null)
             }
-            emit(_transmissionData.value)
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getBCMStatus(): Flow<BCMStatus?> = flow {
-        emit(_bcmStatus.value)
-    }
+    fun getBCMStatus(): StateFlow<BCMStatus?> = _bcmStatus
 
     fun readVIN(): Flow<String?> = flow {
         mode22Client.readDID("F190").collect { data ->

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.canopobd.data.domain.WastegateHealthAnalyzer
 import com.canopobd.data.model.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -286,8 +287,11 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    private var turboAnalysisJob: Job? = null
+
     fun startTurboAnalysisCollection(obdDataFlow: kotlinx.coroutines.flow.Flow<OBDData>, carProfileFlow: kotlinx.coroutines.flow.Flow<CarProfile>) {
-        viewModelScope.launch {
+        turboAnalysisJob?.cancel()
+        turboAnalysisJob = viewModelScope.launch {
             kotlinx.coroutines.flow.combine(obdDataFlow, carProfileFlow) { data, carProfile ->
                 data to carProfile
             }.collect { (data, carProfile) ->
@@ -296,5 +300,10 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        turboAnalysisJob?.cancel()
+        super.onCleared()
     }
 }

@@ -4,6 +4,7 @@ import android.util.Log
 import com.canopobd.bluetooth.ELM327BTConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.util.concurrent.CopyOnWriteArrayList
 
 data class CANMessage(
     val timestamp: Long,
@@ -89,6 +90,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
 
     private val _messages = MutableStateFlow<List<CANMessage>>(emptyList())
     val messages: StateFlow<List<CANMessage>> = _messages.asStateFlow()
+    private val messagesInternal = CopyOnWriteArrayList<CANMessage>()
 
     private val _isMonitoring = MutableStateFlow(false)
     val isMonitoring: StateFlow<Boolean> = _isMonitoring.asStateFlow()
@@ -132,6 +134,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
     fun startMonitoring(onMessage: ((CANMessage) -> Unit)? = null) {
         if (_isMonitoring.value) return
         _isMonitoring.value = true
+        messagesInternal.clear()
         _messages.value = emptyList()
         _errorMessage.value = null
         var messageCount = 0
@@ -144,12 +147,11 @@ class CANMonitor(private val connection: ELM327BTConnection) {
                     if (response.isNotBlank() && !response.contains("ERROR")) {
                         val parsedMessages = parseCANResponse(response)
                         parsedMessages.forEach { msg ->
-                            val current = _messages.value.toMutableList()
-                            current.add(0, msg)
-                            if (current.size > maxMessageHistory) {
-                                current.removeAt(current.size - 1)
+                            messagesInternal.add(0, msg)
+                            if (messagesInternal.size > maxMessageHistory) {
+                                messagesInternal.removeAt(messagesInternal.size - 1)
                             }
-                            _messages.value = current
+                            _messages.value = messagesInternal.toList()
                             onMessage?.invoke(msg)
                             messageCount++
 
@@ -220,15 +222,16 @@ class CANMonitor(private val connection: ELM327BTConnection) {
     }
 
     fun clearMessages() {
+        messagesInternal.clear()
         _messages.value = emptyList()
     }
 
     fun getMessagesById(canId: String): List<CANMessage> {
-        return _messages.value.filter { it.canId.equals(canId, ignoreCase = true) }
+        return messagesInternal.filter { it.canId.equals(canId, ignoreCase = true) }
     }
 
     fun getUniqueCanIds(): Set<String> {
-        return _messages.value.map { it.canId }.toSet()
+        return messagesInternal.map { it.canId }.toSet()
     }
 
     fun getMessageCount(): Int = _messages.value.size

@@ -405,6 +405,7 @@ private fun RangeCard(rangeKm: Double, fuelLevelPercent: Double, fuelLiters: Dou
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            @Suppress("DEPRECATION")
             LinearProgressIndicator(
                 progress = (fuelLevelPercent / 100.0).toFloat().coerceIn(0f, 1f),
                 modifier = Modifier

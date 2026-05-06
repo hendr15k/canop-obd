@@ -3,11 +3,12 @@ package com.canopobd.data.maintenance
 import com.canopobd.data.model.MaintenanceType
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 object MaintenanceScheduler {
     
     private val scheduledReminders = ConcurrentHashMap<String, ScheduledMaintenance>()
-    private val maintenanceAlerts = mutableListOf<MaintenanceAlert>()
+    private val maintenanceAlerts = CopyOnWriteArrayList<MaintenanceAlert>()
     
     const val ALERT_THRESHOLD_KM = 500
     const val ALERT_THRESHOLD_DAYS = 14

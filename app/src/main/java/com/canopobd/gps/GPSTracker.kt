@@ -19,6 +19,10 @@ class GPSTracker(private val context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
+    fun hasLocationPermission(): Boolean {
+        return context.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
     private val _currentLocation = MutableStateFlow<GPSLocation?>(null)
     val currentLocation: StateFlow<GPSLocation?> = _currentLocation.asStateFlow()
 
@@ -43,8 +47,9 @@ class GPSTracker(private val context: Context) {
         .setMinUpdateDistanceMeters(5f)
         .build()
 
-    fun startTracking() {
-        if (_isTracking.value) return
+    fun startTracking(): Boolean {
+        if (_isTracking.value) return false
+        if (!hasLocationPermission()) return false
 
         tripId = UUID.randomUUID().toString().take(8).uppercase()
         tripStartTime = System.currentTimeMillis()
@@ -62,12 +67,14 @@ class GPSTracker(private val context: Context) {
             }
         }
 
+        val callback = locationCallback ?: return false
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
-            locationCallback!!,
+            callback,
             Looper.getMainLooper()
         )
         _isTracking.value = true
+        return true
     }
 
     fun stopTracking() {
@@ -177,6 +184,10 @@ class GPSTracker(private val context: Context) {
     }
 
     fun getLastKnownLocation(callback: (GPSLocation?) -> Unit) {
+        if (!hasLocationPermission()) {
+            callback(null)
+            return
+        }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { loc ->
                 callback(if (loc != null) locationToGPS(loc) else null)

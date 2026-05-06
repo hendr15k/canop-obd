@@ -12,6 +12,7 @@ import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.CopyOnWriteArrayList
 
 @SuppressLint("MissingPermission")
 class RemoteBridge(
@@ -30,7 +31,7 @@ class RemoteBridge(
     private var serverSocket: ServerSocket? = null
     private var serverJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val clients = mutableListOf<ClientHandler>()
+    private val clients = CopyOnWriteArrayList<ClientHandler>()
 
     companion object {
         const val DEFAULT_PORT = 35000
@@ -67,8 +68,7 @@ class RemoteBridge(
                         val clientSocket = serverSocket?.accept()
                         if (clientSocket != null) {
                             val handler = ClientHandler(clientSocket)
-                            synchronized(clients) { clients.add(handler) }
-                            _connectedClients.value = clients.size
+                            synchronized(clients) { clients.add(handler); _connectedClients.value = clients.size }
                             handler.start()
                         }
                     } catch (e: Exception) {
@@ -88,9 +88,11 @@ class RemoteBridge(
     fun stopServer() {
         serverJob?.cancel()
         serverJob = null
-        clients.forEach { it.close() }
-        clients.clear()
-        _connectedClients.value = 0
+        synchronized(clients) {
+            clients.forEach { it.close() }
+            clients.clear()
+            _connectedClients.value = 0
+        }
         try {
             serverSocket?.close()
         } catch (e: Exception) {
@@ -195,8 +197,12 @@ class RemoteBridge(
             } catch (e: Exception) {
                 Log.w("RemoteBridge", "Failed to close client socket", e)
             }
-            synchronized(clients) { clients.remove(this) }
-            _connectedClients.value = clients.size
+            val newSize: Int
+            synchronized(clients) {
+                clients.remove(this)
+                newSize = clients.size
+            }
+            _connectedClients.value = newSize
         }
     }
 }

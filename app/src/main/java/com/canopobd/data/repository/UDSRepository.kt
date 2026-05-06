@@ -673,7 +673,7 @@ object UDSConstants {
         const val THROTTLE_POSITION = "F449"
         const val ENGINE_LOAD = "F442"
         const val FUEL_LEVEL = "F42A"
-        const val OIL_TEMP = "F425"
+        const val OIL_TEMP = "F43C"
         const val OIL_PRESSURE = "F441"
         const val INJECTION_QUANTITY = "F450"
         const val INJECTION_TIMING = "F451"

@@ -600,7 +600,7 @@ private fun WiperControlCard(
                 3 to Icons.Filled.Thunderstorm,
                 -1 to Icons.Filled.AutoAwesome
             ).forEach { (mode, icon) ->
-                val isSelected = if (mode == -1) speed == 0 && false else speed == mode
+                val isSelected = if (mode == -1) false else speed == mode
                 val selectedColor = when (mode) {
                     0 -> colors.textDim
                     1 -> colors.gaugeGreen

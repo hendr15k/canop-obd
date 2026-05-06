@@ -206,6 +206,11 @@ class OBDRepository(
             _primaryGaugeIds.value = ids
         }
         _pollMode.value = PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
+        try {
+            scope.launch { migrateFromPrefsIfNeeded() }
+        } catch (e: Exception) {
+            Log.e("OBDRepository", "Migration failed: ${e.message}")
+        }
         _alertConfig.value = AlertConfig(
             speedWarning = prefs.getFloat("alert_speed", 130f),
             speedWarningEnabled = prefs.getBoolean("alert_speed_on", false),

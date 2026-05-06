@@ -28,7 +28,7 @@ class MaintenanceNotificationManager(private val context: Context) {
             ).apply {
                 description = CHANNEL_DESC
             }
-            val manager = context.getSystemService(NotificationManager::class.java)
+            val manager = context.getSystemService(NotificationManager::class.java) ?: return
             manager.createNotificationChannel(channel)
         }
     }
@@ -120,7 +120,7 @@ class MaintenanceNotificationManager(private val context: Context) {
             .setAutoCancel(true)
             .build()
 
-        val manager = context.getSystemService(NotificationManager::class.java)
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.notify(notificationId, notification)
     }
 
@@ -131,7 +131,7 @@ class MaintenanceNotificationManager(private val context: Context) {
     }
 
     fun cancelAll() {
-        val manager = context.getSystemService(NotificationManager::class.java)
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.cancelAll()
     }
 }
