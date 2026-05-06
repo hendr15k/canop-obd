@@ -214,6 +214,24 @@ class OBDRepository(
     private val _tpmsReading = MutableStateFlow(TPMSReading())
     val tpmsReading: StateFlow<TPMSReading> = _tpmsReading.asStateFlow()
 
+    data class ClimateReading(
+        val driverTempCelsius: Int = 22,
+        val passengerTempCelsius: Int = 22,
+        val fanSpeed: Int = 3,
+        val isACEnabled: Boolean = false,
+        val isAutoMode: Boolean = true,
+        val isRecirculation: Boolean = false,
+        val isFrontDefrost: Boolean = false,
+        val isRearDefrost: Boolean = false,
+        val isMirrorDefrost: Boolean = false,
+        val outsideTemp: Int = 18,
+        val cabinTemp: Int = 23,
+        val acCompressorActive: Boolean = false,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+    private val _climateReading = MutableStateFlow(ClimateReading())
+    val climateReading: StateFlow<ClimateReading> = _climateReading.asStateFlow()
+
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
@@ -682,6 +700,25 @@ class OBDRepository(
                 frontRightTemp = 26,
                 rearLeftTemp = 24,
                 rearRightTemp = 25
+            )
+        }
+    }
+
+    fun readClimate() {
+        scope.launch {
+            val conn = connection
+            if (conn != null && _connectionState.value == OBDConnectionState.Connected) {
+                android.util.Log.d("OBDRepository", "Requesting Climate data from vehicle")
+            }
+            _climateReading.value = ClimateReading(
+                driverTempCelsius = 22,
+                passengerTempCelsius = 22,
+                fanSpeed = 3,
+                isACEnabled = false,
+                isAutoMode = true,
+                isRecirculation = false,
+                outsideTemp = 18,
+                cabinTemp = 23
             )
         }
     }
