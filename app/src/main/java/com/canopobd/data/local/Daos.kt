@@ -65,6 +65,9 @@ interface TripDao {
     @Insert
     suspend fun insert(trip: TripEntity): Long
 
+    @Query("DELETE FROM trips WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
     @Query("DELETE FROM trips")
     suspend fun deleteAll()
 }

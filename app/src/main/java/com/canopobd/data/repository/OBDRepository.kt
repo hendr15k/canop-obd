@@ -111,6 +111,8 @@ class OBDRepository(
     private var reconnectJob: Job? = null
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    val tripHistoryEntities: StateFlow<List<TripEntity>> = tripDao.getAll()
+        .stateIn(scope, SharingStarted.Lazily, emptyList())
     private var pollingJob: Job? = null
     private var tripStartTime: Long = 0L
     private var tripSamples: Long = 0L
@@ -359,6 +361,15 @@ class OBDRepository(
                         }
                     }
         saveTripData()
+    }
+
+    suspend fun sendRawCommand(cmd: String): String? {
+        return try {
+            connection?.sendRawCommand(cmd)
+        } catch (e: Exception) {
+            Log.e("OBDRepository", "sendRawCommand failed: ${e.message}")
+            null
+        }
     }
 
     private fun handleConnectionLoss(error: String) {
@@ -673,6 +684,14 @@ class OBDRepository(
 
     fun clearGPSTripHistory() {
         gpsTracker.clearTripHistory()
+    }
+
+    suspend fun deleteTrip(id: Long) {
+        tripDao.deleteById(id)
+    }
+
+    suspend fun clearTripHistory() {
+        tripDao.deleteAll()
     }
 
     fun setPrimaryGauges(ids: Set<String>) {

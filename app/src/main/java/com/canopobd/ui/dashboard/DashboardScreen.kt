@@ -43,6 +43,7 @@ import com.canopobd.ui.diagnostics.DiagnosticsDialog
 import com.canopobd.ui.alerts.AlertSettingsDialog
 import com.canopobd.ui.analysis.DataAnalysisDialog
 import com.canopobd.data.model.GPSTrip
+import com.canopobd.data.local.TripEntity
 import com.canopobd.data.model.OBDData
 import com.canopobd.data.model.ActiveAlert
 import com.canopobd.data.model.AlertConfig
@@ -193,6 +194,8 @@ fun DashboardScreen(
     onStartPerfTest: (com.canopobd.data.model.PerformanceTestType) -> Unit,
     onStopPerfTest: () -> Unit,
     onClearTripHistory: () -> Unit,
+    tripHistoryEntities: List<TripEntity>,
+    onDeleteTrip: (Long) -> Unit,
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
@@ -215,6 +218,7 @@ fun DashboardScreen(
     onToggleExtendedFuel: () -> Unit,
     onToggleExtendedMaintenance: () -> Unit,
     onToggleComfortControl: () -> Unit,
+    onSendBCMCommand: (ComfortCommand) -> Unit,
     appThemeMode: com.canopobd.data.model.AppThemeMode,
     onSetAppThemeMode: (com.canopobd.data.model.AppThemeMode) -> Unit,
     modifier: Modifier = Modifier
@@ -488,7 +492,12 @@ fun DashboardScreen(
             }
             composable("trip_history") {
                 if (showTripHistory) {
-                    com.canopobd.ui.triphistory.TripHistoryDialog(trips = tripHistory, onDismiss = { onToggleTripHistory(); navController.safePop() }, onClearHistory = onClearTripHistory)
+                    com.canopobd.ui.trip.TripHistoryScreen(
+                        trips = tripHistoryEntities,
+                        onBack = { onToggleTripHistory(); navController.safePop() },
+                        onDeleteTrip = onDeleteTrip,
+                        onClearAll = onClearTripHistory
+                    )
                 }
             }
             composable("power_calculator") {
@@ -596,7 +605,7 @@ fun DashboardScreen(
             composable("comfort_control") {
                 if (showComfortControl) {
                     ComfortControlDialog(
-                        onCommand = { /* CAN-BUS command would be sent here */ },
+                        onCommand = onSendBCMCommand,
                         onDismiss = { onToggleComfortControl(); navController.safePop() }
                     )
                 }

@@ -33,11 +33,16 @@ import com.canopobd.data.domain.TurboEfficiencyAnalyzer
 import com.canopobd.data.domain.BoostLeakDetector
 import com.canopobd.data.domain.WastegateHealthAnalyzer
 import com.canopobd.data.domain.SensorHealthMonitor
+import com.canopobd.protocol.BCMCommandMapper
+import com.canopobd.ui.comfort.ComfortCommand
+import com.canopobd.notifications.MaintenanceNotificationManager
 import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
 import com.canopobd.data.domain.FuelSystemAnalyzer
 
 import com.canopobd.data.model.*
+import com.canopobd.data.local.TripEntity
+import com.canopobd.data.local.MaintenanceEntity
 import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -53,6 +58,12 @@ class DashboardViewModel private constructor(
 ) : ViewModel() {
 
     private val context: Application = application
+    private val notificationManager = MaintenanceNotificationManager(application)
+
+    init {
+        notificationManager.createNotificationChannel()
+    }
+
     private val turboViewModel = TurboViewModel(application)
     private val safetyViewModel = SafetyViewModel(application)
     private val ecoScoreViewModel = EcoScoreViewModel(application)
@@ -86,6 +97,7 @@ class DashboardViewModel private constructor(
     val isGPSTracking = repository.isGPSTracking
     val currentTrip = repository.currentTrip
     val tripHistory = repository.tripHistory
+    val tripHistoryEntities: StateFlow<List<TripEntity>> = repository.tripHistoryEntities
     val trendHistory = repository.trendHistory
 
     val readinessMonitor = repository.readinessMonitor
@@ -460,7 +472,25 @@ class DashboardViewModel private constructor(
     }
 
     fun disconnect() {
+        checkMaintenanceNotifications()
         repository.disconnect()
+    }
+
+    private fun checkMaintenanceNotifications() {
+        val items = repository.loadMaintenanceItems()
+        val entities = items.map { item ->
+            MaintenanceEntity(
+                type = item.type.name,
+                lastServiceKm = item.lastServiceKm,
+                intervalKm = item.intervalKm,
+                lastServiceDate = item.lastServiceDate
+            )
+        }
+        val currentKm = _currentKm.value
+        val reminders = notificationManager.checkMaintenanceReminders(entities, currentKm)
+        if (reminders.isNotEmpty()) {
+            notificationManager.showAllReminders(reminders)
+        }
     }
 
     fun toggleDevicePicker() {
@@ -686,6 +716,15 @@ class DashboardViewModel private constructor(
     fun toggleExtendedMaintenance() { _showExtendedMaintenance.value = !_showExtendedMaintenance.value }
     fun toggleComfortControl() { _showComfortControl.value = !_showComfortControl.value }
 
+    fun onSendBCMCommand(command: ComfortCommand) {
+        viewModelScope.launch {
+            val action = BCMCommandMapper.actionToATCommand(command.action.name, command.value)
+            if (action != null) {
+                repository.sendRawCommand(action)
+            }
+        }
+    }
+
     fun selectCarProfile(profile: com.canopobd.data.model.CarProfile) {
         _carProfileState.value = profile
         repository.saveCarProfile(profile)
@@ -820,6 +859,14 @@ class DashboardViewModel private constructor(
 
     fun clearGPSTripHistory() {
         repository.clearGPSTripHistory()
+    }
+
+    fun deleteTrip(id: Long) {
+        viewModelScope.launch { repository.deleteTrip(id) }
+    }
+
+    fun clearTripHistory() {
+        viewModelScope.launch { repository.clearTripHistory() }
     }
 
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT) {

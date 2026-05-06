@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.canopobd.R
 import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
+import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.ui.update.UpdateDialog
 import com.canopobd.viewmodel.DashboardViewModel
 
@@ -165,6 +166,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val currentTrip by viewModel.currentTrip.collectAsState()
     val trendHistory by viewModel.trendHistory.collectAsState()
     val tripHistory by viewModel.tripHistory.collectAsState()
+    val tripHistoryEntities by viewModel.tripHistoryEntities.collectAsState()
     val readinessMonitor by viewModel.readinessMonitor.collectAsState()
     val detectedProtocol by viewModel.detectedProtocol.collectAsState()
     val showFuelEconomy by viewModel.showFuelEconomy.collectAsState()
@@ -361,6 +363,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onStartPerfTest = viewModel::startPerformanceTest,
         onStopPerfTest = viewModel::stopPerformanceTest,
         onClearTripHistory = viewModel::clearGPSTripHistory,
+        tripHistoryEntities = tripHistoryEntities,
+        onDeleteTrip = viewModel::deleteTrip,
         onTogglePowerCalculator = viewModel::togglePowerCalculator,
         onToggleDriveScore = viewModel::toggleDriveScore,
         onToggleShiftLight = viewModel::toggleShiftLight,
@@ -383,6 +387,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleExtendedFuel = viewModel::toggleExtendedFuel,
         onToggleExtendedMaintenance = viewModel::toggleExtendedMaintenance,
         onToggleComfortControl = viewModel::toggleComfortControl,
+        onSendBCMCommand = viewModel::onSendBCMCommand,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
         carProfile = carProfile,
