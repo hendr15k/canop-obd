@@ -40,11 +40,67 @@ fun CustomCANFrameSenderDialog(
     
     val presets = remember {
         listOf(
-            CANPreset("Zentralverriegelung", "752", "02 10 03", "Extended Session"),
-            CANPreset("Fenster Auf", "74B", "3F 01 01", "Fenster FH"),
-            CANPreset("Fenster Zu", "74B", "3F 01 00", "Fenster FH"),
-            CANPreset("Spiegel Einklappen", "74B", "40 01 01", "Spiegel"),
-            CANPreset("ECU VIN lesen", "7E0", "09 02", "VIN auslesen")
+            // Diagnose Presets
+            CANPreset("Extended Session", "7E0", "10 03", "Erweiterte Diagnose-Sitzung"),
+            CANPreset("Readiness Monitor", "7E0", "01 01", "Readiness Tests abfragen"),
+            CANPreset("VIN lesen", "7E0", "09 02", "Fahrzeug-Identifikationsnummer"),
+            CANPreset("Supported PIDs", "7E0", "01 00", "Unterstuetzte PIDs scannen"),
+            
+            // BCM Presets
+            CANPreset("BCM Extended Session", "7C0", "10 03", "BCM erweiterte Sitzung"),
+            CANPreset("BCM VIN", "7C0", "22 F1 90", "BCM VIN auslesen"),
+            CANPreset("BCM Part Number", "7C0", "22 F1 8C", "BCM Teilenummer"),
+            
+            // Zentralverriegelung
+            CANPreset("Verriegeln", "752", "2E FF 01 1F", "Alle Tueren verriegeln"),
+            CANPreset("Entriegeln", "752", "2E FF 01 0F", "Alle Tueren entriegeln"),
+            CANPreset("Fahrertuer Entriegeln", "752", "2E FF 01 01", "Nur Fahrertuer"),
+            
+            // Fensterheber
+            CANPreset("Fenster Fahrer Auf", "74B", "2E FF 02 01 00", "Fahrerfenster hoch"),
+            CANPreset("Fenster Fahrer Zu", "74B", "2E FF 02 01 64", "Fahrerfenster runter"),
+            CANPreset("Fenster Alle Auf", "74B", "2E FF 02 00 00", "Alle Fenster hoch"),
+            CANPreset("Fenster Alle Zu", "74B", "2E FF 02 00 64", "Alle Fenster runter"),
+            CANPreset("Fenster Stop", "74B", "2E FF 02 01 FF", "Fenster anhalten"),
+            
+            // Spiegel
+            CANPreset("Spiegel Einklappen", "752", "2E FF 03 04", "Spiegel einklappen"),
+            CANPreset("Spiegel Ausklappen", "752", "2E FF 03 05", "Spiegel ausklappen"),
+            CANPreset("Spiegelheizung An", "752", "2E FF 03 08", "Spiegelheizung einschalten"),
+            CANPreset("Spiegelheizung Aus", "752", "2E FF 03 00", "Spiegelheizung ausschalten"),
+            
+            // Beleuchtung
+            CANPreset("Coming Home An", "752", "2E FF 04 20", "Coming Home aktivieren"),
+            CANPreset("Coming Home Aus", "752", "2E FF 04 00", "Coming Home deaktivieren"),
+            CANPreset("Leaving Home An", "752", "2E FF 04 40", "Leaving Home aktivieren"),
+            CANPreset("Eckenlicht An", "752", "2E FF 04 10", "Eckenlicht einschalten"),
+            CANPreset("Tagfahrlicht An", "752", "2E FF 04 02", "DRL einschalten"),
+            CANPreset("Tagfahrlicht Aus", "752", "2E FF 04 04", "DRL ausschalten"),
+            
+            // Heizung
+            CANPreset("Heckscheibenheizung An", "752", "2E FF 05 01", "Heckscheibenheizung"),
+            CANPreset("Heckscheibenheizung Aus", "752", "2E FF 05 00", "Heckscheibenheizung aus"),
+            CANPreset("Frontscheibenheizung An", "752", "2E FF 05 02", "Frontscheibenheizung"),
+            CANPreset("Lenkradheizung Stufe 2", "752", "2E FF 05 08", "Lenkradheizung"),
+            
+            // Scheibenwischer
+            CANPreset("Wischer Aus", "752", "2E FF 06 00", "Scheibenwischer aus"),
+            CANPreset("Wischer Stufe 1", "752", "2E FF 06 01", "Scheibenwischer langsam"),
+            CANPreset("Wischer Stufe 2", "752", "2E FF 06 02", "Scheibenwischer schnell"),
+            CANPreset("Wischer Auto", "752", "2E FF 06 13", "Scheibenwischer Automatik"),
+            CANPreset("Heckwischer An", "752", "2E FF 06 04", "Heckscheibenwischer"),
+            
+            // Sitzheizung
+            CANPreset("Sitz FH Stufe 1", "752", "2E FF 09 01", "Fahrersitzheizung Stufe 1"),
+            CANPreset("Sitz FH Stufe 2", "752", "2E FF 09 02", "Fahrersitzheizung Stufe 2"),
+            CANPreset("Sitz FH Stufe 3", "752", "2E FF 09 03", "Fahrersitzheizung Stufe 3"),
+            CANPreset("Sitz BF Stufe 1", "752", "2E FF 09 10", "Beifahrersitzheizung"),
+            
+            // Horn & Sunroof
+            CANPreset("Hupe", "752", "2E FF 07 01", "Hupe kurz hupen"),
+            CANPreset("Sunroof Oeffnen", "76B", "2E FF 08 64", "Schiebedach oeffnen"),
+            CANPreset("Sunroof Schliessen", "76B", "2E FF 08 00", "Schiebedach schliessen"),
+            CANPreset("Sunroof Stop", "76B", "2E FF 08 FF", "Schiebedach stoppen")
         )
     }
     

@@ -36,14 +36,21 @@ data class ComfortState(
     val rearWindowHeating: Boolean = false,
     val frontHeating: Boolean = false,
     val steeringWheelHeating: Boolean = false,
+    val seatDriverHeating: Int = 0,  // 0=off, 1-3=level
+    val seatPassengerHeating: Int = 0,
     val ambientLight: Int = 0,
     val daylightSensor: Boolean = false,
     val rainSensor: Int = 0,
     val wiperSpeed: Int = 0,
+    val rearWiper: Boolean = false,
     val comingHome: Boolean = false,
     val leavingHome: Boolean = false,
     val corneringLight: Boolean = false,
-    val drlMode: Int = 0
+    val parkingLights: Boolean = false,
+    val fogLights: Boolean = false,
+    val drlMode: Int = 0,
+    val sunroofPosition: Int = 0,  // 0=closed, 1-100=open
+    val hornActive: Boolean = false
 )
 
 data class ComfortCommand(
@@ -52,23 +59,51 @@ data class ComfortCommand(
 )
 
 enum class ComfortAction {
-    LOCK, UNLOCK,
+    // Zentralverriegelung
+    LOCK, UNLOCK, UNLOCK_DRIVER, UNLOCK_TAILGATE, UNLOCK_FUEL,
+    
+    // Fenster
     WINDOW_DRIVER_UP, WINDOW_DRIVER_DOWN, WINDOW_DRIVER_STOP,
     WINDOW_PASSENGER_UP, WINDOW_PASSENGER_DOWN, WINDOW_PASSENGER_STOP,
     WINDOW_REAR_LEFT_UP, WINDOW_REAR_LEFT_DOWN, WINDOW_REAR_LEFT_STOP,
     WINDOW_REAR_RIGHT_UP, WINDOW_REAR_RIGHT_DOWN, WINDOW_REAR_RIGHT_STOP,
     WINDOW_ALL_UP, WINDOW_ALL_DOWN,
+    
+    // Spiegel
     MIRROR_FOLD, MIRROR_UNFOLD,
     MIRROR_HEATING_ON, MIRROR_HEATING_OFF,
+    MIRROR_MOVE_UP, MIRROR_MOVE_DOWN, MIRROR_MOVE_LEFT, MIRROR_MOVE_RIGHT,
+    
+    // Heizung
     REAR_HEATING_ON, REAR_HEATING_OFF,
     FRONT_HEATING_ON, FRONT_HEATING_OFF,
     STEERING_HEATING_ON, STEERING_HEATING_OFF,
-    AMBIENT_LIGHT_INCREASE, AMBIENT_LIGHT_DECREASE,
+    STEERING_HEATING_1, STEERING_HEATING_2, STEERING_HEATING_3,
+    
+    // Sitzheizung
+    SEAT_DRIVER_HEAT_1, SEAT_DRIVER_HEAT_2, SEAT_DRIVER_HEAT_3, SEAT_DRIVER_OFF,
+    SEAT_PASSENGER_HEAT_1, SEAT_PASSENGER_HEAT_2, SEAT_PASSENGER_HEAT_3, SEAT_PASSENGER_OFF,
+    
+    // Beleuchtung
+    AMBIENT_LIGHT_INCREASE, AMBIENT_LIGHT_DECREASE, AMBIENT_LIGHT_MAX,
     COMING_HOME_ON, COMING_HOME_OFF,
     LEAVING_HOME_ON, LEAVING_HOME_OFF,
     CORNERING_LIGHT_ON, CORNERING_LIGHT_OFF,
     DRL_MODE_AUTO, DRL_MODE_ON, DRL_MODE_OFF,
+    PARKING_LIGHTS_ON, PARKING_LIGHTS_OFF,
+    FOG_LIGHTS_ON, FOG_LIGHTS_OFF,
+    
+    // Scheibenwischer
     WIPER_OFF, WIPER_LOW, WIPER_MEDIUM, WIPER_HIGH, WIPER_AUTO,
+    WIPER_REAR_ON, WIPER_REAR_OFF,
+    
+    // Horn
+    HORN, HORN_STOP,
+    
+    // Sunroof
+    SUNROOF_OPEN, SUNROOF_CLOSE, SUNROOF_STOP, SUNROOF_VENT,
+    
+    // Custom
     CUSTOM_CAN_FRAME,
     CUSTOM_CAN_ID,
     CUSTOM_CAN_DATA

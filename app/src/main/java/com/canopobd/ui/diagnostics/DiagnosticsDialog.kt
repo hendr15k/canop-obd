@@ -1,7 +1,9 @@
 package com.canopobd.ui.diagnostics
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,7 +36,7 @@ fun DiagnosticsDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.75f),
+                .fillMaxHeight(0.85f),
             shape = RoundedCornerShape(16.dp),
             color = canopoSurface
         ) {
@@ -80,6 +83,64 @@ fun DiagnosticsDialog(
                         }
                     }
 
+                    // Opel Astra J ECU Information
+                    item {
+                        SectionHeader("ECU Adressen (GMLAN)")
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = canopoDark
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                listOf(
+                                    "7E0 -> 7E8" to "ECM (Motorsteuerung)",
+                                    "7E1 -> 7E9" to "TCM (Getriebe)",
+                                    "7C0 -> 7C8" to "BCM (Body Control)",
+                                    "7C3 -> 7CB" to "IPC (Instrumentencluster)",
+                                    "7C2 -> 7CA" to "ABS/ESP",
+                                    "7C5 -> 7CD" to "SRS (Airbag)"
+                                ).forEach { (address, name) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(address, fontFamily = FontFamily.Monospace, color = gaugeGreen, fontSize = 11.sp)
+                                        Text(name, color = textDim, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // PSA/Stellantis CAN IDs
+                    item {
+                        SectionHeader("PSA/Stellantis CAN-IDs")
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = canopoDark
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                listOf(
+                                    "74B" to "PORTEC (Fenster/Tueren)",
+                                    "752" to "BMF (Body Module)",
+                                    "76B" to "BSI (Komfort)",
+                                    "240" to "DDM (Fahrertuer)",
+                                    "340" to "PDM (Beifahrertuer)",
+                                    "420" to "NAC/RCC (Radio/Navi)"
+                                ).forEach { (id, name) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(id, fontFamily = FontFamily.Monospace, color = gaugeCyan, fontSize = 11.sp)
+                                        Text(name, color = textDim, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         SectionHeader("${stringResource(R.string.diagnostics_supported_pids)} (${supportedPIDs.size})")
                         if (supportedPIDs.isEmpty()) {
@@ -108,6 +169,68 @@ fun DiagnosticsDialog(
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                             )
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // UDS Services
+                    item {
+                        SectionHeader("UDS Dienste (ISO 14229)")
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = canopoDark
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                listOf(
+                                    "0x10" to "DiagnosticSessionControl",
+                                    "0x11" to "ECUReset",
+                                    "0x14" to "ClearDiagnosticInfo",
+                                    "0x19" to "ReadDTCInformation",
+                                    "0x22" to "ReadDataByIdentifier",
+                                    "0x27" to "SecurityAccess",
+                                    "0x2E" to "WriteDataByIdentifier",
+                                    "0x2F" to "InputOutputControlByID",
+                                    "0x31" to "RoutineControl",
+                                    "0x3E" to "TesterPresent"
+                                ).forEach { (code, name) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(code, fontFamily = FontFamily.Monospace, color = gaugeOrange, fontSize = 10.sp)
+                                        Text(name, color = textDim, fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Mode 22 Extended PIDs
+                    item {
+                        SectionHeader("Mode 22 Erweiterte PIDs")
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = canopoDark
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                listOf(
+                                    "F190" to "VIN (Vehicle ID)",
+                                    "F191" to "ECU Hardware Version",
+                                    "F192" to "ECU Software Version",
+                                    "F193" to "Calibration ID",
+                                    "F181" to "Application Software ID",
+                                    "F18C" to "ECU Serial Number"
+                                ).forEach { (pid, name) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("22$pid", fontFamily = FontFamily.Monospace, color = gaugeYellow, fontSize = 10.sp)
+                                        Text(name, color = textDim, fontSize = 10.sp)
                                     }
                                 }
                             }
