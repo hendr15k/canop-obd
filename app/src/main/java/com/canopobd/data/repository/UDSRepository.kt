@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import java.util.concurrent.atomic.AtomicBoolean
 
 class UDSRepository(private val connection: ELM327BTConnection) {
 
@@ -112,36 +113,36 @@ class UDSRepository(private val connection: ELM327BTConnection) {
     }
 
     private val udsClient = UDSClient(connection)
-    private var sessionActive = false
-    private var extendedSessionActive = false
+    private val sessionActive = AtomicBoolean(false)
+    private val extendedSessionActive = AtomicBoolean(false)
 
     fun initializeSession(): Flow<Boolean> = flow {
         try {
             Log.i(TAG, "Initializing UDS session...")
             val extendedResponse = udsClient.diagnosticSessionControl(UDSSessionType.EXTENDED).first()
             if (extendedResponse.isPositive) {
-                extendedSessionActive = true
-                sessionActive = true
+                extendedSessionActive.set(true)
+                sessionActive.set(true)
                 Log.i(TAG, "Extended session active")
                 emit(true)
             } else {
                 val defaultResponse = udsClient.diagnosticSessionControl(UDSSessionType.DEFAULT).first()
-                sessionActive = defaultResponse.isPositive
-                extendedSessionActive = false
+                sessionActive.set(defaultResponse.isPositive)
+                extendedSessionActive.set(false)
                 Log.w(TAG, "Extended session failed, default: ${defaultResponse.isPositive}")
                 emit(defaultResponse.isPositive)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Session initialization error: ${e.message}")
-            sessionActive = false
-            extendedSessionActive = false
+            sessionActive.set(false)
+            extendedSessionActive.set(false)
             emit(false)
         }
     }.flowOn(Dispatchers.IO)
 
     fun getVIN(): Flow<String> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit("")
@@ -168,7 +169,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getCalibrationID(): Flow<String> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit("")
@@ -195,7 +196,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getTorque(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -224,7 +225,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getBoostPressure(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -252,7 +253,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getBatteryVoltage(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -281,7 +282,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getFuelConsumption(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -310,7 +311,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getCoolantTemperature(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -338,7 +339,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getEngineSpeed(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -367,7 +368,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getVehicleSpeed(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -395,7 +396,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getThrottlePosition(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -423,7 +424,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getOilTemperature(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -451,7 +452,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun getFuelLevel(): Flow<Double?> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(null)
@@ -479,7 +480,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun readAllAvailableDIDs(): Flow<Map<String, DIDValue>> = flow<Map<String, DIDValue>> {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(emptyMap())
@@ -519,12 +520,11 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
             for (did in didsToScan) {
                 try {
-                    udsClient.readDataByIdentifier(did).collect { response ->
-                        if (response.isPositive) {
-                            val didValue = udsClient.parseDIDValue(did, response.data)
-                            results[did] = didValue
-                            Log.v(TAG, "DID $did: ${didValue.parsedValue}")
-                        }
+                    val response = udsClient.readDataByIdentifier(did).first()
+                    if (response.isPositive) {
+                        val didValue = udsClient.parseDIDValue(did, response.data)
+                        results[did] = didValue
+                        Log.v(TAG, "DID $did: ${didValue.parsedValue}")
                     }
                 } catch (e: Exception) {
                     Log.v(TAG, "DID $did not available: ${e.message}")
@@ -541,7 +541,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun clearDTCCodes(): Flow<Boolean> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(false)
@@ -560,7 +560,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun readDTCCodes(): Flow<List<Pair<String, Int>>> = flow<List<Pair<String, Int>>> {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(emptyList())
@@ -584,7 +584,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun requestSecurityAccess(level: Int, key: ByteArray? = null): Flow<Boolean> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(false)
@@ -603,7 +603,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     fun executeRoutine(routineId: String): Flow<Boolean> = flow {
         try {
-            if (!sessionActive) {
+            if (!sessionActive.get()) {
                 val init = initializeSession().first()
                 if (!init) {
                     emit(false)
@@ -624,8 +624,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
         try {
             udsClient.ecuReset(0x01).collect { response ->
                 Log.i(TAG, "ECU reset: ${response.isPositive}")
-                sessionActive = false
-                extendedSessionActive = false
+                sessionActive.set(false)
+                extendedSessionActive.set(false)
                 emit(response.isPositive)
             }
         } catch (e: Exception) {
@@ -634,15 +634,15 @@ class UDSRepository(private val connection: ELM327BTConnection) {
         }
     }.flowOn(Dispatchers.IO)
 
-    fun isSessionActive(): Boolean = sessionActive
+    fun isSessionActive(): Boolean = sessionActive.get()
 
-    fun isExtendedSessionActive(): Boolean = extendedSessionActive
+    fun isExtendedSessionActive(): Boolean = extendedSessionActive.get()
 
     fun endSession(): Flow<Boolean> = flow {
         try {
             val response = udsClient.diagnosticSessionControl(UDSSessionType.DEFAULT).first()
-            sessionActive = false
-            extendedSessionActive = false
+            sessionActive.set(false)
+            extendedSessionActive.set(false)
             Log.i(TAG, "Session ended: ${response.isPositive}")
             emit(response.isPositive)
         } catch (e: Exception) {

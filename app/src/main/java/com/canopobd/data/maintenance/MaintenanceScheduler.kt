@@ -10,6 +10,9 @@ object MaintenanceScheduler {
     private val scheduledReminders = ConcurrentHashMap<String, ScheduledMaintenance>()
     private val maintenanceAlerts = CopyOnWriteArrayList<MaintenanceAlert>()
     
+    // Store last service data for each maintenance type
+    private val lastServiceData = ConcurrentHashMap<MaintenanceType, ServiceRecord>()
+    
     const val ALERT_THRESHOLD_KM = 500
     const val ALERT_THRESHOLD_DAYS = 14
     
@@ -609,12 +612,35 @@ object MaintenanceScheduler {
     }
     
     private fun findLastServiceKm(type: MaintenanceType, currentKm: Int): Int {
-        return 0
+        return lastServiceData[type]?.lastServiceKm ?: 0
     }
     
     private fun findLastServiceDate(type: MaintenanceType, currentDate: Long): Long {
-        return currentDate - (30L * 24 * 60 * 60 * 1000)
+        return lastServiceData[type]?.lastServiceDate ?: (currentDate - (30L * 24 * 60 * 60 * 1000))
     }
+    
+    /**
+     * Updates the last service record for a maintenance type.
+     * Call this when a service is completed.
+     */
+    fun updateLastService(type: MaintenanceType, serviceKm: Int, serviceDate: Long) {
+        lastServiceData[type] = ServiceRecord(serviceKm, serviceDate)
+    }
+    
+    /**
+     * Clears the last service record for a maintenance type.
+     */
+    fun clearLastService(type: MaintenanceType) {
+        lastServiceData.remove(type)
+    }
+    
+    /**
+     * Record to store last service information
+     */
+    private data class ServiceRecord(
+        val lastServiceKm: Int,
+        val lastServiceDate: Long
+    )
     
     private fun addMonths(timestamp: Long, months: Int): Long {
         val calendar = Calendar.getInstance()

@@ -133,7 +133,8 @@ class CANRepository(private val connection: ELM327BTConnection) {
         var consecutiveFailures = 0
 
         pollingJob = scope.launch {
-            while (isActive && _isMonitoring.value) {
+            while (isActive) {
+                if (!_isMonitoring.value) break
                 try {
                     updateExtendedPIDs()
                     updateTurboData()
@@ -208,42 +209,48 @@ class CANRepository(private val connection: ELM327BTConnection) {
     }
 
     fun getEngineTorque(): Flow<Double?> = flow {
-        mode22Client.readDID("F4B0").collect { data ->
-            emit(data?.let { parseTorque(it) })
+        try {
+            mode22Client.readDID("F4B0").collect { data ->
+                emit(data?.let { parseTorque(it) })
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "getEngineTorque error: ${e.message}")
+            emit(null)
         }
     }.flowOn(Dispatchers.IO)
 
     fun getBoostPressureTarget(): Flow<Double?> = flow {
-        mode22Client.readDID("F4C0").collect { data ->
-            emit(data?.let { parsePressure(it) })
+        try {
+            mode22Client.readDID("F4C0").collect { data ->
+                emit(data?.let { parsePressure(it) })
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "getBoostPressureTarget error: ${e.message}")
+            emit(null)
         }
     }.flowOn(Dispatchers.IO)
 
     fun getTurboWastegateDuty(): Flow<Double?> = flow {
-        mode22Client.readDID("220004").collect { data ->
-            emit(data?.let { parsePercent(it) })
-        }
-    }.flowOn(Dispatchers.IO)
-
-    fun getTransmissionData(): Flow<TransmissionData?> = flow {
-        val gearDid = "226001"
-        mode22Client.readDID(gearDid).collect { data ->
-            if (data != null && data.isNotEmpty()) {
-                val gear = data[0].toInt() and 0xFF
-                val td = TransmissionData(gear = gear)
-                _transmissionData.value = td
-                emit(td)
-            } else {
-                emit(null)
+        try {
+            mode22Client.readDID("220004").collect { data ->
+                emit(data?.let { parsePercent(it) })
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "getTurboWastegateDuty error: ${e.message}")
+            emit(null)
         }
     }.flowOn(Dispatchers.IO)
 
     fun getBCMStatus(): StateFlow<BCMStatus?> = _bcmStatus
 
     fun readVIN(): Flow<String?> = flow {
-        mode22Client.readDID("F190").collect { data ->
-            emit(data?.let { parseVIN(it) })
+        try {
+            mode22Client.readDID("F190").collect { data ->
+                emit(data?.let { parseVIN(it) })
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "readVIN error: ${e.message}")
+            emit(null)
         }
     }.flowOn(Dispatchers.IO)
 

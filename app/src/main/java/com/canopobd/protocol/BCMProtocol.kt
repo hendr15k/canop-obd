@@ -101,7 +101,7 @@ object BCMProtocol {
 
     private fun hexToBytes(hex: String): ByteArray {
         return ByteArray(hex.length / 2) { i ->
-            ((hex.substring(i * 2, i * 2 + 2).toInt(16) - 256) % 256).toByte()
+            hex.substring(i * 2, i * 2 + 2).toInt(16).toByte()
         }
     }
 

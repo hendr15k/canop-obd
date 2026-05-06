@@ -468,6 +468,7 @@ class DashboardViewModel private constructor(
     val mode22DataCache: StateFlow<Map<String, Mode22Data>> = _mode22DataCache.asStateFlow()
 
     private val _dtcProcessingJob = MutableStateFlow<Job?>(null)
+    private val _turboAnalysisJob = MutableStateFlow<Job?>(null)
 
     init {
         if (_permissionsGranted.value) refreshDevices()
@@ -831,7 +832,10 @@ class DashboardViewModel private constructor(
             recordedSamples = _timingChainState.value.recordedSamples + 1,
             coldSampleCount = if (!isWarmedUp) _timingChainState.value.coldSampleCount + 1 else _timingChainState.value.coldSampleCount,
             lastRpmReading = rpm,
-            avgRpmCold = if (!isWarmedUp && _timingChainState.value.coldSampleCount + 1 > 0) (_timingChainState.value.avgRpmCold + rpm) / (_timingChainState.value.coldSampleCount + 1.0) else _timingChainState.value.avgRpmCold,
+            avgRpmCold = if (!isWarmedUp) {
+                val newCount = _timingChainState.value.coldSampleCount + 1
+                if (newCount > 0) (_timingChainState.value.avgRpmCold * _timingChainState.value.coldSampleCount + rpm) / newCount else rpm
+            } else _timingChainState.value.avgRpmCold,
             avgRpmWarm = if (isWarmedUp) (_timingChainState.value.avgRpmWarm + rpm) / 2 else _timingChainState.value.avgRpmWarm,
             rpmDeviationCold = rpmVariation
         )
@@ -1042,7 +1046,8 @@ class DashboardViewModel private constructor(
     // ========== Turbo Analysis ==========
 
     private fun startTurboAnalysisCollection() {
-        viewModelScope.launch {
+        _turboAnalysisJob.value?.cancel()
+        _turboAnalysisJob.value = viewModelScope.launch {
             obdData.collect { data ->
                 if (data.rpm > 0) {
                     updateAllTurboMetrics(data)
@@ -1791,6 +1796,7 @@ class DashboardViewModel private constructor(
     }
 
     override fun onCleared() {
+        _turboAnalysisJob.value?.cancel()
         super.onCleared()
         repository.disconnect()
     }

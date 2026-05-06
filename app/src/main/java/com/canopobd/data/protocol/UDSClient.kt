@@ -24,8 +24,11 @@ class UDSClient(private val connection: ELM327BTConnection) {
         private const val UDS_FUNCTIONAL_RESPONSE = 0x7E8
     }
 
+    @Volatile
     private var currentSession: UDSSessionType = UDSSessionType.DEFAULT
+    @Volatile
     private var securityLevel: Int = 0
+    @Volatile
     private var testerPresentActive = false
 
     private fun parseISOTPDelimiter(response: String): String {
@@ -37,20 +40,27 @@ class UDSClient(private val connection: ELM327BTConnection) {
         val cleaned = parseISOTPDelimiter(response)
         if (cleaned.isEmpty()) return ByteArray(0)
 
-        if (cleaned.length >= 4 && cleaned.substring(0, 2).toInt(16) == serviceId + 0x40) {
-            return cleaned.substring(4).chunked(2).mapNotNull { hex ->
-                if (hex.length == 2) {
-                    try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-                } else null
-            }.toByteArray()
-        }
+        try {
+            val positiveResponseId = (serviceId + 0x40).toString(16).uppercase().padStart(2, '0')
+            val negativeResponseId = (serviceId + 0x7F).toString(16).uppercase().padStart(2, '0')
 
-        if (cleaned.length >= 2 && cleaned.substring(0, 2).toInt(16) == serviceId + 0x7F) {
-            return cleaned.substring(2).chunked(2).mapNotNull { hex ->
-                if (hex.length == 2) {
-                    try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-                } else null
-            }.toByteArray()
+            if (cleaned.length >= 4 && cleaned.substring(0, 2).uppercase() == positiveResponseId) {
+                return cleaned.substring(4).chunked(2).mapNotNull { hex ->
+                    if (hex.length == 2) {
+                        try { hex.toInt(16).toByte() } catch (e: Exception) { null }
+                    } else null
+                }.toByteArray()
+            }
+
+            if (cleaned.length >= 2 && cleaned.substring(0, 2).uppercase() == negativeResponseId) {
+                return cleaned.substring(2).chunked(2).mapNotNull { hex ->
+                    if (hex.length == 2) {
+                        try { hex.toInt(16).toByte() } catch (e: Exception) { null }
+                    } else null
+                }.toByteArray()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse UDS response header: ${e.message}")
         }
 
         return cleaned.chunked(2).mapNotNull { hex ->

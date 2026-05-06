@@ -689,7 +689,7 @@ private fun HealthStatusBar(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth((score / 100f).toFloat())
+                    .fillMaxWidth((score / 100f).toFloat().coerceIn(0f, 1f))
                     .background(
                         brush = Brush.horizontalGradient(
                             colors = listOf(

@@ -165,6 +165,8 @@ class OBDRepository(
     private val trendRecorder = com.canopobd.ui.components.TrendRecorder(maxPoints = 60)
     private var lastTrendRecordTime = 0L
     private val trendRecordInterval = 1000L
+    private var lastWidgetUpdateTime = 0L
+    private val widgetUpdateInterval = 5000L // Update widget prefs every 5 seconds to reduce SharedPreferences writes
 
     private val _readinessMonitor = MutableStateFlow(ReadinessMonitor())
     val readinessMonitor: StateFlow<ReadinessMonitor> = _readinessMonitor.asStateFlow()
@@ -206,11 +208,6 @@ class OBDRepository(
             _primaryGaugeIds.value = ids
         }
         _pollMode.value = PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
-        try {
-            scope.launch { migrateFromPrefsIfNeeded() }
-        } catch (e: Exception) {
-            Log.e("OBDRepository", "Migration failed: ${e.message}")
-        }
         _alertConfig.value = AlertConfig(
             speedWarning = prefs.getFloat("alert_speed", 130f),
             speedWarningEnabled = prefs.getBoolean("alert_speed_on", false),
@@ -459,7 +456,10 @@ class OBDRepository(
                             avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
                             sampleCount = tripSamples,
                             totalFuelUsed = tripFuelUsedSum,
-                            avgFuelRate = if (tripSamples > 0) tripFuelUsedSum / ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001) else 0.0,
+                            avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
+                                val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
+                                tripFuelUsedSum / elapsedHours
+                            } else 0.0,
                             fuelStartLevel = tripFuelStart,
                             fuelEndLevel = results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel,
                             vin = storedVin
@@ -570,15 +570,19 @@ class OBDRepository(
                     lastTrendRecordTime = now
                 }
 
-                    val unit = _measurementUnit.value
-                    prefs.edit()
-                        .putFloat("widget_rpm", _obdData.value.rpm.toFloat())
-                        .putFloat("widget_speed", unit.convertSpeed(_obdData.value.speed).toFloat())
-                        .putFloat("widget_coolant", unit.convertTemp(_obdData.value.coolantTemp).toFloat())
-                        .putFloat("widget_load", _obdData.value.engineLoad.toFloat())
-                        .putFloat("widget_fuel", _obdData.value.fuelLevel.toFloat())
-                        .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
-                        .apply()
+                    // Throttle widget prefs writes to reduce SharedPreferences race conditions
+                    if (now - lastWidgetUpdateTime >= widgetUpdateInterval) {
+                        lastWidgetUpdateTime = now
+                        val unit = _measurementUnit.value
+                        prefs.edit()
+                            .putFloat("widget_rpm", _obdData.value.rpm.toFloat())
+                            .putFloat("widget_speed", unit.convertSpeed(_obdData.value.speed).toFloat())
+                            .putFloat("widget_coolant", unit.convertTemp(_obdData.value.coolantTemp).toFloat())
+                            .putFloat("widget_load", _obdData.value.engineLoad.toFloat())
+                            .putFloat("widget_fuel", _obdData.value.fuelLevel.toFloat())
+                            .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
+                            .apply()
+                    }
 
                     consecutivePollingFailures = 0
                     _lastError.value = null

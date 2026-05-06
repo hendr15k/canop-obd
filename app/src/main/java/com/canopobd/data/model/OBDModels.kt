@@ -118,7 +118,7 @@ enum class OBDPID(
     THROTTLE_C("015D", "Throttle C", "%", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
     }),
-    THROTTLE_ACTUATOR("015C", "Throttle Actuator", "%", 1, { b ->
+    THROTTLE_ACTUATOR("0136", "Throttle Actuator", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->

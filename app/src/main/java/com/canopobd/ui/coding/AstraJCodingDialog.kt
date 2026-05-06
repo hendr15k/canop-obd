@@ -207,10 +207,11 @@ fun AstraJCodingDialog(
             color = MaterialTheme.colorScheme.surface
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
+                val currentOption = selectedOption
                 AstraJCodingTopBar(
                     category = selectedCategory,
-                    option = selectedOption,
-                    isFavorite = selectedOption != null && favorites.contains(selectedOption!!.id),
+                    option = currentOption,
+                    isFavorite = currentOption?.let { favorites.contains(it.id) } == true,
                     onBack = {
                         if (selectedProfile != null) {
                             selectedProfile = null

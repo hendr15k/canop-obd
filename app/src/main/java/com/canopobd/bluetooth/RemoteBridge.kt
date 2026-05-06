@@ -72,6 +72,7 @@ class RemoteBridge(
                             handler.start()
                         }
                     } catch (e: Exception) {
+                    Log.e("RemoteBridge", "Client handler error: ${e.message}", e)
                         if (serverSocket?.isClosed == false) {
                             delay(100)
                         }
@@ -124,6 +125,7 @@ class RemoteBridge(
                         }
                     }
                 } catch (e: Exception) {
+                    Log.e("RemoteBridge", "Client handler error: ${e.message}", e)
                 } finally {
                     close()
                 }

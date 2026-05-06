@@ -57,6 +57,7 @@ enum class CANBusSpeed(val baud: Int, val code: String) {
 }
 
 class CANMonitor(private val connection: ELM327BTConnection) {
+    private val messagesLock = Any()
     companion object {
         private const val TAG = "CANMonitor"
         private const val COMMAND_TIMEOUT_MS = 2000L
@@ -84,6 +85,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var monitoringJob: Job? = null
+    @Volatile
     private var isInitialized = false
     private var currentFilter: String? = null
     private var filterMode = CANFilterMode.ALL
@@ -134,8 +136,10 @@ class CANMonitor(private val connection: ELM327BTConnection) {
     fun startMonitoring(onMessage: ((CANMessage) -> Unit)? = null) {
         if (_isMonitoring.value) return
         _isMonitoring.value = true
-        messagesInternal.clear()
-        _messages.value = emptyList()
+        synchronized(messagesLock) {
+            messagesInternal.clear()
+            _messages.value = emptyList()
+        }
         _errorMessage.value = null
         var messageCount = 0
         var lastSecond = System.currentTimeMillis() / 1000
@@ -147,11 +151,13 @@ class CANMonitor(private val connection: ELM327BTConnection) {
                     if (response.isNotBlank() && !response.contains("ERROR")) {
                         val parsedMessages = parseCANResponse(response)
                         parsedMessages.forEach { msg ->
-                            messagesInternal.add(0, msg)
-                            if (messagesInternal.size > maxMessageHistory) {
-                                messagesInternal.removeAt(messagesInternal.size - 1)
+                            synchronized(messagesLock) {
+                                messagesInternal.add(0, msg)
+                                if (messagesInternal.size > maxMessageHistory) {
+                                    messagesInternal.removeAt(messagesInternal.size - 1)
+                                }
+                                _messages.value = messagesInternal.toList()
                             }
-                            _messages.value = messagesInternal.toList()
                             onMessage?.invoke(msg)
                             messageCount++
 

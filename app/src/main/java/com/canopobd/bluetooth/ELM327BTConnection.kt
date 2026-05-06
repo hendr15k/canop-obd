@@ -643,8 +643,11 @@ class ELM327BTConnection(
             withTimeout(15_000L) {
                 socket?.connect()
             }
-            inputStream = socket?.inputStream
-            outputStream = socket?.outputStream
+            // Assign streams atomically before setting connected state
+            val inStream = socket?.inputStream ?: throw IOException("Failed to get input stream")
+            val outStream = socket?.outputStream ?: throw IOException("Failed to get output stream")
+            inputStream = inStream
+            outputStream = outStream
             _isConnected.value = true
 
             if (!initELM327()) {
@@ -703,11 +706,10 @@ class ELM327BTConnection(
 
     suspend fun readMultiplePIDs(pids: List<OBDPID>): Map<OBDPID, Double> = withContext(Dispatchers.IO) {
         val results = mutableMapOf<OBDPID, Double>()
+        // Process sequentially to avoid race conditions on serial ELM327 socket
         pids.chunked(4).forEach { batch ->
-            val deferreds = batch.map { pid ->
-                async { pid to requestPID(pid) }
-            }
-            deferreds.awaitAll().forEach { (pid, value) ->
+            batch.forEach { pid ->
+                val value = requestPID(pid)
                 value?.let { results[pid] = it }
             }
         }
