@@ -30,4 +30,9 @@ sealed class NavRoute(val route: String) {
     data object AstraJCoding : NavRoute("astra_j_coding")
     data object SafetySystems : NavRoute("safety_systems")
     data object EcoScore : NavRoute("eco_score")
+    data object ExtendedGearbox : NavRoute("extended_gearbox")
+    data object ExtendedTurbo : NavRoute("extended_turbo")
+    data object ExtendedFuel : NavRoute("extended_fuel")
+    data object ExtendedMaintenance : NavRoute("extended_maintenance")
+    data object ComfortControl : NavRoute("comfort_control")
 }

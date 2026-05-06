@@ -183,6 +183,22 @@ class DashboardViewModel private constructor(
     val drivingStyleAnalysis: StateFlow<com.canopobd.data.model.DrivingStyleAnalysis> get() = ecoScoreViewModel.drivingStyle
     val ecoTips: StateFlow<List<com.canopobd.data.model.EcoTip>> get() = ecoScoreViewModel.tips
 
+    // Extended Feature State
+    private val _showExtendedGearbox = MutableStateFlow(false)
+    val showExtendedGearbox: StateFlow<Boolean> = _showExtendedGearbox.asStateFlow()
+
+    private val _showExtendedTurbo = MutableStateFlow(false)
+    val showExtendedTurbo: StateFlow<Boolean> = _showExtendedTurbo.asStateFlow()
+
+    private val _showExtendedFuel = MutableStateFlow(false)
+    val showExtendedFuel: StateFlow<Boolean> = _showExtendedFuel.asStateFlow()
+
+    private val _showExtendedMaintenance = MutableStateFlow(false)
+    val showExtendedMaintenance: StateFlow<Boolean> = _showExtendedMaintenance.asStateFlow()
+
+    private val _showComfortControl = MutableStateFlow(false)
+    val showComfortControl: StateFlow<Boolean> = _showComfortControl.asStateFlow()
+
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
@@ -537,6 +553,12 @@ class DashboardViewModel private constructor(
     fun toggleEcoScore() { ecoScoreViewModel.toggleEcoScore() }
     fun dismissEcoScore() { ecoScoreViewModel.dismissEcoScore() }
     fun setFuelPrice(price: Double) { ecoScoreViewModel.setFuelPrice(price) }
+
+    fun toggleExtendedGearbox() { _showExtendedGearbox.value = !_showExtendedGearbox.value }
+    fun toggleExtendedTurbo() { _showExtendedTurbo.value = !_showExtendedTurbo.value }
+    fun toggleExtendedFuel() { _showExtendedFuel.value = !_showExtendedFuel.value }
+    fun toggleExtendedMaintenance() { _showExtendedMaintenance.value = !_showExtendedMaintenance.value }
+    fun toggleComfortControl() { _showComfortControl.value = !_showComfortControl.value }
 
     fun selectCarProfile(profile: com.canopobd.data.model.CarProfile) {
         _carProfileState.value = profile

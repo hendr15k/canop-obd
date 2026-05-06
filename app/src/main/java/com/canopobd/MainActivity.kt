@@ -202,6 +202,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showTurboCooldown by viewModel.showTurboCooldown.collectAsState()
     val turboCooldownState by viewModel.turboCooldownState.collectAsState()
 
+    // Extended Feature State
+    val showExtendedGearbox by viewModel.showExtendedGearbox.collectAsState()
+    val showExtendedTurbo by viewModel.showExtendedTurbo.collectAsState()
+    val showExtendedFuel by viewModel.showExtendedFuel.collectAsState()
+    val showExtendedMaintenance by viewModel.showExtendedMaintenance.collectAsState()
+    val showComfortControl by viewModel.showComfortControl.collectAsState()
+
     // Safety & ECO State
     val showSafetySystems by viewModel.showSafetySystems.collectAsState()
     val safetySummary by viewModel.safetySummary.collectAsState()
@@ -365,6 +372,16 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         _onToggleCarProfile = viewModel::toggleCarProfile,
         onToggleTurboCooldown = viewModel::toggleTurboCooldown,
         onSelectCarProfile = viewModel::selectCarProfile,
+        showExtendedGearbox = showExtendedGearbox,
+        showExtendedTurbo = showExtendedTurbo,
+        showExtendedFuel = showExtendedFuel,
+        showExtendedMaintenance = showExtendedMaintenance,
+        showComfortControl = showComfortControl,
+        onToggleExtendedGearbox = viewModel::toggleExtendedGearbox,
+        onToggleExtendedTurbo = viewModel::toggleExtendedTurbo,
+        onToggleExtendedFuel = viewModel::toggleExtendedFuel,
+        onToggleExtendedMaintenance = viewModel::toggleExtendedMaintenance,
+        onToggleComfortControl = viewModel::toggleComfortControl,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
         carProfile = carProfile,

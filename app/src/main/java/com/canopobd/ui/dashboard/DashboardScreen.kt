@@ -56,7 +56,13 @@ import com.canopobd.data.model.OilData
 import com.canopobd.data.model.TimingChainState
 import com.canopobd.ui.carprofile.CarProfileDialog
 import com.canopobd.ui.turbo.TurboMonitorDialog
+import com.canopobd.ui.turbo.ExtendedTurboMonitorDialog
 import com.canopobd.ui.timingchain.TimingChainMonitorDialog
+import com.canopobd.ui.gearbox.ExtendedGearboxDialog
+import com.canopobd.ui.fuel.ExtendedFuelEconomyDialog
+import com.canopobd.ui.maintenance.ExtendedMaintenanceDialog
+import com.canopobd.ui.comfort.ComfortControlDialog
+import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.ui.turbo.TurboCoolDownBanner
 import com.canopobd.ui.turbo.TurboCoolDownDialog
 import com.canopobd.data.model.TurboCoolDownState
@@ -197,6 +203,16 @@ fun DashboardScreen(
     _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
     onSelectCarProfile: (CarProfile) -> Unit,
+    showExtendedGearbox: Boolean,
+    showExtendedTurbo: Boolean,
+    showExtendedFuel: Boolean,
+    showExtendedMaintenance: Boolean,
+    showComfortControl: Boolean,
+    onToggleExtendedGearbox: () -> Unit,
+    onToggleExtendedTurbo: () -> Unit,
+    onToggleExtendedFuel: () -> Unit,
+    onToggleExtendedMaintenance: () -> Unit,
+    onToggleComfortControl: () -> Unit,
     appThemeMode: com.canopobd.data.model.AppThemeMode,
     onSetAppThemeMode: (com.canopobd.data.model.AppThemeMode) -> Unit,
     modifier: Modifier = Modifier
@@ -272,6 +288,7 @@ fun DashboardScreen(
                     onToggleTimingChainMonitor = onToggleTimingChainMonitor,
                     _onToggleCarProfile = _onToggleCarProfile,
                     onToggleTurboCooldown = onToggleTurboCooldown,
+                    onToggleComfortControl = onToggleComfortControl,
                     onDisconnect = onDisconnect,
                     recordingActive = recordingActive,
                     isGPSTracking = isGPSTracking,
@@ -516,6 +533,68 @@ fun DashboardScreen(
                     CarProfileDialog(currentProfile = carProfile, onSelectProfile = onSelectCarProfile, onDismiss = { _onToggleCarProfile(); navController.popBackStack() })
                 }
             }
+            composable("extended_gearbox") {
+                if (showExtendedGearbox) {
+                    ExtendedGearboxDialog(
+                        telemetry = com.canopobd.ui.gearbox.GearboxTelemetry(
+                            engineRpm = obdData.rpm,
+                            vehicleSpeedKmh = obdData.speed,
+                            oilTempCelsius = obdData.oilTemp,
+                            engineLoad = obdData.engineLoad
+                        ),
+                        onDismiss = { onToggleExtendedGearbox(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("extended_turbo") {
+                if (showExtendedTurbo) {
+                    ExtendedTurboMonitorDialog(
+                        extendedData = com.canopobd.ui.turbo.ExtendedTurboData(
+                            boostActualBar = obdData.boostPressure / 100.0,
+                            boostTargetBar = obdData.boostPressureTargetMode22 / 100.0,
+                            wastegatePosition = obdData.wastegatePositionMode22,
+                            wastegateDutyCycle = obdData.wastegateControl,
+                            turboRpm = obdData.turboRpmMode22,
+                            chargeAirTemp = obdData.chargeAirCoolerTemp,
+                            intakeAirTemp = obdData.intakeTemp,
+                            egtCurrent = obdData.egtBank1,
+                            egtPeak = obdData.egtBank1,
+                            engineLoad = obdData.engineLoad,
+                            engineRpm = obdData.rpm
+                        ),
+                        coolDownState = turboCooldownState,
+                        onDismiss = { onToggleExtendedTurbo(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("extended_fuel") {
+                if (showExtendedFuel) {
+                    ExtendedFuelEconomyDialog(
+                        fuelEconomyData = fuelEconomyData,
+                        fuelLevelPercent = obdData.fuelLevel,
+                        maf = obdData.mafRate,
+                        speed = obdData.speed,
+                        onDismiss = { onToggleExtendedFuel(); navController.popBackStack() }
+                    )
+                }
+            }
+            composable("extended_maintenance") {
+                if (showExtendedMaintenance) {
+                    ExtendedMaintenanceDialog(
+                        currentKm = currentKm,
+                        onDismiss = { onToggleExtendedMaintenance(); navController.popBackStack() },
+                        onCompleteService = { type, km -> onSetMaintenanceItem(com.canopobd.data.model.MaintenanceType.valueOf(type), km, 15000) }
+                    )
+                }
+            }
+            composable("comfort_control") {
+                if (showComfortControl) {
+                    ComfortControlDialog(
+                        onCommand = { /* CAN-BUS command would be sent here */ },
+                        onDismiss = { onToggleComfortControl(); navController.popBackStack() }
+                    )
+                }
+            }
         }
     }
 }
@@ -674,6 +753,7 @@ private fun DashboardHeader(
     onToggleTimingChainMonitor: () -> Unit,
     _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
+    onToggleComfortControl: () -> Unit,
     onDisconnect: () -> Unit,
     recordingActive: Boolean,
     isGPSTracking: Boolean,
@@ -847,6 +927,12 @@ private fun DashboardHeader(
                         label = stringResource(R.string.dashboard_known_issues),
                         color = colors.gaugeYellow,
                         onClick = onToggleKnownIssues
+                    )
+                    QuickActionButton(
+                        icon = Icons.Filled.SettingsRemote,
+                        label = "Komfort",
+                        color = colors.gaugeCyan,
+                        onClick = { onToggleComfortControl(); navController.navigate("comfort_control") }
                     )
                     QuickActionButton(
                         icon = Icons.Filled.Air,
