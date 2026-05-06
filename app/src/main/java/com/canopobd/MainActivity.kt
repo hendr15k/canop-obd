@@ -277,6 +277,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showCodingDialog by viewModel.showCodingDialog.collectAsState()
     val codingInProgress by viewModel.codingInProgress.collectAsState()
     val codingResult by viewModel.codingResult.collectAsState()
+    val emulatorMode by viewModel.emulatorMode.collectAsState()
 
     // Safety & ECO State
     val showSafetySystems by viewModel.showSafetySystems.collectAsState()
@@ -503,6 +504,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onClearCodingResult = viewModel::clearCodingResult,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
+        emulatorMode = emulatorMode,
+        onSetEmulatorMode = viewModel::setEmulatorMode,
         carProfile = carProfile,
         turboData = turboData,
         oilData = oilData,

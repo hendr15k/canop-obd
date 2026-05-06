@@ -9,6 +9,7 @@ import com.canopobd.bluetooth.ELM327BTConnection
 import com.canopobd.bluetooth.Mode22PIDs
 import com.canopobd.bluetooth.Mode22TurboData
 import com.canopobd.bluetooth.RemoteBridge
+import com.canopobd.data.emulator.OBDEmulator
 import com.canopobd.data.local.AlertConfigDao
 import com.canopobd.data.local.AlertConfigEntity
 import com.canopobd.data.local.AppSettingsDao
@@ -194,6 +195,11 @@ class OBDRepository(
 
     private var mode22Counter = 0
 
+    private val _emulatorMode = MutableStateFlow(false)
+    val emulatorMode: StateFlow<Boolean> = _emulatorMode.asStateFlow()
+    private var emulator: OBDEmulator? = null
+    private var emulatorPollingJob: Job? = null
+
     init {
         _pollRate.value = prefs.getLong("poll_rate", 500L)
         _autoReconnect.value = prefs.getBoolean("auto_reconnect", false)
@@ -208,6 +214,7 @@ class OBDRepository(
             _primaryGaugeIds.value = ids
         }
         _pollMode.value = PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
+        _emulatorMode.value = prefs.getBoolean("emulator_mode", false)
         _alertConfig.value = AlertConfig(
             speedWarning = prefs.getFloat("alert_speed", 130f),
             speedWarningEnabled = prefs.getBoolean("alert_speed_on", false),
@@ -221,6 +228,9 @@ class OBDRepository(
             batteryLowWarningEnabled = prefs.getBoolean("alert_battery_on", true)
         )
         scope.launch { migrateFromPrefsIfNeeded() }
+        if (_emulatorMode.value) {
+            connectEmulator()
+        }
     }
 
     private suspend fun migrateFromPrefsIfNeeded() {
@@ -1017,5 +1027,114 @@ class OBDRepository(
     fun loadCarProfile(): CarProfile {
         val id = prefs.getString("car_profile_id", null)
         return if (id != null) CarProfile.fromId(id) ?: CarProfile.default() else CarProfile.default()
+    }
+
+    fun setEmulatorMode(enabled: Boolean) {
+        _emulatorMode.value = enabled
+        prefs.edit().putBoolean("emulator_mode", enabled).apply()
+        if (enabled) {
+            connectEmulator()
+        } else {
+            disconnectEmulator()
+        }
+    }
+
+    fun connectEmulator() {
+        if (emulator != null) return
+        emulator = OBDEmulator()
+        _connectionState.value = OBDConnectionState.Connected
+        _detectedProtocol.value = "OBD Emulator (Simulated)"
+        startEmulatorPolling()
+    }
+
+    fun disconnectEmulator() {
+        emulatorPollingJob?.cancel()
+        emulatorPollingJob = null
+        emulator?.disconnect()
+        emulator = null
+        _connectionState.value = OBDConnectionState.Disconnected
+        _obdData.value = OBDData()
+    }
+
+    private fun startEmulatorPolling() {
+        emulatorPollingJob?.cancel()
+        emulatorPollingJob = scope.launch {
+            while (isActive) {
+                try {
+                    emulator?.let { emu ->
+                        val data = emu.generateData(_pollRate.value)
+                        val mode22 = emu.generateMode22Data()
+
+                        _obdData.value = data
+                        _mode22Data.value = mode22
+
+                        val now = System.currentTimeMillis()
+                        tripSamples++
+                        tripSpeedSum += data.speed
+                        tripRpmSum += data.rpm
+                        tripFuelUsedSum += data.engineFuelRate * (_pollRate.value / 3_600_000.0)
+
+                        if (now - lastTrendRecordTime >= trendRecordInterval) {
+                            trendRecorder.record(
+                                data.rpm,
+                                data.speed,
+                                data.coolantTemp,
+                                data.boostPressure,
+                                data.wastegateControl,
+                                data.turboRpm,
+                                data.egtBank1,
+                                data.chargeAirCoolerTemp
+                            )
+                            _trendHistory.value = trendRecorder.getHistory()
+                            lastTrendRecordTime = now
+                        }
+
+                        val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
+                        if (dtHours > 0) {
+                            val distanceKm = (tripPrevSpeed + data.speed) / 2.0 * dtHours
+                            _tripData.value = _tripData.value.copy(
+                                durationSeconds = (now - tripStartTime) / 1000L,
+                                distanceKm = _tripData.value.distanceKm + distanceKm,
+                                maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, data.speed),
+                                avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
+                                maxRpm = maxOf(_tripData.value.maxRpm, data.rpm),
+                                avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
+                                sampleCount = tripSamples,
+                                totalFuelUsed = tripFuelUsedSum,
+                                avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
+                                    val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
+                                    tripFuelUsedSum / elapsedHours
+                                } else 0.0,
+                                fuelStartLevel = tripFuelStart,
+                                fuelEndLevel = data.fuelLevel,
+                                vin = storedVin
+                            )
+                        }
+                        tripPrevSpeed = data.speed
+                        tripPrevTimestamp = now
+
+                        if (now - lastWidgetUpdateTime >= widgetUpdateInterval) {
+                            lastWidgetUpdateTime = now
+                            val unit = _measurementUnit.value
+                            prefs.edit()
+                                .putFloat("widget_rpm", data.rpm.toFloat())
+                                .putFloat("widget_speed", unit.convertSpeed(data.speed).toFloat())
+                                .putFloat("widget_coolant", unit.convertTemp(data.coolantTemp).toFloat())
+                                .putFloat("widget_load", data.engineLoad.toFloat())
+                                .putFloat("widget_fuel", data.fuelLevel.toFloat())
+                                .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
+                                .apply()
+                        }
+
+                        recordConnectionSuccess()
+                        checkAlerts()
+                        if (_recordingActive.value) recordData()
+                    }
+                } catch (e: Exception) {
+                    Log.e("OBDRepository", "Emulator polling error: ${e.message}")
+                }
+                delay(_pollRate.value)
+            }
+        }
     }
 }

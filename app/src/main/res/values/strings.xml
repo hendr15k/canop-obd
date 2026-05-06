@@ -788,6 +788,11 @@
     <string name="not_supported">Nicht unterstützt</string>
     <string name="complete">Bereit</string>
 
+    <!-- Emulator Mode -->
+    <string name="emulator_mode">OBD Emulator</string>
+    <string name="emulator_mode_desc">Simuliere OBD-Daten ohne Auto</string>
+    <string name="status_emulator">OBD Emulator</string>
+
     <!-- Widget strings -->
     <string name="widget_app_name">canop-obd</string>
     <string name="widget_default_value">0</string>

@@ -97,6 +97,7 @@ class DashboardViewModel private constructor(
     val appThemeMode: StateFlow<AppThemeMode> = repository.appThemeMode
     val primaryGaugeIds: StateFlow<Set<String>> = repository.primaryGaugeIds
     val pollMode: StateFlow<PollMode> = repository.pollMode
+    val emulatorMode: StateFlow<Boolean> = repository.emulatorMode
 
     val currentLocation = repository.currentLocation
     val isGPSTracking = repository.isGPSTracking
@@ -1016,6 +1017,10 @@ class DashboardViewModel private constructor(
 
     fun setPollMode(mode: PollMode) {
         repository.setPollMode(mode)
+    }
+
+    fun setEmulatorMode(enabled: Boolean) {
+        repository.setEmulatorMode(enabled)
     }
 
     fun resetTrip() {

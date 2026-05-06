@@ -30,12 +30,14 @@ fun SettingsDialog(
     autoReconnect: Boolean,
     pollMode: PollMode,
     appThemeMode: AppThemeMode,
+    emulatorMode: Boolean,
     onDismiss: () -> Unit,
     onPollRateChange: (Long) -> Unit,
     onUnitChange: (MeasurementUnit) -> Unit,
     onAutoReconnectChange: (Boolean) -> Unit,
     onPollModeChange: (PollMode) -> Unit,
-    onSetAppThemeMode: (AppThemeMode) -> Unit
+    onSetAppThemeMode: (AppThemeMode) -> Unit,
+    onSetEmulatorMode: (Boolean) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -153,6 +155,40 @@ fun SettingsDialog(
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = gaugeGreen,
                                     checkedTrackColor = gaugeGreen.copy(alpha = 0.3f),
+                                    uncheckedThumbColor = textSecondary,
+                                    uncheckedTrackColor = canopoDark
+                                )
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(canopoDark, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.emulator_mode),
+                                    color = textPrimary,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = stringResource(R.string.emulator_mode_desc),
+                                    color = textDim,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            Switch(
+                                checked = emulatorMode,
+                                onCheckedChange = onSetEmulatorMode,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = gaugeOrange,
+                                    checkedTrackColor = gaugeOrange.copy(alpha = 0.3f),
                                     uncheckedThumbColor = textSecondary,
                                     uncheckedTrackColor = canopoDark
                                 )
