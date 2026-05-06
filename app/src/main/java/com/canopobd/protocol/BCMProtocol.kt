@@ -444,6 +444,120 @@ object BCMProtocol {
         fun buildTPMSLearnFrame() = "310307"
     }
 
+    object CANParser {
+        fun parseHVACMessage(canId: String, data: ByteArray): HVACStatus? {
+            if (data.size < 8) return null
+            
+            return when (canId.uppercase()) {
+                "7E5", "7ED", "420", "422" -> parseHVACStatusByte(data)
+                else -> null
+            }
+        }
+        
+        private fun parseHVACStatusByte(data: ByteArray): HVACStatus {
+            val byte0 = data.getOrNull(0)?.toInt() ?: 0
+            val byte1 = data.getOrNull(1)?.toInt() ?: 0
+            val byte2 = data.getOrNull(2)?.toInt() ?: 0
+            val byte3 = data.getOrNull(3)?.toInt() ?: 0
+            val byte4 = data.getOrNull(4)?.toInt() ?: 0
+            val byte5 = data.getOrNull(5)?.toInt() ?: 0
+            val byte6 = data.getOrNull(6)?.toInt() ?: 0
+            
+            return HVACStatus(
+                acCompressorActive = (byte0 and 0x01) != 0,
+                fanSpeed = (byte1 and 0x0F),
+                driverTemp = ((byte2 and 0xFF) - 64) * 0.5,
+                passengerTemp = ((byte3 and 0xFF) - 64) * 0.5,
+                autoModeActive = (byte0 and 0x02) != 0,
+                recirculationActive = (byte0 and 0x04) != 0,
+                frontDefrostActive = (byte0 and 0x08) != 0,
+                rearDefrostActive = (byte0 and 0x10) != 0,
+                rearLeftVent = (byte4 and 0x01) != 0,
+                rearRightVent = (byte4 and 0x02) != 0,
+                footVent = (byte4 and 0x04) != 0,
+                faceVent = (byte4 and 0x08) != 0,
+                outsideTempRaw = byte5,
+                cabinTempRaw = byte6,
+                timestamp = System.currentTimeMillis()
+            )
+        }
+        
+        fun parseTPMSMessage(canId: String, data: ByteArray): TPMSStatus? {
+            if (data.size < 6) return null
+            
+            return when (canId.uppercase()) {
+                "420", "422", "428" -> parseTPMSStatusByte(data)
+                else -> null
+            }
+        }
+        
+        private fun parseTPMSStatusByte(data: ByteArray): TPMSStatus {
+            val byte0 = data.getOrNull(0)?.toInt() ?: 0
+            val byte1 = data.getOrNull(1)?.toInt() ?: 0
+            val byte2 = data.getOrNull(2)?.toInt() ?: 0
+            val byte3 = data.getOrNull(3)?.toInt() ?: 0
+            val byte4 = data.getOrNull(4)?.toInt() ?: 0
+            val byte5 = data.getOrNull(5)?.toInt() ?: 0
+            
+            val frontLeftPsi = if (byte0 > 0) byte0 * 0.25 + 20.0 else 0.0
+            val frontRightPsi = if (byte1 > 0) byte1 * 0.25 + 20.0 else 0.0
+            val rearLeftPsi = if (byte2 > 0) byte2 * 0.25 + 20.0 else 0.0
+            val rearRightPsi = if (byte3 > 0) byte3 * 0.25 + 20.0 else 0.0
+            
+            return TPMSStatus(
+                frontLeftPSI = frontLeftPsi,
+                frontRightPSI = frontRightPsi,
+                rearLeftPSI = rearLeftPsi,
+                rearRightPSI = rearRightPsi,
+                frontLeftTemp = if (byte4 in 1..200) byte4 - 50 else 0,
+                frontRightTemp = if (byte5 in 1..200) byte5 - 50 else 0,
+                rearLeftTemp = 0,
+                rearRightTemp = 0,
+                lowPressureWarning = (byte0 or byte1 or byte2 or byte3) == 0,
+                systemError = (byte0 and byte1 and byte2 and byte3) == 0xFF,
+                timestamp = System.currentTimeMillis()
+            )
+        }
+    }
+    
+    data class HVACStatus(
+        val acCompressorActive: Boolean = false,
+        val fanSpeed: Int = 0,
+        val driverTemp: Double = 22.0,
+        val passengerTemp: Double = 22.0,
+        val autoModeActive: Boolean = false,
+        val recirculationActive: Boolean = false,
+        val frontDefrostActive: Boolean = false,
+        val rearDefrostActive: Boolean = false,
+        val rearLeftVent: Boolean = false,
+        val rearRightVent: Boolean = false,
+        val footVent: Boolean = false,
+        val faceVent: Boolean = false,
+        val outsideTempRaw: Int = 0,
+        val cabinTempRaw: Int = 0,
+        val timestamp: Long = System.currentTimeMillis()
+    ) {
+        val outsideTempCelsius: Int
+            get() = if (outsideTempRaw in 1..200) outsideTempRaw - 50 else 0
+            
+        val cabinTempCelsius: Int
+            get() = if (cabinTempRaw in 1..200) cabinTempRaw - 50 else 0
+    }
+    
+    data class TPMSStatus(
+        val frontLeftPSI: Double = 0.0,
+        val frontRightPSI: Double = 0.0,
+        val rearLeftPSI: Double = 0.0,
+        val rearRightPSI: Double = 0.0,
+        val frontLeftTemp: Int = 0,
+        val frontRightTemp: Int = 0,
+        val rearLeftTemp: Int = 0,
+        val rearRightTemp: Int = 0,
+        val lowPressureWarning: Boolean = false,
+        val systemError: Boolean = false,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+
     // IPC (Instrument Panel Cluster) Controls
     object IPC {
         // IPC CAN IDs
@@ -622,6 +736,7 @@ data class BCMCommand(
 
     object BCMCommandMapper {
 
+    @Suppress("UNUSED_PARAMETER")
     fun mapToCommand(action: String, value: Any? = null): BCMCommand? {
         return when (action.uppercase()) {
             // Zentralverriegelung

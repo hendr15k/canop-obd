@@ -1207,4 +1207,54 @@ class OBDRepository(
             }
         }
     }
+
+    fun processCANMessage(canId: String, data: ByteArray) {
+        val hvacParsed = try {
+            com.canopobd.protocol.BCMProtocol.CANParser.parseHVACMessage(canId, data)
+        } catch (e: Exception) {
+            null
+        }
+        
+        hvacParsed?.let { hvac ->
+            _climateReading.value = ClimateReading(
+                driverTempCelsius = hvac.driverTemp.toInt(),
+                passengerTempCelsius = hvac.passengerTemp.toInt(),
+                fanSpeed = hvac.fanSpeed,
+                isACEnabled = hvac.acCompressorActive,
+                isAutoMode = hvac.autoModeActive,
+                isRecirculation = hvac.recirculationActive,
+                isFrontDefrost = hvac.frontDefrostActive,
+                isRearDefrost = hvac.rearDefrostActive,
+                outsideTemp = hvac.outsideTempCelsius,
+                cabinTemp = hvac.cabinTempCelsius,
+                acCompressorActive = hvac.acCompressorActive,
+                timestamp = hvac.timestamp
+            )
+            Log.d("OBDRepository", "Updated climate from CAN: AC=${hvac.acCompressorActive}, Fan=${hvac.fanSpeed}")
+        }
+        
+        val tpmsParsed = try {
+            com.canopobd.protocol.BCMProtocol.CANParser.parseTPMSMessage(canId, data)
+        } catch (e: Exception) {
+            null
+        }
+        
+        tpmsParsed?.let { tpms ->
+            _tpmsReading.value = TPMSReading(
+                frontLeftPSI = tpms.frontLeftPSI,
+                frontRightPSI = tpms.frontRightPSI,
+                rearLeftPSI = tpms.rearLeftPSI,
+                rearRightPSI = tpms.rearRightPSI,
+                frontLeftTemp = tpms.frontLeftTemp,
+                frontRightTemp = tpms.frontRightTemp,
+                rearLeftTemp = tpms.rearLeftTemp,
+                rearRightTemp = tpms.rearRightTemp,
+                timestamp = tpms.timestamp
+            )
+            Log.d("OBDRepository", "Updated TPMS from CAN: FL=${tpms.frontLeftPSI}psi, FR=${tpms.frontRightPSI}psi")
+        }
+    }
+
+    fun getLastClimateReading(): ClimateReading = _climateReading.value
+    fun getLastTPMSReading(): TPMSReading = _tpmsReading.value
 }

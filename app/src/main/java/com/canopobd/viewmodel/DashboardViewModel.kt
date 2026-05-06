@@ -41,6 +41,7 @@ import com.canopobd.notifications.MaintenanceNotificationManager
 import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
 import com.canopobd.data.domain.FuelSystemAnalyzer
+import com.canopobd.data.repository.CANRepository
 
 import android.util.Log
 import com.canopobd.data.model.*
@@ -76,8 +77,11 @@ class DashboardViewModel private constructor(
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val repository = OBDRepository(context, bluetoothManager?.adapter)
+    private var canRepository: CANRepository? = null
 
     val connectionState: StateFlow<OBDConnectionState> = repository.connectionState
+    val climateReading = repository.climateReading
+    val tpmsReading = repository.tpmsReading
     val obdData: StateFlow<OBDData> = repository.obdData
     val dtcResponse: StateFlow<DTCResponse?> = repository.dtcResponse
     val recordingActive: StateFlow<Boolean> = repository.recordingActive
@@ -528,12 +532,36 @@ class DashboardViewModel private constructor(
     fun connect(deviceAddress: String) {
         _showDevicePicker.value = false
         repository.connect(deviceAddress)
+        initializeCANRepository()
+    }
+
+    private fun initializeCANRepository() {
+        val conn = try {
+            val field = repository.javaClass.getDeclaredField("connection")
+            field.isAccessible = true
+            field.get(repository) as? com.canopobd.bluetooth.ELM327BTConnection
+        } catch (e: Exception) {
+            null
+        }
+        
+        if (conn != null && canRepository == null) {
+            canRepository = CANRepository(conn)
+            viewModelScope.launch {
+                canRepository?.initialize()
+                canRepository?.startCANMonitoring { canMessage ->
+                    repository.processCANMessage(canMessage.canId, canMessage.data)
+                }
+            }
+        }
     }
 
     fun disconnect() {
         checkMaintenanceNotifications()
         sessionNotifiedMaintenance.clear()
         lastMaintenanceCheckTime = 0L
+        canRepository?.stopCANMonitoring()
+        canRepository?.shutdown()
+        canRepository = null
         repository.disconnect()
     }
 
