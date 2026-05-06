@@ -26,11 +26,12 @@ fun TripHistoryScreen(
     trips: List<TripEntity>,
     onBack: () -> Unit,
     onDeleteTrip: (Long) -> Unit,
-    onClearAll: () -> Unit
+    onClearAll: () -> Unit,
+    onShareCsv: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf<Long?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -44,6 +45,9 @@ fun TripHistoryScreen(
                     if (trips.isNotEmpty()) {
                         IconButton(onClick = { showClearAllDialog = true }) {
                             Icon(Icons.Filled.DeleteSweep, "Alle löschen")
+                        }
+                        IconButton(onClick = onShareCsv) {
+                            Icon(Icons.Filled.Share, "Exportieren")
                         }
                     }
                 },
@@ -155,6 +159,7 @@ private fun TripSummaryCard(trips: List<TripEntity>) {
     val avgSpeed = trips.map { it.avgSpeedKmh }.average()
     val maxSpeed = trips.maxOfOrNull { it.maxSpeedKmh } ?: 0f
     val totalDuration = trips.sumOf { it.endTime - it.startTime }
+    val fuelPer100km = if (totalDistance > 0) (totalFuel / totalDistance * 100) else 0.0
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -185,6 +190,11 @@ private fun TripSummaryCard(trips: List<TripEntity>) {
                     icon = Icons.Filled.LocalGasStation,
                     value = "%.1f L".format(totalFuel),
                     label = "Gesamtverbrauch"
+                )
+                SummaryItem(
+                    icon = Icons.Filled.InvertColors,
+                    value = "%.1f L".format(fuelPer100km),
+                    label = "Ø L/100km"
                 )
                 SummaryItem(
                     icon = Icons.Filled.Speed,

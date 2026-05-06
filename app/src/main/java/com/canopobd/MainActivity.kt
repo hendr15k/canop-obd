@@ -221,6 +221,20 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val rangeEstimation by viewModel.rangeEstimation.collectAsState()
     val drivingStyleAnalysis by viewModel.drivingStyleAnalysis.collectAsState()
     val ecoTips by viewModel.ecoTips.collectAsState()
+    var csvShareContent by remember { mutableStateOf<String?>(null) }
+    val activityContext = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(csvShareContent) {
+        csvShareContent?.let { content ->
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(android.content.Intent.EXTRA_TEXT, content)
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            activityContext.startActivity(android.content.Intent.createChooser(intent, "Fahrthistorie exportieren"))
+            csvShareContent = null
+        }
+    }
 
     val update = availableUpdate
     if (showUpdateDialog && update != null) {
@@ -365,6 +379,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onClearTripHistory = viewModel::clearGPSTripHistory,
         tripHistoryEntities = tripHistoryEntities,
         onDeleteTrip = viewModel::deleteTrip,
+        onShareTripCsv = {
+            viewModel.exportTripHistoryToCsv { csv -> csvShareContent = csv }
+        },
         onTogglePowerCalculator = viewModel::togglePowerCalculator,
         onToggleDriveScore = viewModel::toggleDriveScore,
         onToggleShiftLight = viewModel::toggleShiftLight,

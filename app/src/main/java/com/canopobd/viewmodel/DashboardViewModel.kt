@@ -853,6 +853,24 @@ class DashboardViewModel private constructor(
 
     fun getGPSTripHistory(): List<com.canopobd.data.model.GPSTrip> = repository.getGPSTripHistory()
 
+    fun exportTripHistoryToCsv(callback: (String) -> Unit) {
+        viewModelScope.launch {
+            val trips = tripHistoryEntities.value
+            val sb = StringBuilder()
+            val df = java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.GERMAN)
+            val tf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.GERMAN)
+            sb.appendLine("Datum,Uhrzeit Start,Uhrzeit Ende,Dauer (min),Strecke (km),Ø Geschw. (km/h),Max Geschw. (km/h),Ø RPM,Max RPM,Kraftstoff (L),Ø L/100km,VIN")
+            for (trip in trips) {
+                val durationMin = ((trip.endTime - trip.startTime) / 60000).toInt()
+                val fuelPer100 = if (trip.distanceKm > 0) (trip.fuelUsedLiters / trip.distanceKm * 100) else 0f
+                sb.appendLine("${df.format(java.util.Date(trip.startTime))},${tf.format(java.util.Date(trip.startTime))},${tf.format(java.util.Date(trip.endTime))},$durationMin,%.2f,%.1f,%.0f,%.0f,%.0f,%.2f,%.1f,${trip.vin}".format(
+                    trip.distanceKm, trip.avgSpeedKmh, trip.maxSpeedKmh, trip.avgRpm, trip.maxRpm, trip.fuelUsedLiters, fuelPer100
+                ))
+            }
+            callback(sb.toString())
+        }
+    }
+
     fun exportTripToGPX(): String = repository.exportCurrentTripToGPX()
 
     fun exportTripToKML(): String = repository.exportCurrentTripToKML()

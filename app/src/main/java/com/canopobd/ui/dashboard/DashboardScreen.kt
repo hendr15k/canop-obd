@@ -196,6 +196,7 @@ fun DashboardScreen(
     onClearTripHistory: () -> Unit,
     tripHistoryEntities: List<TripEntity>,
     onDeleteTrip: (Long) -> Unit,
+    onShareTripCsv: () -> Unit,
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
@@ -496,7 +497,8 @@ fun DashboardScreen(
                         trips = tripHistoryEntities,
                         onBack = { onToggleTripHistory(); navController.safePop() },
                         onDeleteTrip = onDeleteTrip,
-                        onClearAll = onClearTripHistory
+                        onClearAll = onClearTripHistory,
+                        onShareCsv = onShareTripCsv
                     )
                 }
             }
