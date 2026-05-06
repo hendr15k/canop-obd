@@ -152,7 +152,6 @@ fun DashboardScreen(
     isGPSTracking: Boolean,
     currentTrip: GPSTrip?,
     trendHistory: TrendHistory,
-    tripHistory: List<GPSTrip>,
     readinessMonitor: ReadinessMonitor,
     detectedProtocol: String,
     supportedPIDs: List<String>,
@@ -678,7 +677,7 @@ fun DashboardScreen(
                     onLoadProfile(profile)
                     onToggleVehicleProfileManager()
                 },
-                onExportProfile = { profile ->
+                onExportProfile = { _ ->
                     onToggleVehicleProfileManager()
                 },
                 currentProfile = currentVehicleProfile

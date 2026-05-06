@@ -207,7 +207,6 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val isGPSTracking by viewModel.isGPSTracking.collectAsState()
     val currentTrip by viewModel.currentTrip.collectAsState()
     val trendHistory by viewModel.trendHistory.collectAsState()
-    val tripHistory by viewModel.tripHistory.collectAsState()
     val tripHistoryEntities by viewModel.tripHistoryEntities.collectAsState()
     val readinessMonitor by viewModel.readinessMonitor.collectAsState()
     val detectedProtocol by viewModel.detectedProtocol.collectAsState()
@@ -391,7 +390,6 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         isGPSTracking = isGPSTracking,
         currentTrip = currentTrip,
         trendHistory = trendHistory,
-        tripHistory = tripHistory,
         readinessMonitor = readinessMonitor,
         detectedProtocol = detectedProtocol,
         supportedPIDs = supportedPIDs,
