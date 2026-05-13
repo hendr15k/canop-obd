@@ -277,10 +277,16 @@ class CANRepository(private val connection: ELM327BTConnection) {
         val parser = BCMProtocol.CANParser
 
         when {
-            canId in listOf("7E5", "7ED", "420", "422") -> {
+            canId in listOf("7E5", "7ED") -> {
                 parser.parseHVACMessage(canId, data)
             }
-            canId in listOf("420", "422", "428") -> {
+            canId in listOf("420", "422") -> {
+                val hvacResult = parser.parseHVACMessage(canId, data)
+                if (hvacResult == null) {
+                    parser.parseTPMSMessage(canId, data)
+                }
+            }
+            canId == "428" -> {
                 parser.parseTPMSMessage(canId, data)
             }
             canId in listOf("7E1", "7E9", "424", "426") -> {

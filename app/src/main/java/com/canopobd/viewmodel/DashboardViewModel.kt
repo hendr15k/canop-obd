@@ -163,6 +163,19 @@ class DashboardViewModel private constructor(
     private var lastMaintenanceCheckTime = 0L
     private val sessionNotifiedMaintenance = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, MaintenanceNotificationManager.Urgency>>()
 
+    // Oil thermal stress tracking
+    private var oilTimeAbove110C = 0.0
+    private var oilTimeAbove115C = 0.0
+    private var oilTimeAbove120C = 0.0
+    private var oilShortTripCount = 0
+    private var lastOilTempSampleTime = 0L
+    private var lastOilTempWasCold = true
+
+    // Turbo spool time tracking
+    private var turboSpoolTracking = false
+    private var turboSpoolStartTime = 0L
+    private var turboSpoolStartBoost = 0.0
+
     private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
     val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
 
@@ -201,6 +214,7 @@ class DashboardViewModel private constructor(
     private val _timingChainState = MutableStateFlow(com.canopobd.data.model.TimingChainState())
     val timingChainState: StateFlow<com.canopobd.data.model.TimingChainState> = _timingChainState.asStateFlow()
     private val rpmSampleBuffer = mutableListOf<Double>()
+    private val timingAdvanceBuffer = mutableListOf<Double>()
 
     val turboData: StateFlow<com.canopobd.data.model.TurboData> get() = turboViewModel.turboData
     val oilData: StateFlow<com.canopobd.data.model.OilData> get() = turboViewModel.oilData
@@ -539,14 +553,7 @@ class DashboardViewModel private constructor(
     }
 
     private fun initializeCANRepository() {
-        val conn = try {
-            val field = repository.javaClass.getDeclaredField("connection")
-            field.isAccessible = true
-            field.get(repository) as? com.canopobd.bluetooth.ELM327BTConnection
-        } catch (e: Exception) {
-            null
-        }
-        
+        val conn = repository.connection
         if (conn != null && canRepository == null) {
             canRepository = CANRepository(conn)
             viewModelScope.launch {
@@ -882,30 +889,30 @@ class DashboardViewModel private constructor(
             com.canopobd.ui.tpms.TireData(
                 position = "Vorne Links",
                 pressure = (tpms.frontLeftPressure * 0.0689476).toFloat(),
-                temperature = 25,
+                temperature = 0,
                 isLow = tpms.frontLeftPressure > 0 && tpms.frontLeftPressure < 28.0,
-                sensorBattery = 100
+                sensorBattery = 0
             ),
             com.canopobd.ui.tpms.TireData(
                 position = "Vorne Rechts",
                 pressure = (tpms.frontRightPressure * 0.0689476).toFloat(),
-                temperature = 26,
+                temperature = 0,
                 isLow = tpms.frontRightPressure > 0 && tpms.frontRightPressure < 28.0,
-                sensorBattery = 98
+                sensorBattery = 0
             ),
             com.canopobd.ui.tpms.TireData(
                 position = "Hinten Links",
                 pressure = (tpms.rearLeftPressure * 0.0689476).toFloat(),
-                temperature = 24,
+                temperature = 0,
                 isLow = tpms.rearLeftPressure > 0 && tpms.rearLeftPressure < 28.0,
-                sensorBattery = 95
+                sensorBattery = 0
             ),
             com.canopobd.ui.tpms.TireData(
                 position = "Hinten Rechts",
                 pressure = (tpms.rearRightPressure * 0.0689476).toFloat(),
-                temperature = 25,
+                temperature = 0,
                 isLow = tpms.rearRightPressure > 0 && tpms.rearRightPressure < 28.0,
-                sensorBattery = 100
+                sensorBattery = 0
             )
         )
     }
@@ -1121,6 +1128,11 @@ class DashboardViewModel private constructor(
         if (rpm > 0) {
             rpmSampleBuffer.add(rpm)
             if (rpmSampleBuffer.size > 30) rpmSampleBuffer.removeAt(0)
+        }
+
+        if (data.timingAdvance > 0) {
+            timingAdvanceBuffer.add(data.timingAdvance)
+            if (timingAdvanceBuffer.size > 30) timingAdvanceBuffer.removeAt(0)
         }
 
         val rpmVariation = if (rpmSampleBuffer.size >= 3) {
@@ -1511,6 +1523,22 @@ class DashboardViewModel private constructor(
     private fun updateExtendedAnalyzers(data: OBDData) {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
 
+        // Accumulate oil thermal stress tracking
+        val oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp
+        val now = System.currentTimeMillis()
+        if (lastOilTempSampleTime > 0 && oilTemp > 0) {
+            val dtHours = (now - lastOilTempSampleTime) / 3_600_000.0
+            if (oilTemp > 110) oilTimeAbove110C += dtHours
+            if (oilTemp > 115) oilTimeAbove115C += dtHours
+            if (oilTemp > 120) oilTimeAbove120C += dtHours
+            // Short trip detection: engine was cold, now warm
+            if (lastOilTempWasCold && data.coolantTemp > 70 && data.runTime < 600) {
+                oilShortTripCount++
+            }
+        }
+        lastOilTempWasCold = oilTemp < 70 || data.coolantTemp < 70
+        lastOilTempSampleTime = now
+
         try {
             val oilInput = OilConditionMonitor.OilInput(
                 oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.coolantTemp,
@@ -1534,18 +1562,35 @@ class DashboardViewModel private constructor(
                 lastOilChangeKm = _maintenanceItems.value.find { it.type == com.canopobd.data.model.MaintenanceType.OIL_CHANGE }?.lastServiceKm?.toDouble() ?: 0.0,
                 lastOilChangeTimestamp = _maintenanceItems.value.find { it.type == com.canopobd.data.model.MaintenanceType.OIL_CHANGE }?.lastServiceDate ?: 0L,
                 engineRuntimeSec = data.runTime,
-                drivingPattern = OilHealthPredictor.DrivingPattern.NORMAL,
-                timeAbove110C = 0.0,
-                timeAbove115C = 0.0,
-                timeAbove120C = 0.0,
-                shortTripCount = 0,
-                oilConsumptionLPer1000Km = 0.0
+                drivingPattern = determineDrivingPattern(data),
+                timeAbove110C = oilTimeAbove110C,
+                timeAbove115C = oilTimeAbove115C,
+                timeAbove120C = oilTimeAbove120C,
+                shortTripCount = oilShortTripCount,
+                oilConsumptionLPer1000Km = estimateOilConsumption(data)
             )
             oilHealthPrediction.value = oilHealthPredictor.analyze(oilHealthInput)
         } catch (e: Exception) { Log.w(TAG, "OilHealthPredictor failed", e) }
 
         try {
+            sensorValidator.addMaf(data.mafRate)
+            sensorValidator.addRpm(data.rpm)
             sensorValidationResult.value = sensorValidator.validateMaf(data.mafRate)
+            val boostBar = if (data.boostPressure > 0) (data.boostPressure - data.barometricPressure).coerceAtLeast(0.0) / 100.0 else null
+            val boostValidation = sensorValidator.validateBoost(boostBar, data.barometricPressure)
+            val coolantValidation = sensorValidator.validateCoolant(data.coolantTemp)
+            val rpmValidation = sensorValidator.validateRpm(data.rpm)
+            val aggregatedResult = when {
+                sensorValidationResult.value is com.canopobd.data.domain.ValidationResult.Invalid -> sensorValidationResult.value
+                boostValidation is com.canopobd.data.domain.ValidationResult.Invalid -> boostValidation
+                coolantValidation is com.canopobd.data.domain.ValidationResult.Invalid -> coolantValidation
+                rpmValidation is com.canopobd.data.domain.ValidationResult.Invalid -> rpmValidation
+                boostValidation is com.canopobd.data.domain.ValidationResult.Suspicious -> boostValidation
+                coolantValidation is com.canopobd.data.domain.ValidationResult.Suspicious -> coolantValidation
+                rpmValidation is com.canopobd.data.domain.ValidationResult.Suspicious -> rpmValidation
+                else -> sensorValidationResult.value
+            }
+            sensorValidationResult.value = aggregatedResult
         } catch (e: Exception) { Log.w(TAG, "SensorValidator failed", e) }
 
         try {
@@ -1581,12 +1626,13 @@ class DashboardViewModel private constructor(
         } catch (e: Exception) { Log.w(TAG, "FuelConsumptionAnalyzer failed", e) }
 
         try {
+            val tcmData = canRepository?.transmissionData?.value
             val m32Input = M32GearboxMonitor.GearboxInput(
                 rpmHistory = listOf(data.rpm),
                 speedHistory = listOf(data.speed),
-                gearPosition = 0,
-                clutchPosition = 0.0,
-                transmissionTemp = 0.0,
+                gearPosition = tcmData?.gear ?: 0,
+                clutchPosition = if (tcmData?.clutchStatus == "slipping") 1.0 else if (tcmData?.gear != null && tcmData.gear > 0) 0.0 else 0.5,
+                transmissionTemp = tcmData?.oilTemp ?: data.coolantTemp.toDouble(),
                 activeDTCs = dtcCodes
             )
             gearboxResult.value = m32GearboxMonitor.analyze(m32Input)
@@ -1595,9 +1641,12 @@ class DashboardViewModel private constructor(
         try {
             val chainInput = ChainTensionerAnalyzer.ChainTensionerInput(
                 activeDTCs = dtcCodes,
-                coldStartRattleDurationSec = 0.0,
-                idleRpmVariance = 0.0,
-                timingAdvanceVariance = 0.0,
+                coldStartRattleDurationSec = if (_timingChainState.value.coldStartRattleDetected) _timingChainState.value.coldSampleCount.toDouble() * 0.5 else 0.0,
+                idleRpmVariance = _timingChainState.value.idleRpmVariation,
+                timingAdvanceVariance = if (timingAdvanceBuffer.size >= 3) {
+                    val mean = timingAdvanceBuffer.average()
+                    timingAdvanceBuffer.map { (it - mean) * (it - mean) }.sum() / timingAdvanceBuffer.size
+                } else 0.0,
                 currentRpm = data.rpm,
                 timingAdvance = data.timingAdvance,
                 coolantTemp = data.coolantTemp,
@@ -1706,12 +1755,25 @@ class DashboardViewModel private constructor(
             val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
             val targetBoostAt80 = calibration.normalBoostTargetBar
 
-            val spoolTime = if (data.throttle > 10 && data.rpm > 1500) {
-                2.0
-            } else if (data.throttle > 5 && data.rpm > 1000) {
-                3.0
-            } else {
-                0.0
+            val nowMs = System.currentTimeMillis()
+            val spoolTime = run {
+                // Track actual spool time: start when throttle crosses threshold,
+                // measure when boost reaches 80% of target
+                if (data.throttle > 80 && !turboSpoolTracking) {
+                    turboSpoolTracking = true
+                    turboSpoolStartTime = nowMs
+                    turboSpoolStartBoost = actualBoostBar
+                }
+                if (turboSpoolTracking && actualBoostBar >= targetBoostAt80 * 0.8) {
+                    val elapsed = (nowMs - turboSpoolStartTime) / 1000.0
+                    turboSpoolTracking = false
+                    if (elapsed > 0.1 && elapsed < 10.0) elapsed else 0.0
+                } else if (turboSpoolTracking && (nowMs - turboSpoolStartTime) > 10000) {
+                    turboSpoolTracking = false
+                    0.0
+                } else {
+                    0.0
+                }
             }
 
             val turboSpoolInput = TurboSpoolAnalyzer.SpoolInput(
@@ -2100,12 +2162,34 @@ class DashboardViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val rawPid = if (pid.startsWith("22")) pid.drop(2) else pid
-                _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
-                    pid = rawPid,
-                    value = 0.0,
-                    unit = "",
-                    timestamp = System.currentTimeMillis()
-                ))
+                val canRepo = canRepository
+                if (canRepo != null) {
+                    canRepo.mode22Client.readDID(rawPid).collect { result ->
+                        if (result != null) {
+                            val pidInfo = canRepo.getDIDInfo(rawPid)
+                            _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
+                                pid = rawPid,
+                                value = pidInfo?.formula?.invoke(result) ?: 0.0,
+                                unit = pidInfo?.unit ?: "",
+                                timestamp = System.currentTimeMillis()
+                            ))
+                        } else {
+                            _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
+                                pid = rawPid,
+                                value = 0.0,
+                                unit = "",
+                                timestamp = System.currentTimeMillis()
+                            ))
+                        }
+                    }
+                } else {
+                    _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
+                        pid = rawPid,
+                        value = 0.0,
+                        unit = "",
+                        timestamp = System.currentTimeMillis()
+                    ))
+                }
             } catch (e: Exception) {
                 _mode22DataCache.value = _mode22DataCache.value - pid
             }
@@ -2121,6 +2205,29 @@ class DashboardViewModel private constructor(
         }
         _supportedMode22Pids.value = discovered
         return discovered
+    }
+
+    private fun determineDrivingPattern(data: OBDData): OilHealthPredictor.DrivingPattern {
+        val avgRpm = data.rpm
+        val load = data.engineLoad
+        val speed = data.speed
+        return when {
+            avgRpm > 5000 || load > 85 || speed > 180 -> OilHealthPredictor.DrivingPattern.TRACK
+            avgRpm > 3000 || load > 60 || speed > 120 -> OilHealthPredictor.DrivingPattern.SPORTY
+            avgRpm > 800 && speed < 30 && data.runTime < 600 -> OilHealthPredictor.DrivingPattern.SHORT_TRIP
+            load > 70 && data.runTime > 300 -> OilHealthPredictor.DrivingPattern.TOWING
+            speed < 5 && avgRpm < 800 -> OilHealthPredictor.DrivingPattern.EASY
+            else -> OilHealthPredictor.DrivingPattern.NORMAL
+        }
+    }
+
+    private fun estimateOilConsumption(data: OBDData): Double {
+        // A14NET typical oil consumption: 0.05-0.3 L/1000km depending on driving
+        val baseConsumption = 0.08
+        val loadFactor = data.engineLoad / 100.0
+        val rpmFactor = if (data.rpm > 4000) 2.0 else if (data.rpm > 3000) 1.5 else 1.0
+        val boostFactor = if (data.boostPressure > 150) 1.8 else if (data.boostPressure > 100) 1.3 else 1.0
+        return baseConsumption * rpmFactor * boostFactor * (1 + loadFactor)
     }
 
     override fun onCleared() {

@@ -31,7 +31,7 @@ class OBDRepository(
     private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?
 ) {
-    private val connection: ELM327BTConnection? = bluetoothAdapter?.let { ELM327BTConnection(it) }
+    val connection: ELM327BTConnection? = bluetoothAdapter?.let { ELM327BTConnection(it) }
     private var remoteBridge: RemoteBridge? = null
     private val prefs: SharedPreferences = context.getSharedPreferences("canop_obd_prefs", Context.MODE_PRIVATE)
 
@@ -712,39 +712,19 @@ class OBDRepository(
 
     fun readTPMS() {
         scope.launch {
-            val conn = connection
-            if (conn != null && _connectionState.value == OBDConnectionState.Connected) {
-                android.util.Log.d("OBDRepository", "Requesting TPMS data from vehicle")
+            val current = _tpmsReading.value
+            if (current.frontLeftPSI == 0.0 && current.frontRightPSI == 0.0) {
+                android.util.Log.d("OBDRepository", "No TPMS data from CAN bus yet")
             }
-            _tpmsReading.value = TPMSReading(
-                frontLeftPSI = 32.0,
-                frontRightPSI = 32.0,
-                rearLeftPSI = 32.0,
-                rearRightPSI = 32.0,
-                frontLeftTemp = 25,
-                frontRightTemp = 26,
-                rearLeftTemp = 24,
-                rearRightTemp = 25
-            )
         }
     }
 
     fun readClimate() {
         scope.launch {
-            val conn = connection
-            if (conn != null && _connectionState.value == OBDConnectionState.Connected) {
-                android.util.Log.d("OBDRepository", "Requesting Climate data from vehicle")
+            val current = _climateReading.value
+            if (current.fanSpeed == 0 && !current.isACEnabled) {
+                android.util.Log.d("OBDRepository", "No climate data from CAN bus yet")
             }
-            _climateReading.value = ClimateReading(
-                driverTempCelsius = 22,
-                passengerTempCelsius = 22,
-                fanSpeed = 3,
-                isACEnabled = false,
-                isAutoMode = true,
-                isRecirculation = false,
-                outsideTemp = 18,
-                cabinTemp = 23
-            )
         }
     }
 

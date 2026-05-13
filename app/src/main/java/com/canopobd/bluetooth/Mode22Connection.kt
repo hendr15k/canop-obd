@@ -150,8 +150,12 @@ object Mode22PIDs {
     // PID Definitions with formulas
     val PID_DEFINITIONS = mapOf(
         // Vehicle Info
-        VIN to Mode22PIDInfo("F190", "VIN", "chars", 17) { _ -> 0.0 },
-        CALIBRATION_ID to Mode22PIDInfo("F191", "Calibration ID", "", 16) { _ -> 0.0 },
+        VIN to Mode22PIDInfo("F190", "VIN", "chars", 17) { b ->
+            b.filter { it.toInt() in 0x20..0x7E }.map { it.toInt().toChar() }.joinToString("").let { 0.0 }
+        },
+        CALIBRATION_ID to Mode22PIDInfo("F191", "Calibration ID", "", 16) { b ->
+            b.filter { it.toInt() in 0x20..0x7E }.map { it.toInt().toChar() }.joinToString("").let { 0.0 }
+        },
         CALIBRATION_VERIFICATION to Mode22PIDInfo("F192", "CVN", "", 4) { b ->
             if (b.size >= 4) {
                 (((b[0].toInt() and 0xFF) shl 24) or

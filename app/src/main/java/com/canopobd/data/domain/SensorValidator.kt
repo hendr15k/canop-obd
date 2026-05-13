@@ -13,6 +13,16 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration) {
         private const val MAX_MAF_CHANGE = 20.0  // g/s per sample
     }
 
+    fun addMaf(maf: Double) {
+        mafHistory.add(maf)
+        if (mafHistory.size > HISTORY_SIZE) mafHistory.removeAt(0)
+    }
+
+    fun addRpm(rpm: Double) {
+        rpmHistory.add(rpm)
+        if (rpmHistory.size > HISTORY_SIZE) rpmHistory.removeAt(0)
+    }
+
     fun validateMaf(maf: Double?, previousMaf: Double? = null): ValidationResult {
         if (maf == null) return ValidationResult.Unavailable
 
