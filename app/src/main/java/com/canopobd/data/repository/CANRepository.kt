@@ -8,6 +8,7 @@ import com.canopobd.data.protocol.CANFilterMode
 import com.canopobd.data.protocol.Mode22Client
 import com.canopobd.data.protocol.Mode22DIDInfo
 import com.canopobd.data.protocol.DIDCategory
+import com.canopobd.protocol.BCMProtocol
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -264,7 +265,66 @@ class CANRepository(private val connection: ELM327BTConnection) {
     fun discoverDIDs(): Flow<List<String>> = mode22Client.discoverAvailableDIDs()
 
     fun startCANMonitoring(onMessage: (CANMessage) -> Unit) {
-        canMonitor.startMonitoring(onMessage)
+        canMonitor.startMonitoring { msg ->
+            processCANMessage(msg)
+            onMessage(msg)
+        }
+    }
+
+    private fun processCANMessage(msg: CANMessage) {
+        val canId = msg.canId.uppercase()
+        val data = msg.data
+        val parser = BCMProtocol.CANParser
+
+        when {
+            canId in listOf("7E5", "7ED", "420", "422") -> {
+                parser.parseHVACMessage(canId, data)
+            }
+            canId in listOf("420", "422", "428") -> {
+                parser.parseTPMSMessage(canId, data)
+            }
+            canId in listOf("7E1", "7E9", "424", "426") -> {
+                parser.parseTCMMessage(canId, data)?.let { tcm ->
+                    _transmissionData.value = TransmissionData(
+                        gear = tcm.currentGear,
+                        oilTemp = tcm.oilTempCelsius.toDouble(),
+                        pressure = tcm.pressureKpa.toDouble(),
+                        inputSpeed = tcm.inputShaftRpm,
+                        outputSpeed = tcm.outputShaftRpm,
+                        clutchStatus = if (tcm.clutchSlipping) "slipping" else if (tcm.currentGear > 0) "engaged" else null
+                    )
+                }
+            }
+            canId in listOf("7E0", "7E8", "430", "432") -> {
+                // ECM — already handled by OBD polling
+            }
+            canId in listOf("280", "288", "388") -> {
+                // BCM status frames — parse door/light status
+                if (data.size >= 4) {
+                    val byte0 = data[0].toInt() and 0xFF
+                    val byte1 = data[1].toInt() and 0xFF
+                    _bcmStatus.value = _bcmStatus.value?.copy(
+                        driverDoorOpen = (byte0 and 0x01) != 0,
+                        passengerDoorOpen = (byte0 and 0x02) != 0,
+                        rearLeftDoorOpen = (byte0 and 0x04) != 0,
+                        rearRightDoorOpen = (byte0 and 0x08) != 0,
+                        trunkOpen = (byte0 and 0x10) != 0,
+                        hoodOpen = (byte0 and 0x20) != 0,
+                        lightsOn = (byte1 and 0x01) != 0,
+                        hazardsOn = (byte1 and 0x02) != 0
+                    ) ?: BCMStatus(
+                        driverDoorOpen = (byte0 and 0x01) != 0,
+                        passengerDoorOpen = (byte0 and 0x02) != 0,
+                        rearLeftDoorOpen = (byte0 and 0x04) != 0,
+                        rearRightDoorOpen = (byte0 and 0x08) != 0,
+                        trunkOpen = (byte0 and 0x10) != 0,
+                        hoodOpen = (byte0 and 0x20) != 0,
+                        lightsOn = (byte1 and 0x01) != 0,
+                        hazardsOn = (byte1 and 0x02) != 0
+                    )
+                }
+            }
+        }
     }
 
     fun stopCANMonitoring() {

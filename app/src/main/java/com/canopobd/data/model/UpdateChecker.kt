@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.net.URL
 
@@ -23,7 +25,7 @@ object UpdateChecker {
     private const val PREFS_NAME = "canop_obd_update"
     private const val KEY_LAST_CHECK = "last_update_check"
     private const val KEY_SKIPPED_VERSION = "skipped_version"
-    private const val CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L // 6 hours
+    private const val CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
 
     fun getCurrentVersionCode(context: Context): Int {
         return try {
@@ -43,7 +45,7 @@ object UpdateChecker {
         }
     }
 
-    fun checkForUpdate(context: Context): AppUpdate? {
+    suspend fun checkForUpdate(context: Context): AppUpdate? = withContext(Dispatchers.IO) {
         try {
             val url = URL("https://api.github.com/repos/$GITHUB_REPO/releases/latest")
             val connection = url.openConnection()
@@ -51,7 +53,7 @@ object UpdateChecker {
             connection.readTimeout = 10000
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
-            val response = connection.inputStream.bufferedReader().readText()
+            val response = connection.getInputStream().bufferedReader().readText()
             val json = org.json.JSONObject(response)
 
             val tagName = json.optString("tag_name", "")
@@ -64,28 +66,26 @@ object UpdateChecker {
 
             val assets = json.optJSONArray("assets") ?: JSONArray()
             var apkUrl = ""
-            var apkSize = 0L
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.optString("name", "")
                 if (name.endsWith(".apk")) {
                     apkUrl = asset.optString("browser_download_url", "")
-                    apkSize = asset.optLong("size", 0L)
                     break
                 }
             }
 
-            if (apkUrl.isEmpty()) return null
+            if (apkUrl.isEmpty()) return@withContext null
 
             val remoteCode = parseVersionCode(body, versionName)
             val isNewer = compareVersions(versionName, currentVersionName) > 0 || remoteCode > currentCode
-            if (!isNewer) return null
+            if (!isNewer) return@withContext null
 
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val skippedVersion = prefs.getString(KEY_SKIPPED_VERSION, "")
-            if (skippedVersion == versionName) return null
+            if (skippedVersion == versionName) return@withContext null
 
-            return AppUpdate(
+            AppUpdate(
                 versionName = versionName,
                 versionCode = remoteCode,
                 releaseNotes = body,
@@ -94,7 +94,7 @@ object UpdateChecker {
             )
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed: ${e.message}")
-            return null
+            null
         }
     }
 
@@ -127,11 +127,9 @@ object UpdateChecker {
     }
 
     private fun parseVersionCode(body: String, versionName: String): Int {
-        // Try to extract versionCode from release body or derive from version name
         val codePattern = Regex("""versionCode[:\s]*(\d+)""", RegexOption.IGNORE_CASE)
         codePattern.find(body)?.groupValues?.get(1)?.toIntOrNull()?.let { return it }
 
-        // Derive from version name (e.g. "1.6.0" -> 8, assuming major*100+minor*10+patch+1)
         val parts = versionName.split(".")
         if (parts.size >= 3) {
             val major = parts[0].toIntOrNull() ?: 0
@@ -139,6 +137,6 @@ object UpdateChecker {
             val patch = parts[2].toIntOrNull() ?: 0
             return major * 100 + minor * 10 + patch + 1
         }
-        return 999
+        return 0
     }
 }

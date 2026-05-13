@@ -553,6 +553,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showTimingChainMonitor = showTimingChainMonitor,
         showCarProfile = showCarProfile,
         _showTurboCooldown = showTurboCooldown,
-        turboCooldownState = turboCooldownState
+        turboCooldownState = turboCooldownState,
+        tcmReading = viewModel.tcmReading.value,
+        ecmReading = viewModel.ecmReading.value
     )
 }

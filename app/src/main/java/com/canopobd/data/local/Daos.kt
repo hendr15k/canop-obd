@@ -83,3 +83,15 @@ interface AppSettingsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(settings: AppSettingsEntity)
 }
+
+@Dao
+interface TripLocationDao {
+    @Query("SELECT * FROM trip_locations WHERE tripId = :tripId ORDER BY timestamp ASC")
+    suspend fun getLocationsForTrip(tripId: Long): List<TripLocationEntity>
+
+    @Insert
+    suspend fun insertAll(locations: List<TripLocationEntity>)
+
+    @Query("DELETE FROM trip_locations WHERE tripId = :tripId")
+    suspend fun deleteForTrip(tripId: Long)
+}

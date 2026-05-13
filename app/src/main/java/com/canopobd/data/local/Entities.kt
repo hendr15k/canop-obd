@@ -1,6 +1,8 @@
 package com.canopobd.data.local
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "maintenance_items")
@@ -61,4 +63,19 @@ data class AppSettingsEntity(
     val storedVin: String = "",
     val carProfileId: String = "",
     val currentKm: Int = 0
+)
+
+@Entity(tableName = "trip_locations", foreignKeys = [
+    ForeignKey(entity = TripEntity::class, parentColumns = ["id"], childColumns = ["tripId"], onDelete = ForeignKey.CASCADE)
+], indices = [Index("tripId")])
+data class TripLocationEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val tripId: Long,
+    val latitude: Double,
+    val longitude: Double,
+    val altitude: Double,
+    val speed: Float,
+    val bearing: Float,
+    val accuracy: Float,
+    val timestamp: Long
 )

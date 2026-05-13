@@ -4,17 +4,27 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Looper
+import com.canopobd.data.local.CanopoDatabase
+import com.canopobd.data.local.TripEntity
+import com.canopobd.data.local.TripLocationEntity
 import com.canopobd.data.model.GPSLocation
 import com.canopobd.data.model.GPSTrip
 import com.google.android.gms.location.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
 @SuppressLint("MissingPermission")
 class GPSTracker(private val context: Context) {
+
+    private val db = CanopoDatabase.getInstance(context)
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
@@ -46,6 +56,40 @@ class GPSTracker(private val context: Context) {
         .setMinUpdateIntervalMillis(500L)
         .setMinUpdateDistanceMeters(5f)
         .build()
+
+    init {
+        loadTripHistoryFromDb()
+    }
+
+    private fun loadTripHistoryFromDb() {
+        scope.launch {
+            try {
+                val trips = db.tripDao().getAllOnce().map { trip ->
+                    val locations = db.tripLocationDao().getLocationsForTrip(trip.id).map { loc ->
+                        GPSLocation(
+                            latitude = loc.latitude,
+                            longitude = loc.longitude,
+                            altitude = loc.altitude,
+                            speed = loc.speed,
+                            bearing = loc.bearing,
+                            accuracy = loc.accuracy,
+                            timestamp = loc.timestamp
+                        )
+                    }
+                    GPSTrip(
+                        id = trip.id.toString(),
+                        startTime = trip.startTime,
+                        endTime = trip.endTime,
+                        locations = locations,
+                        distanceKm = trip.distanceKm.toDouble(),
+                        maxSpeedKmh = trip.maxSpeedKmh.toDouble(),
+                        avgSpeedKmh = trip.avgSpeedKmh.toDouble()
+                    )
+                }
+                _tripHistory.value = trips
+            } catch (_: Exception) { }
+        }
+    }
 
     fun startTracking(): Boolean {
         if (_isTracking.value) return false
@@ -99,9 +143,43 @@ class GPSTracker(private val context: Context) {
             )
             _tripHistory.value = _tripHistory.value + trip
             _currentTrip.value = trip
+            persistTrip(trip)
         }
 
         _isTracking.value = false
+    }
+
+    private fun persistTrip(trip: GPSTrip) {
+        scope.launch {
+            try {
+                val tripEntity = TripEntity(
+                    startTime = trip.startTime,
+                    endTime = trip.endTime,
+                    distanceKm = trip.distanceKm.toFloat(),
+                    avgSpeedKmh = trip.avgSpeedKmh.toFloat(),
+                    maxSpeedKmh = trip.maxSpeedKmh.toFloat(),
+                    avgRpm = 0.0,
+                    maxRpm = 0.0,
+                    fuelUsedLiters = 0f,
+                    vin = ""
+                )
+                val tripRowId = db.tripDao().insert(tripEntity)
+
+                val locationEntities = trip.locations.map { loc ->
+                    TripLocationEntity(
+                        tripId = tripRowId,
+                        latitude = loc.latitude,
+                        longitude = loc.longitude,
+                        altitude = loc.altitude,
+                        speed = loc.speed,
+                        bearing = loc.bearing,
+                        accuracy = loc.accuracy,
+                        timestamp = loc.timestamp
+                    )
+                }
+                db.tripLocationDao().insertAll(locationEntities)
+            } catch (_: Exception) { }
+        }
     }
 
     private fun processLocation(loc: GPSLocation) {
@@ -181,6 +259,11 @@ class GPSTracker(private val context: Context) {
     fun clearTripHistory() {
         _tripHistory.value = emptyList()
         _currentTrip.value = null
+        scope.launch {
+            try {
+                db.tripDao().deleteAll()
+            } catch (_: Exception) { }
+        }
     }
 
     fun getLastKnownLocation(callback: (GPSLocation?) -> Unit) {

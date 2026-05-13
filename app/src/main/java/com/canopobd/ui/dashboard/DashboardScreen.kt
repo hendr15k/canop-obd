@@ -88,6 +88,7 @@ import com.canopobd.ui.profile.SavedProfile
 import com.canopobd.ui.tpms.TPMSDialog
 import com.canopobd.ui.climate.ClimateControlDialog
 import com.canopobd.ui.climate.ClimateCommand
+import com.canopobd.ui.components.TCMECMCANStatusCard
 import kotlin.math.abs
 
 @Composable
@@ -283,6 +284,8 @@ fun DashboardScreen(
     showClimateControl: Boolean,
     onToggleClimateControl: () -> Unit,
     onSendClimateCommand: (com.canopobd.ui.climate.ClimateCommand) -> Unit,
+    tcmReading: com.canopobd.data.repository.OBDRepository.TCMReading,
+    ecmReading: com.canopobd.data.repository.OBDRepository.ECMReading,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -493,6 +496,25 @@ fun DashboardScreen(
                         primaryIds = primaryGaugeIds,
                         colors = colors
                     )
+                }
+
+                item {
+                    TCMECMCANStatusCard(
+                        tcmCurrentGear = tcmReading.currentGear,
+                        tcmOilTempCelsius = tcmReading.oilTempCelsius,
+                        tcmPressureKpa = tcmReading.pressureKpa,
+                        tcmSportMode = tcmReading.sportMode,
+                        tcmManualMode = tcmReading.manualMode,
+                        tcmError = tcmReading.transmissionError,
+                        ecmRpm = ecmReading.rpm,
+                        ecmSpeedKmh = ecmReading.speedKmh,
+                        ecmCoolantTemp = ecmReading.coolantTemp,
+                        ecmThrottlePosition = ecmReading.throttlePosition,
+                        ecmEngineLoad = ecmReading.engineLoad,
+                        lastUpdateTime = tcmReading.timestamp,
+                        colors = colors
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 item {

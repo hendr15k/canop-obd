@@ -43,6 +43,13 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
     private var totalIdleTimeMs = 0L
     private var lastSpeed = 0.0
     private var lastTimestamp = 0L
+    private var lastThrottle = 0.0
+    private var brakeEventCount = 0
+    private var harshBrakeCount = 0
+    private var coastingSamples = 0
+    private var totalSamples = 0
+    private var decelSamples = 0
+    private var speedDecelSum = 0.0
 
     fun updateFromOBDData(data: OBDData, fuelLevelPercent: Double) {
         val now = System.currentTimeMillis()
@@ -71,6 +78,7 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         generateTips(data)
 
         lastSpeed = data.speed
+        lastThrottle = data.throttle
     }
 
     private fun updateEfficiency(data: OBDData, fuelLevelPercent: Double) {
@@ -243,9 +251,35 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
             else -> 20
         }
 
-        val brakeScore = 75
+        totalSamples++
+        val speedDelta = data.speed - lastSpeed
+        val isDecelerating = speedDelta < -2.0
+        val isCoasting = data.throttle < 10.0 && data.speed > 10.0 && speedDelta > -3.0
+
+        if (isDecelerating) {
+            decelSamples++
+            brakeEventCount++
+            if (speedDelta < -8.0) harshBrakeCount++
+        }
+        if (isCoasting) coastingSamples++
+
+        val brakeScore = when {
+            brakeEventCount == 0 -> 80
+            else -> {
+                val harshRatio = harshBrakeCount.toDouble() / brakeEventCount.toDouble()
+                (100.0 * (1.0 - harshRatio)).coerceIn(20.0, 95.0).toInt()
+            }
+        }
+
         val cruiseScore = if (eff.cruisingTimePercent > 60) 90 else 50
-        val anticipationScore = 70
+        val anticipationScore = when {
+            totalSamples < 10 -> 70
+            coastingSamples == 0 -> 40
+            else -> {
+                val coastRatio = coastingSamples.toDouble() / totalSamples.toDouble()
+                (coastRatio * 100.0).coerceIn(20.0, 95.0).toInt()
+            }
+        }
 
         val totalScore = (accelScore * 0.4 + brakeScore * 0.2 + cruiseScore * 0.2 + anticipationScore * 0.2).toInt()
 
@@ -334,5 +368,12 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         totalIdleTimeMs = 0L
         lastSpeed = 0.0
         lastTimestamp = 0L
+        lastThrottle = 0.0
+        brakeEventCount = 0
+        harshBrakeCount = 0
+        coastingSamples = 0
+        totalSamples = 0
+        decelSamples = 0
+        speedDecelSum = 0.0
     }
 }

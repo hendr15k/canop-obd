@@ -200,6 +200,7 @@ class DashboardViewModel private constructor(
     val carProfile: StateFlow<com.canopobd.data.model.CarProfile> = _carProfileState.asStateFlow()
     private val _timingChainState = MutableStateFlow(com.canopobd.data.model.TimingChainState())
     val timingChainState: StateFlow<com.canopobd.data.model.TimingChainState> = _timingChainState.asStateFlow()
+    private val rpmSampleBuffer = mutableListOf<Double>()
 
     val turboData: StateFlow<com.canopobd.data.model.TurboData> get() = turboViewModel.turboData
     val oilData: StateFlow<com.canopobd.data.model.OilData> get() = turboViewModel.oilData
@@ -1116,7 +1117,17 @@ class DashboardViewModel private constructor(
         val rpm = data.rpm
         val coolant = data.coolantTemp
         val isWarmedUp = coolant > 80
-        val rpmVariation = if (rpm > 0) (rpm * 0.02) else 0.0
+
+        if (rpm > 0) {
+            rpmSampleBuffer.add(rpm)
+            if (rpmSampleBuffer.size > 30) rpmSampleBuffer.removeAt(0)
+        }
+
+        val rpmVariation = if (rpmSampleBuffer.size >= 3) {
+            val mean = rpmSampleBuffer.average()
+            val variance = rpmSampleBuffer.map { (it - mean) * (it - mean) }.sum() / rpmSampleBuffer.size
+            kotlin.math.sqrt(variance)
+        } else if (rpm > 0) rpm * 0.02 else 0.0
         val healthScore = when {
             rpmVariation < 2.0 && isWarmedUp -> 95
             rpmVariation < 5.0 && isWarmedUp -> 80

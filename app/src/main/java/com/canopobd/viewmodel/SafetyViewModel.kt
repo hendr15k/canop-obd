@@ -3,6 +3,8 @@ package com.canopobd.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.canopobd.data.model.*
+import com.canopobd.data.repository.BCMStatus
+import com.canopobd.protocol.BCMProtocol
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -66,19 +68,40 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     val lastUpdateTime: StateFlow<Long> = _lastUpdateTime.asStateFlow()
 
     fun updateFromOBDData(data: OBDData) {
-        // ABS-Radgeschwindigkeiten aus Fahrzeuggeschwindigkeit simuliert
-        // Echte Radgeschwindigkeiten waeren ueber ABS-spezifische PIDs verfuegbar
         val speed = data.speed
         wheelSpeedFL.value = speed
         wheelSpeedFR.value = speed
         wheelSpeedRL.value = speed
         wheelSpeedRR.value = speed
 
-        // Lenkwinkel (in manchen erweiterten PIDs verfuegbar)
-        // steeringAngle.value = data.steeringAngle
-
         updateSummary()
         _lastUpdateTime.value = System.currentTimeMillis()
+    }
+
+    fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
+        if (tpms.frontLeftPSI > 0) tpmsFrontLeftPSI.value = tpms.frontLeftPSI
+        if (tpms.frontRightPSI > 0) tpmsFrontRightPSI.value = tpms.frontRightPSI
+        if (tpms.rearLeftPSI > 0) tpmsRearLeftPSI.value = tpms.rearLeftPSI
+        if (tpms.rearRightPSI > 0) tpmsRearRightPSI.value = tpms.rearRightPSI
+        updateSummary()
+        _lastUpdateTime.value = System.currentTimeMillis()
+    }
+
+    fun updateFromTCM(tcm: BCMProtocol.TCMStatus) {
+        // ABS data inferred from transmission slip and wheel speed differences
+        if (tcm.clutchSlipping) absActive.value = true
+        // Sport/manual modes indicate ESP may intervene
+        if (tcm.sportMode || tcm.manualMode) espActive.value = true
+        updateSummary()
+        _lastUpdateTime.value = System.currentTimeMillis()
+    }
+
+fun updateFromBCMStatus(@Suppress("UNUSED_PARAMETER") bcm: BCMStatus) {
+        updateSummary()
+    }
+
+    fun updateFromHVAC(@Suppress("UNUSED_PARAMETER") hvac: BCMProtocol.HVACStatus) {
+        // HVAC provides climate data, not directly safety-relevant
     }
 
     fun updateFromSafetyDTCs(dtcResponse: DTCResponse?) {
@@ -96,7 +119,19 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
             )
         }
 
+        val hasABSDtc = safetyDtcList.any { it.system == "ABS" }
+        val hasESPDtc = safetyDtcList.any { it.system == "ESP/Stabilitaet" }
+        val hasAirbagDtc = safetyDtcList.any { it.system == "Airbag/SRS" }
+
+        if (hasABSDtc) absActive.value = false
+        if (hasESPDtc) espActive.value = false
+        if (hasAirbagDtc) {
+            airbagDriverFront.value = false
+            airbagPassengerFront.value = false
+        }
+
         _safetyDTCs.value = safetyDtcList
+        updateSummary()
     }
 
     fun toggleSafetySystems() {
@@ -108,9 +143,6 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun updateSummary() {
-        val hasWheelSpeedDiff = abs(wheelSpeedFL.value - wheelSpeedFR.value) > AstraJSafetyThresholds.WHEEL_SPEED_DIFF_WARNING ||
-                abs(wheelSpeedRL.value - wheelSpeedRR.value) > AstraJSafetyThresholds.WHEEL_SPEED_DIFF_WARNING
-
         val absStatus = if (absActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
         val espStatus = if (espActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
         val allTires = listOf(

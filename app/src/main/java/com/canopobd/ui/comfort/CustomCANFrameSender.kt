@@ -37,6 +37,11 @@ fun CustomCANFrameSenderDialog(
     var data by remember { mutableStateOf("") }
     var response by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
+
+    val hexRegex = remember { Regex("^[0-9A-Fa-f]{1,2}( [0-9A-Fa-f]{1,2})*$") }
+    val canIdValid = remember(canId) { canId.isNotEmpty() && canId.toIntOrNull(16) != null && canId.toInt(16) <= 0x7FF }
+    val dataValid = remember(data) { data.isEmpty() || hexRegex.matches(data) }
     
     val presets = remember {
         listOf(
@@ -234,7 +239,8 @@ fun CustomCANFrameSenderDialog(
                         onValueChange = { canId = it.uppercase().filter { c -> c.isDigit() || c in 'A'..'F' }.take(3) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("z.B. 752") },
-                        singleLine = true
+                        singleLine = true,
+                        isError = canId.isNotEmpty() && !canIdValid
                     )
                 }
                 
@@ -246,8 +252,20 @@ fun CustomCANFrameSenderDialog(
                         onValueChange = { data = it.uppercase().filter { c -> c.isDigit() || c in 'A'..'F' || c == ' ' }.take(50) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("z.B. 3F 01 01") },
-                        singleLine = true
+                        singleLine = true,
+                        isError = data.isNotEmpty() && !dataValid
                     )
+                }
+
+                validationError?.let { error ->
+                    item {
+                        Text(
+                            text = error,
+                            color = colors.gaugeRed,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
                 
                 item {
@@ -257,11 +275,21 @@ fun CustomCANFrameSenderDialog(
                     ) {
                         Button(
                             onClick = {
+                                if (!canIdValid) {
+                                    validationError = "Ungueltige CAN-ID (1-7FF)"
+                                    return@Button
+                                }
+                                if (data.isNotEmpty() && !dataValid) {
+                                    validationError = "Ungueltige Hex-Daten (Format: XX XX XX)"
+                                    return@Button
+                                }
+                                validationError = null
                                 isLoading = true
                                 onSendFrame(canId, data)
                                 response = "Befehl gesendet..."
                             },
                             modifier = Modifier.weight(1f),
+                            enabled = canIdValid && (data.isEmpty() || dataValid),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                         ) {
                             Icon(Icons.Filled.Send, null, modifier = Modifier.size(16.dp))

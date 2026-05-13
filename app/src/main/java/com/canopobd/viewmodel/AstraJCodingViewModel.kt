@@ -26,6 +26,9 @@ class AstraJCodingViewModel : ViewModel() {
     private val _state = MutableStateFlow(CodingState())
     val state: StateFlow<CodingState> = _state.asStateFlow()
 
+    var onApplyOption: ((AstraJCodingModels.CodingOption, AstraJCodingModels.CodingValue) -> Unit)? = null
+    var onLoadValues: (suspend () -> Map<String, String>)? = null
+
     init {
         loadCategories()
     }
@@ -67,26 +70,23 @@ class AstraJCodingViewModel : ViewModel() {
     }
 
     fun saveCoding(option: AstraJCodingModels.CodingOption, value: String) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isSaving = true)
+        val codingValue = option.values.find { it.value == value }
+            ?: option.values.firstOrNull()
+            ?: return
 
-            try {
-                kotlinx.coroutines.delay(500)
-
-                val newValues = _state.value.currentValues.toMutableMap()
-                newValues[option.id] = value
-
-                _state.value = _state.value.copy(
-                    currentValues = newValues,
-                    isSaving = false,
-                    successMessage = "${option.displayName} wurde auf ${value} geändert"
-                )
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isSaving = false,
-                    error = "Fehler beim Speichern: ${e.message}"
-                )
-            }
+        val callback = onApplyOption
+        if (callback != null) {
+            callback.invoke(option, codingValue)
+            val newValues = _state.value.currentValues.toMutableMap()
+            newValues[option.id] = value
+            _state.value = _state.value.copy(
+                currentValues = newValues,
+                successMessage = null // result comes back via codingResult
+            )
+        } else {
+            _state.value = _state.value.copy(
+                error = "Keine Fahrzeugverbindung"
+            )
         }
     }
 
@@ -95,13 +95,30 @@ class AstraJCodingViewModel : ViewModel() {
             _state.value = _state.value.copy(isSaving = true)
 
             try {
-                kotlinx.coroutines.delay(1000)
-
-                _state.value = _state.value.copy(
-                    currentValues = profile.options,
-                    isSaving = false,
-                    successMessage = "Profil '${profile.name}' wurde angewendet"
-                )
+                val callback = onApplyOption
+                if (callback != null) {
+                    for ((optionId, valueStr) in profile.options) {
+                        val option = AstraJCodingRepository.getAllCategories()
+                            .flatMap { it.options }
+                            .find { it.id == optionId }
+                        val value = option?.values?.find { it.value == valueStr }
+                            ?: option?.values?.firstOrNull()
+                        if (option != null && value != null) {
+                            callback.invoke(option, value)
+                        }
+                    }
+                    _state.value = _state.value.copy(
+                        currentValues = profile.options,
+                        isSaving = false,
+                        successMessage = "Profil '${profile.name}' wird angewendet..."
+                    )
+                } else {
+                    _state.value = _state.value.copy(
+                        currentValues = profile.options,
+                        isSaving = false,
+                        error = "Keine Fahrzeugverbindung"
+                    )
+                }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isSaving = false,
@@ -114,16 +131,38 @@ class AstraJCodingViewModel : ViewModel() {
     fun loadCurrentValues() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
-            kotlinx.coroutines.delay(500)
-            _state.value = _state.value.copy(isLoading = false)
+            try {
+                val loader = onLoadValues
+                if (loader != null) {
+                    val values = loader.invoke()
+                    _state.value = _state.value.copy(
+                        currentValues = values,
+                        isLoading = false
+                    )
+                } else {
+                    _state.value = _state.value.copy(isLoading = false)
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Fehler beim Laden: ${e.message}"
+                )
+            }
         }
     }
 
     fun backupCurrentSettings() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(
-                successMessage = "Backup wurde erstellt"
-            )
+            val values = _state.value.currentValues
+            if (values.isNotEmpty()) {
+                _state.value = _state.value.copy(
+                    successMessage = "Backup erstellt: ${values.size} Werte gespeichert"
+                )
+            } else {
+                _state.value = _state.value.copy(
+                    error = "Keine Werte zum Sichern vorhanden"
+                )
+            }
         }
     }
 
