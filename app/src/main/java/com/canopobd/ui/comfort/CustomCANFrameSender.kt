@@ -312,7 +312,7 @@ fun CustomCANFrameSenderDialog(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF0D1117)
+                            color = colors.surfaceVariant
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text("Response:", color = colors.textSecondary, fontSize = 10.sp)

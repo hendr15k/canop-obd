@@ -131,22 +131,22 @@ data class TPMSData(
     val frontRightPressure: Double = 0.0,
     val rearLeftPressure: Double = 0.0,
     val rearRightPressure: Double = 0.0,
-    val frontLeftTemp: Double = 0.0,
-    val frontRightTemp: Double = 0.0,
-    val rearLeftTemp: Double = 0.0,
-    val rearRightTemp: Double = 0.0,
+    val frontLeftTemp: Int = 0,
+    val frontRightTemp: Int = 0,
+    val rearLeftTemp: Int = 0,
+    val rearRightTemp: Int = 0,
     val unit: String = "PSI",
     val systemType: String = "Direct"
 ) {
     val pressures: List<Double> get() = listOf(frontLeftPressure, frontRightPressure, rearLeftPressure, rearRightPressure)
-    val temperatures: List<Double> get() = listOf(frontLeftTemp, frontRightTemp, rearLeftTemp, rearRightTemp)
+    val temperatures: List<Int> get() = listOf(frontLeftTemp, frontRightTemp, rearLeftTemp, rearRightTemp)
 
     val avgPressure: Double get() = pressures.average()
     val maxPressure: Double get() = pressures.max()
     val minPressure: Double get() = pressures.min()
     val pressureDifference: Double get() = maxPressure - minPressure
 
-    val maxTemp: Double get() = temperatures.max()
+    val maxTemp: Double get() = temperatures.max()?.toDouble() ?: 0.0
 
     val isLowPressure: Boolean get() = when (unit) {
         "PSI" -> minPressure < AstraJSafetyThresholds.TPMS_LOW_PRESSURE_PSI && minPressure > 0.0

@@ -349,7 +349,7 @@ private fun LayoutPreview(primaryGaugeIds: Set<String>) {
                                     .size(80.dp)
                                     .clip(CircleShape)
                                     .background(canopoSurface.copy(alpha = 0.3f))
-                                    .border(1.dp, textDim.copy(alpha = 0.3f), CircleShape),
+                                    .border(1.dp, textDim.copy(alpha = 0.4f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(

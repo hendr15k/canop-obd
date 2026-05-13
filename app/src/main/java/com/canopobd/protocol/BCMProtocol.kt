@@ -459,19 +459,19 @@ object BCMProtocol {
         }
         
         private fun parseHVACStatusByte(data: ByteArray): HVACStatus {
-            val byte0 = data.getOrNull(0)?.toInt() ?: 0
-            val byte1 = data.getOrNull(1)?.toInt() ?: 0
-            val byte2 = data.getOrNull(2)?.toInt() ?: 0
-            val byte3 = data.getOrNull(3)?.toInt() ?: 0
-            val byte4 = data.getOrNull(4)?.toInt() ?: 0
-            val byte5 = data.getOrNull(5)?.toInt() ?: 0
-            val byte6 = data.getOrNull(6)?.toInt() ?: 0
+            val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
+            val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
+            val byte2 = data.getOrNull(2)?.toInt()?.and(0xFF) ?: 0
+            val byte3 = data.getOrNull(3)?.toInt()?.and(0xFF) ?: 0
+            val byte4 = data.getOrNull(4)?.toInt()?.and(0xFF) ?: 0
+            val byte5 = data.getOrNull(5)?.toInt()?.and(0xFF) ?: 0
+            val byte6 = data.getOrNull(6)?.toInt()?.and(0xFF) ?: 0
             
             return HVACStatus(
                 acCompressorActive = (byte0 and 0x01) != 0,
                 fanSpeed = (byte1 and 0x0F),
-                driverTemp = ((byte2 and 0xFF) - 64) * 0.5,
-                passengerTemp = ((byte3 and 0xFF) - 64) * 0.5,
+                driverTemp = (byte2 - 64) * 0.5,
+                passengerTemp = (byte3 - 64) * 0.5,
                 autoModeActive = (byte0 and 0x02) != 0,
                 recirculationActive = (byte0 and 0x04) != 0,
                 frontDefrostActive = (byte0 and 0x08) != 0,
@@ -496,27 +496,34 @@ object BCMProtocol {
         }
         
         private fun parseTPMSStatusByte(data: ByteArray): TPMSStatus {
-            val byte0 = data.getOrNull(0)?.toInt() ?: 0
-            val byte1 = data.getOrNull(1)?.toInt() ?: 0
-            val byte2 = data.getOrNull(2)?.toInt() ?: 0
-            val byte3 = data.getOrNull(3)?.toInt() ?: 0
-            val byte4 = data.getOrNull(4)?.toInt() ?: 0
-            val byte5 = data.getOrNull(5)?.toInt() ?: 0
-            
-            val frontLeftPsi = if (byte0 > 0) byte0 * 0.25 + 20.0 else 0.0
-            val frontRightPsi = if (byte1 > 0) byte1 * 0.25 + 20.0 else 0.0
-            val rearLeftPsi = if (byte2 > 0) byte2 * 0.25 + 20.0 else 0.0
-            val rearRightPsi = if (byte3 > 0) byte3 * 0.25 + 20.0 else 0.0
-            
+            val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
+            val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
+            val byte2 = data.getOrNull(2)?.toInt()?.and(0xFF) ?: 0
+            val byte3 = data.getOrNull(3)?.toInt()?.and(0xFF) ?: 0
+            val byte4 = data.getOrNull(4)?.toInt()?.and(0xFF) ?: 0
+            val byte5 = data.getOrNull(5)?.toInt()?.and(0xFF) ?: 0
+            val byte6 = data.getOrNull(6)?.toInt()?.and(0xFF) ?: 0
+            val byte7 = data.getOrNull(7)?.toInt()?.and(0xFF) ?: 0
+
+            val frontLeftPsi = if (byte0 > 0) byte0 * 0.25 else 0.0
+            val frontRightPsi = if (byte1 > 0) byte1 * 0.25 else 0.0
+            val rearLeftPsi = if (byte2 > 0) byte2 * 0.25 else 0.0
+            val rearRightPsi = if (byte3 > 0) byte3 * 0.25 else 0.0
+
+            val frontLeftTemp = if (byte4 in 1..200) byte4 - 40 else 0
+            val frontRightTemp = if (byte5 in 1..200) byte5 - 40 else 0
+            val rearLeftTemp = if (byte6 in 1..200) byte6 - 40 else 0
+            val rearRightTemp = if (byte7 in 1..200) byte7 - 40 else 0
+
             return TPMSStatus(
                 frontLeftPSI = frontLeftPsi,
                 frontRightPSI = frontRightPsi,
                 rearLeftPSI = rearLeftPsi,
                 rearRightPSI = rearRightPsi,
-                frontLeftTemp = if (byte4 in 1..200) byte4 - 50 else 0,
-                frontRightTemp = if (byte5 in 1..200) byte5 - 50 else 0,
-                rearLeftTemp = 0,
-                rearRightTemp = 0,
+                frontLeftTemp = frontLeftTemp,
+                frontRightTemp = frontRightTemp,
+                rearLeftTemp = rearLeftTemp,
+                rearRightTemp = rearRightTemp,
                 lowPressureWarning = (byte0 or byte1 or byte2 or byte3) == 0,
                 systemError = (byte0 and byte1 and byte2 and byte3) == 0xFF,
                 timestamp = System.currentTimeMillis()
@@ -550,9 +557,9 @@ object BCMProtocol {
                 0x06 -> 6
                 else -> 0
             }
-            
-            val oilTemp = if (byte1 in 1..200) byte1 - 40 else 0
-            val pressure = byte2 * 4
+
+            val oilTemp = if ((byte1 and 0xFF) in 1..200) (byte1 and 0xFF) - 40 else 0
+            val pressure = (byte2 and 0xFF) * 4
             
             return TCMStatus(
                 currentGear = gear,

@@ -595,7 +595,7 @@ fun DashboardScreen(
             com.canopobd.ui.power.PowerCalculatorDialog(calculation = powerCalculation, rpm = obdData.rpm, maf = obdData.mafRate, onDismiss = onTogglePowerCalculator)
         }
         if (showDriveScore) {
-            com.canopobd.ui.drivescore.DriveScoreDialog(score = driveScore, sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000, harshAccels = driveSession.harshAccels, harshBrakes = driveSession.harshBrakes, idleTimeSeconds = driveSession.idleTimeSeconds, avgRpm = driveSession.avgRpm, avgThrottle = driveSession.avgThrottle, avgSpeed = driveSession.avgSpeed, onDismiss = onToggleDriveScore, onResetScore = onResetDriveScore)
+            com.canopobd.ui.drivescore.DriveScoreDialog(score = driveScore, sessionDuration = (System.currentTimeMillis() - driveSession.startTime) / 1000, harshAccels = driveSession.harshAccels, harshBrakes = driveSession.harshBrakes, idleTimeSeconds = driveSession.idleTimeSeconds, avgRpm = driveSession.avgRpm, avgThrottle = driveSession.avgThrottle, avgSpeed = driveSession.avgSpeed, fuelConsumptionL100km = fuelConsumption?.avgL100km ?: 0.0, onDismiss = onToggleDriveScore, onResetScore = onResetDriveScore)
         }
         if (showShiftLight) {
             com.canopobd.ui.shiftlight.ShiftLightDialog(config = shiftLightConfig, currentRpm = obdData.rpm, onDismiss = onToggleShiftLight, onUpdateConfig = onUpdateShiftLightConfig)

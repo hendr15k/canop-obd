@@ -544,21 +544,21 @@ class OBDRepository(
                         engineLoad = results[OBDPID.ENGINE_LOAD] ?: _obdData.value.engineLoad,
                         fuelLevel = results[OBDPID.FUEL_LEVEL] ?: _obdData.value.fuelLevel,
                         batteryVoltage = batteryVoltage,
-                        timingAdvance = results[OBDPID.TIMING_ADVANCE] ?: 0.0,
-                        mafRate = results[OBDPID.MAF_RATE] ?: 0.0,
-                        fuelPressure = results[OBDPID.FUEL_PRESSURE] ?: 0.0,
-                        intakePressure = results[OBDPID.INTAKE_PRESSURE] ?: 0.0,
-                        runTime = results[OBDPID.RUN_TIME] ?: 0.0,
-                        fuelRailPressure = results[OBDPID.FUEL_RAIL_PRESSURE] ?: 0.0,
-                        commandedEGR = results[OBDPID.COMMANDED_EGR] ?: 0.0,
-                        egrTemp = results[OBDPID.EGR_TEMP] ?: 0.0,
-                        commandedEvapPurge = results[OBDPID.COMMANDED_EVAPORATIVE_PURGE] ?: 0.0,
-                        barometricPressure = results[OBDPID.BAROMETRIC_PRESSURE] ?: 0.0,
-                        o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: 0.0,
-                        o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: 0.0,
-                        catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: 0.0,
-                        controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: 0.0,
-                        absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: 0.0,
+                        timingAdvance = results[OBDPID.TIMING_ADVANCE] ?: _obdData.value.timingAdvance,
+                        mafRate = results[OBDPID.MAF_RATE] ?: _obdData.value.mafRate,
+                        fuelPressure = results[OBDPID.FUEL_PRESSURE] ?: _obdData.value.fuelPressure,
+                        intakePressure = results[OBDPID.INTAKE_PRESSURE] ?: _obdData.value.intakePressure,
+                        runTime = results[OBDPID.RUN_TIME] ?: _obdData.value.runTime,
+                        fuelRailPressure = results[OBDPID.FUEL_RAIL_PRESSURE] ?: _obdData.value.fuelRailPressure,
+                        commandedEGR = results[OBDPID.COMMANDED_EGR] ?: _obdData.value.commandedEGR,
+                        egrTemp = results[OBDPID.EGR_TEMP] ?: _obdData.value.egrTemp,
+                        commandedEvapPurge = results[OBDPID.COMMANDED_EVAPORATIVE_PURGE] ?: _obdData.value.commandedEvapPurge,
+                        barometricPressure = results[OBDPID.BAROMETRIC_PRESSURE] ?: _obdData.value.barometricPressure,
+                        o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: _obdData.value.o2VoltageB1S1,
+                        o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: _obdData.value.o2VoltageB1S2,
+                        catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: _obdData.value.catalystTemp,
+                        controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: _obdData.value.controlModuleVoltage,
+                        absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: _obdData.value.absoluteLoadValue,
                         engineFuelRate = fuelRate,
                         shortTermFuelTrimB1 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK1] ?: 0.0,
                         longTermFuelTrimB1 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK1] ?: 0.0,
@@ -580,7 +580,15 @@ class OBDRepository(
                         turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
                         vin = storedVin,
                         timestamp = now,
-                        distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
+distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
+                    )
+
+                    // Feed computed trip data to GPSTracker for persistence
+                    gpsTracker.updateTripOBDData(
+                        avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
+                        maxRpm = results[OBDPID.RPM]?.let { maxOf(_tripData.value.maxRpm, it) } ?: _tripData.value.maxRpm,
+                        fuelUsedLiters = tripFuelUsedSum.toFloat(),
+                        vin = storedVin
                     )
 
                     mode22Counter++

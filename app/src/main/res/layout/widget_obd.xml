@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/widget_app_name"
-        android:textColor="#7B2FFF"
+        android:textColor="#A78BFA"
         android:textSize="14sp"
         android:textStyle="bold" />
 
@@ -39,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_default_value"
-            android:textColor="#3282B8"
+            android:textColor="#5DADE2"
             android:textSize="28sp"
             android:textStyle="bold"
             android:gravity="center" />
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_rpm_label"
-            android:textColor="#606060"
+            android:textColor="#B8C4D0"
             android:textSize="11sp"
             android:gravity="center" />
 
@@ -68,7 +68,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_speed_unit"
-            android:textColor="#606060"
+            android:textColor="#B8C4D0"
             android:textSize="11sp"
             android:gravity="center" />
 

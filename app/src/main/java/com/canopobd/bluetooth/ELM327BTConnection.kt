@@ -659,6 +659,7 @@ class ELM327BTConnection(
             Result.success(Unit)
         } catch (e: Exception) {
             _isConnected.value = false
+            try { socket?.close() } catch (_: Exception) { }
             Result.failure(e)
         }
     }

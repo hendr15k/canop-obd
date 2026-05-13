@@ -889,30 +889,30 @@ class DashboardViewModel private constructor(
             com.canopobd.ui.tpms.TireData(
                 position = "Vorne Links",
                 pressure = (tpms.frontLeftPressure * 0.0689476).toFloat(),
-                temperature = 0,
+                temperature = tpms.frontLeftTemp,
                 isLow = tpms.frontLeftPressure > 0 && tpms.frontLeftPressure < 28.0,
-                sensorBattery = 0
+                sensorBattery = if (tpms.frontLeftPressure > 0) 100 else 0
             ),
             com.canopobd.ui.tpms.TireData(
                 position = "Vorne Rechts",
                 pressure = (tpms.frontRightPressure * 0.0689476).toFloat(),
-                temperature = 0,
+                temperature = tpms.frontRightTemp,
                 isLow = tpms.frontRightPressure > 0 && tpms.frontRightPressure < 28.0,
-                sensorBattery = 0
+                sensorBattery = if (tpms.frontRightPressure > 0) 100 else 0
             ),
             com.canopobd.ui.tpms.TireData(
                 position = "Hinten Links",
                 pressure = (tpms.rearLeftPressure * 0.0689476).toFloat(),
-                temperature = 0,
+                temperature = tpms.rearLeftTemp,
                 isLow = tpms.rearLeftPressure > 0 && tpms.rearLeftPressure < 28.0,
-                sensorBattery = 0
+                sensorBattery = if (tpms.rearLeftPressure > 0) 100 else 0
             ),
             com.canopobd.ui.tpms.TireData(
                 position = "Hinten Rechts",
                 pressure = (tpms.rearRightPressure * 0.0689476).toFloat(),
-                temperature = 0,
+                temperature = tpms.rearRightTemp,
                 isLow = tpms.rearRightPressure > 0 && tpms.rearRightPressure < 28.0,
-                sensorBattery = 0
+                sensorBattery = if (tpms.rearRightPressure > 0) 100 else 0
             )
         )
     }
@@ -1384,18 +1384,19 @@ class DashboardViewModel private constructor(
 
     // ========== Turbo Analysis ==========
 
-    private fun startTurboAnalysisCollection() {
-        _turboAnalysisJob.value?.cancel()
-        _turboAnalysisJob.value = viewModelScope.launch {
-            obdData.collect { data ->
-                if (data.rpm > 0) {
-                    updateAllTurboMetrics(data)
-                    updateEmissionsAnalyzers(data)
-                    updateExtendedAnalyzers(data)
-                }
-            }
-        }
-    }
+private fun startTurboAnalysisCollection() {
+         _turboAnalysisJob.value?.cancel()
+         _turboAnalysisJob.value = viewModelScope.launch {
+             obdData.collect { data ->
+                 if (data.rpm > 0) {
+                     updateAllTurboMetrics(data)
+                     updateEmissionsAnalyzers(data)
+                     updateExtendedAnalyzers(data)
+                 }
+             }
+         }
+         turboViewModel.updateDriveSession(_driveSession.value)
+     }
 
     // ========== Emissions Analyzers ==========
 
@@ -1829,14 +1830,19 @@ class DashboardViewModel private constructor(
         return warnings
     }
 
-    private fun updateAllTurboMetrics(data: OBDData) {
-        turboViewModel.updateFromOBDData(data, _carProfileState.value)
+private fun updateAllTurboMetrics(data: OBDData) {
+         val currentSession = _driveSession.value
+         val updatedSession = currentSession.copy(
+             avgRpm = currentSession.avgRpm.coerceAtLeast(data.rpm),
+             endTime = System.currentTimeMillis()
+         )
+         turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
-        fuelRailPressure.value = data.fuelRailPressure
-        injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
-            data.mafRate / 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
-        } else 0.0
-    }
+         fuelRailPressure.value = data.fuelRailPressure
+         injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
+             data.mafRate / 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
+         } else 0.0
+     }
 
     fun analyzeBoost(
         actualKpa: Double,

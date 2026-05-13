@@ -247,7 +247,7 @@ fun Mode22BrowserDialog(
                         .fillMaxWidth()
                         .weight(1f),
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF0D1117)
+                    color = colors.surfaceVariant
                 ) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize()

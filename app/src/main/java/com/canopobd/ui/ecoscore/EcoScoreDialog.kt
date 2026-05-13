@@ -166,7 +166,7 @@ private fun EcoScoreCircle(ecoScore: EcoScoreData) {
                 val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
 
                 drawArc(
-                    color = textDim.copy(alpha = 0.3f),
+                    color = textDim.copy(alpha = 0.4f),
                     startAngle = 150f,
                     sweepAngle = 240f,
                     useCenter = false,
@@ -491,7 +491,7 @@ private fun ReichweiteCard(rangeEstimation: RangeEstimation) {
                     .fillMaxWidth()
                     .height(12.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(textDim.copy(alpha = 0.3f))
+                    .background(textDim.copy(alpha = 0.4f))
             ) {
                 Box(
                     modifier = Modifier
@@ -586,7 +586,7 @@ private fun FahrstilCard(drivingStyle: DrivingStyleAnalysis) {
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(textDim.copy(alpha = 0.3f))
+                    .background(textDim.copy(alpha = 0.4f))
             ) {
                 Box(
                     modifier = Modifier
@@ -614,7 +614,7 @@ private fun FahrstilCard(drivingStyle: DrivingStyleAnalysis) {
                                 .width(80.dp)
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(textDim.copy(alpha = 0.3f))
+                                .background(textDim.copy(alpha = 0.4f))
                         ) {
                             val scoreColor = when {
                                 value >= 70 -> gaugeGreen

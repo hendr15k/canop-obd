@@ -256,7 +256,7 @@ private fun BoostPressureCard(
                             modifier = Modifier
                                 .width(1.dp)
                                 .fillMaxHeight()
-                                .background(colors.textDim.copy(alpha = 0.3f))
+                                .background(colors.textDim.copy(alpha = 0.4f))
                         )
                     }
                 }

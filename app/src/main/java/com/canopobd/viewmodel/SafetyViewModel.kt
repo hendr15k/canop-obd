@@ -43,6 +43,8 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     val tpmsRearLeftPSI = MutableStateFlow(0.0)
     val tpmsRearRightPSI = MutableStateFlow(0.0)
 
+    private var lastTPMS: BCMProtocol.TPMSStatus? = null
+
     // Airbag-Status
     val airbagDriverFront = MutableStateFlow(true)
     val airbagPassengerFront = MutableStateFlow(true)
@@ -125,11 +127,12 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         brakeWearRearRight.value = rearRemaining
     }
 
-    fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
-        if (tpms.frontLeftPSI > 0) tpmsFrontLeftPSI.value = tpms.frontLeftPSI
-        if (tpms.frontRightPSI > 0) tpmsFrontRightPSI.value = tpms.frontRightPSI
-        if (tpms.rearLeftPSI > 0) tpmsRearLeftPSI.value = tpms.rearLeftPSI
-        if (tpms.rearRightPSI > 0) tpmsRearRightPSI.value = tpms.rearRightPSI
+fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
+         lastTPMS = tpms
+         if (tpms.frontLeftPSI > 0) tpmsFrontLeftPSI.value = tpms.frontLeftPSI
+         if (tpms.frontRightPSI > 0) tpmsFrontRightPSI.value = tpms.frontRightPSI
+         if (tpms.rearLeftPSI > 0) tpmsRearLeftPSI.value = tpms.rearLeftPSI
+         if (tpms.rearRightPSI > 0) tpmsRearRightPSI.value = tpms.rearRightPSI
         updateSummary()
         _lastUpdateTime.value = System.currentTimeMillis()
     }
@@ -242,12 +245,16 @@ fun updateFromBCMStatus(bcm: BCMStatus) {
                 brakePressure = brakePressure.value
             ),
             brakeWear = BrakeWear(brakeWearFrontLeft.value, brakeWearFrontRight.value, brakeWearRearLeft.value, brakeWearRearRight.value),
-            tpmsData = TPMSData(
-                frontLeftPressure = tpmsFrontLeftPSI.value,
-                frontRightPressure = tpmsFrontRightPSI.value,
-                rearLeftPressure = tpmsRearLeftPSI.value,
-                rearRightPressure = tpmsRearRightPSI.value
-            ),
+tpmsData = TPMSData(
+                 frontLeftPressure = tpmsFrontLeftPSI.value,
+                 frontRightPressure = tpmsFrontRightPSI.value,
+                 rearLeftPressure = tpmsRearLeftPSI.value,
+                 rearRightPressure = tpmsRearRightPSI.value,
+                 frontLeftTemp = lastTPMS?.frontLeftTemp ?: 0,
+                 frontRightTemp = lastTPMS?.frontRightTemp ?: 0,
+                 rearLeftTemp = lastTPMS?.rearLeftTemp ?: 0,
+                 rearRightTemp = lastTPMS?.rearRightTemp ?: 0
+             ),
             airbagStatus = AirbagStatus(
                 driverFront = airbagDriverFront.value,
                 passengerFront = airbagPassengerFront.value,

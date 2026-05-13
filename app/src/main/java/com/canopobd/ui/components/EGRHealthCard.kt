@@ -105,7 +105,7 @@ fun EGRHealthCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
-                    color = colors.textDim.copy(alpha = 0.1f)
+                    color = colors.textDim.copy(alpha = 0.4f)
                 ) {
                     Row(
                         modifier = Modifier.padding(10.dp),

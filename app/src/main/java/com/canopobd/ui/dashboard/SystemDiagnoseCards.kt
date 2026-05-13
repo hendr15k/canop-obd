@@ -254,7 +254,7 @@ fun EmissionsReadinessCard(
                     if (missingMonitors.size > 4) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = colors.textDim.copy(alpha = 0.3f)
+                            color = colors.textDim.copy(alpha = 0.4f)
                         ) {
                             Text(
                                 text = "+${missingMonitors.size - 4}",

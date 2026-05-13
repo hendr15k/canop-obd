@@ -353,40 +353,40 @@ class CANRepository(private val connection: ELM327BTConnection) {
         return canMonitor.clearFilters()
     }
 
-    private fun parseTorque(data: ByteArray): Double {
-        if (data.size < 2) return 0.0
-        return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF) - 500).toDouble()
-    }
+private fun parseTorque(data: ByteArray): Double? {
+         if (data.size < 2) return null
+         return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF) - 500).toDouble()
+     }
 
-    private fun parsePressure(data: ByteArray): Double {
-        if (data.size < 2) return 0.0
-        return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)).toDouble()
-    }
+     private fun parsePressure(data: ByteArray): Double? {
+         if (data.size < 2) return null
+         return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)).toDouble()
+     }
 
-    private fun parseTemperature(data: ByteArray): Double {
-        if (data.isEmpty()) return 0.0
-        return ((data[0].toInt() and 0xFF) - 40).toDouble()
-    }
+     private fun parseTemperature(data: ByteArray): Double? {
+         if (data.isEmpty()) return null
+         return ((data[0].toInt() and 0xFF) - 40).toDouble()
+     }
 
-    private fun parseVoltage(data: ByteArray): Double {
-        if (data.isEmpty()) return 0.0
-        return (data[0].toInt() and 0xFF) / 10.0
-    }
+     private fun parseVoltage(data: ByteArray): Double? {
+         if (data.isEmpty()) return null
+         return (data[0].toInt() and 0xFF) / 10.0
+     }
 
-    private fun parsePercent(data: ByteArray): Double {
-        if (data.isEmpty()) return 0.0
-        return (data[0].toInt() and 0xFF) * 100.0 / 255.0
-    }
+     private fun parsePercent(data: ByteArray): Double? {
+         if (data.isEmpty()) return null
+         return (data[0].toInt() and 0xFF) * 100.0 / 255.0
+     }
 
-    private fun parseSpeed(data: ByteArray): Double {
-        if (data.size < 2) return 0.0
-        return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)).toDouble()
-    }
+     private fun parseSpeed(data: ByteArray): Double? {
+         if (data.size < 2) return null
+         return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)).toDouble()
+     }
 
-    private fun parseFuelConsumption(data: ByteArray): Double {
-        if (data.size < 2) return 0.0
-        return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)) / 20.0
-    }
+     private fun parseFuelConsumption(data: ByteArray): Double? {
+         if (data.size < 2) return null
+         return ((data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)) / 20.0
+     }
 
     private fun parseVIN(data: ByteArray): String {
         return data.filter { it.toInt() in 0x20..0x7E }

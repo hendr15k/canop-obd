@@ -235,7 +235,7 @@ private fun ConsumptionGaugeSection(currentL100km: Double) {
                     val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
 
                     drawArc(
-                        color = textDim.copy(alpha = 0.2f),
+                        color = textDim.copy(alpha = 0.4f),
                         startAngle = 150f,
                         sweepAngle = 240f,
                         useCenter = false,
@@ -412,7 +412,7 @@ private fun RangeCard(rangeKm: Double, fuelLevelPercent: Double, fuelLiters: Dou
                     .fillMaxWidth()
                     .height(6.dp),
                 color = rangeColor,
-                trackColor = textDim.copy(alpha = 0.2f),
+                trackColor = textDim.copy(alpha = 0.4f),
                 strokeCap = StrokeCap.Round
             )
 
@@ -704,7 +704,7 @@ private fun WorkshopComparisonCard(
                     val y = (size.height - barHeight) / 2f
 
                     drawRoundRect(
-                        color = textDim.copy(alpha = 0.2f),
+                        color = textDim.copy(alpha = 0.4f),
                         topLeft = Offset(0f, y),
                         size = Size(size.width, barHeight),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())

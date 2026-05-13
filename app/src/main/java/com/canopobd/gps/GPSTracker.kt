@@ -29,6 +29,15 @@ class GPSTracker(private val context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
+    var tripAvgRpm: Double = 0.0
+        private set
+    var tripMaxRpm: Double = 0.0
+        private set
+    var tripFuelUsedLiters: Float = 0f
+        private set
+    var tripVin: String = ""
+        private set
+
     fun hasLocationPermission(): Boolean {
         return context.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
@@ -158,10 +167,10 @@ class GPSTracker(private val context: Context) {
                     distanceKm = trip.distanceKm.toFloat(),
                     avgSpeedKmh = trip.avgSpeedKmh.toFloat(),
                     maxSpeedKmh = trip.maxSpeedKmh.toFloat(),
-                    avgRpm = 0.0,
-                    maxRpm = 0.0,
-                    fuelUsedLiters = 0f,
-                    vin = ""
+                    avgRpm = tripAvgRpm,
+                    maxRpm = tripMaxRpm,
+                    fuelUsedLiters = tripFuelUsedLiters,
+                    vin = tripVin
                 )
                 val tripRowId = db.tripDao().insert(tripEntity)
 
@@ -264,6 +273,13 @@ class GPSTracker(private val context: Context) {
                 db.tripDao().deleteAll()
             } catch (_: Exception) { }
         }
+    }
+
+    fun updateTripOBDData(avgRpm: Double, maxRpm: Double, fuelUsedLiters: Float, vin: String) {
+        tripAvgRpm = avgRpm
+        tripMaxRpm = maxRpm
+        tripFuelUsedLiters = fuelUsedLiters
+        tripVin = vin
     }
 
     fun getLastKnownLocation(callback: (GPSLocation?) -> Unit) {

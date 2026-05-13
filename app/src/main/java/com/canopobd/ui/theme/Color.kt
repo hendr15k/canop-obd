@@ -29,13 +29,13 @@ val gaugeBlueGlow = Color(0xFF2563EB)
 // Text colors
 val textPrimary = Color(0xFFF8FAFC)
 val textSecondary = Color(0xFF94A3B8)
-val textDim = Color(0xFF475569)
-val textMuted = Color(0xFF334155)
+val textDim = Color(0xFF8899AA)
+val textMuted = Color(0xFF64748B)
 
 // Background surfaces
-val surfaceCard = Color(0xFF0F0F18)
-val surfaceElevated = Color(0xFF1A1A28)
-val surfaceOverlay = Color(0xFF252535)
+val surfaceCard = Color(0xFF13132A)
+val surfaceElevated = Color(0xFF1E1E34)
+val surfaceOverlay = Color(0xFF2A2A40)
 
 // Border colors
 val borderSubtle = Color(0xFF1E293B)
@@ -124,8 +124,8 @@ val DefaultLightAppColors = AppColors(
     secondary = canopoSecondary,
     gaugeRed = gaugeRed,
     gaugeOrange = gaugeOrange,
-    gaugeYellow = gaugeYellow,
-    gaugeGreen = gaugeGreen,
+    gaugeYellow = Color(0xFFB45309),
+    gaugeGreen = Color(0xFF15803D),
     gaugeCyan = gaugeCyan,
     gaugeRedGlow = gaugeRedGlow,
     gaugeOrangeGlow = gaugeOrangeGlow,
@@ -133,17 +133,17 @@ val DefaultLightAppColors = AppColors(
     gaugeBlueGlow = gaugeBlueGlow,
     textPrimary = Color(0xFF1E293B),
     textSecondary = Color(0xFF64748B),
-    textDim = Color(0xFF94A3B8),
-    textMuted = Color(0xFFCBD5E1),
+    textDim = Color(0xFF64748B),
+    textMuted = Color(0xFF94A3B8),
     surfaceCard = Color(0xFFFFFFFF),
     surfaceElevated = Color(0xFFF8FAFC),
     surfaceOverlay = Color(0xFFF1F5F9),
     borderSubtle = Color(0xFFE2E8F0),
     borderDefault = Color(0xFFCBD5E1),
     borderAccent = canopoAccent,
-    connectionExcellent = gaugeGreen,
-    connectionGood = Color(0xFF4ADE80),
-    connectionFair = gaugeYellow,
+    connectionExcellent = Color(0xFF15803D),
+    connectionGood = Color(0xFF22C55E),
+    connectionFair = Color(0xFFB45309),
     connectionPoor = gaugeRed
 )
 
@@ -163,8 +163,8 @@ fun com.canopobd.data.model.ColorTheme.toAppColors(mode: AppThemeMode = AppTheme
             secondary = aColor.copy(alpha = 0.8f),
             gaugeRed = Color(this.gaugeRed),
             gaugeOrange = Color(this.gaugeOrange),
-            gaugeYellow = Color(this.gaugeYellow),
-            gaugeGreen = Color(this.gaugeGreen),
+            gaugeYellow = Color(0xFFB45309),
+            gaugeGreen = Color(0xFF15803D),
             gaugeCyan = Color(0xFF06B6D4),
             gaugeRedGlow = Color(this.gaugeRed),
             gaugeOrangeGlow = Color(this.gaugeOrange),
@@ -172,8 +172,8 @@ fun com.canopobd.data.model.ColorTheme.toAppColors(mode: AppThemeMode = AppTheme
             gaugeBlueGlow = Color(0xFF2563EB),
             textPrimary = Color(0xFF1E293B),
             textSecondary = Color(0xFF64748B),
-            textDim = Color(0xFF94A3B8),
-            textMuted = Color(0xFFCBD5E1),
+            textDim = Color(0xFF64748B),
+            textMuted = Color(0xFF94A3B8),
             surfaceCard = Color(0xFFFFFFFF),
             surfaceElevated = Color(0xFFF8FAFC),
             surfaceOverlay = Color(0xFFF1F5F9),

@@ -1088,7 +1088,7 @@ private fun ChargeAirTempCard(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth(normalMarker)
-                        .background(colors.textDim.copy(alpha = 0.5f))
+                        .background(colors.textDim.copy(alpha = 0.55f))
                 )
             }
             Row(

@@ -33,6 +33,7 @@ fun DriveScoreDialog(
     avgRpm: Double,
     avgThrottle: Double,
     avgSpeed: Double,
+    fuelConsumptionL100km: Double = 0.0,
     onDismiss: () -> Unit,
     onResetScore: () -> Unit
 ) {
@@ -173,7 +174,7 @@ fun DriveScoreDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             StatItem(label = stringResource(R.string.drive_score_idle_time), value = formatDuration(idleTimeSeconds))
-                            StatItem(label = stringResource(R.string.drive_score_fuel_consumption), value = stringResource(R.string.drive_score_fuel_placeholder))
+                            StatItem(label = stringResource(R.string.drive_score_fuel_consumption), value = if (fuelConsumptionL100km > 0) String.format("%.1f L/100km", fuelConsumptionL100km) else "--- L/100km")
                         }
                     }
                 }

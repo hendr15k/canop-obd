@@ -290,18 +290,25 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
 
     private var turboAnalysisJob: Job? = null
 
-    fun startTurboAnalysisCollection(obdDataFlow: kotlinx.coroutines.flow.Flow<OBDData>, carProfileFlow: kotlinx.coroutines.flow.Flow<CarProfile>) {
-        turboAnalysisJob?.cancel()
-        turboAnalysisJob = viewModelScope.launch {
-            kotlinx.coroutines.flow.combine(obdDataFlow, carProfileFlow) { data, carProfile ->
-                data to carProfile
-            }.collect { (data, carProfile) ->
-                if (data.rpm > 0) {
-                    updateFromOBDDataWithDriveSession(data, carProfile, DriveSession())
-                }
-            }
-        }
-    }
+    private val _currentDriveSession = MutableStateFlow(DriveSession())
+
+fun startTurboAnalysisCollection(obdDataFlow: kotlinx.coroutines.flow.Flow<OBDData>, carProfileFlow: kotlinx.coroutines.flow.Flow<CarProfile>, driveSession: DriveSession = DriveSession()) {
+         turboAnalysisJob?.cancel()
+         _currentDriveSession.value = driveSession
+         turboAnalysisJob = viewModelScope.launch {
+             kotlinx.coroutines.flow.combine(obdDataFlow, carProfileFlow) { data, carProfile ->
+                 data to carProfile
+             }.collect { (data, carProfile) ->
+                 if (data.rpm > 0) {
+                     updateFromOBDDataWithDriveSession(data, carProfile, _currentDriveSession.value)
+                 }
+             }
+         }
+     }
+
+     fun updateDriveSession(driveSession: DriveSession) {
+         _currentDriveSession.value = driveSession
+     }
 
     override fun onCleared() {
         turboAnalysisJob?.cancel()

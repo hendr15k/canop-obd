@@ -266,7 +266,7 @@ fun ClimateControlDialog(
                                             .size(width = 8.dp, height = (16 + index * 4).dp)
                                             .clip(RoundedCornerShape(2.dp))
                                             .background(
-                                                if (isActive) colors.gaugeCyan else colors.textDim.copy(alpha = 0.3f)
+                                                if (isActive) colors.gaugeCyan else colors.textDim.copy(alpha = 0.4f)
                                             )
                                     )
                                 }

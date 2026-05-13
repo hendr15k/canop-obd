@@ -251,7 +251,7 @@ class EGTMonitor(
             if (temp > STRESS_TEMP_BASE) {
                 val excess = temp - STRESS_TEMP_BASE
                 stressUnits += excess * STRESS_RATE_PER_10C
-                totalTimeHours += 0.5 // Angenommen: 30 Sekunden pro Messung
+                totalTimeHours += (30.0 / 3600.0) // Angenommen: 30 Sekunden pro Messung
             }
         }
 
