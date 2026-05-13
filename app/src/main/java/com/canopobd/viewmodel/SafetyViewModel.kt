@@ -113,10 +113,16 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
         val absStatus = if (absActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
         val espStatus = if (espActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
+        val allTires = listOf(
+            tpmsFrontLeftPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,
+            tpmsFrontRightPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,
+            tpmsRearLeftPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,
+            tpmsRearRightPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI
+        )
         val tpmsStatus = when {
-            tpmsFrontLeftPSI.value > 0 && tpmsFrontLeftPSI.value < AstraJSafetyThresholds.TPMS_CRITICAL_PSI -> SystemStatus.FAULT
-            tpmsFrontLeftPSI.value > 0 && tpmsFrontLeftPSI.value < AstraJSafetyThresholds.TPMS_LOW_PRESSURE_PSI -> SystemStatus.WARNING
-            tpmsFrontLeftPSI.value > 0 -> SystemStatus.OK
+            allTires.any { it.first > 0 && it.first < AstraJSafetyThresholds.TPMS_CRITICAL_PSI } -> SystemStatus.FAULT
+            allTires.any { it.first > 0 && it.first < AstraJSafetyThresholds.TPMS_LOW_PRESSURE_PSI } -> SystemStatus.WARNING
+            allTires.any { it.first > 0 } -> SystemStatus.OK
             else -> SystemStatus.UNKNOWN
         }
 

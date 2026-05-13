@@ -365,11 +365,9 @@ private fun EGTGraph(
     criticalThreshold: Double,
     colors: AppColors
 ) {
-    val chartData = remember {
-        if (history.isEmpty()) {
+    val chartData = remember(history) {
+        history.takeLast(20).ifEmpty {
             List(20) { (300 + (it * 30)).toDouble() }
-        } else {
-            history.takeLast(20)
         }
     }
 

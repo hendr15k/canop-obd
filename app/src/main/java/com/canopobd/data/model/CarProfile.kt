@@ -104,6 +104,7 @@ data class TimingChainState(
     val phase: TimingChainPhase = TimingChainPhase.UNKNOWN,
     val recordedSamples: Int = 0,
     val coldSampleCount: Int = 0,
+    val warmSampleCount: Int = 0,
     val avgRpmCold: Double = 0.0,
     val avgRpmWarm: Double = 0.0,
     val rpmDeviationCold: Double = 0.0,

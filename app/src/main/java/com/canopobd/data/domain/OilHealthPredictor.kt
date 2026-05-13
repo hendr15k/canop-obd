@@ -315,7 +315,7 @@ class OilHealthPredictor(
         val effectiveKm = kmSinceChange * drivingFactor * shortTripFactor + thermalAddition * 1000.0
 
         // Gesamte Degradation
-        val totalDegradation = (mileageDegradation * drivingFactor * shortTripFactor + thermalAddition)
+        val totalDegradation = (mileageDegradation + thermalAddition)
             .coerceIn(0.0, 100.0)
 
         // Empfohlenes Wechselintervall basierend auf Fahrprofil

@@ -422,9 +422,13 @@ object BCMProtocol {
         
         fun acOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_ON.toByte())
         fun acOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_OFF.toByte())
+        fun recirculationFrame(enable: Boolean) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), if (enable) RECIRCULATION.toByte() else AC_OFF.toByte())
         fun defrostFrontFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), DEFROST_FRONT.toByte())
+        fun defrostFrontOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_OFF.toByte())
         fun defrostRearFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), DEFROST_REAR.toByte())
+        fun defrostRearOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_OFF.toByte())
         fun defrostAllFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), (DEFROST_FRONT or DEFROST_REAR or DEFROST_MIRROR).toByte())
+        fun defrostMirrorsOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_OFF.toByte())
         fun blowerSpeedFrame(speed: Int) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), (0x80 or speed.coerceIn(0, 6)).toByte())
         fun temperatureFrame(temp: Int) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), temp.coerceIn(16, 32).toByte())
         fun autoModeFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AUTO_MODE.toByte())

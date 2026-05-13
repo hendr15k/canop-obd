@@ -166,7 +166,7 @@ private fun OverdueItem(item: ProblemMileageMap, currentKm: Int) {
                     color = gaugeRed
                 )
                 Text(
-                    text = "${item.typicalRangeEndKm - currentKm} km überfällig · ${item.description.take(40)}",
+                    text = "${currentKm - item.typicalRangeEndKm} km überfällig · ${item.description.take(40)}",
                     fontSize = 10.sp,
                     color = gaugeRed.copy(alpha = 0.8f)
                 )

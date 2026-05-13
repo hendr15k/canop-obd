@@ -49,8 +49,8 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         val boostAnalysis = analyzeBoost(
             absoluteBoostKpa, targetBoostKpa, calibration
         )
-        val wgAnalysis = analyzeWastegate(
-            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration
+        val wgAnalysis = analyzeWastegateWithSession(
+            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, absoluteBoostKpa, null
         )
         wastegatePosition.value = wgAnalysis.position
 
@@ -87,7 +87,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
             absoluteBoostKpa, targetBoostKpa, calibration
         )
         val wgAnalysis = analyzeWastegateWithSession(
-            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, driveSession
+            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, absoluteBoostKpa, driveSession
         )
         wastegatePosition.value = wgAnalysis.position
 
@@ -193,7 +193,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         load: Double,
         calibration: AstraJ14TurboCalibration
     ): WastegateAnalysisResult {
-        return analyzeWastegateWithSession(dutyCycle, rpm, load, calibration, null)
+        return analyzeWastegateWithSession(dutyCycle, rpm, load, calibration, 0.0, null)
     }
 
     private fun analyzeWastegateWithSession(
@@ -201,6 +201,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         rpm: Int,
         load: Double,
         calibration: AstraJ14TurboCalibration,
+        actualBoostKpa: Double,
         driveSession: DriveSession?
     ): WastegateAnalysisResult {
         val avgWastegate = if (driveSession != null && driveSession.wastegateSampleCount > 0) {
@@ -214,7 +215,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
             wastegateDuty = dutyCycle,
             avgWastegateDuty = avgWastegate,
             targetBoost = targetBoostKpa,
-            actualBoost = 0.0,
+            actualBoost = actualBoostKpa,
             rpm = rpm.toDouble(),
             engineLoad = load
         )

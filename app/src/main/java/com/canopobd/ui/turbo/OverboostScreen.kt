@@ -328,7 +328,7 @@ private fun BoostVsTarget(
                     color = deviationColor
                 )
                 Text(
-                    text = "Effizienz: %.0f%%".format((targetBoost / currentBoost.coerceAtLeast(0.01)) * 100),
+                    text = "Effizienz: %.0f%%".format((currentBoost.coerceAtLeast(0.01) / targetBoost) * 100),
                     fontSize = 11.sp,
                     color = colors.textSecondary
                 )
@@ -372,8 +372,8 @@ private fun OverboostHistoryChart(
     history: List<OverboostHistory>,
     colors: AppColors
 ) {
-    val sampleData = remember {
-        if (history.isEmpty()) {
+    val sampleData = remember(history) {
+        history.ifEmpty {
             listOf(
                 OverboostHistory(System.currentTimeMillis() - 300000, 1.25, 8),
                 OverboostHistory(System.currentTimeMillis() - 240000, 1.18, 6),
@@ -381,8 +381,6 @@ private fun OverboostHistoryChart(
                 OverboostHistory(System.currentTimeMillis() - 120000, 1.28, 7),
                 OverboostHistory(System.currentTimeMillis() - 60000, 1.22, 5)
             )
-        } else {
-            history
         }
     }
 

@@ -941,13 +941,13 @@ class DashboardViewModel private constructor(
                     val current = _climateState.value
                     val newState = current.copy(isRecirculation = true)
                     _climateState.value = newState
-                    BCMProtocol.Climate.autoModeFrame().let { bytesToHex(it) }
+                    BCMProtocol.Climate.recirculationFrame(true).let { bytesToHex(it) }
                 }
                 is com.canopobd.ui.climate.ClimateCommand.RECIRC_OFF -> {
                     val current = _climateState.value
                     val newState = current.copy(isRecirculation = false)
                     _climateState.value = newState
-                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                    BCMProtocol.Climate.recirculationFrame(false).let { bytesToHex(it) }
                 }
                 is com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT -> {
                     val current = _climateState.value
@@ -959,7 +959,7 @@ class DashboardViewModel private constructor(
                     val current = _climateState.value
                     val newState = current.copy(isFrontDefrost = false)
                     _climateState.value = newState
-                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                    BCMProtocol.Climate.defrostFrontOffFrame().let { bytesToHex(it) }
                 }
                 is com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR -> {
                     val current = _climateState.value
@@ -971,7 +971,7 @@ class DashboardViewModel private constructor(
                     val current = _climateState.value
                     val newState = current.copy(isRearDefrost = false)
                     _climateState.value = newState
-                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                    BCMProtocol.Climate.defrostRearOffFrame().let { bytesToHex(it) }
                 }
                 is com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS -> {
                     val current = _climateState.value
@@ -983,7 +983,7 @@ class DashboardViewModel private constructor(
                     val current = _climateState.value
                     val newState = current.copy(isMirrorDefrost = false)
                     _climateState.value = newState
-                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
+                    BCMProtocol.Climate.defrostMirrorsOffFrame().let { bytesToHex(it) }
                 }
                 is com.canopobd.ui.climate.ClimateCommand.FAN_OFF -> {
                     val current = _climateState.value
@@ -1144,7 +1144,11 @@ class DashboardViewModel private constructor(
                 val newCount = _timingChainState.value.coldSampleCount + 1
                 if (newCount > 0) (_timingChainState.value.avgRpmCold * _timingChainState.value.coldSampleCount + rpm) / newCount else rpm
             } else _timingChainState.value.avgRpmCold,
-            avgRpmWarm = if (isWarmedUp) (_timingChainState.value.avgRpmWarm + rpm) / 2 else _timingChainState.value.avgRpmWarm,
+            warmSampleCount = if (isWarmedUp) _timingChainState.value.warmSampleCount + 1 else _timingChainState.value.warmSampleCount,
+            avgRpmWarm = if (isWarmedUp) {
+                val warmCount = _timingChainState.value.warmSampleCount + 1
+                if (warmCount > 0) (_timingChainState.value.avgRpmWarm * _timingChainState.value.warmSampleCount + rpm) / warmCount else rpm
+            } else _timingChainState.value.avgRpmWarm,
             rpmDeviationCold = rpmVariation
         )
     }
@@ -1444,8 +1448,9 @@ class DashboardViewModel private constructor(
     }
 
     private fun updateSAIAnalysis(data: OBDData, dtcCodes: List<String>) {
+        val saActive = data.coolantTemp < 65.0 && data.rpm > 0 && data.rpm < 2000 && data.runTime > 5 && data.runTime < 120
         val input = SecondaryAirAnalyzer.SAIInput(
-            saActive = data.commandedEGR > 5 && data.rpm < 2000,
+            saActive = saActive,
             engineRpm = data.rpm,
             coolantTemp = data.coolantTemp,
             intakeTemp = data.intakeTemp,
@@ -1756,7 +1761,7 @@ class DashboardViewModel private constructor(
 
         fuelRailPressure.value = data.fuelRailPressure
         injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
-            data.mafRate * 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
+            data.mafRate / 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
         } else 0.0
     }
 

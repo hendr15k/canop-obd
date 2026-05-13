@@ -383,9 +383,8 @@ private fun getSpoolTimeDescription(ms: Long): String = when {
 
 @Composable
 private fun SpoolHistoryChart(colors: AppColors, history: List<Long>) {
-    val sampleData = remember {
-        if (history.isEmpty()) listOf(1200L, 1150L, 1080L, 1300L, 980L, 1100L, 950L)
-        else history
+    val sampleData = remember(history) {
+        history.ifEmpty { listOf(1200L, 1150L, 1080L, 1300L, 980L, 1100L, 950L) }
     }
 
     val avgTime = if (sampleData.isNotEmpty()) sampleData.average().toLong() else 0L
