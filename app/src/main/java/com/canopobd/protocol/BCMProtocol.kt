@@ -70,7 +70,7 @@ object BCMProtocol {
         const val SEAT_HEATING_STATUS = 0xFF09
         const val AMBIENT_LIGHT = 0xFF10
         const val CLIMATE_STATUS = 0xFF11
-        const val BCM_PART_NUMBER = 0xF190
+        const val BCM_PART_NUMBER = 0xF192
         const val VIN = 0xF190
         const val ECU_HARDWARE = 0xF191
         const val ECU_SOFTWARE = 0xF192
@@ -268,9 +268,9 @@ object BCMProtocol {
         fun driverLevel2Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x02.toByte())
         fun driverLevel3Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x03.toByte())
         fun driverOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x00.toByte())
-        fun passengerLevel1Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x10.toByte())
-        fun passengerLevel2Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x20.toByte())
-        fun passengerLevel3Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x30.toByte())
+        fun passengerLevel1Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), PASSENGER_LEVEL_1.toByte())
+        fun passengerLevel2Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), PASSENGER_LEVEL_2.toByte())
+        fun passengerLevel3Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), PASSENGER_LEVEL_3.toByte())
         fun passengerOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x00.toByte())
     }
 

@@ -56,7 +56,7 @@ class GPSTracker(private val context: Context) {
 
     private var tripId: String = ""
     private var tripStartTime: Long = 0L
-    private var tripLocations: MutableList<GPSLocation> = mutableListOf()
+    private var tripLocations: MutableList<GPSLocation> = java.util.Collections.synchronizedList(mutableListOf())
     private var tripDistanceMeters: Double = 0.0
     private var lastLocation: GPSLocation? = null
     private var locationCallback: LocationCallback? = null

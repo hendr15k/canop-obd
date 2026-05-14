@@ -62,6 +62,7 @@ class DashboardViewModel private constructor(
 
     private val context: Application = application
     private val notificationManager = MaintenanceNotificationManager(application)
+    private val viewModelPrefs = application.getSharedPreferences("dashboard_vm", Context.MODE_PRIVATE)
 
     init {
         notificationManager.createNotificationChannel()
@@ -157,7 +158,7 @@ class DashboardViewModel private constructor(
     private val _maintenanceItems = MutableStateFlow<List<com.canopobd.data.model.MaintenanceItem>>(emptyList())
     val maintenanceItems: StateFlow<List<com.canopobd.data.model.MaintenanceItem>> = _maintenanceItems.asStateFlow()
 
-    private val _currentKm = MutableStateFlow(0)
+    private val _currentKm = MutableStateFlow(viewModelPrefs.getInt("odometer_km", 0))
     val currentKm: StateFlow<Int> = _currentKm.asStateFlow()
 
     private var lastMaintenanceCheckTime = 0L
@@ -1835,7 +1836,8 @@ private fun startTurboAnalysisCollection() {
         val updatedSession = currentSession.copy(
             endTime = System.currentTimeMillis()
         )
-         turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
+        _driveSession.value = updatedSession
+        turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
          fuelRailPressure.value = data.fuelRailPressure
          injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
@@ -2001,7 +2003,11 @@ private fun startTurboAnalysisCollection() {
     private fun startWarningMonitoring() {
         viewModelScope.launch {
             obdData.collect { data ->
-                _currentKm.value = repository.tripData.value.distanceKm.toInt().coerceAtLeast(0)
+                val tripKm = repository.tripData.value.distanceKm.toInt().coerceAtLeast(0)
+                if (tripKm > _currentKm.value) {
+                    _currentKm.value = tripKm
+                    viewModelPrefs.edit().putInt("odometer_km", tripKm).apply()
+                }
                 if (data.rpm > 0) {
                     val warnings = checkCriticalWarnings(data)
                     criticalWarnings.value = warnings
