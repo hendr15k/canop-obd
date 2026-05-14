@@ -513,11 +513,12 @@ class OBDRepository(
                     val now = System.currentTimeMillis()
                     val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
                     if (dtHours > 0) {
-                        val distanceKm = (tripPrevSpeed + speed) / 2.0 * dtHours
+                        val clampedSpeed = speed.coerceAtLeast(0.0)
+                        val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
                         _tripData.value = _tripData.value.copy(
                             durationSeconds = (now - tripStartTime) / 1000L,
                             distanceKm = _tripData.value.distanceKm + distanceKm,
-                            maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, speed),
+                            maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
                             avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
                             maxRpm = maxOf(_tripData.value.maxRpm, rpm),
                             avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
@@ -532,7 +533,7 @@ class OBDRepository(
                             vin = storedVin
                         )
                     }
-                    tripPrevSpeed = speed
+                    tripPrevSpeed = speed.coerceAtLeast(0.0)
                     tripPrevTimestamp = now
 
                     _obdData.value = OBDData(
@@ -1127,6 +1128,15 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         emulator = OBDEmulator()
         _connectionState.value = OBDConnectionState.Connected
         _detectedProtocol.value = "OBD Emulator (Simulated)"
+        tripStartTime = System.currentTimeMillis()
+        tripSamples = 0
+        tripSpeedSum = 0.0
+        tripRpmSum = 0.0
+        tripFuelUsedSum = 0.0
+        tripPrevSpeed = 0.0
+        tripPrevTimestamp = tripStartTime
+        tripFuelStart = _obdData.value.fuelLevel
+        _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
         startEmulatorPolling()
     }
 
@@ -1174,11 +1184,12 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
                         val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
                         if (dtHours > 0) {
-                            val distanceKm = (tripPrevSpeed + data.speed) / 2.0 * dtHours
+                            val clampedSpeed = data.speed.coerceAtLeast(0.0)
+                            val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
                             _tripData.value = _tripData.value.copy(
                                 durationSeconds = (now - tripStartTime) / 1000L,
                                 distanceKm = _tripData.value.distanceKm + distanceKm,
-                                maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, data.speed),
+                                maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
                                 avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
                                 maxRpm = maxOf(_tripData.value.maxRpm, data.rpm),
                                 avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
@@ -1193,7 +1204,7 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                                 vin = storedVin
                             )
                         }
-                        tripPrevSpeed = data.speed
+                        tripPrevSpeed = data.speed.coerceAtLeast(0.0)
                         tripPrevTimestamp = now
 
                         if (now - lastWidgetUpdateTime >= widgetUpdateInterval) {

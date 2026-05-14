@@ -222,7 +222,7 @@ private fun TrendChart(
             )
             val last = data.lastOrNull()
             Text(
-                text = if (last != null) "%.0f %s".format(last.value, unit) else "-- $unit",
+                text = if (last != null) "%.0f %s".format(last.value.coerceAtLeast(0f), unit) else "-- $unit",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = color

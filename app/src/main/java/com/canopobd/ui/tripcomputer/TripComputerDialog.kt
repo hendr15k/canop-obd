@@ -344,12 +344,12 @@ private fun formatDuration(seconds: Long): String {
 }
 
 private fun formatSpeed(kmh: Double, unit: MeasurementUnit = MeasurementUnit.METRIC): String {
-    val value = unit.convertSpeed(kmh)
+    val value = unit.convertSpeed(kmh).coerceAtLeast(0.0)
     return "%.0f %s".format(value, unit.speedUnit)
 }
 
 private fun formatDistance(km: Double, unit: MeasurementUnit = MeasurementUnit.METRIC): String {
-    val value = unit.convertDistance(km)
+    val value = unit.convertDistance(km).coerceAtLeast(0.0)
     return "%.1f %s".format(value, unit.distanceUnit())
 }
 
@@ -388,11 +388,11 @@ private fun GPSStatusCard(trip: GPSTrip, onStop: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("%.1f km".format(trip.distanceKm), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                    Text("%.1f km".format(trip.distanceKm.coerceAtLeast(0.0)), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textPrimary)
                     Text("Distance", fontSize = 10.sp, color = textSecondary)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("%.0f km/h".format(trip.maxSpeedKmh), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = gaugeOrange)
+                    Text("%.0f km/h".format(trip.maxSpeedKmh.coerceAtLeast(0.0)), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = gaugeOrange)
                     Text("Max Speed", fontSize = 10.sp, color = textSecondary)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

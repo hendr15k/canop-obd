@@ -194,7 +194,7 @@ class OBDEmulator(
             currentBoost = min(1.0, throttlePosition / 100 * 0.8 + (currentRpm - 2000) / 8000 * 0.2)
             currentBoost += (Math.random() - 0.5) * 0.02
         } else {
-            currentBoost = max(-0.3, currentBoost - 0.02)
+            currentBoost = max(0.0, currentBoost - 0.02)
         }
 
         currentSpeed = when {
@@ -204,7 +204,7 @@ class OBDEmulator(
             throttlePosition < 80 -> min(160.0, currentSpeed + 0.8)
             else -> min(210.0, currentSpeed + 1.0)
         }
-        currentSpeed += (Math.random() - 0.5) * 0.5
+        currentSpeed = currentSpeed.coerceAtLeast(0.0)
 
         currentFuelLevel = max(0.0, currentFuelLevel - throttlePosition * 0.00001)
     }
