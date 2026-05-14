@@ -20,6 +20,7 @@ class OBDEmulator(
     private var currentFuelLevel = 75.0
     private var currentBoost = 0.0
     private var driveCyclePhase = 0
+    private var accumulatedDistance = 0.0
 
     enum class VehicleType {
         OPEL_ASTRA_J_14T,
@@ -38,6 +39,7 @@ class OBDEmulator(
         currentFuelLevel = 75.0
         currentBoost = 0.0
         driveCyclePhase = 0
+        accumulatedDistance = 0.0
     }
 
     fun disconnect() {
@@ -50,6 +52,8 @@ class OBDEmulator(
         updateSimulation()
 
         val timeSeconds = simulationTime / 1000.0
+        accumulatedDistance += currentSpeed * (pollIntervalMs / 3_600_000.0)
+
         val noise = { base: Double, amplitude: Double ->
             base + (sin(timeSeconds * 3.7) * amplitude * 0.3 + cos(timeSeconds * 2.3) * amplitude * 0.2)
         }
@@ -145,7 +149,7 @@ class OBDEmulator(
             fuelConsumptionInstant = calculateFuelRate(),
             fuelConsumptionAverage = 6.5 + throttlePosition * 3,
             afrRatioMode22 = 14.7 + sin(timeSeconds * 4) * 0.5,
-            distanceWithMil = simulationTime / 1000.0 * currentSpeed / 3600.0
+            distanceWithMil = accumulatedDistance
         )
     }
 

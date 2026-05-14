@@ -213,8 +213,8 @@ class DashboardViewModel private constructor(
     val carProfile: StateFlow<com.canopobd.data.model.CarProfile> = _carProfileState.asStateFlow()
     private val _timingChainState = MutableStateFlow(com.canopobd.data.model.TimingChainState())
     val timingChainState: StateFlow<com.canopobd.data.model.TimingChainState> = _timingChainState.asStateFlow()
-    private val rpmSampleBuffer = mutableListOf<Double>()
-    private val timingAdvanceBuffer = mutableListOf<Double>()
+    private val rpmSampleBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
+    private val timingAdvanceBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
 
     val turboData: StateFlow<com.canopobd.data.model.TurboData> get() = turboViewModel.turboData
     val oilData: StateFlow<com.canopobd.data.model.OilData> get() = turboViewModel.oilData
@@ -1830,12 +1830,11 @@ private fun startTurboAnalysisCollection() {
         return warnings
     }
 
-private fun updateAllTurboMetrics(data: OBDData) {
-         val currentSession = _driveSession.value
-         val updatedSession = currentSession.copy(
-             avgRpm = currentSession.avgRpm.coerceAtLeast(data.rpm),
-             endTime = System.currentTimeMillis()
-         )
+    private fun updateAllTurboMetrics(data: OBDData) {
+        val currentSession = _driveSession.value
+        val updatedSession = currentSession.copy(
+            endTime = System.currentTimeMillis()
+        )
          turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
          fuelRailPressure.value = data.fuelRailPressure
@@ -2002,7 +2001,7 @@ private fun updateAllTurboMetrics(data: OBDData) {
     private fun startWarningMonitoring() {
         viewModelScope.launch {
             obdData.collect { data ->
-                _currentKm.value = data.distanceWithMil.toInt()
+                _currentKm.value = repository.tripData.value.distanceKm.toInt().coerceAtLeast(0)
                 if (data.rpm > 0) {
                     val warnings = checkCriticalWarnings(data)
                     criticalWarnings.value = warnings
@@ -2238,8 +2237,9 @@ private fun updateAllTurboMetrics(data: OBDData) {
 
     override fun onCleared() {
         _turboAnalysisJob.value?.cancel()
-        super.onCleared()
+        repository.cleanup()
         repository.disconnect()
+        super.onCleared()
     }
 
     class Factory(private val application: Application) : ViewModelProvider.Factory {

@@ -746,9 +746,11 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
     private fun recordData() {
         val d = _obdData.value
-        _recordedData.value = _recordedData.value + DataRecord(
-            d.timestamp, d.rpm, d.speed, d.coolantTemp, d.throttle, d.fuelLevel, d.batteryVoltage
-        )
+        _recordedData.update { list ->
+            list + DataRecord(
+                d.timestamp, d.rpm, d.speed, d.coolantTemp, d.throttle, d.fuelLevel, d.batteryVoltage
+            )
+        }
     }
 
     fun setPollRate(rate: Long) {
@@ -1061,9 +1063,9 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                     currentKmL = kmL,
                     avgKmL = if (avgL100km > 0.5) 100.0 / avgL100km else 0.0,
                     currentMpgUs = mpgUs,
-                    avgMpgUs = 235.214583 / avgL100km,
+                    avgMpgUs = if (avgL100km > 0.5) 235.214583 / avgL100km else 0.0,
                     currentMpgUk = mpgUk,
-                    avgMpgUk = 282.4809363 / avgL100km,
+                    avgMpgUk = if (avgL100km > 0.5) 282.4809363 / avgL100km else 0.0,
                     estimatedFromMaf = true
                 )
             }
@@ -1158,6 +1160,7 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                         val data = emu.generateData(_pollRate.value)
                         val mode22 = emu.generateMode22Data()
 
+                        if (!isActive) return@launch
                         _obdData.value = data
                         _mode22Data.value = mode22
 
