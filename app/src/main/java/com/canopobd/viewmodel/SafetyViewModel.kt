@@ -27,6 +27,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
     // Systemstatus
     val absActive = MutableStateFlow(false)
+    val absHasFault = MutableStateFlow(false)
     val espActive = MutableStateFlow(false)
     val espHasFault = MutableStateFlow(false)
     val tractionControlActive = MutableStateFlow(false)
@@ -148,6 +149,7 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
     }
 
     fun updateFromBCMStatus(bcm: BCMStatus) {
+        tractionControlActive.value = false
         val currentSpeed = _safetySummary.value.wheelSpeeds.frontLeft
         val isMoving = currentSpeed > 5.0
 
@@ -179,12 +181,8 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
                 acOnTimeMs += elapsed
                 lastAcOnTime = now
             }
-            if (hvac.frontDefrostActive || hvac.rearDefrostActive) {
-                hillStartAssistActive.value = true
-            }
-            if (hvac.recirculationActive && hvac.outsideTempCelsius < 5) {
-                hillStartAssistActive.value = true
-            }
+            hillStartAssistActive.value = hvac.frontDefrostActive || hvac.rearDefrostActive ||
+                (hvac.recirculationActive && hvac.outsideTempCelsius < 5)
         }
         lastHVACUpdate = now
         updateSummary()
@@ -210,8 +208,8 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
         val hasESPDtc = safetyDtcList.any { it.system == "ESP/Stabilitaet" }
         val hasAirbagDtc = safetyDtcList.any { it.system == "Airbag/SRS" }
 
-        if (hasABSDtc) absActive.value = false
-        if (hasESPDtc) espHasFault.value = true
+        absHasFault.value = hasABSDtc
+        espHasFault.value = hasESPDtc
         if (hasAirbagDtc) {
             airbagDriverFront.value = false
             airbagPassengerFront.value = false
@@ -230,7 +228,11 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
     }
 
     private fun updateSummary() {
-        val absStatus = if (absActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
+        val absStatus = when {
+            absHasFault.value -> SystemStatus.FAULT
+            absActive.value -> SystemStatus.OK
+            else -> SystemStatus.UNKNOWN
+        }
         val espStatus = when {
             espHasFault.value -> SystemStatus.FAULT
             espActive.value -> SystemStatus.OK

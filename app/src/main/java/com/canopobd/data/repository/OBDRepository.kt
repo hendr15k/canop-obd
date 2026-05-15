@@ -727,7 +727,7 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         scope.launch {
             val current = _tpmsReading.value
             if (current.frontLeftPSI == 0.0 && current.frontRightPSI == 0.0) {
-                android.util.Log.d("OBDRepository", "No TPMS data from CAN bus yet")
+                android.util.Log.d("OBDRepository", "TPMS: no data on CAN bus (CAN ID 420/422). TPMS requires BCM polling via UDS routine 0x0302")
             }
         }
     }
@@ -736,7 +736,7 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         scope.launch {
             val current = _climateReading.value
             if (current.fanSpeed == 0 && !current.isACEnabled) {
-                android.util.Log.d("OBDRepository", "No climate data from CAN bus yet")
+                android.util.Log.d("OBDRepository", "Climate: no data on CAN bus (CAN ID 7E5/7ED). Climate requires HVAC CAN monitoring")
             }
         }
     }

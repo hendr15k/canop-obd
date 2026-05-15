@@ -217,7 +217,11 @@ fun UpdateDialog(
                 }
             }
         },
-        dismissButton = {}
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen", color = colors.textSecondary)
+            }
+        }
     )
 }
 
