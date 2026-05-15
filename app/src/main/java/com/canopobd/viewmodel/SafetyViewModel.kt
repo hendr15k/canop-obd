@@ -28,6 +28,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     // Systemstatus
     val absActive = MutableStateFlow(false)
     val espActive = MutableStateFlow(false)
+    val espHasFault = MutableStateFlow(false)
     val tractionControlActive = MutableStateFlow(false)
     val hillStartAssistActive = MutableStateFlow(false)
 
@@ -210,7 +211,7 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
         val hasAirbagDtc = safetyDtcList.any { it.system == "Airbag/SRS" }
 
         if (hasABSDtc) absActive.value = false
-        if (hasESPDtc) espActive.value = false
+        if (hasESPDtc) espHasFault.value = true
         if (hasAirbagDtc) {
             airbagDriverFront.value = false
             airbagPassengerFront.value = false
@@ -230,7 +231,11 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
 
     private fun updateSummary() {
         val absStatus = if (absActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
-        val espStatus = if (espActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
+        val espStatus = when {
+            espHasFault.value -> SystemStatus.FAULT
+            espActive.value -> SystemStatus.OK
+            else -> SystemStatus.UNKNOWN
+        }
         val allTires = listOf(
             tpmsFrontLeftPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,
             tpmsFrontRightPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,

@@ -854,28 +854,28 @@ class DashboardViewModel private constructor(
                     pressure = (tpms.frontLeftPSI * 0.0689476).toFloat(),
                     temperature = tpms.frontLeftTemp,
                     isLow = tpms.frontLeftPSI > 0 && tpms.frontLeftPSI < 28.0,
-                    sensorBattery = 100
+                    sensorBattery = 0
                 ),
                 com.canopobd.ui.tpms.TireData(
                     position = "Vorne Rechts",
                     pressure = (tpms.frontRightPSI * 0.0689476).toFloat(),
                     temperature = tpms.frontRightTemp,
                     isLow = tpms.frontRightPSI > 0 && tpms.frontRightPSI < 28.0,
-                    sensorBattery = 98
+                    sensorBattery = 0
                 ),
                 com.canopobd.ui.tpms.TireData(
                     position = "Hinten Links",
                     pressure = (tpms.rearLeftPSI * 0.0689476).toFloat(),
                     temperature = tpms.rearLeftTemp,
                     isLow = tpms.rearLeftPSI > 0 && tpms.rearLeftPSI < 28.0,
-                    sensorBattery = 95
+                    sensorBattery = 0
                 ),
                 com.canopobd.ui.tpms.TireData(
                     position = "Hinten Rechts",
                     pressure = (tpms.rearRightPSI * 0.0689476).toFloat(),
                     temperature = tpms.rearRightTemp,
                     isLow = tpms.rearRightPSI > 0 && tpms.rearRightPSI < 28.0,
-                    sensorBattery = 100
+                    sensorBattery = 0
                 )
             )
         } else {
