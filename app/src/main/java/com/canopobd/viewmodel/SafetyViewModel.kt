@@ -146,7 +146,7 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
         _lastUpdateTime.value = System.currentTimeMillis()
     }
 
-fun updateFromBCMStatus(bcm: BCMStatus) {
+    fun updateFromBCMStatus(bcm: BCMStatus) {
         val currentSpeed = _safetySummary.value.wheelSpeeds.frontLeft
         val isMoving = currentSpeed > 5.0
 
