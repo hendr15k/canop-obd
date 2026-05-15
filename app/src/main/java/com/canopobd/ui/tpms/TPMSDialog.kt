@@ -257,7 +257,11 @@ fun TPMSDialog(
                 }
             }
         },
-        confirmButton = {}
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Schliessen", color = colors.accent)
+            }
+        }
     )
 }
 

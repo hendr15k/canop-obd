@@ -150,10 +150,6 @@ fun updateFromBCMStatus(bcm: BCMStatus) {
         val currentSpeed = _safetySummary.value.wheelSpeeds.frontLeft
         val isMoving = currentSpeed > 5.0
 
-        if (bcm.hazardsOn) {
-            tractionControlActive.value = true
-        }
-
         if (bcm.alarmTriggered) {
             tractionControlActive.value = true
         }
