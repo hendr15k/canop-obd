@@ -300,12 +300,16 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
 
     LaunchedEffect(csvShareContent) {
         csvShareContent?.let { content ->
-            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = "text/csv"
-                putExtra(android.content.Intent.EXTRA_TEXT, content)
-                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+            try {
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/csv"
+                    putExtra(android.content.Intent.EXTRA_TEXT, content)
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                activityContext.startActivity(android.content.Intent.createChooser(intent, "Fahrthistorie exportieren"))
+            } catch (e: android.content.ActivityNotFoundException) {
+                android.util.Log.e("MainActivity", "No app to handle CSV share", e)
             }
-            activityContext.startActivity(android.content.Intent.createChooser(intent, "Fahrthistorie exportieren"))
             csvShareContent = null
         }
     }

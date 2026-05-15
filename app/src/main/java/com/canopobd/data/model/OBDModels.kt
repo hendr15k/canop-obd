@@ -46,8 +46,8 @@ enum class OBDPID(
     RUN_TIME("011F", "Engine Run Time", "s", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
-    DISTANCE_MIL("0121", "Distance with MIL", "km", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    DISTANCE_MIL("0121", "Distance with MIL", "km", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
     FUEL_RAIL_PRESSURE("012A", "Fuel Rail Pressure", "kPa", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 0.079 else 0.0
