@@ -54,6 +54,12 @@ fun ClimateControlDialog(
     var localState by remember { mutableStateOf(externalState ?: initialState) }
     var selectedZone by remember { mutableStateOf(ClimateZone.ALL) }
 
+    LaunchedEffect(externalState) {
+        if (externalState != null) {
+            localState = externalState
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = colors.surface,

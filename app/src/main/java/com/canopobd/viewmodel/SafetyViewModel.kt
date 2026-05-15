@@ -147,30 +147,51 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
     }
 
 fun updateFromBCMStatus(bcm: BCMStatus) {
-        if (bcm.lightsOn && !bcm.hazardsOn) {
-            // Lights on during driving is normal
-        }
+        val currentSpeed = _safetySummary.value.wheelSpeeds.frontLeft
+        val isMoving = currentSpeed > 5.0
+
         if (bcm.hazardsOn) {
-            // Hazards active — could indicate a safety situation
+            tractionControlActive.value = true
         }
+
         if (bcm.alarmTriggered) {
-            // Alarm triggered — security concern
+            tractionControlActive.value = true
         }
-        // Open door while driving is a safety concern
-        val anyDoorOpen = bcm.driverDoorOpen || bcm.passengerDoorOpen ||
-                bcm.rearLeftDoorOpen || bcm.rearRightDoorOpen
+
+        if (isMoving) {
+            val anyDoorOpen = bcm.driverDoorOpen || bcm.passengerDoorOpen ||
+                    bcm.rearLeftDoorOpen || bcm.rearRightDoorOpen
+            if (anyDoorOpen) {
+                tractionControlActive.value = true
+            }
+        }
+
         updateSummary()
         _lastUpdateTime.value = System.currentTimeMillis()
     }
 
+    private var lastHVACUpdate = 0L
+    private var acOnTimeMs = 0L
+    private var lastAcOnTime = 0L
+
     fun updateFromHVAC(hvac: BCMProtocol.HVACStatus) {
-        // A/C compressor active during overheating indicates thermal management
-        // Recirculation during low temps can cause window fogging (safety)
-        if (hvac.acCompressorActive) {
-            // Track A/C state for thermal safety analysis
+        val now = System.currentTimeMillis()
+        if (lastHVACUpdate > 0) {
+            val elapsed = now - lastHVACUpdate
+            if (hvac.acCompressorActive) {
+                acOnTimeMs += elapsed
+                lastAcOnTime = now
+            }
+            if (hvac.frontDefrostActive || hvac.rearDefrostActive) {
+                hillStartAssistActive.value = true
+            }
+            if (hvac.recirculationActive && hvac.outsideTempCelsius < 5) {
+                hillStartAssistActive.value = true
+            }
         }
+        lastHVACUpdate = now
         updateSummary()
-        _lastUpdateTime.value = System.currentTimeMillis()
+        _lastUpdateTime.value = now
     }
 
     fun updateFromSafetyDTCs(dtcResponse: DTCResponse?) {

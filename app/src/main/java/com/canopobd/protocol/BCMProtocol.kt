@@ -117,17 +117,17 @@ object BCMProtocol {
         const val POSITION_50 = 0x32  // 50%
         const val POSITION_75 = 0x4B  // 75%
         
-        fun openDriver() = hexToBytes("2EFF0264")
-        fun closeDriver() = hexToBytes("2EFF0200")
-        fun stopDriver() = hexToBytes("2EFF02FF")
-        fun openPassenger() = hexToBytes("2EFF0264")
-        fun closePassenger() = hexToBytes("2EFF0200")
-        fun openRearLeft() = hexToBytes("2EFF0264")
-        fun closeRearLeft() = hexToBytes("2EFF0200")
-        fun openRearRight() = hexToBytes("2EFF0264")
-        fun closeRearRight() = hexToBytes("2EFF0200")
-        fun openAll() = hexToBytes("2EFF0264646464")
-        fun closeAll() = hexToBytes("2EFF0200000000")
+        fun openDriver() = buildDirectFrame(WINDOW_DRIVER, DIRECTION_DOWN)
+        fun closeDriver() = buildDirectFrame(WINDOW_DRIVER, DIRECTION_UP)
+        fun stopDriver() = buildDirectFrame(WINDOW_DRIVER, DIRECTION_STOP)
+        fun openPassenger() = buildDirectFrame(WINDOW_PASSENGER, DIRECTION_DOWN)
+        fun closePassenger() = buildDirectFrame(WINDOW_PASSENGER, DIRECTION_UP)
+        fun openRearLeft() = buildDirectFrame(WINDOW_REAR_LEFT, DIRECTION_DOWN)
+        fun closeRearLeft() = buildDirectFrame(WINDOW_REAR_LEFT, DIRECTION_UP)
+        fun openRearRight() = buildDirectFrame(WINDOW_REAR_RIGHT, DIRECTION_DOWN)
+        fun closeRearRight() = buildDirectFrame(WINDOW_REAR_RIGHT, DIRECTION_UP)
+        fun openAll() = hexToBytes("2EFF020064646464")
+        fun closeAll() = hexToBytes("2EFF020000000000")
         
         fun buildDirectFrame(windowByte: Int, direction: Int): ByteArray {
             return byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x02.toByte(), windowByte.toByte(), direction.toByte())
@@ -851,6 +851,8 @@ object BCMProtocol {
 enum class BCMCommandType {
     UDS_WRITE,
     UDS_READ,
+    UDS_ROUTINE,
+    OBD_MODE,
     NONE
 }
 
@@ -943,19 +945,19 @@ data class BCMCommand(
             "READ_LIGHTING_STATUS" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, "", BCMCommandType.UDS_READ)
             "READ_HEATING_STATUS" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, "", BCMCommandType.UDS_READ)
             
-            // Fenster
-            "WINDOW_DRIVER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
-            "WINDOW_DRIVER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
-            "WINDOW_DRIVER_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
-            "WINDOW_PASSENGER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
-            "WINDOW_PASSENGER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
-            "WINDOW_PASSENGER_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
-            "WINDOW_REAR_LEFT_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
-            "WINDOW_REAR_LEFT_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
-            "WINDOW_REAR_LEFT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
-            "WINDOW_REAR_RIGHT_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00", BCMCommandType.UDS_WRITE)
-            "WINDOW_REAR_RIGHT_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64", BCMCommandType.UDS_WRITE)
-            "WINDOW_REAR_RIGHT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "FF", BCMCommandType.UDS_WRITE)
+            // Fenster (Format: 2E FF 02 [windowIdx] [direction])
+            "WINDOW_DRIVER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0100", BCMCommandType.UDS_WRITE)
+            "WINDOW_DRIVER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0164", BCMCommandType.UDS_WRITE)
+            "WINDOW_DRIVER_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "01FF", BCMCommandType.UDS_WRITE)
+            "WINDOW_PASSENGER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0200", BCMCommandType.UDS_WRITE)
+            "WINDOW_PASSENGER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0264", BCMCommandType.UDS_WRITE)
+            "WINDOW_PASSENGER_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "02FF", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_LEFT_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0300", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_LEFT_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0364", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_LEFT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "03FF", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_RIGHT_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0400", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_RIGHT_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0464", BCMCommandType.UDS_WRITE)
+            "WINDOW_REAR_RIGHT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "04FF", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00000000", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64646464", BCMCommandType.UDS_WRITE)
             
@@ -967,18 +969,18 @@ data class BCMCommand(
             "CLIMATE_DEFROST_ALL" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "1C", BCMCommandType.UDS_WRITE)
             "CLIMATE_AUTO" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "02", BCMCommandType.UDS_WRITE)
             
-            // TPMS
-            "TPMS_RESET" -> BCMCommand(0, "310302", BCMCommandType.NONE)
-            
-            // Oil/Inspection Reset
-            "OIL_RESET" -> BCMCommand(0, "310303", BCMCommandType.NONE)
-            "INSPECTION_RESET" -> BCMCommand(0, "310304", BCMCommandType.NONE)
-            
-            // DTCs
-            "DTC_READ" -> BCMCommand(0, "03", BCMCommandType.NONE)
-            "DTC_READ_PENDING" -> BCMCommand(0, "07", BCMCommandType.NONE)
-            "DTC_CLEAR" -> BCMCommand(0, "04", BCMCommandType.NONE)
-            "DTC_READ_PERMANENT" -> BCMCommand(0, "0A", BCMCommandType.NONE)
+            // TPMS — UDS Routine Control (0x31)
+            "TPMS_RESET" -> BCMCommand(0, "310302", BCMCommandType.UDS_ROUTINE)
+
+            // Oil/Inspection Reset — UDS Routine Control (0x31)
+            "OIL_RESET" -> BCMCommand(0, "310303", BCMCommandType.UDS_ROUTINE)
+            "INSPECTION_RESET" -> BCMCommand(0, "310304", BCMCommandType.UDS_ROUTINE)
+
+            // DTCs — OBD Mode (03/04/07/0A)
+            "DTC_READ" -> BCMCommand(0, "03", BCMCommandType.OBD_MODE)
+            "DTC_READ_PENDING" -> BCMCommand(0, "07", BCMCommandType.OBD_MODE)
+            "DTC_CLEAR" -> BCMCommand(0, "04", BCMCommandType.OBD_MODE)
+            "DTC_READ_PERMANENT" -> BCMCommand(0, "0A", BCMCommandType.OBD_MODE)
             
             else -> null
         }
@@ -986,9 +988,20 @@ data class BCMCommand(
 
     fun actionToATCommand(action: String, value: Any? = null): String? {
         val cmd = mapToCommand(action, value) ?: return null
-        val didH = String.format("%02X", (cmd.did shr 8) and 0xFF)
-        val didL = String.format("%02X", cmd.did and 0xFF)
-        val sid = if (cmd.type == BCMCommandType.UDS_WRITE) "2E" else "22"
-        return "$sid$didH$didL${cmd.value}"
+        return when (cmd.type) {
+            BCMCommandType.UDS_WRITE -> {
+                val didH = String.format("%02X", (cmd.did shr 8) and 0xFF)
+                val didL = String.format("%02X", cmd.did and 0xFF)
+                "2E$didH$didL${cmd.value}"
+            }
+            BCMCommandType.UDS_READ -> {
+                val didH = String.format("%02X", (cmd.did shr 8) and 0xFF)
+                val didL = String.format("%02X", cmd.did and 0xFF)
+                "22$didH$didL${cmd.value}"
+            }
+            BCMCommandType.UDS_ROUTINE -> cmd.value
+            BCMCommandType.OBD_MODE -> cmd.value
+            BCMCommandType.NONE -> null
+        }
     }
 }
