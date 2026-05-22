@@ -1,10 +1,13 @@
-name: Build Debug APK
+name: Build & Release APK
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -27,12 +30,65 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build debug APK
+      - name: Decode keystore
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" > /tmp/keystore.b64
+          base64 -d /tmp/keystore.b64 > /tmp/release-key.jks
+          rm /tmp/keystore.b64
+
+      - name: Extract version from build.gradle.kts
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: version
+        run: |
+          VERSION_NAME=`grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/'`
+          VERSION_CODE=`grep 'versionCode' app/build.gradle.kts | sed 's/.*= \([0-9]*\).*/\1/'`
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+      - name: Build release APK
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          KEYSTORE_PATH: /tmp/release-key.jks
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+
+      - name: Build debug APK (PR only)
+        if: github.event_name == 'pull_request'
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload debug APK
+      - name: Upload debug APK artifact (PR only)
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: canop-obd-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 14
+          retention-days: 7
+
+      - name: Upload APK to Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "canop-obd v${{ steps.version.outputs.VERSION_NAME }}"
+          body: |
+            ## canop-obd v${{ steps.version.outputs.VERSION_NAME }}
+
+            **versionCode:** ${{ steps.version.outputs.VERSION_CODE }}
+
+            ### Installation
+            1. Download `app-release.apk` below
+            2. Open the APK on your Android device
+            3. Allow installation from unknown sources if prompted
+            4. The app will automatically check for updates on startup
+
+            ### What's New
+            See the commit history for details.
+          files: app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
