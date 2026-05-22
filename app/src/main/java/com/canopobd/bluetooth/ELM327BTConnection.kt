@@ -645,7 +645,7 @@ class ELM327BTConnection(
 
     /**
      * Connect to a Bluetooth device (ELM327 adapter) with timeout
-     
+     */
     suspend fun connect(device: BluetoothDevice): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             socket?.close()
@@ -719,7 +719,7 @@ class ELM327BTConnection(
 
     /**
      * Read multiple PIDs in one pass (faster)
-     
+     */
     suspend fun readMultiplePIDs(pids: List<OBDPID>): Map<OBDPID, Double> = withContext(Dispatchers.IO) {
         val results = mutableMapOf<OBDPID, Double>()
         // Process sequentially to avoid race conditions on serial ELM327 socket
