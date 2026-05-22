@@ -760,7 +760,7 @@ class ELM327BTConnection(
         
         if (hex.contains("ERROR") || hex.isEmpty()) return codes
         
-        val cleanHex = hex.drop(2)
+        val cleanHex = hex.drop(4)
         val chars = cleanHex.chunked(4)
         
         for (chunk in chars) {
@@ -1112,13 +1112,9 @@ class ELM327BTConnection(
     suspend fun readMultipleMode22PIDs(pidCodes: List<String>): Map<String, Double> = withContext(Dispatchers.IO) {
         val results = mutableMapOf<String, Double>()
         
-        // Process in batches of 4 to avoid overwhelming the ECU
         pidCodes.chunked(4).forEach { batch ->
-            val deferreds = batch.map { pidCode ->
-                async { pidCode to requestMode22PID(pidCode) }
-            }
-            deferreds.awaitAll().forEach { (pidCode, value) ->
-                value?.let { results[pidCode] = it }
+            batch.forEach { pidCode ->
+                requestMode22PID(pidCode)?.let { results[pidCode] = it }
             }
         }
         
@@ -1595,7 +1591,7 @@ class ELM327BTConnection(
                 val dtcStatus = hex.substring(6, 8).toInt(16)
                 info["dtcCount"] = (dtcStatus and 0x7F)
                 info["milOn"] = (dtcStatus and 0x80) != 0
-                info[" ignitionType"] = when ((dtcStatus shr 6) and 0x03) {
+                info["ignitionType"] = when ((dtcStatus shr 6) and 0x03) {
                     1 -> "Compression"
                     2 -> "Spark"
                     else -> "Unknown"

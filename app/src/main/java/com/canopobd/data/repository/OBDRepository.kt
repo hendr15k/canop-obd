@@ -110,6 +110,7 @@ class OBDRepository(
 
     private var lastConnectedAddress: String? = null
     private var reconnectJob: Job? = null
+    private var connectAttempt = java.util.concurrent.atomic.AtomicLong(0)
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     val tripHistoryEntities: StateFlow<List<TripEntity>> = tripDao.getAll()
@@ -332,6 +333,7 @@ class OBDRepository(
     }
 
     fun connect(address: String) {
+        val attempt = connectAttempt.incrementAndGet()
         val conn = connection
         if (conn == null) {
             val msg = "Bluetooth not available"
@@ -365,6 +367,7 @@ class OBDRepository(
                 return@launch
             }
 
+            if (connectAttempt.get() != attempt) return@launch
             _connectionState.value = OBDConnectionState.Connected
             _lastError.value = null
             startPolling(conn)
@@ -394,6 +397,7 @@ class OBDRepository(
     }
 
     fun disconnect() {
+        connectAttempt.incrementAndGet()
         reconnectJob?.cancel()
         reconnectJob = null
         stopRemoteServer()
@@ -723,7 +727,7 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         scope.launch {
             val current = _tpmsReading.value
             if (current.frontLeftPSI == 0.0 && current.frontRightPSI == 0.0) {
-                android.util.Log.d("OBDRepository", "No TPMS data from CAN bus yet")
+                android.util.Log.d("OBDRepository", "TPMS: no data on CAN bus (CAN ID 420/422). TPMS requires BCM polling via UDS routine 0x0302")
             }
         }
     }
@@ -732,7 +736,7 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         scope.launch {
             val current = _climateReading.value
             if (current.fanSpeed == 0 && !current.isACEnabled) {
-                android.util.Log.d("OBDRepository", "No climate data from CAN bus yet")
+                android.util.Log.d("OBDRepository", "Climate: no data on CAN bus (CAN ID 7E5/7ED). Climate requires HVAC CAN monitoring")
             }
         }
     }
@@ -1149,6 +1153,8 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         emulator = null
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
+        trendRecorder.clear()
+        _trendHistory.value = TrendHistory()
     }
 
     private fun startEmulatorPolling() {

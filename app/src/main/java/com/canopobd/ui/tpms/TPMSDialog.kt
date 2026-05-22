@@ -42,16 +42,12 @@ fun TPMSDialog(
     var resetProgress by remember { mutableStateOf(0f) }
     var lastResetTime by remember { mutableStateOf<Long?>(null) }
 
-    val displayTires = tireData ?: listOf(
-        TireData("Vorne Links", 230f, 25, false, false, 100),
-        TireData("Vorne Rechts", 228f, 26, false, false, 98),
-        TireData("Hinten Links", 232f, 24, false, false, 95),
-        TireData("Hinten Rechts", 235f, 25, false, false, 100)
-    )
+    val displayTires = tireData ?: emptyList()
 
-    val avgPressure = displayTires.filter { it.pressure > 0 }.map { it.pressure }.average().toFloat()
+    val validPressures = displayTires.filter { it.pressure > 0 }
+    val avgPressure = if (validPressures.isNotEmpty()) validPressures.map { it.pressure }.average().toFloat() else 0f
     val maxPressure = displayTires.maxOfOrNull { it.pressure } ?: 0f
-    val minPressure = displayTires.filter { it.pressure > 0 }.minOfOrNull { it.pressure } ?: 0f
+    val minPressure = validPressures.minOfOrNull { it.pressure } ?: 0f
     val pressureDiff = maxPressure - minPressure
 
     AlertDialog(
@@ -257,7 +253,11 @@ fun TPMSDialog(
                 }
             }
         },
-        confirmButton = {}
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Schliessen", color = colors.accent)
+            }
+        }
     )
 }
 

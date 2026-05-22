@@ -143,13 +143,13 @@ object MaintenanceScheduler {
                 workshopMax = 150.0,
                 laborHours = 1.0
             ),
-            partNumber = "NGK LZKR6AP-11G",
+            partNumber = "NGK LZKR6B-10E",
             alternatives = listOf(
                 "Bosch FR7HPP332",
                 "Denso SC16HL11",
                 "Champion RC10PYPB4"
             ),
-            notes = "Gap 0.7mm! Drehmoment 20-25Nm. Bei Kurzstrecke: 30.000km"
+            notes = "Gap 0.7mm! Drehmoment 20-25Nm. Bei Kurzstrecke: 30.000km. Bei Zündaussetzern SOFORT prüfen!"
         )
     }
     
@@ -369,8 +369,8 @@ object MaintenanceScheduler {
     }
     
     private fun createTimingChainSchedule(currentKm: Int, currentDate: Long) {
-        val intervalKm = 80000
-        val intervalMonths = 60
+        val intervalKm = 150000
+        val intervalMonths = 120
         val lastServiceKm = findLastServiceKm(MaintenanceType.TURBO_BOOST_CHECK, currentKm)
         val lastServiceDate = findLastServiceDate(MaintenanceType.TURBO_BOOST_CHECK, currentDate)
         
@@ -395,7 +395,7 @@ object MaintenanceScheduler {
             ),
             partNumber = "N/A - Prüfung",
             alternatives = emptyList(),
-            notes = "A14NET bekanntes Problem: Rattern bei Kaltstart ab 80.000km! P0340/P0341 Fehlercodes beachten"
+            notes = "A14NET: Kettenspanner defekt oft ab 80.000km! Rattern bei Kaltstart = P0340/P0341 Fehlercodes = SOFORT handeln!"
         )
     }
     

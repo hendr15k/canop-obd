@@ -299,6 +299,24 @@
     <string name="oil_consumption_warning">Ölverbrauch!</string>
     <string name="oil_consumption_rate">Ölverbrauch</string>
     <string name="turbo_health">Turbo-Gesundheit</string>
+    <string name="turbo_spool_title">Turbo-Spool-Anzeige</string>
+    <string name="turbo_spool_status">Turbo-Spool-Status</string>
+    <string name="turbo_spool_time">Spool-Zeit</string>
+    <string name="turbo_time_to_full">Zeit bis Volllast</string>
+    <string name="turbo_spool_history">Historische Spool-Zeiten</string>
+    <string name="turbo_rpm_label">Turbolader-Drehzahl</string>
+    <string name="spooling">SPOOLING</string>
+    <string name="excellent">Ausgezeichnet</string>
+    <string name="good">Gut</string>
+    <string name="satisfactory">Befriedigend</string>
+    <string name="slow">Langsam</string>
+    <string name="close">Close</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="safety_systems_title">Safety Systems</string>
+    <string name="safety_tabs_wheels">Wheels</string>
+    <string name="safety_tabs_esp_abs">ESP/ABS</string>
+    <string name="safety_tabs_brakes">Brakes</string>
+    <string name="safety_tabs_airbag">Airbag</string>
 
     <!-- Timing Chain -->
     <string name="timing_chain_title">Steuerkette</string>

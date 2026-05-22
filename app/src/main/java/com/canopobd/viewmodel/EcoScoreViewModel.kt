@@ -49,7 +49,6 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
     private var coastingSamples = 0
     private var totalSamples = 0
     private var decelSamples = 0
-    private var speedDecelSum = 0.0
 
     fun updateFromOBDData(data: OBDData, fuelLevelPercent: Double) {
         val now = System.currentTimeMillis()
@@ -374,6 +373,5 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         coastingSamples = 0
         totalSamples = 0
         decelSamples = 0
-        speedDecelSum = 0.0
     }
 }

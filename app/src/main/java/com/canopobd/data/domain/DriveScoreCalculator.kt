@@ -23,7 +23,9 @@ object DriveScoreCalculator {
 
     fun calculateCruisingScore(session: DriveSession): Int {
         return if (session.avgSpeed > 0) {
-            ((session.speedSamples / (session.speedSamples + session.harshAccels + session.harshBrakes)) * 100).toInt().coerceIn(0, 100)
+            val totalEvents = session.speedSampleCount + session.harshAccels + session.harshBrakes
+            if (totalEvents > 0) (session.speedSampleCount.toDouble() / totalEvents * 100).toInt().coerceIn(0, 100)
+            else 50
         } else 50
     }
 
@@ -62,10 +64,8 @@ object DriveScoreCalculator {
 
         score -= session.harshBrakes * 10
 
-        val aggressiveAccelCount = ((session.throttleSamples * session.rpmSamples) /
-            (session.avgRpm.coerceAtLeast(1.0) * session.avgThrottle.coerceAtLeast(1.0))).toInt()
         val harshAccelCount = if (session.avgThrottle > HARSH_THROTTLE && session.avgRpm > HARSH_RPM_THRESHOLD)
-            aggressiveAccelCount.coerceAtMost(session.harshAccels) else 0
+            session.harshAccels else 0
         score -= harshAccelCount * 15
 
         return score.coerceIn(0, 100)
@@ -107,7 +107,7 @@ object DriveScoreCalculator {
         }
 
         val rpmOverPenaltyRatio = session.rpmAbove4500Samples.toDouble() /
-            (session.boostSampleCount.coerceAtLeast(1))
+            (session.rpmSampleCount.coerceAtLeast(1))
         score -= (rpmOverPenaltyRatio * 30).toInt().coerceIn(0, 25)
 
         if (session.deceleratingSamples > 0) {

@@ -23,9 +23,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.canopobd.R
 import com.canopobd.data.model.TurboData
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
+import androidx.compose.ui.res.stringResource
 
 data class SpoolData(
     val spoolTimeMs: Long = 0,
@@ -60,7 +62,7 @@ fun TurboSpoolScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Turbo-Spool-Anzeige",
+                    text = stringResource(R.string.turbo_spool_title),
                     color = colors.textPrimary,
                     fontWeight = FontWeight.Bold
                 )
@@ -160,7 +162,7 @@ private fun TurboSpoolAnimation(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Turbo-Spool-Status",
+                text = stringResource(R.string.turbo_spool_status),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.textPrimary
@@ -233,7 +235,7 @@ private fun TurboSpoolAnimation(
                     if (spoolData.isSpooling) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "SPOOLING",
+                            text = stringResource(R.string.spooling),
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = colors.gaugeCyan
@@ -322,14 +324,14 @@ private fun SpoolTimeResult(
         ) {
             Column {
                 Text(
-                    text = "Spool-Zeit",
+                    text = stringResource(R.string.turbo_spool_time),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Zeit bis Volllast",
+                    text = stringResource(R.string.turbo_time_to_full),
                     fontSize = 10.sp,
                     color = colors.textDim
                 )

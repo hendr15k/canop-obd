@@ -27,7 +27,9 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
     // Systemstatus
     val absActive = MutableStateFlow(false)
+    val absHasFault = MutableStateFlow(false)
     val espActive = MutableStateFlow(false)
+    val espHasFault = MutableStateFlow(false)
     val tractionControlActive = MutableStateFlow(false)
     val hillStartAssistActive = MutableStateFlow(false)
 
@@ -146,31 +148,45 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
         _lastUpdateTime.value = System.currentTimeMillis()
     }
 
-fun updateFromBCMStatus(bcm: BCMStatus) {
-        if (bcm.lightsOn && !bcm.hazardsOn) {
-            // Lights on during driving is normal
-        }
-        if (bcm.hazardsOn) {
-            // Hazards active — could indicate a safety situation
-        }
+    fun updateFromBCMStatus(bcm: BCMStatus) {
+        tractionControlActive.value = false
+        val currentSpeed = _safetySummary.value.wheelSpeeds.frontLeft
+        val isMoving = currentSpeed > 5.0
+
         if (bcm.alarmTriggered) {
-            // Alarm triggered — security concern
+            tractionControlActive.value = true
         }
-        // Open door while driving is a safety concern
-        val anyDoorOpen = bcm.driverDoorOpen || bcm.passengerDoorOpen ||
-                bcm.rearLeftDoorOpen || bcm.rearRightDoorOpen
+
+        if (isMoving) {
+            val anyDoorOpen = bcm.driverDoorOpen || bcm.passengerDoorOpen ||
+                    bcm.rearLeftDoorOpen || bcm.rearRightDoorOpen
+            if (anyDoorOpen) {
+                tractionControlActive.value = true
+            }
+        }
+
         updateSummary()
         _lastUpdateTime.value = System.currentTimeMillis()
     }
 
+    private var lastHVACUpdate = 0L
+    private var acOnTimeMs = 0L
+    private var lastAcOnTime = 0L
+
     fun updateFromHVAC(hvac: BCMProtocol.HVACStatus) {
-        // A/C compressor active during overheating indicates thermal management
-        // Recirculation during low temps can cause window fogging (safety)
-        if (hvac.acCompressorActive) {
-            // Track A/C state for thermal safety analysis
+        val now = System.currentTimeMillis()
+        if (lastHVACUpdate > 0) {
+            val elapsed = now - lastHVACUpdate
+            if (hvac.acCompressorActive) {
+                acOnTimeMs += elapsed
+                lastAcOnTime = now
+            }
+            hillStartAssistActive.value = hvac.frontDefrostActive || hvac.rearDefrostActive ||
+                (hvac.recirculationActive && hvac.outsideTempCelsius < 5)
         }
+        lastHVACUpdate = now
         updateSummary()
-        _lastUpdateTime.value = System.currentTimeMillis()
+        _lastUpdateTime.value = now
     }
 
     fun updateFromSafetyDTCs(dtcResponse: DTCResponse?) {
@@ -192,8 +208,8 @@ fun updateFromBCMStatus(bcm: BCMStatus) {
         val hasESPDtc = safetyDtcList.any { it.system == "ESP/Stabilitaet" }
         val hasAirbagDtc = safetyDtcList.any { it.system == "Airbag/SRS" }
 
-        if (hasABSDtc) absActive.value = false
-        if (hasESPDtc) espActive.value = false
+        absHasFault.value = hasABSDtc
+        espHasFault.value = hasESPDtc
         if (hasAirbagDtc) {
             airbagDriverFront.value = false
             airbagPassengerFront.value = false
@@ -212,8 +228,16 @@ fun updateFromBCMStatus(bcm: BCMStatus) {
     }
 
     private fun updateSummary() {
-        val absStatus = if (absActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
-        val espStatus = if (espActive.value) SystemStatus.OK else SystemStatus.UNKNOWN
+        val absStatus = when {
+            absHasFault.value -> SystemStatus.FAULT
+            absActive.value -> SystemStatus.OK
+            else -> SystemStatus.UNKNOWN
+        }
+        val espStatus = when {
+            espHasFault.value -> SystemStatus.FAULT
+            espActive.value -> SystemStatus.OK
+            else -> SystemStatus.UNKNOWN
+        }
         val allTires = listOf(
             tpmsFrontLeftPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,
             tpmsFrontRightPSI.value to AstraJSafetyThresholds.TPMS_CRITICAL_PSI,

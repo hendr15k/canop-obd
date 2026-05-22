@@ -62,6 +62,7 @@ class DashboardViewModel private constructor(
 
     private val context: Application = application
     private val notificationManager = MaintenanceNotificationManager(application)
+    private val viewModelPrefs = application.getSharedPreferences("dashboard_vm", Context.MODE_PRIVATE)
 
     init {
         notificationManager.createNotificationChannel()
@@ -157,7 +158,7 @@ class DashboardViewModel private constructor(
     private val _maintenanceItems = MutableStateFlow<List<com.canopobd.data.model.MaintenanceItem>>(emptyList())
     val maintenanceItems: StateFlow<List<com.canopobd.data.model.MaintenanceItem>> = _maintenanceItems.asStateFlow()
 
-    private val _currentKm = MutableStateFlow(0)
+    private val _currentKm = MutableStateFlow(viewModelPrefs.getInt("odometer_km", 0))
     val currentKm: StateFlow<Int> = _currentKm.asStateFlow()
 
     private var lastMaintenanceCheckTime = 0L
@@ -853,28 +854,28 @@ class DashboardViewModel private constructor(
                     pressure = (tpms.frontLeftPSI * 0.0689476).toFloat(),
                     temperature = tpms.frontLeftTemp,
                     isLow = tpms.frontLeftPSI > 0 && tpms.frontLeftPSI < 28.0,
-                    sensorBattery = 100
+                    sensorBattery = 0
                 ),
                 com.canopobd.ui.tpms.TireData(
                     position = "Vorne Rechts",
                     pressure = (tpms.frontRightPSI * 0.0689476).toFloat(),
                     temperature = tpms.frontRightTemp,
                     isLow = tpms.frontRightPSI > 0 && tpms.frontRightPSI < 28.0,
-                    sensorBattery = 98
+                    sensorBattery = 0
                 ),
                 com.canopobd.ui.tpms.TireData(
                     position = "Hinten Links",
                     pressure = (tpms.rearLeftPSI * 0.0689476).toFloat(),
                     temperature = tpms.rearLeftTemp,
                     isLow = tpms.rearLeftPSI > 0 && tpms.rearLeftPSI < 28.0,
-                    sensorBattery = 95
+                    sensorBattery = 0
                 ),
                 com.canopobd.ui.tpms.TireData(
                     position = "Hinten Rechts",
                     pressure = (tpms.rearRightPSI * 0.0689476).toFloat(),
                     temperature = tpms.rearRightTemp,
                     isLow = tpms.rearRightPSI > 0 && tpms.rearRightPSI < 28.0,
-                    sensorBattery = 100
+                    sensorBattery = 0
                 )
             )
         } else {
@@ -1385,35 +1386,42 @@ class DashboardViewModel private constructor(
     // ========== Turbo Analysis ==========
 
 private fun startTurboAnalysisCollection() {
-         _turboAnalysisJob.value?.cancel()
-         _turboAnalysisJob.value = viewModelScope.launch {
-             obdData.collect { data ->
-                 if (data.rpm > 0) {
-                     updateAllTurboMetrics(data)
-                     updateEmissionsAnalyzers(data)
-                     updateExtendedAnalyzers(data)
-                 }
-             }
-         }
-         turboViewModel.updateDriveSession(_driveSession.value)
+        _turboAnalysisJob.value?.cancel()
+        _turboAnalysisJob.value = viewModelScope.launch(Dispatchers.Default) {
+            obdData
+                .filter { data -> data.rpm > 0 }
+                .throttleLatest(50L) // Limit to 20 updates/sec max
+                .collect { data ->
+                    updateAllTurboMetrics(data)
+                    updateEmissionsAnalyzers(data)
+                    updateExtendedAnalyzers(data)
+                }
+        }
+        turboViewModel.updateDriveSession(_driveSession.value)
      }
 
     // ========== Emissions Analyzers ==========
 
     private fun updateEmissionsAnalyzers(data: OBDData) {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
-        val history = _voltageHistory.value.toMutableList()
-        if (data.batteryVoltage > 0) {
-            history.add(data.batteryVoltage)
-            if (history.size > 60) history.removeAt(0)
-            _voltageHistory.value = history
+        // Use synchronized list to avoid concurrent modification
+        val history = synchronized(_voltageHistory) {
+            val h = _voltageHistory.value.toMutableList()
+            if (data.batteryVoltage > 0) {
+                h.add(data.batteryVoltage)
+                if (h.size > 60) h.removeAt(0)
+                _voltageHistory.value = h
+            }
+            h.toList() // Return a snapshot for use outside synchronized block
         }
-
-        val o2History = _o2VoltageHistory.value.toMutableList()
-        if (data.o2VoltageB1S1 > 0) {
-            o2History.add(data.o2VoltageB1S1)
-            if (o2History.size > 60) o2History.removeAt(0)
-            _o2VoltageHistory.value = o2History
+        val o2History = synchronized(_o2VoltageHistory) {
+            val o2 = _o2VoltageHistory.value.toMutableList()
+            if (data.o2VoltageB1S1 > 0) {
+                o2.add(data.o2VoltageB1S1)
+                if (o2.size > 60) o2.removeAt(0)
+                _o2VoltageHistory.value = o2
+            }
+            o2.toList() // Return a snapshot for use outside synchronized block
         }
 
         updateBatteryAnalysis(data, dtcCodes, history)
@@ -1835,7 +1843,8 @@ private fun startTurboAnalysisCollection() {
         val updatedSession = currentSession.copy(
             endTime = System.currentTimeMillis()
         )
-         turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
+        _driveSession.value = updatedSession
+        turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
          fuelRailPressure.value = data.fuelRailPressure
          injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
@@ -2001,7 +2010,11 @@ private fun startTurboAnalysisCollection() {
     private fun startWarningMonitoring() {
         viewModelScope.launch {
             obdData.collect { data ->
-                _currentKm.value = repository.tripData.value.distanceKm.toInt().coerceAtLeast(0)
+                val tripKm = repository.tripData.value.distanceKm.toInt().coerceAtLeast(0)
+                if (tripKm > _currentKm.value) {
+                    _currentKm.value = tripKm
+                    viewModelPrefs.edit().putInt("odometer_km", tripKm).apply()
+                }
                 if (data.rpm > 0) {
                     val warnings = checkCriticalWarnings(data)
                     criticalWarnings.value = warnings
