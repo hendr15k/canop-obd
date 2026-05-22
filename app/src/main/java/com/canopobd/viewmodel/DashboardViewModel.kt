@@ -75,6 +75,7 @@ class DashboardViewModel private constructor(
     private val turboViewModel = TurboViewModel(application)
     private val safetyViewModel = SafetyViewModel(application)
     private val ecoScoreViewModel = EcoScoreViewModel(application)
+    private val accelerationTimer = com.canopobd.data.domain.AccelerationTimer()
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val repository = OBDRepository(context, bluetoothManager?.adapter)
@@ -182,6 +183,12 @@ class DashboardViewModel private constructor(
 
     private val _performanceTestState = MutableStateFlow(com.canopobd.data.model.PerformanceTestState())
     val performanceTestState: StateFlow<com.canopobd.data.model.PerformanceTestState> = _performanceTestState.asStateFlow()
+
+    private val _currentAccelerationRun = MutableStateFlow<com.canopobd.data.model.AccelerationRun?>(null)
+    val currentAccelerationRun: StateFlow<com.canopobd.data.model.AccelerationRun?> = _currentAccelerationRun.asStateFlow()
+
+    private val _gpsSpeedForTest = MutableStateFlow(0.0)
+    val gpsSpeedForTest: StateFlow<Double> = _gpsSpeedForTest.asStateFlow()
 
     private val _showPowerCalculator = MutableStateFlow(false)
     val showPowerCalculator: StateFlow<Boolean> = _showPowerCalculator.asStateFlow()
@@ -733,33 +740,91 @@ class DashboardViewModel private constructor(
     }
 
     fun startPerformanceTest(testType: com.canopobd.data.model.PerformanceTestType) {
+        // Start the GPS-based acceleration timer
+        accelerationTimer.start(testType)
+        _currentAccelerationRun.value = null
+        _gpsSpeedForTest.value = 0.0
+
         _performanceTestState.value = _performanceTestState.value.copy(
             isRunning = true,
             currentTestType = testType,
             startTimeNanos = System.nanoTime(),
-            statusMessage = "Warte auf Start…"
+            statusMessage = "Warte auf GPS-Speed…"
         )
+
+        // Subscribe to GPS updates for this test
+        viewModelScope.launch {
+            currentLocation.collect { loc ->
+                if (loc != null && _performanceTestState.value.isRunning) {
+                    val speedMs = loc.speed.toDouble()
+                    _gpsSpeedForTest.value = speedMs * 3.6
+
+                    // Feed speed to the timer
+                    val timerState = accelerationTimer.update(speedMs, System.currentTimeMillis())
+
+                    // Update status message with current speed
+                    _performanceTestState.value = _performanceTestState.value.copy(
+                        statusMessage = "%.0f km/h".format(speedMs * 3.6)
+                    )
+
+                    // Check if test finished
+                    if (timerState == com.canopobd.data.domain.AccelerationTimer.TimerState.FINISHED) {
+                        val result = accelerationTimer.buildResult()
+                        _currentAccelerationRun.value = result
+                        if (result != null) {
+                            val perfResult = com.canopobd.data.model.PerformanceResult(
+                                testType = testType,
+                                timeSeconds = result.timeSeconds,
+                                valid = result.valid
+                            )
+                            val history = listOf(perfResult) + _performanceTestState.value.history.take(9)
+                            _performanceTestState.value = _performanceTestState.value.copy(
+                                isRunning = false,
+                                lastResult = perfResult,
+                                history = history,
+                                statusMessage = "Fertig!"
+                            )
+                        }
+                    } else if (timerState == com.canopobd.data.domain.AccelerationTimer.TimerState.CANCELLED) {
+                        _performanceTestState.value = _performanceTestState.value.copy(
+                            isRunning = false,
+                            statusMessage = "Abgebrochen"
+                        )
+                    }
+                }
+            }
+        }
     }
 
     fun stopPerformanceTest() {
-        val state = _performanceTestState.value
-        if (state.isRunning) {
-            val elapsedNanos = System.nanoTime() - state.startTimeNanos
-            val elapsedSeconds = elapsedNanos / 1_000_000_000.0
-            val result = com.canopobd.data.model.PerformanceResult(
-                testType = state.currentTestType,
-                timeSeconds = elapsedSeconds,
-                valid = elapsedSeconds > 0.5 && elapsedSeconds < 300.0
-            )
-            val history = listOf(result) + state.history.take(9)
-            _performanceTestState.value = state.copy(
-                isRunning = false,
-                lastResult = result,
-                history = history,
-                statusMessage = ""
-            )
+        if (_performanceTestState.value.isRunning) {
+            // Try to get a result even if target wasn't reached
+            accelerationTimer.cancel()
+            val result = accelerationTimer.buildResult()
+            _currentAccelerationRun.value = result
+
+            val state = _performanceTestState.value
+            if (result != null && result.valid) {
+                val perfResult = com.canopobd.data.model.PerformanceResult(
+                    testType = state.currentTestType,
+                    timeSeconds = result.timeSeconds,
+                    valid = true
+                )
+                val history = listOf(perfResult) + state.history.take(9)
+                _performanceTestState.value = state.copy(
+                    isRunning = false,
+                    lastResult = perfResult,
+                    history = history,
+                    statusMessage = ""
+                )
+            } else {
+                _performanceTestState.value = state.copy(
+                    isRunning = false,
+                    statusMessage = "Abgebrochen"
+                )
+            }
         } else {
-            _performanceTestState.value = state.copy(isRunning = false, statusMessage = "")
+            _performanceTestState.value = _performanceTestState.value.copy(isRunning = false, statusMessage = "")
         }
     }
 

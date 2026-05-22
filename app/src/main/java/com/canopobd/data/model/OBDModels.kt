@@ -764,6 +764,31 @@ data class PerformanceTestState(
     val statusMessage: String = ""
 )
 
+/**
+ * GPS-based acceleration test state with rich data.
+ */
+data class AccelerationPhase(
+    val name: String,
+    val timestamp: Long,
+    val speedKmh: Double,
+    val rpm: Int?
+)
+
+data class AccelerationRun(
+    val timestamp: Long = System.currentTimeMillis(),
+    val testType: PerformanceTestType = PerformanceTestType.ZERO_100,
+    val timeSeconds: Double = 0.0,
+    val valid: Boolean = false,
+    val maxSpeedKmh: Double = 0.0,
+    val maxAcceleration: Double = 0.0,
+    val timeTo50Percent: Double? = null,
+    val timeTo90Percent: Double? = null,
+    val sampleCount: Int = 0,
+    val phases: List<AccelerationPhase> = emptyList(),
+    val gearShifts: List<Int> = emptyList(),
+    val cancelled: Boolean = false
+)
+
 data class PowerCalculation(
     val horsepower: Double = 0.0,
     val torqueNm: Double = 0.0,

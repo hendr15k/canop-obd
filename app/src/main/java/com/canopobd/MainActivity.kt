@@ -290,6 +290,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val safetySummary by viewModel.safetySummary.collectAsState()
     val showEcoScoreDialog by viewModel.showEcoScoreDialog.collectAsState()
     val ecoScoreData by viewModel.ecoScoreData.collectAsState()
+    val gpsSpeedForTest by viewModel.gpsSpeedForTest.collectAsState()
+    val currentAccelerationRun by viewModel.currentAccelerationRun.collectAsState()
     val co2Data by viewModel.co2Data.collectAsState()
     val fuelCostData by viewModel.fuelCostData.collectAsState()
     val rangeEstimation by viewModel.rangeEstimation.collectAsState()
@@ -525,7 +527,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleQuickActions = viewModel::toggleQuickActions,
         onToggleVehicleProfileManager = viewModel::toggleVehicleProfileManager,
         onExecuteQuickAction = viewModel::executeQuickAction,
-        onLoadProfile = { profile -> },
+        onLoadProfile = { _ -> },
         currentVehicleProfile = null,
         onToggleExtendedTurbo = viewModel::toggleExtendedTurbo,
         onToggleExtendedFuel = viewModel::toggleExtendedFuel,
@@ -559,6 +561,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         _showTurboCooldown = showTurboCooldown,
         turboCooldownState = turboCooldownState,
         tcmReading = viewModel.tcmReading.value,
-        ecmReading = viewModel.ecmReading.value
+        ecmReading = viewModel.ecmReading.value,
+        safetySummary = safetySummary,
+        ecoScoreData = ecoScoreData,
+        gpsSpeedKmh = gpsSpeedForTest,
+        accelerationRun = currentAccelerationRun,
+        onToggleSafetySystems = viewModel::toggleSafetySystems,
+        onToggleEcoScore = viewModel::toggleEcoScore
     )
 }

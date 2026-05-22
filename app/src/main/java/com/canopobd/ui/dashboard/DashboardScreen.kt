@@ -286,6 +286,12 @@ fun DashboardScreen(
     onSendClimateCommand: (com.canopobd.ui.climate.ClimateCommand) -> Unit,
     tcmReading: com.canopobd.data.repository.OBDRepository.TCMReading,
     ecmReading: com.canopobd.data.repository.OBDRepository.ECMReading,
+    safetySummary: com.canopobd.data.model.SafetySummary = com.canopobd.data.model.SafetySummary(),
+    ecoScoreData: com.canopobd.data.model.EcoScoreData = com.canopobd.data.model.EcoScoreData(),
+    gpsSpeedKmh: Double = 0.0,
+    accelerationRun: com.canopobd.data.model.AccelerationRun? = null,
+    onToggleSafetySystems: () -> Unit = {},
+    onToggleEcoScore: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -471,6 +477,196 @@ fun DashboardScreen(
                     )
                 }
 
+                // ── Safety & ECO Score Cards ────────────────────────────────
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Safety Systems Card
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onToggleSafetySystems() },
+                            colors = CardDefaults.cardColors(
+                                containerColor = when {
+                                    safetySummary.hasCritical -> Color(0xFFFF4444).copy(alpha = 0.15f)
+                                    safetySummary.hasWarnings -> Color(0xFFFF8800).copy(alpha = 0.15f)
+                                    else -> colors.surfaceCard.copy(alpha = 0.7f)
+                                }
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Security,
+                                        contentDescription = null,
+                                        tint = when {
+                                            safetySummary.hasCritical -> Color(0xFFFF4444)
+                                            safetySummary.hasWarnings -> Color(0xFFFF8800)
+                                            else -> Color(0xFF44FF88)
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Sicherheit",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.textPrimary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Status indicators row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    val statusItems = listOf(
+                                        "ABS" to safetySummary.safetyStatus.absStatus,
+                                        "ESP" to safetySummary.safetyStatus.espStatus,
+                                        "TPMS" to safetySummary.safetyStatus.tpmsStatus,
+                                        "Airbag" to safetySummary.safetyStatus.airbagStatus
+                                    )
+                                    for ((label, status) in statusItems) {
+                                        Column(
+                                            modifier = Modifier.weight(1f),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = colors.textPrimary.copy(alpha = 0.6f)
+                                            )
+                                            Text(
+                                                text = when (status) {
+                                                    com.canopobd.data.model.SystemStatus.OK -> "✓"
+                                                    com.canopobd.data.model.SystemStatus.WARNING -> "⚠"
+                                                    com.canopobd.data.model.SystemStatus.FAULT -> "✗"
+                                                    else -> "?"
+                                                },
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = when (status) {
+                                                    com.canopobd.data.model.SystemStatus.OK -> Color(0xFF44FF88)
+                                                    com.canopobd.data.model.SystemStatus.WARNING -> Color(0xFFFF8800)
+                                                    com.canopobd.data.model.SystemStatus.FAULT -> Color(0xFFFF4444)
+                                                    else -> colors.textPrimary.copy(alpha = 0.4f)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                if (safetySummary.activeWarningCount > 0) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "${safetySummary.activeWarningCount} Warnung(en)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFFFF8800)
+                                    )
+                                }
+                            }
+                        }
+
+                        // ECO Score Card
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onToggleEcoScore() },
+                            colors = CardDefaults.cardColors(
+                                containerColor = when {
+                                    ecoScoreData.overallScore >= 75 -> Color(0xFF44FF88).copy(alpha = 0.1f)
+                                    ecoScoreData.overallScore >= 50 -> Color(0xFFFFCC00).copy(alpha = 0.1f)
+                                    ecoScoreData.overallScore > 0 -> Color(0xFFFF8800).copy(alpha = 0.1f)
+                                    else -> colors.surfaceCard.copy(alpha = 0.7f)
+                                }
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Eco,
+                                        contentDescription = null,
+                                        tint = when {
+                                            ecoScoreData.overallScore >= 75 -> Color(0xFF44FF88)
+                                            ecoScoreData.overallScore >= 50 -> Color(0xFFFFCC00)
+                                            ecoScoreData.overallScore > 0 -> Color(0xFFFF8800)
+                                            else -> colors.textPrimary.copy(alpha = 0.4f)
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "ECO Score",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.textPrimary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Score display
+                                Text(
+                                    text = "${ecoScoreData.overallScore}",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = when {
+                                        ecoScoreData.overallScore >= 75 -> Color(0xFF44FF88)
+                                        ecoScoreData.overallScore >= 50 -> Color(0xFFFFCC00)
+                                        ecoScoreData.overallScore > 0 -> Color(0xFFFF8800)
+                                        else -> colors.textPrimary.copy(alpha = 0.4f)
+                                    }
+                                )
+                                Text(
+                                    text = if (ecoScoreData.grade.isNotEmpty()) "Grade: ${ecoScoreData.grade}" else "Keine Daten",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textPrimary.copy(alpha = 0.6f)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                // Sub-scores row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "${ecoScoreData.efficiencyScore}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = colors.textPrimary
+                                        )
+                                        Text(
+                                            text = "Effizienz",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = colors.textPrimary.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "${ecoScoreData.smoothnessScore}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = colors.textPrimary
+                                        )
+                                        Text(
+                                            text = "Sanftheit",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = colors.textPrimary.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 item {
                     SectionHeader(
                         title = stringResource(R.string.gauges).uppercase(),
@@ -580,7 +776,7 @@ fun DashboardScreen(
             com.canopobd.ui.maintenance.MaintenanceDialog(maintenanceItems = maintenanceItems, currentKm = currentKm, onDismiss = onToggleMaintenance, onUpdateItem = onSetMaintenanceItem, onResetItem = onResetMaintenanceItem)
         }
         if (showPerformanceTest) {
-            com.canopobd.ui.performance.PerformanceTestDialog(testState = performanceTestState, onDismiss = onTogglePerformanceTest, onStartTest = onStartPerfTest, onStopTest = onStopPerfTest)
+            com.canopobd.ui.performance.PerformanceTestDialog(testState = performanceTestState, gpsSpeedKmh = gpsSpeedKmh, accelerationRun = accelerationRun, onDismiss = onTogglePerformanceTest, onStartTest = onStartPerfTest, onStopTest = onStopPerfTest)
         }
         if (showTripHistory) {
             com.canopobd.ui.trip.TripHistoryScreen(
@@ -826,7 +1022,7 @@ private fun PrimaryGaugeRow(
 private fun SecondaryGaugeGrid(
     gaugeMap: Map<String, GaugeItem>,
     primaryIds: Set<String>,
-    colors: AppColors
+    @Suppress("UNUSED_PARAMETER") colors: AppColors
 ) {
     val secondary = gaugeMap.entries
         .filter { it.key !in primaryIds }
@@ -884,7 +1080,7 @@ private fun DashboardHeader(
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
-    onToggleVehicleInfo: () -> Unit,
+    @Suppress("UNUSED_PARAMETER") onToggleVehicleInfo: () -> Unit,
     onToggleKnownIssues: () -> Unit,
     onToggleTurboMonitor: () -> Unit,
     onToggleTimingChainMonitor: () -> Unit,
@@ -914,7 +1110,7 @@ private fun DashboardHeader(
         connectionState is OBDConnectionState.Connected -> stringResource(R.string.status_connected)
         connectionState is OBDConnectionState.Connecting -> stringResource(R.string.status_connecting)
         connectionState is OBDConnectionState.Disconnected -> stringResource(R.string.status_disconnected)
-        connectionState is OBDConnectionState.Error -> (connectionState as OBDConnectionState.Error).message
+        connectionState is OBDConnectionState.Error -> connectionState.message
         else -> stringResource(R.string.status_disconnected)
     }
 
