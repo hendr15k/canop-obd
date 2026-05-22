@@ -1432,7 +1432,6 @@
     <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$50</ID>
     <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$500</ID>
     <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$5000</ID>
-    <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$50L</ID>
     <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$6</ID>
     <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$60</ID>
     <ID>MagicNumber:DashboardViewModel.kt$DashboardViewModel$600</ID>
@@ -4717,7 +4716,6 @@
     <ID>UnusedParameter:TurboViewModel.kt$TurboViewModel$boostAnalysis: BoostAnalysis</ID>
     <ID>UnusedParameter:TurboViewModel.kt$TurboViewModel$calibration: AstraJ14TurboCalibration</ID>
     <ID>UnusedParameter:WastegateHealthAnalyzer.kt$WastegateHealthAnalyzer$rpm: Double</ID>
-    <ID>UnusedPrivateMember:ExtendedMaintenanceDialog.kt$AstraJServicePlan$private fun createTimingBelt(currentKm: Int): ServiceEntry</ID>
     <ID>UnusedPrivateMember:OBDRepository.kt$OBDRepository$private fun handleConnectionLoss(error: String)</ID>
     <ID>UnusedPrivateProperty:BatteryHealthAnalyzer.kt$BatteryHealthAnalyzer.Companion$private const val CCA_MIN_WEAK = 350</ID>
     <ID>UnusedPrivateProperty:BoostLeakDetector.kt$BoostLeakDetector.Companion$// Turbo-RPM vs Boost-Korrelation private const val TURBO_RPM_HIGH = 150000.0</ID>

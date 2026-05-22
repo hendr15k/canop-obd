@@ -347,13 +347,29 @@ object SafetyDTCMappings {
 
     fun getDTCSystem(code: String): String {
         val normalized = code.uppercase()
+        val description = ALL_DTCS[normalized]?.uppercase() ?: ""
         return when {
             normalized.startsWith("B") -> "Airbag/SRS"
-            normalized.startsWith("C") && (normalized.contains("WHEEL SPEED") || normalized.contains("ABS") || normalized.contains("PUMP") || normalized.contains("BRAKE")) -> "ABS"
-            normalized.startsWith("C") && (normalized.contains("ESP") || normalized.contains("YAW") || normalized.contains("ACCELEROMETER") || normalized.contains("STEERING") || normalized.contains("LATERAL")) -> "ESP/Stabilitaet"
-            normalized.startsWith("C") && (normalized.contains("TIRE") || normalized.contains("TPMS")) -> "TPMS"
+            normalized.startsWith("C") && isABSCode(description) -> "ABS"
+            normalized.startsWith("C") && isESPCode(description) -> "ESP/Stabilitaet"
+            normalized.startsWith("C") && isTPMSCode(description) -> "TPMS"
             else -> "Unbekannt"
         }
+    }
+
+    private fun isABSCode(desc: String): Boolean = desc.let {
+        it.contains("GESCHWINDIGKEIT") || it.contains("ABS") ||
+        it.contains("PUMPE") || it.contains("BREMSE")
+    }
+
+    private fun isESPCode(desc: String): Boolean = desc.let {
+        it.contains("ESP") || it.contains("GIERRATEN") ||
+        it.contains("BESCHLEUNIGUNG") || it.contains("LENKWINKEL") ||
+        it.contains("QUER")
+    }
+
+    private fun isTPMSCode(desc: String): Boolean = desc.let {
+        it.contains("REIFEN") || it.contains("TPMS") || it.contains("REIFENDRUCK")
     }
 
     fun getDTCDescription(code: String): String? = ALL_DTCS[code.uppercase()]

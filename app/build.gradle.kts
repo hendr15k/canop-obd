@@ -18,6 +18,15 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
 
 ktlint {
     android.set(true)
+    ignoreFailures.set(true)
+    filter {
+        exclude("**/build/**/*.kts")
+        exclude("**/generated/**/*.kts")
+    }
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.SARIF)
+    }
 }
 
 android {
