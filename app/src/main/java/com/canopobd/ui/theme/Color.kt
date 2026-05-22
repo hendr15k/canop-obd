@@ -19,6 +19,7 @@ val gaugeOrange = Color(0xFFF97316)
 val gaugeYellow = Color(0xFFFBBF24)
 val gaugeGreen = Color(0xFF22C55E)
 val gaugeCyan = Color(0xFF06B6D4)
+val gaugeAccent = Color(0xFF60A5FA)
 
 // Gauge gradient colors
 val gaugeRedGlow = Color(0xFFDC2626)
@@ -61,6 +62,7 @@ data class AppColors(
     val gaugeYellow: Color,
     val gaugeGreen: Color,
     val gaugeCyan: Color,
+    val gaugeAccent: Color,
     val gaugeRedGlow: Color,
     val gaugeOrangeGlow: Color,
     val gaugeGreenGlow: Color,
@@ -94,6 +96,7 @@ val DefaultAppColors = AppColors(
     gaugeYellow = gaugeYellow,
     gaugeGreen = gaugeGreen,
     gaugeCyan = gaugeCyan,
+    gaugeAccent = gaugeAccent,
     gaugeRedGlow = gaugeRedGlow,
     gaugeOrangeGlow = gaugeOrangeGlow,
     gaugeGreenGlow = gaugeGreenGlow,
@@ -127,6 +130,7 @@ val DefaultLightAppColors = AppColors(
     gaugeYellow = Color(0xFFB45309),
     gaugeGreen = Color(0xFF15803D),
     gaugeCyan = gaugeCyan,
+    gaugeAccent = gaugeAccent,
     gaugeRedGlow = gaugeRedGlow,
     gaugeOrangeGlow = gaugeOrangeGlow,
     gaugeGreenGlow = gaugeGreenGlow,
@@ -166,6 +170,7 @@ fun com.canopobd.data.model.ColorTheme.toAppColors(mode: AppThemeMode = AppTheme
             gaugeYellow = Color(0xFFB45309),
             gaugeGreen = Color(0xFF15803D),
             gaugeCyan = Color(0xFF06B6D4),
+            gaugeAccent = aColor,
             gaugeRedGlow = Color(this.gaugeRed),
             gaugeOrangeGlow = Color(this.gaugeOrange),
             gaugeGreenGlow = Color(this.gaugeGreen),
@@ -199,6 +204,7 @@ fun com.canopobd.data.model.ColorTheme.toAppColors(mode: AppThemeMode = AppTheme
         gaugeYellow = Color(this.gaugeYellow),
         gaugeGreen = Color(this.gaugeGreen),
         gaugeCyan = Color(0xFF06B6D4),
+        gaugeAccent = Color(accentColor),
         gaugeRedGlow = Color(this.gaugeRed),
         gaugeOrangeGlow = Color(this.gaugeOrange),
         gaugeGreenGlow = Color(this.gaugeGreen),

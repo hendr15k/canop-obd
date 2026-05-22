@@ -241,6 +241,37 @@
 
 ---
 
+## 9. Z14XEL (1.4L N/A) – Neue Mode 22 PIDs
+
+> Für den Opel Astra J mit Z14XEL-Motor (1.4L, 122 PS, 160 Nm,自然吸气).
+> Der Z14XEL nutzt den gleichen Bosch ME17.9.2 ECU wie der A14NET, jedoch ohne Turbo.
+
+### 9.1 Z14XEL-spezifische Mode 22 PIDs
+
+| PID | Name | Einheit | Normalwert (Idle) |
+|-----|------|---------|-------------------|
+| 221012 | Drosselklappenstellung | % | 0–3% |
+| 221011 | EGR-Stellung | % | 0–5% |
+| 221013 | Ansaugkrümmer-Druck | kPa | 30–45 (Vakuum) |
+| 221030 | Leerlauf-Luftregelung | % | 30–70% |
+| 221031 | Klopfverstellung | ° | 0–5° |
+| 221032 | Zündverweilzeit | ms | 1.0–2.0 |
+| 221020 | Katalysator-Temperatur | °C | 50–200 (kalt) |
+| 221027 | EVAP-Purge | % | 0–10% |
+
+### 9.2 Unterschiede Z14XEL vs. A14NET
+
+| Aspekt | Z14XEL (N/A) | A14NET (Turbo) |
+|--------|--------------|----------------|
+| Leistung | 90 kW (122 PS) | 103 kW (140 PS) |
+| Drehmoment | 160 Nm @ 3800 | 200 Nm @ 1850–5500 |
+| Max. Drehzahl | 6200 U/min | 6500 U/min |
+| Ladedruck | — | bis 1.0 bar |
+| Öldruck Idle | ≥ 1.0 bar | ≥ 1.0 bar |
+| Kraftstoffrail-Druck | 350–450 kPa | 350–550 kPa |
+
+---
+
 ## Quellen
 
 - SAE J1979 (OBD-II Standard)

@@ -234,6 +234,72 @@ object ExtendedGMMode22 {
     )
 
     // =========================================================================
+    // Z14XEL Mode 22 PIDs – Opel Astra J 1.4 N/A (Bosch ME17.9.2)
+    // =========================================================================
+
+    val THROTTLE_POSITION_Z14 = Mode22PIDDefinition(
+        code = "221012", displayName = "Drosselklappe (Z14XEL)", unit = "%", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0 },
+        normalRangeMin = 0.0, normalRangeMax = 100.0,
+        description = "Drosselklappenstellung (0% = geschlossen, 100% = voll geöffnet)"
+    )
+
+    val EGR_POSITION_Z14 = Mode22PIDDefinition(
+        code = "221011", displayName = "EGR-Stellung (Z14XEL)", unit = "%", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0 },
+        normalRangeMin = 0.0, normalRangeMax = 100.0,
+        description = "EGR-Ventil-Stellung (0% = geschlossen, 100% = voll geöffnet)"
+    )
+
+    val MAP_SENSOR_Z14 = Mode22PIDDefinition(
+        code = "221013", displayName = "Ansaugkrümmer-Druck (Z14XEL)", unit = "kPa", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0 },
+        normalRangeMin = 30.0, normalRangeMax = 110.0,
+        description = "Manifold Air Pressure (Vakuum im Leerlauf, ~100 kPa bei Last)"
+    )
+
+    val IDLE_AIR_CONTROL_Z14 = Mode22PIDDefinition(
+        code = "221030", displayName = "Leerlauf-Luftregelung (Z14XEL)", unit = "%", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0 },
+        normalRangeMin = 0.0, normalRangeMax = 100.0,
+        description = "Leerlauf-Luftschieber-Stellung"
+    )
+
+    val KNOCK_RETARD_Z14 = Mode22PIDDefinition(
+        code = "221031", displayName = "Klopfverstellung (Z14XEL)", unit = "°", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 2.0 else 0.0 },
+        normalRangeMin = 0.0, normalRangeMax = 20.0,
+        description = "Zündverstellung durch Klopfen (0° = keine Klopfregelung)"
+    )
+
+    val IGNITION_DWELL_Z14 = Mode22PIDDefinition(
+        code = "221032", displayName = "Zündverweilzeit (Z14XEL)", unit = "ms", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 10.0 else 0.0 },
+        normalRangeMin = 0.5, normalRangeMax = 3.0,
+        description = "Zündverweilzeit (Leerlauf ~1.5 ms, Last ~2.5 ms)"
+    )
+
+    val CATALYST_TEMP_Z14 = Mode22PIDDefinition(
+        code = "221020", displayName = "Katalysator-Temperatur (Z14XEL)", unit = "°C", byteCount = 2,
+        formula = { b -> if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0 },
+        normalRangeMin = 50.0, normalRangeMax = 1000.0,
+        description = "Katalysator-Temperatur (Normal < 800°C, Warnung > 850°C)"
+    )
+
+    val EVAP_PURGE_Z14 = Mode22PIDDefinition(
+        code = "221027", displayName = "EVAP-Purge (Z14XEL)", unit = "%", byteCount = 1,
+        formula = { b -> if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0 },
+        normalRangeMin = 0.0, normalRangeMax = 100.0,
+        description = "EVAP-Purge-Ventil Duty-Cycle"
+    )
+
+    val Z14XEL_ALL_PIDS: List<Mode22PIDDefinition> = listOf(
+        THROTTLE_POSITION_Z14, EGR_POSITION_Z14, MAP_SENSOR_Z14,
+        IDLE_AIR_CONTROL_Z14, KNOCK_RETARD_Z14, IGNITION_DWELL_Z14,
+        CATALYST_TEMP_Z14, EVAP_PURGE_Z14
+    )
+
+    // =========================================================================
     // Alle PIDs als Liste
     // =========================================================================
 

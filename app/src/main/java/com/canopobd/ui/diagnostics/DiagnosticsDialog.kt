@@ -1,6 +1,7 @@
 package com.canopobd.ui.diagnostics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,12 @@ fun DiagnosticsDialog(
     freezeFrames: List<FreezeFrame>,
     onDismiss: () -> Unit
 ) {
+    var showProblemCases by remember { mutableStateOf(false) }
+
+    if (showProblemCases) {
+        DiagnosticDetailDialog(onDismiss = { showProblemCases = false })
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -57,7 +64,50 @@ fun DiagnosticsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Button to open problem cases dialog
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showProblemCases = true },
+                    shape = RoundedCornerShape(12.dp),
+                    color = canopoAccent.copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.Biotech,
+                            contentDescription = null,
+                            tint = canopoAccent,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.diagnostics_problem_cases),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = canopoAccent
+                            )
+                            Text(
+                                text = stringResource(R.string.diagnostics_problem_cases_desc),
+                                fontSize = 11.sp,
+                                color = textSecondary
+                            )
+                        }
+                        Icon(
+                            Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = canopoAccent,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {

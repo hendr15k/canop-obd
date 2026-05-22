@@ -146,6 +146,8 @@
     <string name="diagnostics_supported_pids">Unterstützte PIDs</string>
     <string name="diagnostics_freeze_frames">Freeze Frames</string>
     <string name="diagnostics_no_freeze_frames">Keine Freeze Frames</string>
+    <string name="diagnostics_problem_cases">Diagnose-Fälle</string>
+    <string name="diagnostics_problem_cases_desc">Hilfreiche Informationen zu typischen Problemen: Turbo, Sensoren, Abgassystem</string>
 
     <!-- Alerts -->
     <string name="alerts_title">Warnungen</string>

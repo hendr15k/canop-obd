@@ -994,6 +994,163 @@ object AstraJDTCCodes {
             udsDTCType = "B"
         )
 
+        // =====================================================================
+        // Z14XEL-spezifische DTCs (N/A 1.4L - Bosch ME17.9.2)
+        // =====================================================================
+        entries += AstraJDTCDetails(
+            code = "P0401",
+            description = "EGR - Unzureichende Durchflussmenge",
+            severity = DTCSeverity.WARNING,
+            system = "Abgas",
+            frequency = DTCFrequency.COMMON,
+            typicalCause = "Verstopftes EGR-Ventil, Ablagerungen im Ansaugkrümmer, defektes Stellglied",
+            recommendedSolution = "EGR-Ventil reinigen, Ansaugkrümmer auf Verkokung prüfen, EGR-Systemtest",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            relatedCodes = listOf("P0402", "P0403"),
+            technicalNotes = "Beim Z14XEL: EGR ist elektrisch geregelt. Ablagerungen im Ansaugkrümmer sind typisch. Kein Turbo, daher andere Luftdynamik als A14NET."
+        )
+        entries += AstraJDTCDetails(
+            code = "P0402",
+            description = "EGR - Überschreitende Durchflussmenge",
+            severity = DTCSeverity.WARNING,
+            system = "Abgas",
+            frequency = DTCFrequency.RARE,
+            typicalCause = "EGR-Ventil klemmt offen, Dichtungsleck, Vakuumleitung defekt",
+            recommendedSolution = "EGR-Ventil auf Freigang prüfen, Vakuumleitungen kontrollieren",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            relatedCodes = listOf("P0401", "P0403")
+        )
+        entries += AstraJDTCDetails(
+            code = "P0403",
+            description = "EGR - Stromkreisfehler",
+            severity = DTCSeverity.WARNING,
+            system = "Abgas",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "Defektes EGR-Stellglied, Verkabelungsfehler, Steuergeräteausgang defekt",
+            recommendedSolution = "EGR-Stellglied-Widerstand messen, Verkabelung prüfen, Ventil ersetzen",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            relatedCodes = listOf("P0401", "P0402")
+        )
+        entries += AstraJDTCDetails(
+            code = "P0106",
+            description = "MAP-Sensor - Bereich/Leistung (Plausibilität)",
+            severity = DTCSeverity.WARNING,
+            system = "Sensor",
+            frequency = DTCFrequency.COMMON,
+            typicalCause = "MAP-Sensor verschmutzt, Vakuumleck, Sensor defekt, Dichtungsleck",
+            recommendedSolution = "MAP-Sensor prüfen, Vakuumleitung auf Dichtheit testen, Sensor ersetzen",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            isAstraJCommon = true,
+            relatedCodes = listOf("P0105", "P0107", "P0108"),
+            technicalNotes = "Beim Z14XEL: MAP-Sensor misst Ansaugdruck. Im Leerlauf Vakuum (30-50 kPa), bei Last Atmospheric (100+ kPa)."
+        )
+        entries += AstraJDTCDetails(
+            code = "P0105",
+            description = "MAP-Sensor - Stromkreisfehler",
+            severity = DTCSeverity.WARNING,
+            system = "Sensor",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "Defekter MAP-Sensor, Verkabelungsfehler, Steckerverbindung",
+            recommendedSolution = "MAP-Sensor und Verkabelung prüfen, Sensor ersetzen",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            relatedCodes = listOf("P0106", "P0107", "P0108")
+        )
+        entries += AstraJDTCDetails(
+            code = "P0107",
+            description = "MAP-Sensor - Signaleingang niedrig",
+            severity = DTCSeverity.WARNING,
+            system = "Sensor",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "MAP-Sensor Kurzschluss gegen Masse, defekter Sensor, Verkabelung",
+            recommendedSolution = "MAP-Sensor-Spannung messen ( Leerlauf: 1.0-1.5V), Sensor ersetzen",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            relatedCodes = listOf("P0105", "P0106")
+        )
+        entries += AstraJDTCDetails(
+            code = "P0108",
+            description = "MAP-Sensor - Signaleingang hoch",
+            severity = DTCSeverity.WARNING,
+            system = "Sensor",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "MAP-Sensor offen, Unterbrechung der Verkabelung, Vakuumleck",
+            recommendedSolution = "Verkabelung prüfen, Vakuumleitung auf Dichtheit testen, Sensor ersetzen",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            relatedCodes = listOf("P0105", "P0106")
+        )
+        entries += AstraJDTCDetails(
+            code = "P2138",
+            description = "Drosselklappenpositionssensor - Spannung unplausibel",
+            severity = DTCSeverity.WARNING,
+            system = "Motor",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "Drosselklappensensor defekt, Verkabelungsfehler, Kurzschluss zwischen Sensoren",
+            recommendedSolution = "Drosselklappensensoren prüfen, Verkabelung testen, ggf. Drosselklappeneinheit ersetzen",
+            estimatedCostWorkshop = DTCCostRange.HIGH,
+            estimatedCostDIY = DTCCostRange.MEDIUM,
+            relatedCodes = listOf("P0220", "P0120", "P2101"),
+            technicalNotes = "Z14XEL: Elektronische Drosselklappe mit zwei Sensoren. Bei Differenz >0.5V: Fehler."
+        )
+        entries += AstraJDTCDetails(
+            code = "P2101",
+            description = "Drosselklappensteller - Unplausibles Signal",
+            severity = DTCSeverity.WARNING,
+            system = "Motor",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "Drosselklappensteller defekt, Verkabelungsfehler, mechanischer Defekt",
+            recommendedSolution = "Drosselklappensteller prüfen, Drosselklappeneinheit reinigen oder ersetzen",
+            estimatedCostWorkshop = DTCCostRange.HIGH,
+            estimatedCostDIY = DTCCostRange.MEDIUM,
+            relatedCodes = listOf("P2138", "P0220", "P2100"),
+            technicalNotes = "Z14XEL: Drosselklappenadaption nach Reinigung/Ersetzung durchführen."
+        )
+        entries += AstraJDTCDetails(
+            code = "P0606",
+            description = "Steuergerätfehler (ECM/PCM Prozessorfehler)",
+            severity = DTCSeverity.CRITICAL,
+            system = "Elektronik",
+            frequency = DTCFrequency.RARE,
+            typicalCause = "Interner Steuergerätefehler, Softwarefehler, Überspannung",
+            recommendedSolution = "Steuergerät neu initialisieren, Software-Update prüfen, ggf. Steuergerät ersetzen",
+            estimatedCostWorkshop = DTCCostRange.VERY_HIGH,
+            estimatedCostDIY = DTCCostRange.VERY_HIGH,
+            relatedCodes = listOf("P0607"),
+            technicalNotes = "Z14XEL: Bei anhaltendem Fehler: Steuergerät-Batterie trennen (30 Min.), bei Fortsetzung: Werkstatt."
+        )
+        entries += AstraJDTCDetails(
+            code = "P0102",
+            description = "Luftmassenmesser (MAF) - Signaleingang niedrig",
+            severity = DTCSeverity.WARNING,
+            system = "Sensor",
+            frequency = DTCFrequency.COMMON,
+            typicalCause = "MAF-Sensor verschmutzt oder defekt, zu wenig Luftstrom, verstopfter Luftfilter",
+            recommendedSolution = "Luftfilter prüfen/tauschen, MAF-Sensor reinigen, bei anhaltendem Fehler: MAF ersetzen",
+            estimatedCostWorkshop = DTCCostRange.MEDIUM,
+            estimatedCostDIY = DTCCostRange.LOW,
+            isAstraJCommon = true,
+            relatedCodes = listOf("P0100", "P0101"),
+            technicalNotes = "Z14XEL: MAF-Wert im Leerlauf ca. 2-4 g/s, bei Last 20-60 g/s. Zu niedrig = Verschmutzung oder Luftleck."
+        )
+        entries += AstraJDTCDetails(
+            code = "P2135",
+            description = "Drosselklappenpositionssensor 1/2 - Unplausibel",
+            severity = DTCSeverity.WARNING,
+            system = "Motor",
+            frequency = DTCFrequency.OCCASIONAL,
+            typicalCause = "Drosselklappensensor defekt, Verkabelung, mechanischer Verschleiss",
+            recommendedSolution = "Drosselklappeneinheit prüfen, Sensoren testen, ggf. Einheit ersetzen",
+            estimatedCostWorkshop = DTCCostRange.HIGH,
+            estimatedCostDIY = DTCCostRange.MEDIUM,
+            relatedCodes = listOf("P2138", "P0220"),
+            technicalNotes = "Z14XEL: Zwei Drosselklappensensoren müssen innerhalb von 0.5V übereinstimmen."
+        )
+
         // Weitere P-Codes fuer Vollstaendigkeit
         entries += AstraJDTCDetails(
             code = "P0335",

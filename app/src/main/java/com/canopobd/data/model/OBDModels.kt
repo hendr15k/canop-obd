@@ -290,6 +290,44 @@ enum class OBDPID(
     }),
     AFR_RATIO_MODE22("22101F", "Luft-Kraftstoff-Verhältnis (Mode22)", "", 2, { b ->
         if (b.size >= 2) 2.0 * (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 65536.0 else 0.0
+    }),
+
+    // Z14XEL Mode 22 PIDs (Opel Astra J 1.4 N/A - Bosch ME17.9.2)
+    THROTTLE_POSITION_MODE22_Z14("221012", "Drosselklappe (Z14XEL)", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    EGR_POSITION_MODE22_Z14("221011", "EGR-Stellung (Z14XEL)", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    MAP_SENSOR_MODE22_Z14("221013", "Ladedruck MAP (Z14XEL)", "kPa", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    PARKING_NEUTRAL_MODE22_Z14("221014", "P/N-Status (Z14XEL)", "", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    CATALYST_TEMP_B1S1_MODE22_Z14("221020", "Kat-Temp B1S1 (Z14XEL)", "°C", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 10.0 - 40.0 else 0.0
+    }),
+    STFT_MODE22_Z14("221024", "STFT Bank1 (Z14XEL)", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
+    }),
+    LTFT_MODE22_Z14("221025", "LTFT Bank1 (Z14XEL)", "%", 1, { b ->
+        if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
+    }),
+    FUEL_PUMP_STATUS_Z14("221026", "Kraftstoffpumpe (Z14XEL)", "", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+    }),
+    EVAP_PURGE_DUTY_Z14("221027", "EVAP-Purge (Z14XEL)", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    IDLE_AIR_CONTROL_Z14("221030", "Leerlauf-Luftregelung (Z14XEL)", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+    }),
+    KNOCK_RETARD_Z14("221031", "Klopfverstellung (Z14XEL)", "°", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 2.0 else 0.0
+    }),
+    IGNITION_DWELL_Z14("221032", "Zündverweilzeit (Z14XEL)", "ms", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) / 10.0 else 0.0
     });
 
     companion object {
@@ -1287,6 +1325,105 @@ data class AstraJ14TurboCalibration(
             ProblemMileageMap("Kolbenringe", 100000, 150000, 3, "Oelverbrauch, Kompressionsverlust"),
             ProblemMileageMap("Getriebe M32", 80000, 120000, 3, "Pre-2012 Modelle – Lager und Synchronringe"),
             ProblemMileageMap("Wastegate-Stellglied", 100000, 150000, 2, "Feder ermuedet, O-Ring poroes")
+        )
+    }
+}
+
+data class Z14XELCalibration(
+    val redlineRpm: Int = 6200,
+    val rpmWarning: Int = 5800,
+    val idleRpm: Int = 750,
+    val maxTorqueNm: Double = 135.0,
+    val maxPowerKw: Double = 90.0,
+    val maxPowerHp: Double = 122.0,
+    val maxOilTempC: Double = 120.0,
+    val optimalOilTempMin: Double = 90.0,
+    val optimalOilTempMax: Double = 110.0,
+    val maxCoolantTempC: Double = 105.0,
+    val maxIntakeAirTempC: Double = 60.0,
+    val oilCapacityLiters: Double = 4.5,
+    val engineCode: String = "Z14XEL",
+    val gmEngineCode: String = "LA14XER",
+    val fuelType: String = "Benzin (95 RON min)",
+    val fuelTankLiters: Double = 56.0,
+    val batteryAh: Int = 70,
+    val alternatorV: Double = 14.0,
+    val coolantCapacity: Double = 5.7,
+    val sparkPlugType: String = "NGK LZKR6A-11 / Bosch FR7LDE",
+    val sparkPlugGap: Double = 0.8,
+    val ecuType: String = "Bosch ME17.9.2",
+    val compressionRatio: String = "11.0:1",
+    val displacement: String = "1364cc (1.4L)",
+    val boreStroke: String = "72.5mm x 82.6mm",
+    val valveConfig: String = "DOHC 16V, DCVCP Nockenwellen",
+    val emissionStandard: String = "Euro 5",
+    val fuelConsumptionCombined: Double = 5.8,
+    val fuelConsumptionUrban: Double = 7.5,
+    val fuelConsumptionExtraUrban: Double = 4.8,
+    val co2Emissions: Int = 135,
+    val topSpeed: Int = 190,
+    val accel0to100: Double = 10.5,
+    val recommendedOil: String = "Dexos2 5W-30",
+    val oilChangeIntervalKm: Int = 15000,
+    val sparkPlugIntervalKm: Int = 60000,
+    val airFilterIntervalKm: Int = 30000,
+    val coolantIntervalKm: Int = 100000,
+    val timingChainIntervalKm: Int = 150000,
+    val vvtSystem: String = "DCVCP (Dual Continuous Variable Cam Phasing)",
+    val maxRpmSustained: Int = 5800,
+    val powerCurvePeakRpm: Int = 5200,
+    val torqueCurvePeakRpm: Int = 3500,
+    val optimalRpmMin: Int = 1500,
+    val optimalRpmMax: Int = 3500,
+    val powerBandRpmMin: Int = 4500,
+    val powerBandRpmMax: Int = 5500
+) {
+    fun isRpmWarning(rpm: Double): Boolean = rpm >= rpmWarning
+    fun isRpmRedline(rpm: Double): Boolean = rpm >= redlineRpm
+    fun isOilTempWarning(temp: Double): Boolean = temp >= maxOilTempC * 0.9
+    fun isOilTempCritical(temp: Double): Boolean = temp >= maxOilTempC
+    fun isCoolantWarning(temp: Double): Boolean = temp >= maxCoolantTempC * 0.95
+    fun isCoolantCritical(temp: Double): Boolean = temp >= maxCoolantTempC
+    fun getRpmPercent(rpm: Double): Double = (rpm / redlineRpm) * 100.0
+    fun isMafNormal(mafGs: Double): Boolean = mafGs in 2.0..70.0
+
+    companion object {
+        val INSTANCE = Z14XELCalibration()
+        val RECOMMENDED_PIDS = listOf(
+            OBDPID.RPM, OBDPID.SPEED, OBDPID.COOLANT_TEMP, OBDPID.THROTTLE,
+            OBDPID.ENGINE_LOAD, OBDPID.EGT_BANK1, OBDPID.FUEL_LEVEL, OBDPID.BATTERY_VOLTAGE,
+            OBDPID.MAF_RATE, OBDPID.ACTUAL_TORQUE, OBDPID.OIL_TEMP,
+            OBDPID.TIMING_ADVANCE, OBDPID.INTAKE_TEMP, OBDPID.ENGINE_FUEL_RATE,
+            OBDPID.INTAKE_PRESSURE, OBDPID.SHORT_TERM_FUEL_TRIM_BANK1,
+            OBDPID.LONG_TERM_FUEL_TRIM_BANK1, OBDPID.O2_VOLTAGE_B1S1, OBDPID.O2_VOLTAGE_B1S2,
+            OBDPID.BAROMETRIC_PRESSURE, OBDPID.FUEL_RAIL_PRESSURE, OBDPID.COMMANDED_EGR,
+            OBDPID.THROTTLE_POSITION_MODE22_Z14, OBDPID.EGR_POSITION_MODE22_Z14,
+            OBDPID.MAP_SENSOR_MODE22_Z14, OBDPID.IDLE_AIR_CONTROL_Z14,
+            OBDPID.KNOCK_RETARD_Z14, OBDPID.IGNITION_DWELL_Z14,
+            OBDPID.CATALYST_TEMP_B1S1_MODE22_Z14, OBDPID.STFT_MODE22_Z14,
+            OBDPID.LTFT_MODE22_Z14, OBDPID.FUEL_PUMP_STATUS_Z14, OBDPID.EVAP_PURGE_DUTY_Z14
+        )
+        val DASHBOARD_PRESET = DashboardPreset(
+            id = "astra_j_14_na",
+            name = "Opel Astra J 1.4 (Z14XEL)",
+            themeName = "CANOPO",
+            primaryGaugeIds = setOf(
+                "rpm", "speed", "coolant", "oil_temp", "throttle",
+                "fuel_level", "battery", "torque", "maf", "intake_temp"
+            ),
+            createdAt = System.currentTimeMillis()
+        )
+        val ALERT_CONFIG = AlertConfig(
+            speedWarning = 170f,
+            speedWarningEnabled = false,
+            coolantWarning = 105f,
+            coolantWarningEnabled = true,
+            fuelWarning = 10f,
+            fuelWarningEnabled = true,
+            rpmWarning = 5800f,
+            rpmWarningEnabled = true,
+            batteryLowWarning = 11.8f,
+            batteryLowWarningEnabled = true
         )
     }
 }
