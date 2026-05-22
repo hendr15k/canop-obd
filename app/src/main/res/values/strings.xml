@@ -611,7 +611,6 @@
     <string name="turbo_boost_absolute">Ladedruck (absolut)</string>
     <string name="turbo_wastegate_pos">Wastegate Position</string>
     <string name="turbo_health_score">Turbo-Gesundheits-Score</string>
-    <string name="turbo_spool_time">Turbo-Ansprechzeit</string>
     <string name="turbo_oil_pressure">Turbo-Oeldruck</string>
     <string name="turbo_inlet_temp">Turbo-Einlasstemperatur</string>
     <string name="turbo_outlet_temp">Turbo-Auslasstemperatur</string>
