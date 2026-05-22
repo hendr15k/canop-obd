@@ -283,11 +283,13 @@ class TurboSpoolAnalyzer(
             input.engineLoad > 70 -> 0.9
             input.engineLoad > 50 -> 0.95
             else -> 1.0
-            }
+        }
 
-        return ((spoolScore * WEIGHT_SPOOL_TIME +
+        val weightedScore = (spoolScore * WEIGHT_SPOOL_TIME +
                 wgScore * WEIGHT_WG_RESPONSE +
-                accelScore * WEIGHT_TURBO_ACCEL) / 100 * 100 * loadFactor).toInt().coerceIn(0, 100)
+                accelScore * WEIGHT_TURBO_ACCEL) / 100.0
+
+        return (weightedScore * loadFactor * 100).toInt().coerceIn(0, 100)
     }
 
     /**

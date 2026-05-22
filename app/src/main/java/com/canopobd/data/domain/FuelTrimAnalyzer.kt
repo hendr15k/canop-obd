@@ -60,22 +60,18 @@ class FuelTrimAnalyzer {
     )
 
     companion object {
-        private const val NORMAL_TRIM = 5.0
-        private const val WARNING_TRIM = 10.0
-        private const val PROBLEM_TRIM = 15.0
-
-    private const val OPTIMAL_TRIM_MAX = 5.0
-
-    private const val WARNING_TRIM_MAX = 10.0
-
-    private const val WARNING_TRIM_MIN = 8.0
-
-    private const val PROBLEM_TRIM_MIN = 12.0
+        // Trim thresholds - consolidated values
+        private const val OPTIMAL_TRIM_MAX = 5.0
+        private const val WARNING_TRIM_MIN = 8.0
+        private const val WARNING_TRIM_MAX = 10.0
+        private const val PROBLEM_TRIM_MIN = 12.0
         private const val CRITICAL_TRIM_MIN = 15.0
 
+        // Bank asymmetry thresholds
         private const val BANK_ASYMMETRY_WARNING = 5.0
         private const val BANK_ASYMMETRY_CRITICAL = 10.0
 
+        // LTFT drift detection
         private const val LTFT_DRIFT_THRESHOLD = 8.0
         private const val TRIM_SAMPLES_FOR_TREND = 10
     }
@@ -90,19 +86,19 @@ class FuelTrimAnalyzer {
         val absTotal = abs(totalTrim)
 
         val (healthScore, diagnosis) = when {
-            absTotal > PROBLEM_TRIM -> {
+            absTotal > CRITICAL_TRIM_MIN -> {
                 when {
                     totalTrim > 0 -> 20 to "System zu mager - Leck oder Sensorproblem"
                     else -> 20 to "System zu fett - Einspritzung oder Kraftstoffdruck"
                 }
             }
-            absTotal > WARNING_TRIM -> {
+            absTotal > WARNING_TRIM_MAX -> {
                 when {
                     totalTrim > 0 -> 50 to "Leichte Trimabweichung (mager)"
                     else -> 50 to "Leichte Trimabweichung (fett)"
                 }
             }
-            absTotal > NORMAL_TRIM -> {
+            absTotal > OPTIMAL_TRIM_MAX -> {
                 70 to "Leicht erhöhter Trim - Wartung empfohlen"
             }
             else -> {

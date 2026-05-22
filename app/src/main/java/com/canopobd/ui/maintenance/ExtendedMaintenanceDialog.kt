@@ -1055,15 +1055,18 @@ object AstraJServicePlan {
 
     fun createServiceEntries(currentKm: Int): List<ServiceEntry> = listOf(
         createOilChange(currentKm),
-        createTimingBelt(currentKm),
+        createTimingChain(currentKm),
         createTransmissionOil(currentKm),
-        createBrakePadsFront(currentKm),
-        createBrakePadsRear(currentKm),
-        createAirFilter(currentKm),
         createSparkPlugs(currentKm),
+        createAirFilter(currentKm),
+        createCabinFilter(currentKm),
         createCoolant(currentKm),
         createTurboInspectionVisual(currentKm),
-        createTurboInspectionPressure(currentKm)
+        createTurboInspectionPressure(currentKm),
+        createBrakePadsFront(currentKm),
+        createBrakePadsRear(currentKm),
+        createPCVValve(currentKm),
+        createMAFSensor(currentKm)
     )
 
     private fun createOilChange(currentKm: Int): ServiceEntry {
@@ -1099,38 +1102,38 @@ object AstraJServicePlan {
         val lastKm = 0
         val dueKm = lastKm + intervalKm
         return ServiceEntry(
-            id = "timing_belt",
-            title = "Zahnriemen-Wechsel",
-            spec = "Riemen + Wasserpumpe + Spannsatz komplett",
-            partNumber = "Opel 55577496 / INA 531 0789 10",
-            alternatives = "Gates K015649XS, ContiTech CT1162, Dayco 94940",
+            id = "timing_chain",
+            title = "Timing-Kette Prüfung",
+            spec = "Steuerkette + Kettenspanner prüfen",
+            partNumber = "Opel 12618087 / INA 421009710",
+            alternatives = "Sachs 186726, SLM 24420398",
             intervalKm = intervalKm,
             intervalMonths = intervalMonths,
             lastServiceKm = lastKm,
             dueKm = dueKm,
             status = calcStatus(currentKm, lastKm, intervalKm, intervalMonths),
             progressPercent = calcProgress(currentKm, lastKm, intervalKm),
-            costDiy = 250.0,
-            costWorkshop = 800.0,
+            costDiy = 0.0,
+            costWorkshop = 150.0,
             reminderEnabled = true,
             reminderThresholdKm = 5000,
-            criticalNote = "A14NET: Zahnriemen-Bruch = Motorschaden! Nicht über 150.000 km oder 10 Jahre hinausschieben!",
-            technicalNote = "Wasserpumpe unbedingt mit tauschen (Kühlmittelkreislauf). Steuerketten-Prüfung beachten (bekanntes A14NET-Problem).",
-            icon = Icons.Filled.Speed
+            criticalNote = "A14NET: Kettenspanner defekt oft ab 80.000km! Rattern bei Kaltstart = P0340/P0341 = SOFORT handeln!",
+            technicalNote = "A14NET hat STOFFKETTE, kein Zahnriemen! Kettenspanner, Leitschienen und Spannschiene prüfen. Bei Verschleiß: kompletter Steuerkettensatz.",
+            icon = Icons.Filled.Warning
         )
     }
 
     private fun createTransmissionOil(currentKm: Int): ServiceEntry {
-        val intervalKm = 60000
+        val intervalKm = 80000
         val intervalMonths = 48
         val lastKm = 0
         val dueKm = lastKm + intervalKm
         return ServiceEntry(
             id = "transmission_oil",
-            title = "Getriebeöl",
+            title = "Getriebeöl (M32)",
             spec = "75W-80 GL-4 (M32: 2.7L)",
-            partNumber = "GM Fluid 1940182",
-            alternatives = "Dexron VI ATF, ACDelco 10-9395, Mobil 1 1940658",
+            partNumber = "GM Fluid 1940182 / Febi 03861",
+            alternatives = "Redline MTL, Motul 75W-80,ravenol 75W-80 GL-4",
             intervalKm = intervalKm,
             intervalMonths = intervalMonths,
             lastServiceKm = lastKm,
@@ -1140,9 +1143,9 @@ object AstraJServicePlan {
             costDiy = 50.0,
             costWorkshop = 140.0,
             reminderEnabled = true,
-            reminderThresholdKm = 2000,
-            criticalNote = "",
-            technicalNote = "M32-Getriebe: Nur saugfähige Dichtung verwenden! Dexron VI oder spezielles Getriebeöl nach Opel-Spezifikation.",
+            reminderThresholdKm = 3000,
+            criticalNote = "Falsches Öl kann Getriebeschaden verursachen! Nur 75W-80 GL-4 für M32 verwenden!",
+            technicalNote = "M32-Getriebe: Nur saugfähige Dichtung verwenden! Kein Dexron VI (Automatiköl) verwenden! Intervalle: 60.000-80.000 km je nach Nutzung.",
             icon = Icons.Filled.Build
         )
     }
@@ -1229,8 +1232,8 @@ object AstraJServicePlan {
     }
 
     private fun createSparkPlugs(currentKm: Int): ServiceEntry {
-        val intervalKm = 30000
-        val intervalMonths = 24
+        val intervalKm = 60000
+        val intervalMonths = 48
         val lastKm = 0
         val dueKm = lastKm + intervalKm
         return ServiceEntry(
@@ -1248,9 +1251,9 @@ object AstraJServicePlan {
             costDiy = 50.0,
             costWorkshop = 130.0,
             reminderEnabled = true,
-            reminderThresholdKm = 1000,
-            criticalNote = "",
-            technicalNote = "Drehmoment: 20-25 Nm. Gap 0,7mm beachten! Bei Kurzstrecke kürzeres Intervall (20.000 km).",
+            reminderThresholdKm = 3000,
+            criticalNote = "Bei Zündaussetzern sofort prüfen! Aussetzer können Kat beschädigen.",
+            technicalNote = "Drehmoment: 20-25 Nm. Gap 0,7mm beachten! Bei Kurzstrecke: 30.000 km Intervall.",
             icon = Icons.Filled.LocalFireDepartment
         )
     }
@@ -1333,6 +1336,87 @@ object AstraJServicePlan {
             criticalNote = "Ladedruckverlust = Leistungsverlust und erhöhter Verbrauch! Drucktest in Werkstatt empfohlen.",
             technicalNote = "OEM-Ladedruck: ~0.8 bar. Bei Underboost-Fehlern (P0299) sofort handeln. Wastegate-Stellglied prüfen.",
             icon = Icons.Filled.Speed
+        )
+    }
+
+    private fun createCabinFilter(currentKm: Int): ServiceEntry {
+        val intervalKm = 30000
+        val intervalMonths = 24
+        val lastKm = 0
+        val dueKm = lastKm + intervalKm
+        return ServiceEntry(
+            id = "cabin_filter",
+            title = "Innenraumfilter",
+            spec = "Aktivkohle oder Standard 215x189x30mm",
+            partNumber = "Opel 13536247",
+            alternatives = "Mann CU31006, Bosch F005CD472, K&N VF2002",
+            intervalKm = intervalKm,
+            intervalMonths = intervalMonths,
+            lastServiceKm = lastKm,
+            dueKm = dueKm,
+            status = calcStatus(currentKm, lastKm, intervalKm, intervalMonths),
+            progressPercent = calcProgress(currentKm, lastKm, intervalKm),
+            costDiy = 20.0,
+            costWorkshop = 45.0,
+            reminderEnabled = true,
+            reminderThresholdKm = 1000,
+            criticalNote = "",
+            technicalNote = "Aktivkohlefilter empfohlen für Allergiker. Einfacher Selberwechsel, ca. 10 Minuten.",
+            icon = Icons.Filled.Build
+        )
+    }
+
+    private fun createPCVValve(currentKm: Int): ServiceEntry {
+        val intervalKm = 60000
+        val intervalMonths = 48
+        val lastKm = 0
+        val dueKm = lastKm + intervalKm
+        return ServiceEntry(
+            id = "pcv_valve",
+            title = "PCV-Ventil",
+            spec = "Kurbelgehäuse-Entlüftungsventil",
+            partNumber = "Opel 55567298",
+            alternatives = "Febi 18696, Vaico V40-0988, SKF VC 10010",
+            intervalKm = intervalKm,
+            intervalMonths = intervalMonths,
+            lastServiceKm = lastKm,
+            dueKm = dueKm,
+            status = calcStatus(currentKm, lastKm, intervalKm, intervalMonths),
+            progressPercent = calcProgress(currentKm, lastKm, intervalKm),
+            costDiy = 25.0,
+            costWorkshop = 60.0,
+            reminderEnabled = true,
+            reminderThresholdKm = 3000,
+            criticalNote = "Defektes PCV kann Ölverbrauch und Leistungsverlust verursachen!",
+            technicalNote = "Bei Öl im Ansaugtrakt oder erhöhtem Ölverbrauch sofort prüfen. Ventil auf Durchgängigkeit testen.",
+            icon = Icons.Filled.Build
+        )
+    }
+
+    private fun createMAFSensor(currentKm: Int): ServiceEntry {
+        val intervalKm = 60000
+        val intervalMonths = 48
+        val lastKm = 0
+        val dueKm = lastKm + intervalKm
+        return ServiceEntry(
+            id = "maf_sensor",
+            title = "MAF-Sensor Reinigung",
+            spec = "Mass airflow sensor - Hitzdraht",
+            partNumber = "Opel 25175827",
+            alternatives = "Bosch 0280218205, Denso 195500-0201",
+            intervalKm = intervalKm,
+            intervalMonths = intervalMonths,
+            lastServiceKm = lastKm,
+            dueKm = dueKm,
+            status = calcStatus(currentKm, lastKm, intervalKm, intervalMonths),
+            progressPercent = calcProgress(currentKm, lastKm, intervalKm),
+            costDiy = 15.0,
+            costWorkshop = 80.0,
+            reminderEnabled = true,
+            reminderThresholdKm = 3000,
+            criticalNote = "Verschmutzter MAF kann erhöhten Verbrauch und Leistungsverlust verursachen!",
+            technicalNote = "Reinigung mit speziellem MAF-Reiniger. Kein Druckluft! Sensor vorsichtig einsprühen und trocknen lassen.",
+            icon = Icons.Filled.Build
         )
     }
 

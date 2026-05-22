@@ -1386,35 +1386,42 @@ class DashboardViewModel private constructor(
     // ========== Turbo Analysis ==========
 
 private fun startTurboAnalysisCollection() {
-         _turboAnalysisJob.value?.cancel()
-         _turboAnalysisJob.value = viewModelScope.launch {
-             obdData.collect { data ->
-                 if (data.rpm > 0) {
-                     updateAllTurboMetrics(data)
-                     updateEmissionsAnalyzers(data)
-                     updateExtendedAnalyzers(data)
-                 }
-             }
-         }
-         turboViewModel.updateDriveSession(_driveSession.value)
+        _turboAnalysisJob.value?.cancel()
+        _turboAnalysisJob.value = viewModelScope.launch(Dispatchers.Default) {
+            obdData
+                .filter { data -> data.rpm > 0 }
+                .throttleLatest(50L) // Limit to 20 updates/sec max
+                .collect { data ->
+                    updateAllTurboMetrics(data)
+                    updateEmissionsAnalyzers(data)
+                    updateExtendedAnalyzers(data)
+                }
+        }
+        turboViewModel.updateDriveSession(_driveSession.value)
      }
 
     // ========== Emissions Analyzers ==========
 
     private fun updateEmissionsAnalyzers(data: OBDData) {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
-        val history = _voltageHistory.value.toMutableList()
-        if (data.batteryVoltage > 0) {
-            history.add(data.batteryVoltage)
-            if (history.size > 60) history.removeAt(0)
-            _voltageHistory.value = history
+        // Use synchronized list to avoid concurrent modification
+        val history = synchronized(_voltageHistory) {
+            val h = _voltageHistory.value.toMutableList()
+            if (data.batteryVoltage > 0) {
+                h.add(data.batteryVoltage)
+                if (h.size > 60) h.removeAt(0)
+                _voltageHistory.value = h
+            }
+            h.toList() // Return a snapshot for use outside synchronized block
         }
-
-        val o2History = _o2VoltageHistory.value.toMutableList()
-        if (data.o2VoltageB1S1 > 0) {
-            o2History.add(data.o2VoltageB1S1)
-            if (o2History.size > 60) o2History.removeAt(0)
-            _o2VoltageHistory.value = o2History
+        val o2History = synchronized(_o2VoltageHistory) {
+            val o2 = _o2VoltageHistory.value.toMutableList()
+            if (data.o2VoltageB1S1 > 0) {
+                o2.add(data.o2VoltageB1S1)
+                if (o2.size > 60) o2.removeAt(0)
+                _o2VoltageHistory.value = o2
+            }
+            o2.toList() // Return a snapshot for use outside synchronized block
         }
 
         updateBatteryAnalysis(data, dtcCodes, history)

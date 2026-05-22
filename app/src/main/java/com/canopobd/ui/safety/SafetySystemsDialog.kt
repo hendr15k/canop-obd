@@ -23,6 +23,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.canopobd.data.model.*
 import com.canopobd.ui.theme.*
+import com.canopobd.R
 
 @Composable
 fun SafetySystemsDialog(
@@ -31,10 +32,10 @@ fun SafetySystemsDialog(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf(
-        TabItem("Räder", Icons.Filled.Speed),
-        TabItem("ESP/ABS", Icons.Filled.Warning),
-        TabItem("Bremsen", Icons.Filled.Build),
-        TabItem("Airbag", Icons.Filled.HealthAndSafety)
+        TabItem(stringResource(R.string.safety_tabs_wheels), Icons.Filled.Speed),
+        TabItem(stringResource(R.string.safety_tabs_esp_abs), Icons.Filled.Warning),
+        TabItem(stringResource(R.string.safety_tabs_brakes), Icons.Filled.Build),
+        TabItem(stringResource(R.string.safety_tabs_airbag), Icons.Filled.HealthAndSafety)
     )
 
     Dialog(
