@@ -1,4 +1,822 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App -->
     <string name="app_name">canop-obd</string>
+
+    <!-- Connection states -->
+    <string name="status_connected">ELM327 Connected</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="status_disconnected">Not connected</string>
+    <string name="status_error">Error</string>
+    <string name="status_remote">Remote: %d</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Bluetooth Permissions Required</string>
+    <string name="permissions_message">Please grant Bluetooth and location access to find and connect to OBD-II adapters.</string>
+    <string name="permissions_grant">Grant Permissions</string>
+
+    <!-- Dashboard -->
+    <string name="settings">Settings</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="remote_server">Remote Server</string>
+    <string name="data_log">Data Log</string>
+    <string name="sensors">Sensors</string>
+    <string name="fault_codes">Fault Codes</string>
+    <string name="disconnect">Disconnect</string>
+
+    <!-- Device picker -->
+    <string name="choose_adapter">Choose OBD Adapter</string>
+    <string name="no_paired_devices">No paired devices.\nPlease pair your ELM327 in Android Bluetooth settings.</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Settings dialog -->
+    <string name="settings_title">Settings</string>
+    <string name="close">Close</string>
+    <string name="poll_rate">Poll Rate</string>
+    <string name="poll_rate_fast">100ms (Fast)</string>
+    <string name="poll_rate_slow">2000ms (Slow)</string>
+    <string name="units">Units</string>
+    <string name="theme">Theme</string>
+    <string name="about">About</string>
+    <string name="app_version">App Version</string>
+    <string name="obd_protocol">OBD Protocol</string>
+    <string name="android_version">Android</string>
+
+    <!-- DTC dialog -->
+    <string name="dtc_title">Diagnostic Trouble Codes</string>
+    <string name="dtc_none_found">No fault codes found</string>
+    <string name="dtc_stored">Stored Faults (%d)</string>
+    <string name="dtc_cyclic">Cyclic Faults (%d)</string>
+    <string name="dtc_clear">Clear Faults</string>
+
+    <!-- Data log dialog -->
+    <string name="datalog_title">Data Recording</string>
+    <string name="datalog_recording">Recording… (%d entries)</string>
+    <string name="datalog_entries">%d entries stored</string>
+    <string name="datalog_no_data">No data recorded</string>
+    <string name="datalog_need_2_points">At least 2 data points needed for trend</string>
+    <string name="datalog_rpm_trend">RPM Trend (last 100 samples)</string>
+    <string name="datalog_speed_trend">Speed Trend</string>
+    <string name="datalog_export_failed">Export failed: %s</string>
+
+    <!-- PID dialog -->
+    <string name="pid_title">Extended Sensors</string>
+
+    <!-- Remote server dialog -->
+    <string name="remote_title">Remote Server</string>
+    <string name="remote_description">Phone as ELM327 bridge for PC</string>
+    <string name="remote_server_running">Server active</string>
+    <string name="remote_connection">Connection:</string>
+    <string name="remote_copy">Copy</string>
+    <string name="remote_clients_connected">%d PC(s) connected</string>
+    <string name="remote_stop_server">Stop Server</string>
+    <string name="remote_port_default">Port (Default: %d)</string>
+    <string name="remote_start_server">Start Server</string>
+    <string name="remote_usage_pc">Usage with PC Software</string>
+    <string name="remote_export_success">Copied: %s</string>
+
+    <!-- PID section titles -->
+    <string name="pid_section_motor">Engine</string>
+    <string name="pid_section_emissions">Emissions</string>
+    <string name="pid_section_lambda">Lambda / O2</string>
+    <string name="pid_section_catalyst">Catalyst</string>
+
+    <!-- Trip computer -->
+    <string name="trip_title">Trip Computer</string>
+    <string name="trip_duration">Duration</string>
+    <string name="trip_distance">Distance</string>
+    <string name="trip_avg_speed">Avg Speed</string>
+    <string name="trip_max_speed">Max Speed</string>
+    <string name="trip_avg_rpm">Avg RPM</string>
+    <string name="trip_max_rpm">Max RPM</string>
+    <string name="trip_fuel_used">Fuel Used</string>
+    <string name="trip_consumption">Avg Consumption</string>
+    <string name="trip_reset">Reset Trip</string>
+    <string name="trip_vin">Vehicle VIN</string>
+    <string name="trip_copy_vin">Copy VIN</string>
+    <string name="trip_vin_not_available">VIN not available</string>
+
+    <!-- Connection quality -->
+    <string name="conn_quality">Conn: %s</string>
+    <string name="conn_quality_excellent">Excellent</string>
+    <string name="conn_quality_good">Good</string>
+    <string name="conn_quality_fair">Fair</string>
+    <string name="conn_quality_poor">Poor</string>
+    <string name="conn_lost">Connection lost</string>
+    <string name="conn_reconnecting">Reconnecting…</string>
+    <string name="conn_auto_reconnect">Auto-reconnect: %s</string>
+    <string name="enabled">On</string>
+    <string name="disabled">Off</string>
+    <string name="auto_reconnect">Auto-reconnect</string>
+
+    <!-- Settings additions -->
+    <string name="connection">Connection</string>
+
+    <!-- Dashboard customization -->
+    <string name="customize_dashboard">Customize Dashboard</string>
+    <string name="color_themes">Color Themes</string>
+    <string name="select_primary_gauges">Select Primary Gauges</string>
+    <string name="layout_preview">Layout Preview</string>
+
+    <!-- Poll modes -->
+    <string name="poll_mode">Poll Mode</string>
+    <string name="poll_fast">Fast</string>
+    <string name="poll_normal">Normal</string>
+    <string name="poll_eco">Eco</string>
+
+    <!-- Readiness monitor -->
+    <string name="readiness_title">Readiness Monitor</string>
+    <string name="readiness_complete">Alle Tests bestanden</string>
+    <string name="readiness_progress">%1$d / %2$d Tests bestanden</string>
+    <string name="readiness_misfire">Misfire</string>
+    <string name="readiness_fuel_system">Kraftstoffsystem</string>
+    <string name="readiness_comprehensive">Komponenten</string>
+    <string name="readiness_catalyst">Katalysator</string>
+    <string name="readiness_heated_catalyst">Heizkatalysator</string>
+    <string name="readiness_evap">Verdunstung</string>
+    <string name="readiness_secondary_air">Sekundärluft</string>
+    <string name="readiness_ac">Klimaanlage</string>
+    <string name="readiness_o2_sensor">O2-Sensor</string>
+    <string name="readiness_o2_heater">O2-Sensor Heizung</string>
+    <string name="readiness_egr">Abgasrückführung</string>
+
+    <!-- Diagnostics -->
+    <string name="diagnostics_title">Diagnose</string>
+    <string name="diagnostics_protocol">Protokoll</string>
+    <string name="diagnostics_supported_pids">Unterstützte PIDs</string>
+    <string name="diagnostics_freeze_frames">Freeze Frames</string>
+    <string name="diagnostics_no_freeze_frames">Keine Freeze Frames</string>
+
+    <!-- Alerts -->
+    <string name="alerts_title">Warnungen</string>
+    <string name="alerts_speed">Geschwindigkeitswarnung</string>
+    <string name="alerts_coolant">Kühlmitteltemperatur</string>
+    <string name="alerts_fuel">Kraftstoff niedrig</string>
+    <string name="alerts_rpm">Drehzahlwarnung</string>
+    <string name="alerts_battery">Batterie niedrig</string>
+    <string name="alerts_threshold">Schwellenwert</string>
+    <string name="alerts_active">Aktive Warnungen</string>
+    <string name="alerts_none">Keine Warnungen</string>
+
+    <!-- Data Analysis -->
+    <string name="analysis_title">Datenanalyse</string>
+    <string name="analysis_import_csv">CSV Importieren</string>
+    <string name="analysis_fuel_trim">Kraftstoff-Trimm-Analyse</string>
+    <string name="analysis_imported">%d Einträge importiert</string>
+    <string name="analysis_no_data">Keine Daten</string>
+    <string name="analysis_total_trim">Gesamtkorrektur</string>
+    <string name="analysis_status">Status</string>
+
+    <!-- Dashboard Customization -->
+    <string name="customize_dashboard_title">Dashboard Anpassen</string>
+    <string name="color_themes_title">Farbschema wählen</string>
+    <string name="select_gauges_title">Haupt-Gauges auswählen (3 für große Anzeige)</string>
+    <string name="layout_preview_title">Vorschau</string>
+    <string name="tab_colors">Farben</string>
+    <string name="tab_gauges">Gauges</string>
+    <string name="tab_layout">Layout</string>
+    <string name="secondary_gauges_label">Sekundär-Gauges (6 Stück):</string>
+    <string name="empty_slot">Leer</string>
+
+    <!-- Gauge Options -->
+    <string name="gauge_rpm">Engine RPM</string>
+    <string name="gauge_speed">Vehicle Speed</string>
+    <string name="gauge_coolant">Coolant Temp</string>
+    <string name="gauge_throttle">Throttle Position</string>
+    <string name="gauge_engine_load">Engine Load</string>
+    <string name="gauge_fuel">Fuel Level</string>
+    <string name="gauge_timing">Timing Advance</string>
+    <string name="gauge_maf">MAF Rate</string>
+    <string name="gauge_intake_temp">Intake Temp</string>
+    <string name="gauge_fuel_trim">Fuel Trim B1</string>
+    <string name="gauge_absolute_load">Absolute Load</string>
+    <string name="gauge_fuel_rate">Fuel Rate</string>
+
+    <!-- Fuel Economy -->
+    <string name="fuel_economy_title">Kraftstoffverbrauch</string>
+    <string name="fuel_economy_current">Aktueller Verbrauch</string>
+    <string name="fuel_economy_avg">Durchschnitt</string>
+    <string name="fuel_economy_l100km">L/100km</string>
+    <string name="fuel_economy_kml">km/L</string>
+    <string name="fuel_economy_mpg_us">MPG (US)</string>
+    <string name="fuel_economy_mpg_uk">MPG (UK)</string>
+    <string name="fuel_economy_no_data">Keine Daten verfügbar</string>
+    <string name="fuel_economy_estimated">Geschätzt</string>
+    <string name="fuel_economy_from_maf">Aus Lufftmassen-Durchfluss</string>
+
+    <!-- Maintenance -->
+    <string name="maintenance_title">Wartung</string>
+    <string name="maintenance_oil">Ölwechsel</string>
+    <string name="maintenance_tires">Reifen</string>
+    <string name="maintenance_inspection">TÜV / AU</string>
+    <string name="maintenance_next_service">Nächster Service</string>
+    <string name="maintenance_last_service">Letzter Service</string>
+    <string name="maintenance_km_remaining">%s km verbleibend</string>
+    <string name="maintenance_overdue">Überfällig</string>
+    <string name="maintenance_due_soon">Bald fällig</string>
+    <string name="maintenance_ok">OK</string>
+    <string name="maintenance_set_km">Kilometerstand setzen</string>
+    <string name="maintenance_reset">Zurücksetzen</string>
+    <string name="maintenance_set_interval">Intervall einstellen</string>
+    <string name="maintenance_km">km</string>
+
+    <!-- Performance Test -->
+    <string name="perf_test_title">Beschleunigungstest</string>
+    <string name="perf_test_0_100">0–100 km/h</string>
+    <string name="perf_test_0_200">0–200 km/h</string>
+    <string name="perf_test_100_200">100–200 km/h</string>
+    <string name="perf_test_start">Start</string>
+    <string name="perf_test_stop">Stopp</string>
+    <string name="perf_test_ready">Bereit — Start drücken</string>
+    <string name="perf_test_running">Messung läuft…</string>
+    <string name="perf_test_result">Ergebnis: %.1f s</string>
+    <string name="perf_test_best">Bestzeit: %.1f s</string>
+    <string name="perf_test_no_result">Kein Ergebnis</string>
+    <string name="perf_test_history">Letzte Ergebnisse</string>
+
+    <!-- Trip History -->
+    <string name="trip_history_title">Fahrthistorie</string>
+    <string name="trip_history_no_trips">Keine Fahrten aufgezeichnet</string>
+    <string name="trip_history_clear">Verlauf löschen</string>
+
+    <!-- Dashboard bottom bar -->
+    <string name="battery_label">Batt: %.1fV</string>
+    <string name="load_label">Load: %.0f%%</string>
+    <string name="gps_tracked">GPS: %.1f km tracked</string>
+
+    <!-- Misc -->
+    <string name="add_gauge">Add gauge</string>
+    <string name="trend">Trend</string>
+    <string name="gps_track">GPS Track</string>
+    <string name="hud_mode">HUD Mode</string>
+    <string name="readiness">Readiness</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="analysis">Analysis</string>
+    <string name="gauges">Gauges</string>
+    <string name="alerts">Alerts</string>
+    <string name="fuel_trim_analysis_title">Kraftstoff-Trimm-Analyse</string>
+    <string name="stft_bank1">STFT Bank 1</string>
+    <string name="ltft_bank1">LTFT Bank 1</string>
+    <string name="stft_bank2">STFT Bank 2</string>
+    <string name="ltft_bank2">LTFT Bank 2</string>
+    <string name="total_trim_bank1">Gesamtkorrektur Bank 1</string>
+    <string name="total_trim_bank2">Gesamtkorrektur Bank 2</string>
+    <string name="status_ok">OK</string>
+    <string name="status_lean">Mager (Lean)</string>
+    <string name="status_rich">Fett (Rich)</string>
+    <string name="stft_label">STFT</string>
+    <string name="ltft_label">LTFT</string>
+    <string name="trim_percent">%.1f%%</string>
+
+    <!-- Car Profile -->
+    <string name="car_profile_title">Fahrzeugprofil</string>
+    <string name="power_short">Leistung</string>
+    <string name="torque_short">Drehmoment</string>
+    <string name="redline_short">Redline</string>
+    <string name="boost_short">Boost</string>
+
+    <!-- Turbo Monitor -->
+    <string name="turbo_monitor_title">Turbo-Monitor</string>
+    <string name="turbo_type">Turbo</string>
+    <string name="ecu">ECU</string>
+    <string name="boost_pressure">Ladedruck</string>
+    <string name="target">Ziel</string>
+    <string name="deviation">Abweichung</string>
+    <string name="overboost_active">Overboost aktiv</string>
+    <string name="underboost_detected">Underboost erkannt</string>
+    <string name="wastegate_control">Wastegate-Steuerung</string>
+    <string name="wastegate_hint" formatted="false">0% = offen, 100% = geschlossen</string>
+    <string name="turbo_temperatures">Temperatur</string>
+    <string name="turbo_inlet">Saugrohr</string>
+    <string name="turbo_outlet">Laderdruck</string>
+    <string name="charge_air_cooler">Ladeluftkühler</string>
+    <string name="intercooler_efficiency">Ladeluftkühler-Effizienz</string>
+    <string name="temp_drop">Temperaturabsenkung: %d°C</string>
+    <string name="oil_status">Ölstatus</string>
+    <string name="oil_temp">Öltemp.</string>
+    <string name="oil_pressure">Öldruck</string>
+    <string name="oil_life">Restlaufzeit</string>
+    <string name="oil_consumption_warning">Ölverbrauch!</string>
+    <string name="oil_consumption_rate">Ölverbrauch</string>
+    <string name="turbo_health">Turbo-Gesundheit</string>
+    <string name="turbo_spool_title">Turbo-Spool-Anzeige</string>
+    <string name="turbo_spool_status">Turbo-Spool-Status</string>
+    <string name="turbo_spool_time">Spool-Zeit</string>
+    <string name="turbo_time_to_full">Zeit bis Volllast</string>
+    <string name="turbo_spool_history">Historische Spool-Zeiten</string>
+    <string name="turbo_rpm_label">Turbolader-Drehzahl</string>
+    <string name="spooling">SPOOLING</string>
+    <string name="excellent">Ausgezeichnet</string>
+    <string name="good">Gut</string>
+    <string name="satisfactory">Befriedigend</string>
+    <string name="slow">Langsam</string>
+    <string name="close">Close</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="safety_systems_title">Safety Systems</string>
+    <string name="safety_tabs_wheels">Wheels</string>
+    <string name="safety_tabs_esp_abs">ESP/ABS</string>
+    <string name="safety_tabs_brakes">Brakes</string>
+    <string name="safety_tabs_airbag">Airbag</string>
+
+    <!-- Timing Chain -->
+    <string name="timing_chain_title">Steuerkette</string>
+    <string name="chain_health_score">Zustandsbewertung</string>
+    <string name="cold_start_analysis">Kaltstart-Analyse</string>
+    <string name="rpm_cold">RPM kalt</string>
+    <string name="rpm_warm">RPM warm</string>
+    <string name="rpm_variation">Rpm-Schwankung</string>
+    <string name="rattle_detected">Rattern erkannt!</string>
+    <string name="rattle_duration">Ratterdauer</string>
+    <string name="current_status">Status</string>
+    <string name="samples">Messwerte</string>
+    <string name="timing_chain_warning">Warnung</string>
+    <string name="chain_warning_text">Die Steuerkette ist ein Verschleißteil. Bei ersten Anzeichen von Rattern (Kaltstart) sollte eine Werkstatt aufgesucht werden.</string>
+    <string name="cold_rattle_symptom">Kaltstart-Rattern erkannt</string>
+    <string name="cold_rattle_action">Steuerkette und Spanner prüfen lassen</string>
+    <string name="high_rpm_variation">Hohe Drehzahlschwankung</string>
+    <string name="high_rpm_action">Öldruck und Kettenspanner prüfen</string>
+    <string name="chain_health_low">Zustand kritisch</string>
+    <string name="chain_health_action">Sofort in Werkstatt!</string>
+    <string name="no_chain_issues">Keine Probleme erkannt</string>
+
+    <!-- Update -->
+    <string name="update_available">Update verf\u00FCgbar</string>
+
+    <!-- Turbo Cooldown -->
+    <string name="turbo_cooldown_title">Turbo-Rücklauf</string>
+    <string name="turbo_cooldown_active">Turbo-Kühlung läuft</string>
+    <string name="turbo_cooldown_wait">Bitte warten…</string>
+    <string name="turbo_cooldown_done">Abkühlung abgeschlossen</string>
+    <string name="turbo_cooldown_hints">Turbo-Schaden durch zu frühes Abstellen vermeiden</string>
+    <string name="turbo_cooldown_auto">Auto (nach Last)</string>
+    <string name="turbo_cooldown_manual">Manuell</string>
+    <string name="turbo_cooldown_cancel">Abbrechen</string>
+    <string name="turbo_cooldown_dialog_title">Turbo-Rücklauf aktiv</string>
+    <string name="turbo_cooldown_explanation">Turbolader nach hoher Beanspruchung abkühlen lassen, um Lagerschäden zu vermeiden.</string>
+    <string name="triggered_by_rpm">Ausgelöst durch Drehzahl</string>
+    <string name="triggered_by_boost">Ausgelöst durch Ladedruck</string>
+    <string name="triggered_by_speed">Ausgelöst durch Geschwindigkeit</string>
+
+    <!-- Update -->
+    <string name="update_release_notes">\u00C4nderungen:</string>
+    <string name="update_new_version_hint">Eine neue Version (v%s) ist verf\u00FCgbar. Lade sie herunter, um die neuesten Funktionen und Fehlerbehebungen zu erhalten.</string>
+    <string name="update_downloading">Download… %d%%</string>
+    <string name="update_download">Herunterladen</string>
+    <string name="update_skip">\u00DCberspringen</string>
+    <string name="update_install">Jetzt installieren</string>
+    <string name="update_ready_to_install">Download abgeschlossen. Tippe auf \u201EJetzt installieren\u201C, um die App zu aktualisieren.</string>
+    <string name="update_download_error">Download fehlgeschlagen: %s</string>
+
+    <!-- Dashboard Header -->
+    <string name="dashboard_power">Leistung</string>
+    <string name="dashboard_driving_style">Fahrstil</string>
+    <string name="dashboard_shift_light">Schaltblitz</string>
+    <string name="dashboard_vehicle_profile">Fahrzeugprofil</string>
+    <string name="dashboard_known_issues">Bekannte Probleme</string>
+    <string name="dashboard_turbo">Turbo</string>
+    <string name="dashboard_timing_chain">Steuerkette</string>
+    <string name="dashboard_car_profile">Fahrzeugprofil</string>
+    <string name="dashboard_turbo_cooldown">Turbo-Rücklauf</string>
+
+    <!-- Gauge Labels -->
+    <string name="gauge_label_rpm">RPM</string>
+    <string name="gauge_label_speed">Speed</string>
+    <string name="gauge_label_coolant">Coolant</string>
+
+    <!-- ShiftLightDialog -->
+    <string name="shift_light_title">Schaltblitz</string>
+    <string name="shift_light_enabled">Aktiviert</string>
+    <string name="shift_light_warning_rpm">Warnung: %s rpm</string>
+    <string name="shift_light_redline_rpm">Rot: %s rpm</string>
+    <string name="shift_light_warning_threshold">Warn-Drehzahl</string>
+    <string name="shift_light_redline_threshold">Rot-Drehzahl</string>
+    <string name="shift_light_flash">Blinken</string>
+    <string name="shift_light_save">Speichern</string>
+
+    <!-- PowerCalculatorDialog -->
+    <string name="power_title">Leistung</string>
+    <string name="power_start_engine">Motor starten für Leistungsdaten</string>
+    <string name="power_rpm_maf_required">RPM > 1000, MAF > 1 g/s erforderlich</string>
+    <string name="power_metric">metrisch</string>
+    <string name="power_us">US</string>
+    <string name="power_torque">Drehmoment</string>
+    <string name="power_estimated_maf">Geschätzte Werte basierend auf Lufftmassen-Durchfluss. Für exakte Werte ist ein Leistungsprüfstand erforderlich.</string>
+
+    <!-- TimingChainMonitorDialog -->
+    <string name="chain_excellent">Steuerkette in ausgezeichnetem Zustand</string>
+    <string name="chain_good">Steuerkette in gutem Zustand</string>
+    <string name="chain_slight_wear">Leichte Verschleißerscheinungen — weiter beobachten</string>
+    <string name="chain_wear_detected">Verschleiß erkannt — Inspektion bei nächster Wartung</string>
+    <string name="chain_warning">Steuerkette warnung — bald prüfen lassen</string>
+    <string name="chain_critical">Steuerkette kritisch — sofort prüfen!</string>
+    <string name="chain_defect">Steuerkette defekt — nicht weiterfahren!</string>
+
+    <!-- TurboMonitorDialog -->
+    <string name="turbo_excellent">Turbolader in einwandfreiem Zustand</string>
+    <string name="turbo_good">Turbolader in gutem Zustand, leichte Verschleißerscheinungen</string>
+    <string name="turbo_wear_detected">Turbolader zeigt Verschleiß — regelmäßig prüfen</string>
+    <string name="turbo_warning">Turbolader-Warnung — Ursache klären</string>
+    <string name="turbo_critical">Sofort prüfen — Turboschaden möglich!</string>
+
+    <!-- KnownIssuesDialog -->
+    <string name="known_issues_title">Typische Probleme Astra J 1.4T</string>
+    <string name="known_issues_close">Schließen</string>
+    <string name="known_issues_subtitle">Bekannte Schwachstellen des A14NET Motors</string>
+    <string name="known_issues_tip">Tipp: Regelmäßige Ölwechsel mit Dexos2 5W-30 und hochwertigem Benzin (98 RON) beugen vielen Problemen vor.</string>
+    <string name="known_issues_less">Weniger ▲</string>
+    <string name="known_issues_details">Details ▼</string>
+
+    <!-- DashboardScreen.kt -->
+    <string name="conn_quality_poor_message">Verbindungsqualität schlecht — OBD-Adapter prüfen</string>
+    <string name="alert">Alert</string>
+
+    <!-- TripComputerDialog -->
+    <string name="trip_time_distance">Zeit &amp; Strecke</string>
+    <string name="trip_speed">Geschwindigkeit</string>
+    <string name="trip_consumption_label">Verbrauch</string>
+    <string name="trip_total">Total</string>
+    <string name="trip_gps_track">GPS Track</string>
+    <string name="trip_gps_tracking">GPS Tracking</string>
+    <string name="trip_stop">Stop</string>
+
+    <!-- DiagnosticsDialog -->
+    <string name="detecting_protocol">Wird ermittelt…</string>
+    <string name="scanning_pids">Scanning…</string>
+
+    <!-- DataLogDialog -->
+    <string name="datalog_export">Export</string>
+    <string name="datalog_delete">Löschen</string>
+    <string name="datalog_rpm_format">RPM %s</string>
+    <string name="datalog_export_as">Exportieren als…</string>
+
+    <!-- TurboCoolDownTimer -->
+    <string name="turbo_seconds">Sekunden</string>
+
+    <!-- RemoteServerDialog -->
+    <string name="remote_pc_software_examples">PC Software-Beispiele:</string>
+
+    <!-- LiveTrendGraph -->
+    <string name="live_trend">Live Trend</string>
+
+    <!-- TripHistoryDialog -->
+    <string name="trip_max">Max</string>
+    <string name="trip_points">Punkte</string>
+
+    <!-- MaintenanceDialog -->
+    <string name="maintenance_odometer">Kilometerstand: %s km</string>
+
+    <!-- VehicleInfoDialog -->
+    <string name="vehicle_info_title">Fahrzeugprofil</string>
+    <string name="vehicle_info_section_motor">Motor</string>
+    <string name="vehicle_info_motor_code">Motorcode</string>
+    <string name="vehicle_info_gm_code">GM-Code</string>
+    <string name="vehicle_info_valve_config">Bauart</string>
+    <string name="vehicle_info_displacement">Hubraum</string>
+    <string name="vehicle_info_bore_stroke">Bohrung × Hub</string>
+    <string name="vehicle_info_compression_ratio">Verdichtung</string>
+    <string name="vehicle_info_power">Leistung</string>
+    <string name="vehicle_info_torque">Drehmoment</string>
+    <string name="vehicle_info_redline">Rote Linie</string>
+    <string name="vehicle_info_idle_rpm">Leerlaufdrehzahl</string>
+    <string name="vehicle_info_engine_family">Motorbaureihe</string>
+    <string name="vehicle_info_ecu">ECU</string>
+    <string name="vehicle_info_nox_standard">NOx-Norm</string>
+    <string name="vehicle_info_section_turbo">Turbolader</string>
+    <string name="vehicle_info_turbo_type">Turbolader-Typ</string>
+    <string name="vehicle_info_max_boost">Max. Ladedruck</string>
+    <string name="vehicle_info_overboost">Overboost</string>
+    <string name="vehicle_info_boost_control">Ladedruckregelung</string>
+    <string name="vehicle_info_vvt_system">VVT-System</string>
+    <string name="vehicle_info_section_fuel">Kraftstoff</string>
+    <string name="vehicle_info_fuel_type">Kraftstoffart</string>
+    <string name="vehicle_info_min_octane">Min. Oktanzahl</string>
+    <string name="vehicle_info_tank_capacity">Tankvolumen</string>
+    <string name="vehicle_info_fuel_consumption_combined">Verbrauch kombiniert</string>
+    <string name="vehicle_info_fuel_consumption_urban">Verbrauch innerorts</string>
+    <string name="vehicle_info_fuel_consumption_extra_urban">Verbrauch außerorts</string>
+    <string name="vehicle_info_co2_emissions">CO2-Ausstoß</string>
+    <string name="vehicle_info_section_performance">Leistung</string>
+    <string name="vehicle_info_top_speed">Höchstgeschwindigkeit</string>
+    <string name="vehicle_info_section_maintenance">Wartung</string>
+    <string name="vehicle_info_motor_oil">Motoröl</string>
+    <string name="vehicle_info_alternative_oil">Alternativöl</string>
+    <string name="vehicle_info_oil_capacity">Ölmenge</string>
+    <string name="vehicle_info_oil_interval">Ölwechselintervall</string>
+    <string name="vehicle_info_air_filter">Luftfilter</string>
+    <string name="vehicle_info_spark_plugs">Zündkerzen</string>
+    <string name="vehicle_info_spark_plug_gap">Zündkerzenabstand</string>
+    <string name="vehicle_info_spark_plug_torque">Anzugsdrehmoment</string>
+    <string name="vehicle_info_coolant">Kühlmittel</string>
+    <string name="vehicle_info_timing_chain">Steuerkette</string>
+    <string name="vehicle_info_timing_chain_hint">Hinweis: Die Steuerkette ist ein Verschleißteil.</string>
+    <string name="vehicle_info_transmission_fluid">Getriebeöl</string>
+    <string name="vehicle_info_section_electrical">Elektrik</string>
+    <string name="vehicle_info_battery">Batterie</string>
+    <string name="vehicle_info_alternator">Lichtmaschine</string>
+    <string name="vehicle_info_charging_voltage">Ladespannung</string>
+    <string name="vehicle_info_section_obd">OBD</string>
+    <string name="vehicle_info_protocol">Protokoll</string>
+    <string name="vehicle_info_connector">Stecker</string>
+    <string name="vehicle_info_ecu_address">ECU-Adresse</string>
+    <string name="vehicle_info_extended_pids">Erweiterte PIDs</string>
+    <string name="vehicle_info_vin">VIN</string>
+    <string name="vehicle_info_interval_km">alle %s km</string>
+    <string name="vehicle_info_fuel_octane">Benzin</string>
+    <string name="vehicle_info_min_octane_recommended">95 RON (98 empfohlen)</string>
+    <string name="vehicle_info_timing_chain_cold_start_hint">Bei Kaltstart-Rasseln prüfen!</string>
+    <string name="vehicle_info_overboost_torque">%d Nm Overboost</string>
+    <string name="vehicle_info_rpm_unit">U/min</string>
+    <string name="vehicle_info_l_per_100km">L/100km</string>
+    <string name="vehicle_info_g_per_km">g/km</string>
+    <string name="vehicle_info_acceleration_time">%s s</string>
+    <string name="vehicle_info_battery_agm">%s Ah AGM</string>
+    <string name="vehicle_info_alternator_format">%sV / 120–140A</string>
+    <string name="vehicle_info_boost_bar">%s bar</string>
+    <string name="vehicle_info_oil_capacity_filter">%s L (mit Filter)</string>
+    <string name="vehicle_info_coolant_dexcool">%s L (Dex-Cool 50/50)</string>
+    <string name="vehicle_info_spark_plug_gap_mm">%s mm</string>
+    <string name="vehicle_info_can_protocol">ISO 15765–4 CAN (500 kbit/s)</string>
+    <string name="vehicle_info_connector_location">OBD-II 16-Pin, unter dem Lenkrad links</string>
+    <string name="vehicle_info_ecu_address_engine">0x7E0 (Motor)</string>
+    <string name="vehicle_info_extended_pids_uds">Service $22 (UDS)</string>
+    <string name="vehicle_info_section_turbocharger">Turbolader</string>
+    <string name="vehicle_info_section_fuel_section">Kraftstoff</string>
+    <string name="vehicle_info_section_performance_data">Leistungsdaten</string>
+    <string name="vehicle_info_section_maintenance_intervals">Wartungsintervalle</string>
+    <string name="vehicle_info_section_obd_notes">OBD-II Hinweise</string>
+    <string name="vehicle_info_alternative">Alternative</string>
+    <string name="vehicle_info_interval">Intervall</string>
+    <string name="vehicle_info_torque_spec">Anzugmoment</string>
+    <string name="vehicle_info_note">Hinweis</string>
+    <string name="vehicle_info_turbocharger_type">Typ</string>
+    <string name="vehicle_info_wastegate_fixed">Wastegate (festgelegt)</string>
+    <string name="vehicle_info_section_electric">Elektrik</string>
+    <string name="vehicle_info_section_obd2">OBD-II Hinweise</string>
+
+    <!-- DriveScoreDialog -->
+    <string name="drive_score_analysis_title">Fahrstil-Analyse</string>
+    <string name="drive_score_title">Fahrstil</string>
+    <string name="drive_score_score_format">%d/100</string>
+    <string name="drive_score_avg_rpm_format">%.0f rpm</string>
+    <string name="drive_score_avg_throttle_format">%.0f%%</string>
+    <string name="drive_score_avg_speed_format">%.0f km/h</string>
+    <string name="drive_score_fuel_placeholder">--- L/100km</string>
+    <string name="drive_score_reset">Zurücksetzen</string>
+    <string name="drive_score_idle">Leerlauf</string>
+    <string name="drive_score_rpm">Drehzahl</string>
+    <string name="drive_score_throttle">Gaspedal</string>
+    <string name="drive_score_boost">Ladedruck</string>
+    <string name="drive_score_eco">Ökofahrer</string>
+    <string name="drive_score_turbo_health">Turbo-Zustand</string>
+    <string name="drive_score_section_session">Fahrtsitzung</string>
+    <string name="drive_score_duration">Dauer</string>
+    <string name="drive_score_avg_rpm">Ø Drehzahl</string>
+    <string name="drive_score_avg_throttle">Ø Gaspedal</string>
+    <string name="drive_score_avg_speed">Ø Geschwindigkeit</string>
+    <string name="drive_score_harsh_accel">Abrupte Beschleunigungen</string>
+    <string name="drive_score_harsh_brake">Abruptes Bremsen</string>
+    <string name="drive_score_idle_time">Leerlaufzeit</string>
+    <string name="drive_score_fuel_consumption">Kraftstoffverbrauch</string>
+    <string name="drive_score_acceleration">Beschleunigung</string>
+    <string name="drive_score_braking">Bremsen</string>
+    <string name="drive_score_cruising">Schwung</string>
+
+    <!-- Gauge Descriptions -->
+    <string name="gauge_rpm_desc">Motor RPM</string>
+    <string name="gauge_speed_desc">Geschwindigkeit</string>
+    <string name="gauge_coolant_desc">Kühlmitteltemperatur</string>
+    <string name="gauge_throttle_desc">Drosselklappe</string>
+    <string name="gauge_engine_load_desc">Motorlast</string>
+    <string name="gauge_fuel_desc">Kraftstoff</string>
+    <string name="gauge_timing_desc">Zündzeitpunkt</string>
+    <string name="gauge_maf_desc">Lufftmassen-Durchfluss</string>
+    <string name="gauge_intake_temp_desc">Ansaugluft</string>
+    <string name="gauge_fuel_trim_desc">Kraftstoffkorrektur</string>
+    <string name="gauge_absolute_load_desc">Motorlast absolut</string>
+    <string name="gauge_fuel_rate_desc">Kraftstoffverbrauch</string>
+    <string name="gauge_accel_pedal_desc">Gaspedal</string>
+    <string name="gauge_hybrid_battery_desc">Hybrid-Batterie</string>
+
+    <!-- Astra J Specific -->
+    <string name="astra_j_title">Opel Astra J 1.4 Turbo</string>
+    <string name="astra_j_engine">Motor: A14NET</string>
+    <string name="astra_j_power">Leistung: 103 kW (140 PS)</string>
+    <string name="astra_j_torque">Drehmoment: 200 Nm</string>
+    <string name="astra_j_overboost">Overboost: 220 Nm</string>
+    <string name="astra_j_turbo_type">Turbolader: BorgWarner KP39</string>
+    <string name="astra_j_ecu">Steuergeraet: Bosch ME17.9.24</string>
+    
+    <!-- Turbo Monitoring -->
+    <string name="turbo_rpm">Turbo-Drehzahl</string>
+    <string name="turbo_boost_relative">Ladedruck (relativ)</string>
+    <string name="turbo_boost_absolute">Ladedruck (absolut)</string>
+    <string name="turbo_wastegate_pos">Wastegate Position</string>
+    <string name="turbo_health_score">Turbo-Gesundheits-Score</string>
+    <string name="turbo_spool_time">Turbo-Ansprechzeit</string>
+    <string name="turbo_oil_pressure">Turbo-Oeldruck</string>
+    <string name="turbo_inlet_temp">Turbo-Einlasstemperatur</string>
+    <string name="turbo_outlet_temp">Turbo-Auslasstemperatur</string>
+    <string name="turbo_intercooler_eff">Ladeluftkuehler-Wirkungsgrad</string>
+    
+    <!-- Torque Monitoring -->
+    <string name="torque_demand">Drehmoment-Anforderung</string>
+    <string name="torque_actual">Drehmoment (Ist)</string>
+    <string name="torque_reference">Drehmoment (Referenz)</string>
+    <string name="torque_efficiency">Drehmoment-Wirkungsgrad</string>
+    
+    <!-- Charge Air -->
+    <string name="charge_air_temp">Ladelufttemperatur</string>
+    <string name="intake_air_temp_2">Ansauglufttemperatur 2</string>
+    <string name="intercooler_warning">Ladeluftkuehler effizienz gering!</string>
+    
+    <!-- Fuel -->
+    <string name="fuel_tank_input">Tankinhalt (Sensor)</string>
+    <string name="ethanol_percent">Ethanol-Anteil</string>
+    <string name="fuel_consumption_sport">Sport-Verbrauch</string>
+    <string name="fuel_consumption_eco">Eco-Verbrauch</string>
+    
+    <!-- Oil -->
+    <string name="oil_temp_warning">Motortemperatur zu hoch!</string>
+    <string name="oil_pressure_low">Oeldruck kritisch niedrig!</string>
+    
+    <!-- Boost Alerts -->
+    <string name="boost_overboost">Overboost aktiviert!</string>
+    <string name="boost_underboost">Unterladung erkannt!</string>
+    <string name="boost_target_reached">Ziel-Ladedruck erreicht</string>
+    
+    <!-- Eco Driving -->
+    <string name="eco_optimal_rpm">Optimaler Drehzahlbereich: 1500–3000</string>
+    <string name="eco_coasting">Segeln im Gang</string>
+    <string name="eco_turbo_score">Turbo-Effizienz-Score</string>
+    
+    <!-- Vehicle Profile -->
+    <string name="vehicle_profile_select">Fahrzeugprofil auswaehlen</string>
+    <string name="vehicle_profile_astra_j">Opel Astra J 1.4 Turbo (140 PS)</string>
+    <string name="vehicle_profile_ecu">Steuergeraet: %s</string>
+    <string name="vehicle_profile_fuel">Kraftstoff: %s RON</string>
+    
+    <!-- Known Issues -->
+    <string name="issue_timing_chain">Kettenspanner</string>
+    <string name="issue_maf_sensor">MAF-Sensor</string>
+    <string name="issue_wastegate">Wastegate-Stellglied</string>
+    <string name="issue_pcv">PCV-Ventil</string>
+    <string name="issue_coolant_sensor">Kuhlmittel-Sensor</string>
+    <string name="issue_turbo_boost">Ladedruck</string>
+    <string name="issue_spark_plugs">Zundkerzen</string>
+    <!-- TurboHealthCard Warnings -->
+    <string name="overboost_warning">Überladung erkannt — Ladedruck zu hoch</string>
+    <string name="underboost_warning">Unterladung — Ladedruck nicht erreicht</string>
+    <string name="oil_temp_high_warning">Öltemperatur kritisch hoch!</string>
+    <string name="oil_temp_warm_warning">Öltemperatur über optimaler Grenze</string>
+    <string name="charge_air_high_warning">Ladelufttemperatur zu hoch — Ladeluftkühler prüfen</string>
+    <string name="wastegate">Wastegate</string>
+    <string name="temperatures">Temperaturen</string>
+
+    <!-- ChainTensionerWarningCard -->
+    <string name="chain_tensioner_title">Steuerkettenspanner</string>
+    <string name="chain_estimated_life">Restlebensdauer</string>
+    <string name="chain_last_checked">Zuletzt geprüft</string>
+    <string name="chain_check_now">Jetzt prüfen</string>
+    <string name="chain_rattle_active">Kaltstart-Rattern erkannt — Steuerkette sofort prüfen!</string>
+    <string name="chain_status_critical">Steuerkette kritisch — sofort prüfen lassen!</string>
+    <string name="chain_status_wear">Verschleiß erkannt — Steuerkette bei nächster Wartung prüfen</string>
+
+    <!-- TurboDetailCard -->
+    <string name="turbo_detail_title">Turbo-Detail</string>
+
+    <!-- FuelSystemCard -->
+    <string name="fuel_system_title">Kraftstoffsystem</string>
+    <string name="fuel_rail_pressure">Kraftstoffraildruck</string>
+    <string name="fuel_injection_qty">Einspritzmenge</string>
+    <string name="fuel_lambda">Lambda-Wert</string>
+
+    <!-- PCVHealthCard -->
+    <string name="pcv_title">PCV-System</string>
+    <string name="pcv_health">PCV-Gesundheit</string>
+    <string name="pcv_maf_correlation">MAF-Korrelation</string>
+    <string name="pcv_stft_deviation">STFT-Abweichung</string>
+    <string name="pcv_oil_consumption_trend">Ölverbrauch-Trend</string>
+    <string name="pcv_check_now">PCV prüfen</string>
+
+    <!-- DriveStyleCard -->
+    <string name="drive_style_overboost">Overboost</string>
+    <string name="drive_style_brakes">Bremsen</string>
+    <string name="drive_style_rpm_dist">RPM-Verteilung</string>
+
+    <!-- M32GearboxStatusCard -->
+    <string name="gearbox_title">Getriebe (M32)</string>
+    <string name="gearbox_health_score">Getriebe-Zustand</string>
+    <string name="gearbox_temp">Getriebetemperatur</string>
+    <string name="gearbox_ratio">Drehzahl-Verhältnis</string>
+    <string name="gearbox_fluid_maintenance">Getriebeöl-Wartung</string>
+    <string name="gearbox_rattle_warning">Getriebe-Rasseln erkannt — Lager prüfen!</string>
+
+    <!-- TuningStageIndicator -->
+    <string name="tuning_stage_title">Tuning-Stufe</string>
+    <string name="tuning_boost_comparison">Ladedruck-Vergleich</string>
+    <string name="tuning_power_estimate">Leistungsschätzung</string>
+    <string name="tuning_fuel_recommendation">Kraftstoff</string>
+    <string name="tuning_m32_warning">Achtung: M32-Getriebe Grenze bei Stage 2+! Getriebeöl-Upgrade empfohlen.</string>
+
+    <!-- CriticalWarningOverlay -->
+    <string name="overlay_dismiss">Schließen</string>
+    <string name="overlay_auto_dismiss">Automatisches Schließen in 10 Sekunden</string>
+
+    <!-- ReadinessMonitorCard -->
+    <string name="readiness_monitors">Readiness Monitore</string>
+    <string name="complete_short">bereit</string>
+    <string name="overall_progress">Gesamtfortschritt</string>
+    <string name="not_ready_short">Nicht bereit</string>
+    <string name="ready">Bereit</string>
+    <string name="mil_on_warning">MIL aktiv — %d Fehler</string>
+
+    <!-- LambdaO2SensorCard -->
+    <string name="lambda_o2_sensors">Lambda / O2 Sensoren</string>
+    <string name="pre_cat">Vorkat</string>
+    <string name="post_cat">Nachkat</string>
+    <string name="voltage">Spannung</string>
+    <string name="heater">Heizung</string>
+    <string name="active">An</string>
+    <string name="inactive">Aus</string>
+    <string name="voltage_history">Spannungsverlauf</string>
+    <string name="short_term_fuel_trim">STFT</string>
+    <string name="long_term_fuel_trim">LTFT</string>
+    <string name="total_trim">Gesamt</string>
+    <string name="lambda_short">λ</string>
+    <string name="cross_count_rate">%d Zyklen/s</string>
+
+    <!-- BatteryHealthCard -->
+    <string name="battery_health">Batterie</string>
+    <string name="charging">Lädt</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="alternator_duty">Lichtmaschine</string>
+    <string name="module_voltage">Modul-Spannung</string>
+    <string name="voltage_trend">Spannungsverlauf</string>
+
+    <!-- EGRHealthCard -->
+    <string name="egr_system">EGR-System</string>
+    <string name="egr_not_supported">EGR wird vom Fahrzeug nicht unterstützt</string>
+    <string name="command">Soll</string>
+    <string name="error">Fehler</string>
+    <string name="egr_position">Position</string>
+    <string name="egr_deviation">Abweichung</string>
+    <string name="egr_temp">Temperatur</string>
+    <string name="egr_health">EGR-Zustand</string>
+    <string name="critical">Kritisch</string>
+    <string name="warning">Warnung</string>
+    <string name="ok">OK</string>
+    <string name="egr_error_warning">Hohe EGR-Abweichung — Ventil oder Vakuumleitung prüfen</string>
+
+    <!-- EVAPSystemCard -->
+    <string name="evap_system">EVAP-System</string>
+    <string name="evap_not_supported">EVAP wird vom Fahrzeug nicht unterstützt</string>
+    <string name="purge_duty_cycle">Purge-Takt</string>
+    <string name="tank_pressure">Tankdruck</string>
+    <string name="pressure_high">Druck hoch</string>
+    <string name="pressure_low">Druck niedrig</string>
+    <string name="pressure_normal">Normal</string>
+    <string name="evap_leak_detected">Leck im Tanksystem erkannt!</string>
+    <string name="evap_leak_action">Tankdeckel und Leitungen prüfen</string>
+    <string name="evap_description">Das EVAP-System kontrolliert Benzindämpfe. Ein Leck kann die Emissionswerte verschlechtern.</string>
+
+    <!-- VehicleInfoCard -->
+    <string name="vehicle_info">Fahrzeuginformationen</string>
+    <string name="vin">VIN</string>
+    <string name="calibration_id">Kalibrierungs-ID</string>
+    <string name="cvn">CVN</string>
+    <string name="ecu_label">ECU</string>
+    <string name="version">Version</string>
+    <string name="protocol">Protokoll</string>
+    <string name="supported_modes">Unterstützte Modi</string>
+    <string name="modes">Modi</string>
+    <string name="manufacturer">Hersteller</string>
+    <string name="model_year">Baujahr</string>
+
+    <!-- EmissionsStatusCard -->
+    <string name="emissions_status">Emissionsstatus</string>
+    <string name="mil_active">MIL Aktiv</string>
+    <string name="ready_for_inspection">TÜV-bereit</string>
+    <string name="not_ready">Nicht bereit</string>
+    <string name="dtc_count_warning">%d gespeicherte Fehler</string>
+    <string name="inspection_hint">Alle Monitore bestanden — bereit für Abgasuntersuchung</string>
+    <string name="driving_cycle_required">Fahrtzyklus erforderlich</string>
+    <string name="incomplete_monitors_hint">%d Monitore noch nicht abgeschlossen</string>
+    <string name="monitor_overview">Monitor-Übersicht</string>
+    <string name="incomplete">Offen</string>
+    <string name="not_supported">Nicht unterstützt</string>
+    <string name="complete">Bereit</string>
+
+    <!-- Emulator Mode -->
+    <string name="emulator_mode">OBD Emulator</string>
+    <string name="emulator_mode_desc">Simuliere OBD-Daten ohne Auto</string>
+    <string name="status_emulator">OBD Emulator</string>
+
+    <!-- Widget strings -->
+    <string name="widget_app_name">canop-obd</string>
+    <string name="widget_default_value">0</string>
+    <string name="widget_rpm_label">RPM</string>
+    <string name="widget_speed_unit">km/h</string>
+    <string name="widget_temp_default">--°C</string>
+    <string name="widget_percent_default">--%</string>
 </resources>

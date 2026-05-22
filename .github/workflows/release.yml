@@ -1,0 +1,65 @@
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK (debug key for now)
+        run: |
+          # For a proper release you'd use a keystore from secrets
+          # For now the unsigned release APK is fine
+          ls -la app/build/outputs/apk/release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "canop-obd v${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## canop-obd v${{ steps.version.outputs.VERSION }}
+
+            ### Installation
+            1. Download the APK below
+            2. Open the APK on your Android device
+            3. Allow installation from unknown sources if prompted
+            4. The app will automatically check for updates on startup
+
+            ### What's New
+            See the commit history for details.
+          files: app/build/outputs/apk/release/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
