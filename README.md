@@ -9,9 +9,10 @@
   <img src="https://github.com/hendr15k/canop-obd/actions/workflows/build.yml/badge.svg" alt="Build">
   <img src="https://img.shields.io/badge/platform-Android%2026%2B-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/kotlin-2.1.0-purple" alt="Kotlin">
-  <img src="https://img.shields.io/badge/files-133-orange" alt="Files">
-  <img src="https://img.shields.io/badge/lines-58000%2B-red" alt="Lines">
+  <img src="https://img.shields.io/badge/kotlin-1.9.22-purple" alt="Kotlin">
+  <img src="https://img.shields.io/badge/version-1.6.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/files-161-orange" alt="Files">
+  <img src="https://img.shields.io/badge/lines-76304-red" alt="Lines">
 </p>
 
 ---
@@ -183,7 +184,7 @@ Zusatzlich zu Standard OBD-II (Mode $01) werden **16 GM-spezifische DIDs** (Mode
 ### Voraussetzungen
 - Android Studio Hedgehog (2023.1.1) oder neuer
 - JDK 17
-- Android SDK 34 (compileSdk)
+- Android SDK 35 (compileSdk)
 - minSdk 26 (Android 8.0)
 - ELM327 Bluetooth OBD-II Adapter (empfohlen: OBDLink MX+ oder STN-basiert)
 
@@ -286,7 +287,7 @@ app/src/main/java/com/canopobd/
     └── knownissues/             # Bekannte Astra J Probleme
 ```
 
-**Statistik:** 133 Kotlin-Dateien | 58.000+ Zeilen Code | 16 Dokumentationen
+**Statistik:** 161 Kotlin-Dateien | 76.304 Zeilen Code | 16 Dokumentationen
 
 ---
 
