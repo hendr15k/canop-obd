@@ -717,7 +717,6 @@ class ELM327BTConnection(
         null
     }
 
-<<<<<<< HEAD
     /**
      * Read multiple PIDs in one pass (faster)
      
