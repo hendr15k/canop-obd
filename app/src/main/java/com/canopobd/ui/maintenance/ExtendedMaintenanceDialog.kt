@@ -1055,7 +1055,7 @@ object AstraJServicePlan {
 
     fun createServiceEntries(currentKm: Int): List<ServiceEntry> = listOf(
         createOilChange(currentKm),
-        createTimingChain(currentKm),
+        createTimingBelt(currentKm),
         createTransmissionOil(currentKm),
         createSparkPlugs(currentKm),
         createAirFilter(currentKm),

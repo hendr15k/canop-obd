@@ -1,0 +1,43 @@
+complexity:
+  LongMethod:
+    threshold: 60
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 8
+  CyclomaticComplexMethod:
+    threshold: 15
+  TooManyFunctions:
+    thresholdInFiles: 25
+    thresholdInClasses: 25
+  ComplexCondition:
+    threshold: 5
+
+style:
+  MaxLineLength:
+    maxLineLength: 120
+  WildcardImport:
+    active: false
+  MagicNumber:
+    active: true
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+    ignoreAnnotated: ['Preview']
+  UnusedPrivateMember:
+    active: true
+  BracesOnIfStatements:
+    active: true
+
+naming:
+  FunctionNaming:
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Za-z][_A-Za-z0-9]*'
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false

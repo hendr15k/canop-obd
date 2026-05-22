@@ -1390,7 +1390,7 @@ private fun startTurboAnalysisCollection() {
         _turboAnalysisJob.value = viewModelScope.launch(Dispatchers.Default) {
             obdData
                 .filter { data -> data.rpm > 0 }
-                .throttleLatest(50L) // Limit to 20 updates/sec max
+                .conflate() // Limit to latest update only
                 .collect { data ->
                     updateAllTurboMetrics(data)
                     updateEmissionsAnalyzers(data)

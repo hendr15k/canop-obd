@@ -62,6 +62,7 @@ class FuelTrimAnalyzer {
     companion object {
         // Trim thresholds - consolidated values
         private const val OPTIMAL_TRIM_MAX = 5.0
+        private const val WARNING_TRIM = 10.0
         private const val WARNING_TRIM_MIN = 8.0
         private const val WARNING_TRIM_MAX = 10.0
         private const val PROBLEM_TRIM_MIN = 12.0

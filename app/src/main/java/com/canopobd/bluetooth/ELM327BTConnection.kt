@@ -637,12 +637,6 @@ class ELM327BTConnection(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    companion object {
-        // Standard Bluetooth SPP UUID for OBD-II adapters
-        private val SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-        private const val MAX_RETRIES = 3
-    }
-
     /**
      * Connect to a Bluetooth device (ELM327 adapter) with timeout
      */
