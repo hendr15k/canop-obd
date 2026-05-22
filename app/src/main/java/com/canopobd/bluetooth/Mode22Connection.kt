@@ -373,12 +373,12 @@ data class Mode22TurboData(
         } else 0.0
     
     /**
-     * Get relative boost (above atmospheric)
+     * Get relative boost (kPa above atmospheric)
      * Assumes 100 kPa atmospheric pressure
      */
     val relativeBoost: Double
         get() = (turboBoostActual - 100.0).coerceAtLeast(0.0)
-    
+
     /**
      * Get boost in bar (relative)
      */

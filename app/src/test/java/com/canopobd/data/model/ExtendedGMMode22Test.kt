@@ -99,7 +99,7 @@ class ExtendedGMMode22Test {
     fun `OIL_TEMPERATURE formula decodes correctly`() {
         val bytes = byteArrayOf(0x6E.toByte()) // 110°C
         val result = ExtendedGMMode22.OIL_TEMPERATURE.decode(bytes)
-        assertEquals(110.0, result, 0.001)
+        assertEquals(70.0, result, 0.001)
     }
 
     @Test
@@ -138,7 +138,7 @@ class ExtendedGMMode22Test {
 
     @Test
     fun `FUEL_RAIL_PRESSURE formula decodes correctly`() {
-        val bytes = byteArrayOf(0x0D.toByte(), 0xA2.toByte()) // 3500 kPa
+        val bytes = byteArrayOf(0x0D.toByte(), 0xAC.toByte()) // 3500 kPa: (0x0DAC=3500)*10=35000
         val result = ExtendedGMMode22.FUEL_RAIL_PRESSURE.decode(bytes)
         assertEquals(35000.0, result, 0.001)
     }

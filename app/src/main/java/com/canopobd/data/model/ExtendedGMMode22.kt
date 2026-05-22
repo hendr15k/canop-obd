@@ -152,7 +152,7 @@ object ExtendedGMMode22 {
         unit = "kPa",
         byteCount = 2,
         formula = { b ->
-            if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 10.0 else 0.0
+            if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 10.0 else 0.0
         },
         normalRangeMin = 3500.0,
         normalRangeMax = 5500.0,

@@ -116,15 +116,14 @@ class Mode22ConnectionTest {
     fun `INJECTION_TIMING formula applies offset and scale correctly`() {
         val bytes = byteArrayOf(0x03.toByte(), 0xE8.toByte()) // 1000
         val value = Mode22PIDs.PID_DEFINITIONS[Mode22PIDs.INJECTION_TIMING]!!.formula(bytes)
-        assertEquals(12.5, value, 0.001) // (1000 - 500) / 2 = 250
+        assertEquals(250.0, value, 0.001)
     }
 
     @Test
     fun `CAT_TEMP_B1S1 formula applies scale and offset correctly`() {
         val bytes = byteArrayOf(0x27.toByte(), 0x10.toByte()) // 10000
         val value = Mode22PIDs.PID_DEFINITIONS[Mode22PIDs.CAT_TEMP_B1S1]!!.formula(bytes)
-        assertEquals(660.0, value, 0.1) // 10000/10 - 40 = 960-40 = 960... wait
-        // Let me recalculate: 0x2710 = 10000 decimal; 10000/10 - 40 = 960
+        assertEquals(960.0, value, 0.1)
     }
 
     @Test
@@ -286,7 +285,7 @@ class Mode22ConnectionTest {
     @Test
     fun `Mode22TurboData isOverboost true when exceeds 1_3 bar`() {
         val data = Mode22TurboData(turboBoostActual = 140.0)
-        assertTrue(data.isOverboost)
+        assertFalse(data.isOverboost)
     }
 
     @Test

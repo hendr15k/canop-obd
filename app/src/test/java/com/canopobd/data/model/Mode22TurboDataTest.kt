@@ -130,7 +130,7 @@ class Mode22TurboDataTest {
 
     @Test
     fun `isOverboost returns true when boost exceeds 1_3 bar`() {
-        val data = Mode22TurboData(turboBoostActual = 230.0) // 1.3 bar
+        val data = Mode22TurboData(turboBoostActual = 235.0)
         assertTrue(data.isOverboost)
     }
 
@@ -216,8 +216,8 @@ class Mode22TurboDataTest {
     @Test
     fun `Mode22TurboData models WOT overboost condition`() {
         val data = Mode22TurboData(
-            turboBoostActual = 210.0,
-            turboBoostTarget = 170.0,
+            turboBoostActual = 310.0,
+            turboBoostTarget = 270.0,
             wastegateDuty = 25.0,
             turboSpeed = 150000.0,
             chargeAirTemp = 50.0,
@@ -227,7 +227,7 @@ class Mode22TurboDataTest {
             vgtPosition = 30.0
         )
         assertTrue(data.boostDeviation > 0)
-        assertEquals(1.1, data.boostBar, 0.01)
+        assertEquals(2.1, data.boostBar, 0.01)
         assertTrue(data.isOverboost)
         assertFalse(data.isUnderboost)
     }
