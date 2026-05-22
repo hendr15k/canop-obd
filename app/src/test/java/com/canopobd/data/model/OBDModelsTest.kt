@@ -317,7 +317,13 @@ class OBDModelsTest {
         val bytes = byteArrayOf(0x7F.toByte())
         val result = OBDPID.FUEL_LEVEL.formula(bytes)
         assertEquals(62.745, result, 0.01)
-    }tEquals(49.8, result, 2.0)
+    }
+
+    @Test
+    fun `OBDPID formula returns expected value for load calculation`() {
+        val bytes = byteArrayOf(0x80.toByte())
+        val result = OBDPID.ENGINE_LOAD.formula(bytes)
+        assertEquals(49.8, result, 2.0)
     }
 
     @Test
@@ -966,6 +972,5 @@ class OBDModelsTest {
         assertEquals(5500, config.warningRpm)
         assertTrue(config.flashEnabled)
         assertFalse(config.soundEnabled)
->>>>>>> main
     }
 }
