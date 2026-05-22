@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - uses: android-actions/setup-android@v2
+
+      - run: chmod +x gradlew
+
+      - name: Ktlint
+        run: ./gradlew ktlintCheck --no-daemon
+
+      - name: Detekt
+        run: ./gradlew detekt --no-daemon
+
+      - name: Upload Detekt report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-report
+          path: build/reports/detekt/detekt.xml
+          retention-days: 7
+        continue-on-error: true
+
+      - name: Upload Ktlint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ktlint-report
+          path: build/reports/ktlint/*.xml
+          retention-days: 7
+        continue-on-error: true
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - uses: android-actions/setup-android@v2
+
+      - run: chmod +x gradlew
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon --continue
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: app/build/reports/tests/testDebugUnitTest/
+          retention-days: 7
+        continue-on-error: true
+
+      - name: Upload test XML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-xml
+          path: app/build/test-results/testDebugUnitTest/*.xml
+          retention-days: 7
+        continue-on-error: true
