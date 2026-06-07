@@ -2,6 +2,7 @@ package com.canopobd.ui.tpms
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,10 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.LocalAppColors
 import com.canopobd.ui.theme.AppColors
 import kotlinx.coroutines.delay
@@ -50,357 +53,280 @@ fun TPMSDialog(
     val minPressure = validPressures.minOfOrNull { it.pressure } ?: 0f
     val pressureDiff = maxPressure - minPressure
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = colors.surface,
-        title = {
-            Row(
+    DialogShell(
+        onDismiss = onDismiss,
+        title = "Reifendruck (TPMS)",
+        eyebrow = "Reifenüberwachung",
+        heightFraction = 0.85f
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Avg pressure card
+            GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                accentEdge = colors.success,
+                padding = 16.dp
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.TireRepair,
-                        contentDescription = null,
-                        tint = colors.gaugeGreen,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Reifendruck (TPMS)", color = colors.textPrimary, fontWeight = FontWeight.Bold)
-                }
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, "Schliessen", tint = colors.textSecondary)
-                }
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = colors.surfaceCard
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Durchschnittsdruck",
-                            color = colors.textSecondary,
-                            fontSize = 12.sp
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .background(colors.success.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.TireRepair,
+                            contentDescription = null,
+                            tint = colors.success,
+                            modifier = Modifier.size(28.dp)
                         )
-                        Row(
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "DURCHSCHNITTSDRUCK",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.textTertiary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 "${avgPressure.toInt()}",
-                                color = colors.textPrimary,
-                                fontSize = 48.sp,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.displaySmall,
+                                color = colors.success,
+                                fontWeight = FontWeight.Black
                             )
                             Text(
                                 " kPa",
-                                color = colors.textSecondary,
-                                fontSize = 16.sp,
-                                modifier = Modifier.padding(bottom = 8.dp)
+                                style = MaterialTheme.typography.titleSmall,
+                                color = colors.textTertiary,
+                                modifier = Modifier.padding(bottom = 6.dp)
                             )
                         }
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            "≈ ${(avgPressure / 6.895f).toInt()} PSI | ${(avgPressure / 100f).format(1)} bar",
-                            color = colors.textDim,
-                            fontSize = 12.sp,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    StatCard(
-                        "Min", "${minPressure.toInt()}", "kPa",
-                        colors.gaugeCyan,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        "Max", "${maxPressure.toInt()}", "kPa",
-                        colors.gaugeOrange,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        "Diff", "${pressureDiff.toInt()}", "kPa",
-                        if (pressureDiff > 30) colors.gaugeOrange else colors.gaugeGreen,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Text(
-                    "Reifendruck",
-                    color = colors.textSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TireCard(
-                            tire = displayTires.getOrElse(0) { TireData("Vorne Links") },
-                            colors = colors,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TireCard(
-                            tire = displayTires.getOrElse(1) { TireData("Vorne Rechts") },
-                            colors = colors,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TireCard(
-                            tire = displayTires.getOrElse(2) { TireData("Hinten Links") },
-                            colors = colors,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TireCard(
-                            tire = displayTires.getOrElse(3) { TireData("Hinten Rechts") },
-                            colors = colors,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                if (lastResetTime != null) {
-                    val timeSinceReset = (System.currentTimeMillis() - lastResetTime!!) / 1000
-                    Text(
-                        "Letzter Reset: vor ${formatTimeSinceReset(timeSinceReset)}",
-                        color = colors.textDim,
-                        fontSize = 10.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        isResetting = true
-                        onTPMSReset()
-                    },
-                    enabled = !isResetting && isConnected,
-                    colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (isResetting) {
-                        CircularProgressIndicator(
-                            progress = resetProgress,
-                            modifier = Modifier.size(20.dp),
-                            color = colors.textPrimary,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("TPMS wird neu gelernt...")
-                    } else {
-                        Icon(Icons.Filled.Refresh, null, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("TPMS neu lernen")
-                    }
-                }
-
-                LaunchedEffect(isResetting) {
-                    if (isResetting) {
-                        repeat(100) { i ->
-                            delay(50)
-                            resetProgress = i / 100f
-                        }
-                        isResetting = false
-                        resetProgress = 0f
-                        lastResetTime = System.currentTimeMillis()
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    color = colors.gaugeCyan.copy(alpha = 0.1f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Filled.Info,
-                            contentDescription = null,
-                            tint = colors.gaugeCyan,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Nach Reifenwechsel oder Druckanpassung TPMS neu lernen aktivieren.",
-                            color = colors.textSecondary,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Schliessen", color = colors.accent)
-            }
-        }
-    )
-}
-
-@Composable
-private fun StatCard(
-    label: String,
-    value: String,
-    unit: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    val colors = LocalAppColors.current
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.15f)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(label, color = colors.textDim, fontSize = 10.sp)
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(value, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(unit, color = colors.textDim, fontSize = 10.sp, modifier = Modifier.padding(bottom = 2.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun TireCard(
-    tire: TireData,
-    colors: AppColors,
-    modifier: Modifier = Modifier
-) {
-    val statusColor by animateColorAsState(
-        when {
-            tire.isNok -> colors.gaugeRed
-            tire.isLow -> colors.gaugeOrange
-            tire.isHigh -> colors.gaugeYellow
-            tire.pressure > 0 -> colors.gaugeGreen
-            else -> colors.textDim
-        },
-        label = "tireStatus"
-    )
-
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = colors.surfaceCard
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(statusColor.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            if (tire.pressure > 0) "${tire.pressure.toInt()}" else "--",
-                            color = statusColor,
-                            fontSize = 20.sp,
+                            "Δ ${pressureDiff.toInt()}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (pressureDiff > 30) colors.warning else colors.textTertiary,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            "kPa",
-                            color = colors.textDim,
-                            fontSize = 10.sp
+                            "Differenz",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.textTertiary
                         )
                     }
-                }
-
-                if (tire.isLow || tire.isNok) {
-                    Icon(
-                        Icons.Filled.Warning,
-                        contentDescription = "Warnung",
-                        tint = colors.gaugeOrange,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .align(Alignment.TopEnd)
-                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                tire.position,
-                color = colors.textPrimary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Row(
-                modifier = Modifier.padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Tire visualization
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                padding = 16.dp
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Thermostat,
-                        contentDescription = null,
-                        tint = colors.textDim,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        "${tire.temperature}°",
-                        color = colors.textDim,
-                        fontSize = 10.sp
+                Text(
+                    "REIFENPOSITIONEN",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .clip(RoundedCornerShape(AppRadius.md))
+                        .background(colors.surfaceElevated)
+                ) {
+                    // Car silhouette
+                    CarSilhouette(
+                        modifier = Modifier.fillMaxSize(),
+                        frontLeft = displayTires.getOrNull(0),
+                        frontRight = displayTires.getOrNull(1),
+                        rearLeft = displayTires.getOrNull(2),
+                        rearRight = displayTires.getOrNull(3),
+                        colors = colors
                     )
                 }
-                if (tire.sensorBattery < 100) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.BatteryAlert,
-                            contentDescription = null,
-                            tint = colors.gaugeOrange,
-                            modifier = Modifier.size(12.dp)
-                        )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    displayTires.forEach { tire ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = tire.position,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colors.textTertiary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "${tire.pressure.toInt()} kPa",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = tireStatusColor(tire, colors),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Reset button
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isResetting) {
+                    Column {
                         Text(
-                            "${tire.sensorBattery}%",
-                            color = colors.gaugeOrange,
-                            fontSize = 10.sp
+                            text = "TPMS-Reset läuft… ${(resetProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.primary
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        LinearProgressIndicator(
+                            progress = resetProgress,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = colors.primary,
+                            trackColor = colors.surfaceRaised
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlineButton(
+                            text = "Schließen",
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GradientButton(
+                            text = "TPMS Reset",
+                            onClick = {
+                                isResetting = true
+                                resetProgress = 0f
+                                onTPMSReset()
+                            },
+                            icon = Icons.Filled.Refresh,
+                            gradient = colors.gradientAccent,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
+            }
+
+            if (lastResetTime != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    StatusDot(color = colors.success, pulse = false)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "Letzter Reset: erfolgreich",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.success
+                    )
+                }
+            }
+        }
+
+        LaunchedEffect(isResetting) {
+            if (isResetting) {
+                while (resetProgress < 1f) {
+                    delay(50)
+                    resetProgress = (resetProgress + 0.02f).coerceAtMost(1f)
+                }
+                isResetting = false
+                lastResetTime = System.currentTimeMillis()
             }
         }
     }
 }
 
-private fun Float.format(decimals: Int) = "%.${decimals}f".format(this)
-
-private fun formatTimeSinceReset(seconds: Long): String {
-    return when {
-        seconds < 60 -> "wenigen Sekunden"
-        seconds < 3600 -> "${seconds / 60} Minuten"
-        else -> "${seconds / 3600} Stunden"
+@Composable
+private fun CarSilhouette(
+    modifier: Modifier = Modifier,
+    frontLeft: TireData?,
+    frontRight: TireData?,
+    rearLeft: TireData?,
+    rearRight: TireData?,
+    colors: AppColors
+) {
+    Box(modifier = modifier) {
+        // Car body outline
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .width(180.dp)
+                .height(80.dp)
+                .clip(RoundedCornerShape(AppRadius.md))
+                .background(colors.surfaceRaised)
+                .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.md))
+        ) {
+            // Front indicator
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 6.dp)
+                    .width(20.dp)
+                    .height(2.dp)
+                    .background(colors.primary.copy(alpha = 0.5f))
+            )
+            Text(
+                text = "↑ VORNE",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textTertiary,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp),
+                fontSize = 7.sp
+            )
+        }
+        // Tire positions
+        TireMarker(frontLeft, Alignment.TopStart, colors)
+        TireMarker(frontRight, Alignment.TopEnd, colors)
+        TireMarker(rearLeft, Alignment.BottomStart, colors)
+        TireMarker(rearRight, Alignment.BottomEnd, colors)
     }
+}
+
+@Composable
+private fun BoxScope.TireMarker(tire: TireData?, alignment: Alignment, colors: AppColors) {
+    val c = tire?.let { tireStatusColor(it, colors) } ?: colors.textMuted
+    Box(
+        modifier = Modifier
+            .align(alignment)
+            .padding(6.dp)
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(c.copy(alpha = 0.3f))
+            .border(2.dp, c, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Circle,
+            contentDescription = null,
+            tint = c,
+            modifier = Modifier.size(10.dp)
+        )
+    }
+}
+
+private fun tireStatusColor(tire: TireData, colors: AppColors): Color = when {
+    tire.isNok -> colors.critical
+    tire.isLow -> colors.warning
+    tire.isHigh -> colors.warning
+    tire.pressure > 0 -> colors.success
+    else -> colors.textMuted
 }

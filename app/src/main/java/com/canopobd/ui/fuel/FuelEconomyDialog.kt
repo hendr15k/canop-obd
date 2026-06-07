@@ -1,5 +1,7 @@
 package com.canopobd.ui.fuel
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,14 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.FuelEconomyData
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -24,175 +25,149 @@ fun FuelEconomyDialog(
     fuelEconomyData: FuelEconomyData,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val colors = LocalAppColors.current
+    DialogShell(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.fuel_economy_title),
+        eyebrow = "Kraftstoffverbrauch",
+        heightFraction = 0.85f
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.8f),
-            shape = RoundedCornerShape(16.dp),
-            color = canopoSurface
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.fuel_economy_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = canopoHighlight
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (fuelEconomyData.currentL100km == 0.0 && fuelEconomyData.currentKmL == 0.0) {
+        if (fuelEconomyData.currentL100km == 0.0 && fuelEconomyData.currentKmL == 0.0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(40.dp))
+                            .background(colors.surfaceRaised),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = textDim, modifier = Modifier.size(64.dp))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = stringResource(R.string.fuel_economy_no_data),
-                                fontSize = 16.sp,
-                                color = textDim
-                            )
-                        }
+                        Icon(
+                            Icons.Filled.LocalGasStation,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(36.dp)
+                        )
                     }
-                } else {
-                    LazyColumn {
-                        item {
-                            if (fuelEconomyData.estimatedFromMaf) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = canopoAccent.copy(alpha = 0.1f)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Filled.Info, contentDescription = null, tint = canopoAccent, modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = stringResource(R.string.fuel_economy_from_maf),
-                                            fontSize = 12.sp,
-                                            color = canopoAccent
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
-                        }
-
-                        item {
-                            Text(
-                                text = stringResource(R.string.fuel_economy_current),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = textSecondary,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-
-                        item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_l100km),
-                                    value = "%.1f".format(fuelEconomyData.currentL100km),
-                                    color = gaugeGreen
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.fuel_economy_no_data),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Fahrt erforderlich",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textTertiary
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (fuelEconomyData.estimatedFromMaf) {
+                    item {
+                        GlassCard(
+                            accentEdge = colors.primary,
+                            padding = 10.dp
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Filled.Info,
+                                    contentDescription = null,
+                                    tint = colors.primary,
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_kml),
-                                    value = "%.1f".format(fuelEconomyData.currentKmL),
-                                    color = gaugeCyan
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_mpg_us),
-                                    value = "%.1f".format(fuelEconomyData.currentMpgUs),
-                                    color = gaugeYellow
-                                )
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_mpg_uk),
-                                    value = "%.1f".format(fuelEconomyData.currentMpgUk),
-                                    color = gaugeOrange
-                                )
-                            }
-                        }
-
-                        item {
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Text(
-                                text = stringResource(R.string.fuel_economy_avg),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = textSecondary,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-
-                        item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_l100km),
-                                    value = "%.1f".format(fuelEconomyData.avgL100km),
-                                    color = gaugeGreen
-                                )
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_kml),
-                                    value = "%.1f".format(fuelEconomyData.avgKmL),
-                                    color = gaugeCyan
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_mpg_us),
-                                    value = "%.1f".format(fuelEconomyData.avgMpgUs),
-                                    color = gaugeYellow
-                                )
-                                EconomyCard(
-                                    modifier = Modifier.weight(1f),
-                                    label = stringResource(R.string.fuel_economy_mpg_uk),
-                                    value = "%.1f".format(fuelEconomyData.avgMpgUk),
-                                    color = gaugeOrange
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.fuel_economy_from_maf),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.primary
                                 )
                             }
                         }
                     }
                 }
+
+                item { SectionHeader(title = stringResource(R.string.fuel_economy_current), icon = Icons.Filled.Speed) }
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_l100km),
+                            value = "%.1f".format(fuelEconomyData.currentL100km),
+                            color = colors.success
+                        )
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_kml),
+                            value = "%.1f".format(fuelEconomyData.currentKmL),
+                            color = colors.info
+                        )
+                    }
+                }
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_mpg_us),
+                            value = "%.1f".format(fuelEconomyData.currentMpgUs),
+                            color = colors.warning
+                        )
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_mpg_uk),
+                            value = "%.1f".format(fuelEconomyData.currentMpgUk),
+                            color = colors.warning
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(Modifier.height(4.dp))
+                    SectionHeader(title = stringResource(R.string.fuel_economy_avg), icon = Icons.Filled.TrendingFlat)
+                }
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_l100km),
+                            value = "%.1f".format(fuelEconomyData.avgL100km),
+                            color = colors.success
+                        )
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_kml),
+                            value = "%.1f".format(fuelEconomyData.avgKmL),
+                            color = colors.info
+                        )
+                    }
+                }
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_mpg_us),
+                            value = "%.1f".format(fuelEconomyData.avgMpgUs),
+                            color = colors.warning
+                        )
+                        EconomyCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.fuel_economy_mpg_uk),
+                            value = "%.1f".format(fuelEconomyData.avgMpgUk),
+                            color = colors.warning
+                        )
+                    }
+                }
+                item { Spacer(Modifier.height(8.dp)) }
             }
         }
     }
@@ -205,25 +180,27 @@ private fun EconomyCard(
     value: String,
     color: androidx.compose.ui.graphics.Color
 ) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = canopoDark
+    val colors = LocalAppColors.current
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.md))
+            .background(colors.surfaceRaised)
+            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(AppRadius.md))
+            .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = value,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
+                style = MaterialTheme.typography.headlineSmall,
+                color = color,
+                fontWeight = FontWeight.Black
             )
+            Spacer(Modifier.height(2.dp))
             Text(
                 text = label,
-                fontSize = 12.sp,
-                color = textSecondary
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textTertiary,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

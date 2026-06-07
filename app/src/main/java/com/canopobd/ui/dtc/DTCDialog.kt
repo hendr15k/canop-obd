@@ -1,5 +1,7 @@
 package com.canopobd.ui.dtc
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,14 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.DiagnosticTroubleCode
 import com.canopobd.data.model.DTCResponse
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -26,116 +28,113 @@ fun DTCDialog(
     onDismiss: () -> Unit,
     onClearDTCs: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val colors = LocalAppColors.current
+    val allCount = (dtcResponse?.codes?.size ?: 0) + (dtcResponse?.pendingCodes?.size ?: 0)
+    val eyebrow = if (allCount > 0) "$allCount Codes gefunden" else null
+
+    DialogShell(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.dtc_title),
+        eyebrow = eyebrow,
+        heightFraction = 0.85f
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.7f),
-            shape = RoundedCornerShape(16.dp),
-            color = canopoSurface
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+        if (dtcResponse == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.dtc_title),
-                        fontSize = 20.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = canopoHighlight
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(
+                        color = colors.primary,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(40.dp)
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
-                    }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "Lese Fehlercodes…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textTertiary
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (dtcResponse == null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = canopoAccent)
-                    }
-                } else {
-                    val allCodes = dtcResponse.codes + dtcResponse.pendingCodes
-
-                    if (allCodes.isEmpty()) {
+            }
+        } else {
+            val allCodes = dtcResponse.codes + dtcResponse.pendingCodes
+            if (allCodes.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(40.dp))
+                                .background(colors.success.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Filled.CheckCircle,
-                                    contentDescription = null,
-                                    tint = gaugeGreen,
-                                    modifier = Modifier.size(64.dp)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    stringResource(R.string.dtc_none_found),
-                                    color = gaugeGreen,
-                                    fontSize = 16.sp
-                                )
-                            }
+                            Icon(
+                                Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                tint = colors.success,
+                                modifier = Modifier.size(40.dp)
+                            )
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            if (dtcResponse.codes.isNotEmpty()) {
-                                item {
-                                    Text(
-                                        stringResource(R.string.dtc_stored, dtcResponse.codes.size),
-                                        color = gaugeRed,
-                                        fontSize = 14.sp,
-                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                        modifier = Modifier.padding(vertical = 8.dp)
-                                    )
-                                }
-                                items(dtcResponse.codes) { dtc ->
-                                    DTCItem(dtc = dtc, isPending = false)
-                                }
-                            }
-
-                            if (dtcResponse.pendingCodes.isNotEmpty()) {
-                                item {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        stringResource(R.string.dtc_cyclic, dtcResponse.pendingCodes.size),
-                                        color = gaugeYellow,
-                                        fontSize = 14.sp,
-                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                        modifier = Modifier.padding(vertical = 8.dp)
-                                    )
-                                }
-                                items(dtcResponse.pendingCodes) { dtc ->
-                                    DTCItem(dtc = dtc, isPending = true)
-                                }
-                            }
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.dtc_none_found),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.success
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Keine Fehler im Steuergerät",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textTertiary
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (dtcResponse.codes.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                title = stringResource(R.string.dtc_stored, dtcResponse.codes.size),
+                                icon = Icons.Filled.Error
+                            )
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = onClearDTCs,
-                            colors = ButtonDefaults.buttonColors(containerColor = gaugeRed),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Filled.Delete, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.dtc_clear))
+                        items(dtcResponse.codes) { dtc ->
+                            DTCItem(dtc = dtc, isPending = false)
                         }
                     }
+                    if (dtcResponse.pendingCodes.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                title = stringResource(R.string.dtc_cyclic, dtcResponse.pendingCodes.size),
+                                icon = Icons.Filled.Warning
+                            )
+                        }
+                        items(dtcResponse.pendingCodes) { dtc ->
+                            DTCItem(dtc = dtc, isPending = true)
+                        }
+                    }
+                }
+                DividerLine()
+                Box(modifier = Modifier.padding(16.dp)) {
+                    GradientButton(
+                        text = stringResource(R.string.dtc_clear),
+                        onClick = onClearDTCs,
+                        icon = Icons.Filled.Delete,
+                        gradient = colors.gradientCritical,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -144,38 +143,52 @@ fun DTCDialog(
 
 @Composable
 private fun DTCItem(dtc: DiagnosticTroubleCode, isPending: Boolean) {
-    Card(
+    val colors = LocalAppColors.current
+    val c = if (isPending) colors.warning else colors.critical
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isPending) canopoDark else canopoSurface.copy(alpha = 0.5f)
-        )
+            .clip(RoundedCornerShape(AppRadius.md))
+            .background(colors.surfaceRaised)
+            .border(1.dp, c.copy(alpha = 0.3f), RoundedCornerShape(AppRadius.md))
+            .padding(12.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.Top
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(AppRadius.sm))
+                .background(c.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 if (isPending) Icons.Filled.Warning else Icons.Filled.Error,
                 contentDescription = null,
-                tint = if (isPending) gaugeYellow else gaugeRed,
-                modifier = Modifier.size(24.dp)
+                tint = c,
+                modifier = Modifier.size(18.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = dtc.code,
-                    fontSize = 16.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    color = if (isPending) gaugeYellow else gaugeRed
+                    style = MaterialTheme.typography.titleSmall,
+                    color = c,
+                    fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = dtc.description,
-                    fontSize = 12.sp,
-                    color = textSecondary
+                Spacer(Modifier.width(6.dp))
+                StatusPill(
+                    text = if (isPending) "PENDING" else "STORIERT",
+                    color = c
                 )
             }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = dtc.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.textSecondary
+            )
         }
     }
 }

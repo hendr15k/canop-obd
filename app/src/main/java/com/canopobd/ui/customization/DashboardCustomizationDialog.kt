@@ -1,8 +1,13 @@
 package com.canopobd.ui.customization
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,15 +18,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.ColorTheme
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
 data class GaugeOption(
@@ -57,61 +62,26 @@ fun DashboardCustomizationDialog(
     onPrimaryGaugesChange: (Set<String>) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    val colors = LocalAppColors.current
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    DialogShell(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.customize_dashboard_title),
+        eyebrow = "Dashboard Anpassen",
+        heightFraction = 0.9f
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
-            color = canopoSurface
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.customize_dashboard_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = canopoHighlight
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = canopoDark,
-                    contentColor = canopoAccent
-                ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = { Text(stringResource(R.string.tab_colors), color = if (selectedTab == 0) textPrimary else textSecondary) }
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = { Text(stringResource(R.string.tab_gauges), color = if (selectedTab == 1) textPrimary else textSecondary) }
-                    )
-                    Tab(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                        text = { Text(stringResource(R.string.tab_layout), color = if (selectedTab == 2) textPrimary else textSecondary) }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+        Column {
+            TabBar(
+                tabs = listOf(
+                    stringResource(R.string.tab_colors),
+                    stringResource(R.string.tab_gauges),
+                    stringResource(R.string.tab_layout)
+                ),
+                selectedIndex = selectedTab,
+                onSelect = { selectedTab = it }
+            )
+            DividerLine()
+            Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> ThemeSelector(
                         currentTheme = currentTheme,
@@ -135,47 +105,56 @@ private fun ThemeSelector(
     currentTheme: ColorTheme,
     onThemeChange: (ColorTheme) -> Unit
 ) {
-    LazyColumn {
+    val colors = LocalAppColors.current
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         item {
-            Text(
-                text = stringResource(R.string.color_themes_title),
-                fontSize = 14.sp,
-                color = textSecondary,
-                modifier = Modifier.padding(bottom = 12.dp)
+            SectionHeader(
+                title = stringResource(R.string.color_themes_title),
+                icon = Icons.Filled.Palette
             )
         }
         items(ColorTheme.entries.toList()) { theme ->
             val isSelected = currentTheme == theme
             val themeColor = Color(theme.primaryColor)
-            Surface(
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp)
                     .clickable { onThemeChange(theme) },
-                shape = RoundedCornerShape(12.dp),
-                color = if (isSelected) themeColor.copy(alpha = 0.15f) else canopoDark,
-                border = if (isSelected) BorderStroke(2.dp, themeColor) else null
+                accentEdge = if (isSelected) themeColor else null,
+                padding = 12.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color(theme.primaryColor))
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(theme.primaryColor),
+                                            Color(theme.accentColor)
+                                        )
+                                    )
+                                )
+                                .border(2.dp, themeColor, CircleShape)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = theme.displayName,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isSelected) themeColor else textPrimary
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (isSelected) themeColor else colors.textPrimary,
+                                fontWeight = FontWeight.Bold
                             )
+                            Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 listOf(
                                     Color(theme.primaryColor),
@@ -185,16 +164,30 @@ private fun ThemeSelector(
                                 ).forEach { c ->
                                     Box(
                                         modifier = Modifier
-                                            .size(12.dp)
+                                            .size(10.dp)
                                             .clip(CircleShape)
                                             .background(c)
+                                            .border(1.dp, colors.borderSubtle, CircleShape)
                                     )
                                 }
                             }
                         }
                     }
                     if (isSelected) {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = themeColor, modifier = Modifier.size(24.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(themeColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -207,83 +200,78 @@ private fun GaugeSelector(
     primaryGaugeIds: Set<String>,
     onPrimaryGaugesChange: (Set<String>) -> Unit
 ) {
-    LazyColumn {
+    val colors = LocalAppColors.current
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         item {
-            Text(
-                text = stringResource(R.string.select_gauges_title),
-                fontSize = 14.sp,
-                color = textSecondary,
-                modifier = Modifier.padding(bottom = 12.dp)
+            SectionHeader(
+                title = stringResource(R.string.select_gauges_title),
+                icon = Icons.Filled.Speed
             )
         }
         items(availableGauges) { gauge ->
             val isPrimary = gauge.id in primaryGaugeIds
             val isDisabled = !isPrimary && primaryGaugeIds.size >= 3
+            val c = if (isDisabled) colors.textMuted else if (isPrimary) colors.primary else colors.textSecondary
 
-            Surface(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 3.dp)
+                    .clip(RoundedCornerShape(AppRadius.md))
+                    .background(colors.surfaceRaised)
+                    .border(
+                        width = if (isPrimary) 1.5.dp else 1.dp,
+                        color = if (isPrimary) colors.primary.copy(alpha = 0.5f) else colors.borderSubtle,
+                        shape = RoundedCornerShape(AppRadius.md)
+                    )
                     .clickable(enabled = !isDisabled) {
-                        val newSet = if (isPrimary) {
-                            primaryGaugeIds - gauge.id
-                        } else if (primaryGaugeIds.size < 3) {
-                            primaryGaugeIds + gauge.id
-                        } else primaryGaugeIds
-
+                        val newSet = if (isPrimary) primaryGaugeIds - gauge.id
+                        else if (primaryGaugeIds.size < 3) primaryGaugeIds + gauge.id
+                        else primaryGaugeIds
                         if (isPrimary || primaryGaugeIds.size < 3) {
                             onPrimaryGaugesChange(newSet)
                         }
-                    },
-                shape = RoundedCornerShape(8.dp),
-                color = when {
-                    isPrimary -> canopoAccent.copy(alpha = 0.15f)
-                    isDisabled -> canopoDark.copy(alpha = 0.5f)
-                    else -> canopoDark
-                },
-                border = if (isPrimary) BorderStroke(1.dp, canopoAccent) else null
+                    }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isPrimary) colors.primary else Color.Transparent)
+                        .border(2.dp, c, RoundedCornerShape(4.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column {
-                        Text(
-                            text = gauge.label,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = when {
-                                isPrimary -> canopoAccent
-                                isDisabled -> textDim
-                                else -> textPrimary
-                            }
-                        )
-                        Text(
-                            text = gauge.description,
-                            fontSize = 11.sp,
-                            color = textDim
+                    if (isPrimary) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = colors.surfaceBlack,
+                            modifier = Modifier.size(12.dp)
                         )
                     }
-                    Checkbox(
-                        checked = isPrimary,
-                        onCheckedChange = {
-                            if (!isDisabled) {
-                                val newSet = if (isPrimary) {
-                                    primaryGaugeIds - gauge.id
-                                } else if (primaryGaugeIds.size < 3) {
-                                    primaryGaugeIds + gauge.id
-                                } else primaryGaugeIds
-                                onPrimaryGaugesChange(newSet)
-                            }
-                        },
-                        enabled = !isDisabled,
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = canopoAccent,
-                            uncheckedColor = textSecondary
-                        )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = gauge.label,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (isDisabled) colors.textMuted else colors.textPrimary
+                    )
+                    Text(
+                        text = gauge.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textTertiary
                     )
                 }
+                Text(
+                    text = gauge.unit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary
+                )
             }
         }
     }
@@ -291,116 +279,109 @@ private fun GaugeSelector(
 
 @Composable
 private fun LayoutPreview(primaryGaugeIds: Set<String>) {
-    Column {
-        Text(
-            text = stringResource(R.string.layout_preview_title),
-            fontSize = 14.sp,
-            color = textSecondary,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = canopoDark
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+    val colors = LocalAppColors.current
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            SectionHeader(
+                title = stringResource(R.string.layout_preview_title),
+                icon = Icons.Filled.Dashboard
+            )
+        }
+        item {
+            GlassCard(
+                padding = 12.dp
             ) {
-                val selected = availableGauges.filter { it.id in primaryGaugeIds }.take(3)
-                repeat(3) { i ->
-                    val gauge = selected.getOrNull(i)
-                    if (gauge != null) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                                    .background(canopoSurface)
-                                    .border(3.dp, gaugeColor(gauge.id), CircleShape),
-                                contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val selected = availableGauges.filter { it.id in primaryGaugeIds }.take(3)
+                    repeat(3) { i ->
+                        val gauge = selected.getOrNull(i)
+                        if (gauge != null) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.surfaceRaised)
+                                        .border(3.dp, gaugeColor(gauge.id), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = gauge.id.uppercase().take(3),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = colors.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = gauge.id.uppercase().take(3),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = canopoAccent
+                                    text = gauge.label.take(10),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textTertiary
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = gauge.label.take(10),
-                                fontSize = 9.sp,
-                                color = textSecondary
-                            )
-                        }
-                    } else {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                                    .background(canopoSurface.copy(alpha = 0.3f))
-                                    .border(1.dp, textDim.copy(alpha = 0.4f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.surfaceRaised.copy(alpha = 0.4f))
+                                        .border(1.dp, colors.borderSubtle, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "—",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = colors.textMuted
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "---",
-                                    fontSize = 12.sp,
-                                    color = textDim
+                                    text = stringResource(R.string.empty_slot),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textMuted
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = stringResource(R.string.empty_slot),
-                                fontSize = 9.sp,
-                                color = textDim
-                            )
                         }
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            color = canopoDark
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = stringResource(R.string.secondary_gauges_label),
-                    fontSize = 12.sp,
-                    color = textSecondary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                val secondaryGauges = availableGauges.filter { it.id !in primaryGaugeIds }.take(6)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    secondaryGauges.take(3).forEach { g ->
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(6.dp),
-                            color = canopoSurface
-                        ) {
-                            Text(
-                                text = g.label.take(8),
-                                fontSize = 10.sp,
-                                color = textSecondary,
-                                modifier = Modifier.padding(6.dp)
+        item {
+            SectionHeader(
+                title = stringResource(R.string.secondary_gauges_label),
+                icon = Icons.Filled.GridView
+            )
+        }
+        item {
+            val secondaryGauges = availableGauges.filter { it.id !in primaryGaugeIds }.take(6)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                secondaryGauges.chunked(3).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        row.forEach { g ->
+                            KeyValueBlock(
+                                label = g.label.take(8),
+                                value = g.unit,
+                                modifier = Modifier.weight(1f),
+                                accentColor = colors.primary
                             )
+                        }
+                        repeat(3 - row.size) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -410,10 +391,13 @@ private fun LayoutPreview(primaryGaugeIds: Set<String>) {
 }
 
 @Composable
-private fun gaugeColor(id: String): Color = when (id) {
-    "rpm", "speed", "coolant" -> gaugeGreen
-    "throttle", "engine_load" -> gaugeYellow
-    "fuel", "fuel_trim", "hybrid_battery" -> gaugeOrange
-    "maf", "accel_pedal" -> gaugeCyan
-    else -> gaugeRed
+private fun gaugeColor(id: String): Color {
+    val colors = LocalAppColors.current
+    return when (id) {
+        "rpm", "speed", "coolant" -> colors.success
+        "throttle", "engine_load" -> colors.warning
+        "fuel", "fuel_trim", "hybrid_battery" -> colors.warning
+        "maf", "accel_pedal" -> colors.info
+        else -> colors.critical
+    }
 }

@@ -1,7 +1,7 @@
 package com.canopobd.ui.drivescore
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,15 +12,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.DriveScore
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -37,183 +37,191 @@ fun DriveScoreDialog(
     onDismiss: () -> Unit,
     onResetScore: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val colors = LocalAppColors.current
+    val scoreColor = Color(score.color)
+    DialogShell(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.drive_score_analysis_title),
+        eyebrow = "Fahrstil-Analyse",
+        heightFraction = 0.9f
     ) {
-        Surface(
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
-            color = canopoSurface
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.drive_score_analysis_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = canopoHighlight
-                    )
-                    Row {
-                        IconButton(onClick = onResetScore) {
-                            Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.drive_score_reset), tint = gaugeYellow, modifier = Modifier.size(20.dp))
-                        }
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+            // Hero score
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(AppRadius.lg))
+                    .background(colors.surfaceBase)
+                    .border(1.dp, scoreColor.copy(alpha = 0.4f), RoundedCornerShape(AppRadius.lg)),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(160.dp)
-                                .clip(CircleShape)
-                                .background(Color(score.color).copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = score.grade,
-                                    fontSize = 56.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(score.color)
-                                )
-                                Text(
-                                    text = stringResource(R.string.drive_score_score_format, score.score),
-                                    fontSize = 16.sp,
-                                    color = textSecondary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            ScoreMini(score.accelerationScore, stringResource(R.string.drive_score_acceleration), gaugeGreen)
-                            ScoreMini(score.brakingScore, stringResource(R.string.drive_score_braking), gaugeRed)
-                            ScoreMini(score.cruisingScore, stringResource(R.string.drive_score_cruising), gaugeCyan)
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            ScoreMini(score.idleScore, stringResource(R.string.drive_score_idle), gaugeYellow)
-                            ScoreMini(score.rpmScore, stringResource(R.string.drive_score_rpm), gaugeOrange)
-                            ScoreMini(score.throttleScore, stringResource(R.string.drive_score_throttle), gaugeCyan)
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            ScoreMini(score.boostScore, stringResource(R.string.drive_score_boost), gaugeCyan)
-                            ScoreMini(score.ecoScore, stringResource(R.string.drive_score_eco), gaugeGreen)
-                            ScoreMini(score.turboHealthScore, stringResource(R.string.drive_score_turbo_health), gaugeOrange)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = canopoDark
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = stringResource(R.string.drive_score_section_session),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = canopoAccent
+                        .size(160.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(scoreColor.copy(alpha = 0.18f), Color.Transparent)
+                            )
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            StatItem(label = stringResource(R.string.drive_score_duration), value = formatDuration(sessionDuration))
-                            StatItem(label = stringResource(R.string.drive_score_avg_rpm), value = stringResource(R.string.drive_score_avg_rpm_format, avgRpm))
-                            StatItem(label = stringResource(R.string.drive_score_avg_throttle), value = stringResource(R.string.drive_score_avg_throttle_format, avgThrottle))
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            StatItem(label = stringResource(R.string.drive_score_avg_speed), value = stringResource(R.string.drive_score_avg_speed_format, avgSpeed))
-                            StatItem(label = stringResource(R.string.drive_score_harsh_accel), value = "$harshAccels")
-                            StatItem(label = stringResource(R.string.drive_score_harsh_brake), value = "$harshBrakes")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            StatItem(label = stringResource(R.string.drive_score_idle_time), value = formatDuration(idleTimeSeconds))
-                            StatItem(label = stringResource(R.string.drive_score_fuel_consumption), value = if (fuelConsumptionL100km > 0) String.format("%.1f L/100km", fuelConsumptionL100km) else "--- L/100km")
-                        }
-                    }
+                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = score.grade,
+                        style = MaterialTheme.typography.displayLarge,
+                        color = scoreColor,
+                        fontWeight = FontWeight.Black
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.drive_score_score_format, score.score),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textSecondary
+                    )
                 }
+            }
+
+            // Score sub-categories
+            GlassCard(padding = 12.dp) {
+                Text(
+                    "TEIL-BEWERTUNGEN",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ScoreMini(score.accelerationScore, stringResource(R.string.drive_score_acceleration), colors.success, Modifier.weight(1f))
+                    ScoreMini(score.brakingScore, stringResource(R.string.drive_score_braking), colors.critical, Modifier.weight(1f))
+                    ScoreMini(score.cruisingScore, stringResource(R.string.drive_score_cruising), colors.info, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ScoreMini(score.idleScore, stringResource(R.string.drive_score_idle), colors.warning, Modifier.weight(1f))
+                    ScoreMini(score.rpmScore, stringResource(R.string.drive_score_rpm), colors.warning, Modifier.weight(1f))
+                    ScoreMini(score.throttleScore, stringResource(R.string.drive_score_throttle), colors.info, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ScoreMini(score.boostScore, stringResource(R.string.drive_score_boost), colors.info, Modifier.weight(1f))
+                    ScoreMini(score.ecoScore, stringResource(R.string.drive_score_eco), colors.success, Modifier.weight(1f))
+                    ScoreMini(score.turboHealthScore, stringResource(R.string.drive_score_turbo_health), colors.warning, Modifier.weight(1f))
+                }
+            }
+
+            // Session stats
+            GlassCard(
+                accentEdge = colors.primary,
+                padding = 12.dp
+            ) {
+                InlineSectionHeader(
+                    title = stringResource(R.string.drive_score_section_session),
+                    icon = Icons.Filled.Schedule
+                )
+                Spacer(Modifier.height(8.dp))
+                DataRow(label = stringResource(R.string.drive_score_duration), value = formatDuration(sessionDuration))
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_avg_rpm),
+                    value = stringResource(R.string.drive_score_avg_rpm_format, avgRpm)
+                )
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_avg_throttle),
+                    value = stringResource(R.string.drive_score_avg_throttle_format, avgThrottle)
+                )
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_avg_speed),
+                    value = stringResource(R.string.drive_score_avg_speed_format, avgSpeed)
+                )
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_harsh_accel),
+                    value = "$harshAccels",
+                    valueColor = if (harshAccels > 5) colors.warning else colors.textPrimary
+                )
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_harsh_brake),
+                    value = "$harshBrakes",
+                    valueColor = if (harshBrakes > 5) colors.warning else colors.textPrimary
+                )
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_idle_time),
+                    value = formatDuration(idleTimeSeconds)
+                )
+                DividerLine(modifier = Modifier.padding(vertical = 2.dp))
+                DataRow(
+                    label = stringResource(R.string.drive_score_fuel_consumption),
+                    value = if (fuelConsumptionL100km > 0) "%.1f L/100km".format(fuelConsumptionL100km) else "—"
+                )
+            }
+
+            // Reset button
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlineButton(
+                    text = stringResource(R.string.drive_score_reset),
+                    onClick = onResetScore,
+                    icon = Icons.Filled.Refresh,
+                    accentColor = colors.warning,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ScoreMini(score: Int, label: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun ScoreMini(score: Int, label: String, color: Color, modifier: Modifier = Modifier) {
+    val colors = LocalAppColors.current
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.md))
+            .background(colors.surfaceRaised)
+            .border(1.dp, color.copy(alpha = 0.4f), RoundedCornerShape(AppRadius.md))
+            .padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Box(
             modifier = Modifier
-                .size(56.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .border(2.dp, color, CircleShape),
+                .background(color.copy(alpha = 0.15f))
+                .border(1.5.dp, color, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "$score",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
+                style = MaterialTheme.typography.titleSmall,
+                color = color,
+                fontWeight = FontWeight.Black
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             text = label,
-            fontSize = 10.sp,
-            color = textDim
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.textTertiary,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1
         )
-    }
-}
-
-@Composable
-private fun StatItem(label: String, value: String) {
-    Column {
-        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textPrimary)
-        Text(text = label, fontSize = 10.sp, color = textDim)
     }
 }
 

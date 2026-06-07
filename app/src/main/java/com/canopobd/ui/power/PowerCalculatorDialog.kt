@@ -1,8 +1,9 @@
 package com.canopobd.ui.power
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,14 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.PowerCalculation
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -27,135 +27,121 @@ fun PowerCalculatorDialog(
     maf: Double,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val colors = LocalAppColors.current
+    DialogShell(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.power_title),
+        eyebrow = "Leistungsrechner",
+        heightFraction = 0.75f
     ) {
-        Surface(
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.7f),
-            shape = RoundedCornerShape(16.dp),
-            color = canopoSurface
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            // Info row
+            GlassCard(padding = 12.dp) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text(
-                        text = stringResource(R.string.power_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = canopoHighlight
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
-                    }
+                    InfoChip(label = "RPM", value = "%.0f".format(rpm), colors = colors, modifier = Modifier.weight(1f))
+                    InfoChip(label = "MAF", value = "%.1f g/s".format(maf), colors = colors, modifier = Modifier.weight(1f))
                 }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    color = canopoDark
+            if (!calculation.isValid) {
+                Spacer(Modifier.weight(1f))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        InfoChip(label = "RPM", value = "%.0f".format(rpm))
-                        InfoChip(label = "MAF", value = "%.1f g/s".format(maf))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (!calculation.isValid) {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(colors.surfaceRaised),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Filled.Speed, contentDescription = null, tint = textDim, modifier = Modifier.size(64.dp))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = stringResource(R.string.power_start_engine),
-                                fontSize = 16.sp,
-                                color = textDim
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(R.string.power_rpm_maf_required),
-                                fontSize = 12.sp,
-                                color = textSecondary
-                            )
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        PowerCard(
-                            modifier = Modifier.weight(1f),
-                            label = "PS",
-                            value = "%.0f".format(calculation.horsepowerMetric),
-                            subtitle = stringResource(R.string.power_metric),
-                            color = gaugeGreen
-                        )
-                        PowerCard(
-                            modifier = Modifier.weight(1f),
-                            label = "HP",
-                            value = "%.0f".format(calculation.horsepower),
-                            subtitle = stringResource(R.string.power_us),
-                            color = gaugeCyan
+                        Icon(
+                            Icons.Filled.Speed,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(40.dp)
                         )
                     }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.power_start_engine),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.power_rpm_maf_required),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textTertiary
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PowerCard(
+                        modifier = Modifier.weight(1f),
+                        label = "PS",
+                        value = "%.0f".format(calculation.horsepowerMetric),
+                        subtitle = stringResource(R.string.power_metric),
+                        color = colors.success
+                    )
+                    PowerCard(
+                        modifier = Modifier.weight(1f),
+                        label = "HP",
+                        value = "%.0f".format(calculation.horsepower),
+                        subtitle = stringResource(R.string.power_us),
+                        color = colors.info
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PowerCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Nm",
+                        value = "%.0f".format(calculation.torqueNm),
+                        subtitle = stringResource(R.string.power_torque),
+                        color = colors.warning
+                    )
+                    PowerCard(
+                        modifier = Modifier.weight(1f),
+                        label = "kW",
+                        value = "%.0f".format(calculation.horsepower / 1.341),
+                        subtitle = "Leistung",
+                        color = colors.info
+                    )
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        PowerCard(
-                            modifier = Modifier.weight(1f),
-                            label = "Nm",
-                            value = "%.0f".format(calculation.torqueNm),
-                            subtitle = stringResource(R.string.power_torque),
-                            color = gaugeOrange
+                GlassCard(
+                    accentEdge = colors.success,
+                    padding = 10.dp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Info,
+                            contentDescription = null,
+                            tint = colors.success,
+                            modifier = Modifier.size(16.dp)
                         )
-                        PowerCard(
-                            modifier = Modifier.weight(1f),
-                            label = "kW",
-                            value = "%.0f".format(calculation.horsepower / 1.341),
-                            subtitle = "Leistung",
-                            color = gaugeCyan
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.power_estimated_maf),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary
                         )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        color = gaugeGreen.copy(alpha = 0.1f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Filled.Info, contentDescription = null, tint = gaugeGreen, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.power_estimated_maf),
-                                fontSize = 11.sp,
-                                color = textSecondary
-                            )
-                        }
                     }
                 }
             }
@@ -171,40 +157,60 @@ private fun PowerCard(
     subtitle: String,
     color: androidx.compose.ui.graphics.Color
 ) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = canopoDark
+    val colors = LocalAppColors.current
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.lg))
+            .background(colors.surfaceBase)
+            .border(1.dp, color.copy(alpha = 0.35f), RoundedCornerShape(AppRadius.lg))
+            .padding(20.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = value,
-                fontSize = 42.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
+                style = MaterialTheme.typography.displaySmall,
+                color = color,
+                fontWeight = FontWeight.Black
             )
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = label,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                color = textPrimary
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.textPrimary,
+                fontWeight = FontWeight.Bold
             )
+            Spacer(Modifier.height(2.dp))
             Text(
                 text = subtitle,
-                fontSize = 11.sp,
-                color = textDim
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textTertiary,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
 }
 
 @Composable
-private fun InfoChip(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = canopoAccent)
-        Text(text = label, fontSize = 11.sp, color = textDim)
+private fun InfoChip(
+    label: String,
+    value: String,
+    colors: AppColors,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            color = colors.primary,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.textTertiary
+        )
     }
 }

@@ -1,6 +1,7 @@
 package com.canopobd.ui.pid
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,14 +12,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.OBDData
+import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
 @Composable
@@ -27,147 +29,108 @@ fun PIDDialog(
     measurementUnit: MeasurementUnit,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val colors = LocalAppColors.current
+    val motorItems = listOf(
+        Triple("Timing Advance", "%.1f°".format(obdData.timingAdvance), colors.success),
+        Triple("MAF Rate", "%.1f g/s".format(obdData.mafRate), colors.success),
+        Triple("Fuel Pressure", "%.0f%%".format(obdData.fuelPressure), colors.warning),
+        Triple("Intake Pressure", "%.0f kPa".format(obdData.intakePressure), colors.success),
+        Triple("Engine Runtime", formatRuntime(obdData.runTime.toInt()), colors.textSecondary),
+        Triple("Fuel Rail Pressure", "%.0f kPa".format(obdData.fuelRailPressure), colors.warning),
+        Triple("Absolute Load", "%.0f%%".format(obdData.absoluteLoadValue), colors.success)
+    )
+    val emissionItems = listOf(
+        Triple("Commanded EGR", "%.1f%%".format(obdData.commandedEGR), colors.success),
+        Triple("EGR Temperature", "%.0f%s".format(obdData.egrTemp, measurementUnit.tempUnit), colors.warning),
+        Triple("Evap Purge", "%.1f%%".format(obdData.commandedEvapPurge), colors.success),
+        Triple("Barometric", "%.0f kPa".format(obdData.barometricPressure), colors.success),
+        Triple("Fuel Rate", "%.2f L/h".format(obdData.engineFuelRate), colors.warning)
+    )
+    val lambdaItems = listOf(
+        Triple("STFT B1", "%.1f%%".format(obdData.shortTermFuelTrimB1), colors.success),
+        Triple("LTFT B1", "%.1f%%".format(obdData.longTermFuelTrimB1), colors.success),
+        Triple("STFT B2", "%.1f%%".format(obdData.shortTermFuelTrimB2), colors.success),
+        Triple("LTFT B2", "%.1f%%".format(obdData.longTermFuelTrimB2), colors.success)
+    )
+    val catalystItems = listOf(
+        Triple("Catalyst Temp", "%.0f%s".format(obdData.catalystTemp, measurementUnit.tempUnit), colors.textPrimary),
+        Triple("Cat Temp B1S2", "%.0f%s".format(obdData.catalystTempB1S2, measurementUnit.tempUnit), colors.textPrimary),
+        Triple("Cat Temp B2S1", "%.0f%s".format(obdData.catalystTempB2S1, measurementUnit.tempUnit), colors.textPrimary),
+        Triple("Cat Temp B2S2", "%.0f%s".format(obdData.catalystTempB2S2, measurementUnit.tempUnit), colors.textPrimary)
+    )
+
+    DialogShell(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.pid_title),
+        eyebrow = "Live OBD-II Sensordaten",
+        heightFraction = 0.9f
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.8f),
-            shape = RoundedCornerShape(16.dp),
-            color = canopoSurface
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.pid_title),
-                        fontSize = 20.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = canopoHighlight
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                LazyColumn {
-                    item {
-                        PIDSection(title = stringResource(R.string.pid_section_motor))
-                    }
-                    items(
-                        listOf(
-                            Triple("Timing Advance", "%.1f°".format(obdData.timingAdvance), gaugeGreen),
-                            Triple("MAF Rate", "%.1f g/s".format(obdData.mafRate), gaugeGreen),
-                            Triple("Fuel Pressure", "%.0f %".format(obdData.fuelPressure), gaugeYellow),
-                            Triple("Intake Pressure", "%.0f kPa".format(obdData.intakePressure), gaugeGreen),
-                            Triple("Engine Runtime", formatRuntime(obdData.runTime), textSecondary),
-                            Triple("Fuel Rail Pressure", "%.0f kPa".format(obdData.fuelRailPressure), gaugeYellow),
-                            Triple("Absolute Load Value", "%.0f%".format(obdData.absoluteLoadValue), gaugeGreen)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = stringResource(R.string.pid_section_emissions))
-                    }
-                    items(
-                        listOf(
-                            Triple("Commanded EGR", "%.1f%".format(obdData.commandedEGR), gaugeGreen),
-                            Triple("EGR Temperature", "%.0f%s".format(obdData.egrTemp, measurementUnit.tempUnit), gaugeYellow),
-                            Triple("Evap Purge", "%.1f%".format(obdData.commandedEvapPurge), gaugeGreen),
-                            Triple("Barometric", "%.0f kPa".format(obdData.barometricPressure), gaugeGreen),
-                            Triple("Fuel Rate", "%.2f L/h".format(obdData.engineFuelRate), gaugeOrange)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = stringResource(R.string.pid_section_lambda))
-                    }
-                    items(
-                        listOf(
-                            Triple("O2 B1S1 Voltage", "%.3f V".format(obdData.o2VoltageB1S1), gaugeYellow),
-                            Triple("O2 B1S2 Voltage", "%.3f V".format(obdData.o2VoltageB1S2), gaugeYellow),
-                            Triple("Ctrl Module Voltage", "%.3f V".format(obdData.controlModuleVoltage), gaugeGreen),
-                            Triple("Fuel Air Ratio", "%.3f".format(obdData.fuelAirRatio), gaugeGreen),
-                            Triple("STFT Bank 1", "%+.1f%".format(obdData.shortTermFuelTrimB1), gaugeYellow),
-                            Triple("LTFT Bank 1", "%+.1f%".format(obdData.longTermFuelTrimB1), gaugeYellow),
-                            Triple("STFT Bank 2", "%+.1f%".format(obdData.shortTermFuelTrimB2), gaugeYellow),
-                            Triple("LTFT Bank 2", "%+.1f%".format(obdData.longTermFuelTrimB2), gaugeYellow)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PIDSection(title = stringResource(R.string.pid_section_catalyst))
-                    }
-                    items(
-                        listOf(
-                            Triple("Catalyst Temp B1S1", "%.1f%s".format(obdData.catalystTemp, measurementUnit.tempUnit), gaugeOrange)
-                        )
-                    ) { (label, value, color) ->
-                        PIDRow(label = label, value = value, color = color)
-                    }
-                }
+            item {
+                SectionHeader(title = stringResource(R.string.pid_section_motor), icon = Icons.Filled.Memory)
             }
+            items(motorItems) { (label, value, color) ->
+                PIDRow(label = label, value = value, color = color)
+            }
+            item {
+                Spacer(Modifier.height(4.dp))
+                SectionHeader(title = stringResource(R.string.pid_section_emissions), icon = Icons.Filled.Air)
+            }
+            items(emissionItems) { (label, value, color) ->
+                PIDRow(label = label, value = value, color = color)
+            }
+            item {
+                Spacer(Modifier.height(4.dp))
+                SectionHeader(title = stringResource(R.string.pid_section_lambda), icon = Icons.Filled.Science)
+            }
+            items(lambdaItems) { (label, value, color) ->
+                PIDRow(label = label, value = value, color = color)
+            }
+            item {
+                Spacer(Modifier.height(4.dp))
+                SectionHeader(title = stringResource(R.string.pid_section_catalyst), icon = Icons.Filled.LocalFireDepartment)
+            }
+            items(catalystItems) { (label, value, color) ->
+                PIDRow(label = label, value = value, color = color)
+            }
+            item { Spacer(Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
-private fun PIDSection(title: String) {
-    Text(
-        text = title,
-        fontSize = 12.sp,
-        color = canopoAccent,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        modifier = Modifier.padding(vertical = 8.dp)
-    )
-}
-
-@Composable
-private fun PIDRow(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
+private fun PIDRow(label: String, value: String, color: Color) {
+    val colors = LocalAppColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp, horizontal = 4.dp)
-            .background(canopoDark.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .clip(RoundedCornerShape(AppRadius.md))
+            .background(colors.surfaceRaised)
+            .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.md))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
-            fontSize = 13.sp,
-            color = textSecondary
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.textSecondary,
+            modifier = Modifier.weight(1f)
         )
         Text(
             text = value,
-            fontSize = 14.sp,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            color = color
+            style = MaterialTheme.typography.titleSmall,
+            color = color,
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
-private fun formatRuntime(seconds: Double): String {
-    val h = (seconds / 3600).toInt()
-    val m = ((seconds % 3600) / 60).toInt()
-    val s = (seconds % 60).toInt()
-    return "%dh %02dm %02ds".format(h, m, s)
+private fun formatRuntime(seconds: Int): String {
+    val h = seconds / 3600
+    val m = (seconds % 3600) / 60
+    val s = seconds % 60
+    return if (h > 0) "%dh %dm".format(h, m) else "%dm %ds".format(m, s)
 }
