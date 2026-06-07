@@ -10,25 +10,51 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.canopobd.R
+import com.canopobd.ui.components.AppRadius
+import com.canopobd.ui.components.GradientButton
+import com.canopobd.ui.components.OutlineButton
+import com.canopobd.ui.components.Spacing
+import com.canopobd.ui.components.StatusDot
+import com.canopobd.ui.components.StatusPill
 import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
-import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.ui.update.UpdateDialog
-import com.canopobd.ui.profile.SavedProfile
 import com.canopobd.viewmodel.DashboardViewModel
 
 class MainActivity : ComponentActivity() {
@@ -48,12 +74,22 @@ class MainActivity : ComponentActivity() {
             val appColors = remember(colorTheme, appThemeMode) { colorTheme.toAppColors(appThemeMode) }
 
             CanopObdTheme(appColors = appColors, appThemeMode = appThemeMode) {
-                if (!isInitialized) {
-                    SplashScreen(appColors = appColors)
-                } else {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = appColors.dark
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(appColors.surfaceBlack)
+                ) {
+                    AnimatedVisibility(
+                        visible = !isInitialized,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        SplashScreen(appColors = appColors)
+                    }
+                    AnimatedVisibility(
+                        visible = isInitialized,
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
                         MainContent(viewModel = viewModel)
                     }
@@ -65,31 +101,101 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun SplashScreen(appColors: AppColors) {
+    val transition = rememberInfiniteTransition(label = "splash_anim")
+    val rotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "splash_rotation"
+    )
+    val pulse by transition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "splash_pulse"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(appColors.dark),
+            .background(appColors.gradientSurface),
         contentAlignment = Alignment.Center
     ) {
+        // Background glow
+        Box(
+            modifier = Modifier
+                .size(280.dp)
+                .clip(CircleShape)
+                .background(appColors.gradientGlow)
+        )
+
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier.size(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidth = 6f
+                    val radius = size.minDimension / 2 - strokeWidth
+                    drawCircle(
+                        color = appColors.primary.copy(alpha = 0.18f),
+                        radius = radius,
+                        style = Stroke(width = strokeWidth)
+                    )
+                    drawArc(
+                        color = appColors.primary,
+                        startAngle = rotation,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        topLeft = Offset(strokeWidth, strokeWidth),
+                        size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
+                        style = Stroke(width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    )
+                    drawCircle(
+                        color = appColors.primary.copy(alpha = pulse),
+                        radius = radius * 0.6f,
+                        style = Stroke(width = 2f)
+                    )
+                }
+                Text(
+                    text = "C",
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Black,
+                    color = appColors.primary
+                )
+            }
+            Spacer(Modifier.height(20.dp))
             Text(
                 text = "canop-obd",
-                fontSize = 28.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = appColors.accent
+                color = appColors.textPure,
+                letterSpacing = 1.sp
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
-                text = "OBD-II Diagnose",
-                fontSize = 14.sp,
-                color = appColors.textSecondary
+                text = "OBD-II Diagnose · Astra J",
+                fontSize = 12.sp,
+                color = appColors.textTertiary,
+                letterSpacing = 1.5.sp
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            CircularProgressIndicator(
-                color = appColors.accent,
-                modifier = Modifier.size(32.dp),
-                strokeWidth = 3.dp
-            )
+            Spacer(Modifier.height(28.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDot(color = appColors.primary, size = 6.dp, pulse = true)
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "Initialisiere…",
+                    fontSize = 11.sp,
+                    color = appColors.textSecondary,
+                    letterSpacing = 0.8.sp
+                )
+            }
         }
     }
 }
@@ -108,7 +214,7 @@ private fun MainContent(viewModel: DashboardViewModel) {
         }
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     var permissionsGranted by remember {
         mutableStateOf(
             requiredPermissions.all {
@@ -145,27 +251,120 @@ private fun MainContent(viewModel: DashboardViewModel) {
 private fun PermissionRequiredScreen(onRequest: () -> Unit) {
     val colors = LocalAppColors.current
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.gradientSurface),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .background(colors.primary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Security,
+                    contentDescription = null,
+                    tint = colors.primary,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+            Spacer(Modifier.height(20.dp))
             Text(
                 text = stringResource(R.string.permissions_title),
-                fontSize = 18.sp,
-                color = colors.highlight
+                style = MaterialTheme.typography.headlineSmall,
+                color = colors.textPure,
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.permissions_message),
-                fontSize = 14.sp,
-                color = colors.textSecondary,
-                modifier = Modifier.padding(horizontal = 32.dp)
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.textTertiary,
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            TextButton(onClick = onRequest) {
-                Text(stringResource(R.string.permissions_grant), color = colors.accent, fontSize = 16.sp)
+            Spacer(Modifier.height(28.dp))
+
+            // Permission badges
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(AppRadius.lg))
+                    .background(colors.surfaceBase)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                PermissionBadge(
+                    icon = Icons.Filled.Bluetooth,
+                    label = "Bluetooth",
+                    description = "Adapter verbinden",
+                    colors = colors
+                )
+                PermissionBadge(
+                    icon = Icons.Filled.LocationOn,
+                    label = "Standort",
+                    description = "GPS-Tracking",
+                    colors = colors
+                )
             }
+
+            Spacer(Modifier.height(28.dp))
+            GradientButton(
+                text = stringResource(R.string.permissions_grant),
+                onClick = onRequest,
+                icon = Icons.Filled.Security,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
+    }
+}
+
+@Composable
+private fun PermissionBadge(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    description: String,
+    colors: AppColors
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(AppRadius.sm))
+                .background(colors.primary.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.textPrimary
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.textTertiary
+            )
+        }
+        StatusPill(text = "Erforderlich", color = colors.warning, filled = true)
     }
 }
 
@@ -298,7 +497,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val drivingStyleAnalysis by viewModel.drivingStyleAnalysis.collectAsState()
     val ecoTips by viewModel.ecoTips.collectAsState()
     var csvShareContent by remember { mutableStateOf<String?>(null) }
-    val activityContext = androidx.compose.ui.platform.LocalContext.current
+    val activityContext = LocalContext.current
 
     LaunchedEffect(csvShareContent) {
         csvShareContent?.let { content ->

@@ -1,6 +1,10 @@
 package com.canopobd.ui.dashboard
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,13 +19,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.R
 import com.canopobd.data.model.*
+import com.canopobd.ui.components.*
 import com.canopobd.ui.components.CircularGauge
 import com.canopobd.ui.components.CompactGauge
 import com.canopobd.ui.components.LiveTrendGraphDialog
@@ -297,7 +304,6 @@ fun DashboardScreen(
     val colors = LocalAppColors.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(
@@ -314,9 +320,9 @@ fun DashboardScreen(
     val isRpmCritical = obdData.rpm > 6000
 
     val backgroundColor = when {
-        isCoolantCritical -> colors.gaugeRed.copy(alpha = 0.15f)
-        isRpmCritical -> colors.gaugeOrange.copy(alpha = 0.1f)
-        else -> colors.dark
+        isCoolantCritical -> colors.critical.copy(alpha = 0.08f)
+        isRpmCritical -> colors.warning.copy(alpha = 0.06f)
+        else -> colors.surfaceBlack
     }
 
     Box(modifier = modifier.fillMaxSize().background(backgroundColor)) {
@@ -328,12 +334,11 @@ fun DashboardScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
-                    Spacer(modifier = Modifier.height(4.dp))
                     DashboardHeader(
                         connectionState = connectionState,
                         connectionStats = connectionStats,
@@ -375,6 +380,7 @@ fun DashboardScreen(
                         recordingActive = recordingActive,
                         isGPSTracking = isGPSTracking,
                         activeAlerts = activeAlerts,
+                        dtcResponse = dtcResponse,
                         onStartGPSTrack = onStartGPSTracking,
                         onStopGPSTrack = onStopGPSTracking
                     )
@@ -395,18 +401,23 @@ fun DashboardScreen(
                     }
                 }
 
+                // ----- HERO STATS (RPM + Speed side-by-side) -----------------
+                item {
+                    HeroStatsRow(obdData = obdData, measurementUnit = measurementUnit, colors = colors)
+                }
+
+                // ----- ANALYSIS ROW -----------------------------------------
                 item {
                     SectionHeader(
-                        title = stringResource(R.string.analysis).uppercase(),
-                        icon = Icons.Filled.Analytics,
-                        colors = colors
+                        title = stringResource(R.string.analysis),
+                        icon = Icons.Filled.Analytics
                     )
                 }
 
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OilHealthCard(
                             prediction = oilHealthPrediction,
@@ -424,7 +435,7 @@ fun DashboardScreen(
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         DriveStyleCard(
                             analysis = driveStyleResult,
@@ -477,201 +488,13 @@ fun DashboardScreen(
                     )
                 }
 
-                // ── Safety & ECO Score Cards ────────────────────────────────
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        // Safety Systems Card
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onToggleSafetySystems() },
-                            colors = CardDefaults.cardColors(
-                                containerColor = when {
-                                    safetySummary.hasCritical -> Color(0xFFFF4444).copy(alpha = 0.15f)
-                                    safetySummary.hasWarnings -> Color(0xFFFF8800).copy(alpha = 0.15f)
-                                    else -> colors.surfaceCard.copy(alpha = 0.7f)
-                                }
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Security,
-                                        contentDescription = null,
-                                        tint = when {
-                                            safetySummary.hasCritical -> Color(0xFFFF4444)
-                                            safetySummary.hasWarnings -> Color(0xFFFF8800)
-                                            else -> Color(0xFF44FF88)
-                                        },
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Sicherheit",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = colors.textPrimary
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                // Status indicators row
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    val statusItems = listOf(
-                                        "ABS" to safetySummary.safetyStatus.absStatus,
-                                        "ESP" to safetySummary.safetyStatus.espStatus,
-                                        "TPMS" to safetySummary.safetyStatus.tpmsStatus,
-                                        "Airbag" to safetySummary.safetyStatus.airbagStatus
-                                    )
-                                    for ((label, status) in statusItems) {
-                                        Column(
-                                            modifier = Modifier.weight(1f),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = colors.textPrimary.copy(alpha = 0.6f)
-                                            )
-                                            Text(
-                                                text = when (status) {
-                                                    com.canopobd.data.model.SystemStatus.OK -> "✓"
-                                                    com.canopobd.data.model.SystemStatus.WARNING -> "⚠"
-                                                    com.canopobd.data.model.SystemStatus.FAULT -> "✗"
-                                                    else -> "?"
-                                                },
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = when (status) {
-                                                    com.canopobd.data.model.SystemStatus.OK -> Color(0xFF44FF88)
-                                                    com.canopobd.data.model.SystemStatus.WARNING -> Color(0xFFFF8800)
-                                                    com.canopobd.data.model.SystemStatus.FAULT -> Color(0xFFFF4444)
-                                                    else -> colors.textPrimary.copy(alpha = 0.4f)
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                                if (safetySummary.activeWarningCount > 0) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${safetySummary.activeWarningCount} Warnung(en)",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFFF8800)
-                                    )
-                                }
-                            }
-                        }
-
-                        // ECO Score Card
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onToggleEcoScore() },
-                            colors = CardDefaults.cardColors(
-                                containerColor = when {
-                                    ecoScoreData.overallScore >= 75 -> Color(0xFF44FF88).copy(alpha = 0.1f)
-                                    ecoScoreData.overallScore >= 50 -> Color(0xFFFFCC00).copy(alpha = 0.1f)
-                                    ecoScoreData.overallScore > 0 -> Color(0xFFFF8800).copy(alpha = 0.1f)
-                                    else -> colors.surfaceCard.copy(alpha = 0.7f)
-                                }
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Eco,
-                                        contentDescription = null,
-                                        tint = when {
-                                            ecoScoreData.overallScore >= 75 -> Color(0xFF44FF88)
-                                            ecoScoreData.overallScore >= 50 -> Color(0xFFFFCC00)
-                                            ecoScoreData.overallScore > 0 -> Color(0xFFFF8800)
-                                            else -> colors.textPrimary.copy(alpha = 0.4f)
-                                        },
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "ECO Score",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = colors.textPrimary
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                // Score display
-                                Text(
-                                    text = "${ecoScoreData.overallScore}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = when {
-                                        ecoScoreData.overallScore >= 75 -> Color(0xFF44FF88)
-                                        ecoScoreData.overallScore >= 50 -> Color(0xFFFFCC00)
-                                        ecoScoreData.overallScore > 0 -> Color(0xFFFF8800)
-                                        else -> colors.textPrimary.copy(alpha = 0.4f)
-                                    }
-                                )
-                                Text(
-                                    text = if (ecoScoreData.grade.isNotEmpty()) "Grade: ${ecoScoreData.grade}" else "Keine Daten",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colors.textPrimary.copy(alpha = 0.6f)
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                // Sub-scores row
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = "${ecoScoreData.efficiencyScore}",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = colors.textPrimary
-                                        )
-                                        Text(
-                                            text = "Effizienz",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = colors.textPrimary.copy(alpha = 0.5f)
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = "${ecoScoreData.smoothnessScore}",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = colors.textPrimary
-                                        )
-                                        Text(
-                                            text = "Sanftheit",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = colors.textPrimary.copy(alpha = 0.5f)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                // ----- GAUGES SECTION ---------------------------------------
                 item {
                     SectionHeader(
-                        title = stringResource(R.string.gauges).uppercase(),
+                        title = stringResource(R.string.gauges),
                         icon = Icons.Filled.Speed,
-                        colors = colors
+                        actionLabel = stringResource(R.string.customize_dashboard),
+                        onAction = onToggleCustomization
                     )
                 }
 
@@ -704,13 +527,12 @@ fun DashboardScreen(
                         tcmError = tcmReading.transmissionError,
                         ecmRpm = ecmReading.rpm,
                         ecmSpeedKmh = ecmReading.speedKmh,
-                        ecmCoolantTemp = ecmReading.coolantTemp,
+                        ecmCoolantTemp = ecmReading.coolantTemp.toInt(),
                         ecmThrottlePosition = ecmReading.throttlePosition,
                         ecmEngineLoad = ecmReading.engineLoad,
                         lastUpdateTime = tcmReading.timestamp,
                         colors = colors
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 item {
@@ -722,11 +544,11 @@ fun DashboardScreen(
                         currentTrip = currentTrip,
                         colors = colors
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
 
+        // ----- DIALOGS (unchanged) -----
         if (showDevicePicker) {
             DevicePickerDialog(devices = devices, onSelect = onConnect, onDismiss = onToggleDevicePicker)
         }
@@ -945,36 +767,146 @@ data class GaugeItem(
 private fun buildGaugeMap(data: OBDData, unit: MeasurementUnit): Map<String, GaugeItem> = mapOf(
     "rpm" to GaugeItem("rpm", "RPM", data.rpm.toFloat(), "rpm", 0f, 8000f,
         when {
-            data.rpm > 6000 -> Color(0xFFFF4444)
-            data.rpm > 5500 -> Color(0xFFFF8800)
-            else -> Color(0xFF44FF88)
+            data.rpm > 6000 -> Color(0xFFFF3D57)
+            data.rpm > 5500 -> Color(0xFFFF9100)
+            else -> Color(0xFF00E676)
         }),
-    "speed" to GaugeItem("speed", "Speed", unit.convertSpeed(data.speed).toFloat(), unit.speedUnit, 0f, 260f, Color(0xFF42A5F5)),
+    "speed" to GaugeItem("speed", "Speed", unit.convertSpeed(data.speed).toFloat(), unit.speedUnit, 0f, 260f, Color(0xFF2979FF)),
     "coolant" to GaugeItem("coolant", "Coolant", unit.convertTemp(data.coolantTemp).toFloat(), unit.tempUnit, -40f, 215f,
         when {
-            data.coolantTemp > 110 -> Color(0xFFFF4444)
-            data.coolantTemp > 100 -> Color(0xFFFF8800)
-            data.coolantTemp > 80 -> Color(0xFF44FF88)
-            data.coolantTemp < 40 -> Color(0xFF42A5F5)
-            else -> Color(0xFFFF8C00)
+            data.coolantTemp > 110 -> Color(0xFFFF3D57)
+            data.coolantTemp > 100 -> Color(0xFFFF9100)
+            data.coolantTemp > 80 -> Color(0xFF00E676)
+            data.coolantTemp < 40 -> Color(0xFF00BCD4)
+            else -> Color(0xFFFF9100)
         }),
-    "throttle" to GaugeItem("throttle", "Throttle", data.throttle.toFloat(), "%", 0f, 100f, Color(0xFFFFE066)),
-    "engine_load" to GaugeItem("engine_load", "Eng Load", data.engineLoad.toFloat(), "%", 0f, 100f, Color(0xFFFFD54F)),
-    "fuel" to GaugeItem("fuel", "Fuel", data.fuelLevel.toFloat(), "%", 0f, 100f, Color(0xFFFF9800)),
+    "throttle" to GaugeItem("throttle", "Throttle", data.throttle.toFloat(), "%", 0f, 100f, Color(0xFFFFC107)),
+    "engine_load" to GaugeItem("engine_load", "Eng Load", data.engineLoad.toFloat(), "%", 0f, 100f, Color(0xFFFFC107)),
+    "fuel" to GaugeItem("fuel", "Fuel", data.fuelLevel.toFloat(), "%", 0f, 100f, Color(0xFFFF9100)),
     "timing" to GaugeItem("timing", "Timing", data.timingAdvance.toFloat(), "°", -64f, 64f, Color(0xFF00BCD4)),
-    "maf" to GaugeItem("maf", "MAF", data.mafRate.toFloat(), "g/s", 0f, 500f, Color(0xFF9C27B0)),
+    "maf" to GaugeItem("maf", "MAF", data.mafRate.toFloat(), "g/s", 0f, 500f, Color(0xFFE91E63)),
     "intake_temp" to GaugeItem("intake_temp", "Intake", unit.convertTemp(data.intakeTemp).toFloat(), unit.tempUnit, -40f, 215f, Color(0xFFFF5722)),
     "fuel_trim" to GaugeItem("fuel_trim", "Fuel Trim", abs(data.shortTermFuelTrimB1 + data.longTermFuelTrimB1).toFloat(), "%", 0f, 50f, Color(0xFFFFAB40), isPercentage = true),
     "load" to GaugeItem("load", "Abs Load", data.absoluteLoadValue.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE)),
-    "fuel_rate" to GaugeItem("fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF5252)),
+    "fuel_rate" to GaugeItem("fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF3D57)),
     "accel_pedal" to GaugeItem("accel_pedal", "Accel Pedal", data.acceleratorPosD.toFloat(), "%", 0f, 100f, Color(0xFF00E5FF)),
     "hybrid_battery" to GaugeItem("hybrid_battery", "Hybrid Batt", data.hybridBatteryRemaining.toFloat(), "%", 0f, 100f,
         when {
-            data.hybridBatteryRemaining < 20 -> Color(0xFFFF4444)
-            data.hybridBatteryRemaining < 40 -> Color(0xFFFF8800)
+            data.hybridBatteryRemaining < 20 -> Color(0xFFFF3D57)
+            data.hybridBatteryRemaining < 40 -> Color(0xFFFF9100)
             else -> Color(0xFF69F0AE)
         })
 )
+
+// ---------------------------------------------------------------------------
+// HERO STATS — Big RPM + Speed display with glow effect
+// ---------------------------------------------------------------------------
+@Composable
+private fun HeroStatsRow(obdData: OBDData, measurementUnit: MeasurementUnit, colors: AppColors) {
+    val rpmColor = when {
+        obdData.rpm > 6000 -> colors.critical
+        obdData.rpm > 5500 -> colors.warning
+        else -> colors.primary
+    }
+    val speedColor = colors.secondary
+    val speedValue = measurementUnit.convertSpeed(obdData.speed)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppRadius.lg))
+            .background(colors.surfaceBase)
+            .background(colors.gradientCard)
+            .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.lg))
+    ) {
+        // Hero glow background
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf<Color>(
+                            colors.primary.copy(alpha = 0.10f),
+                            Color.Transparent,
+                            colors.secondary.copy(alpha = 0.10f)
+                        )
+                    )
+                )
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // RPM block
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(AppRadius.md))
+                    .background(colors.surfaceRaised.copy(alpha = 0.6f))
+                    .border(1.dp, rpmColor.copy(alpha = 0.4f), RoundedCornerShape(AppRadius.md))
+                    .padding(vertical = 14.dp, horizontal = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusDot(color = rpmColor, size = 6.dp, pulse = true)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "RPM",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textTertiary
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = obdData.rpm.toInt().toString(),
+                    style = GaugeTypography.valueXL,
+                    color = rpmColor
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "U/min",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary
+                )
+            }
+            // Speed block
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(AppRadius.md))
+                    .background(colors.surfaceRaised.copy(alpha = 0.6f))
+                    .border(1.dp, speedColor.copy(alpha = 0.4f), RoundedCornerShape(AppRadius.md))
+                    .padding(vertical = 14.dp, horizontal = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusDot(color = speedColor, size = 6.dp, pulse = true)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "SPEED",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textTertiary
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = speedValue.toInt().toString(),
+                    style = GaugeTypography.valueXL,
+                    color = speedColor
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = measurementUnit.speedUnit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun PrimaryGaugeRow(
@@ -989,29 +921,38 @@ private fun PrimaryGaugeRow(
         repeat(totalSlots) { slot ->
             val gauge = gauges.getOrNull(slot)
             if (gauge != null) {
-                    CircularGauge(
+                CircularGauge(
                     value = gauge.value,
                     minValue = gauge.minValue,
                     maxValue = gauge.maxValue,
                     label = gauge.label,
                     unit = gauge.unit,
                     accentColor = gauge.color,
-                    size = 140.dp
+                    size = 120.dp
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(140.dp)
-                        .clip(RoundedCornerShape(70.dp))
-                        .background(colors.surface.copy(alpha = 0.3f)),
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(AppRadius.pill))
+                        .background(colors.surfaceRaised.copy(alpha = 0.4f))
+                        .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.pill)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Filled.Add,
-                        contentDescription = "Add gauge",
-                        tint = colors.textDim,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Filled.Add,
+                            contentDescription = "Add gauge",
+                            tint = colors.textMuted,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "LEER",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.textMuted
+                        )
+                    }
                 }
             }
         }
@@ -1028,11 +969,11 @@ private fun SecondaryGaugeGrid(
         .filter { it.key !in primaryIds }
         .take(6)
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         secondary.chunked(3).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 row.forEach { (_, gauge) ->
                     CompactGauge(
@@ -1041,7 +982,7 @@ private fun SecondaryGaugeGrid(
                         unit = gauge.unit,
                         max = gauge.maxValue.toDouble(),
                         color = gauge.color,
-                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                        modifier = Modifier.weight(1f)
                     )
                 }
                 repeat(3 - row.size) {
@@ -1052,6 +993,9 @@ private fun SecondaryGaugeGrid(
     }
 }
 
+// ---------------------------------------------------------------------------
+// DASHBOARD HEADER — Hero status with quick-access action bar
+// ---------------------------------------------------------------------------
 @Composable
 private fun DashboardHeader(
     connectionState: OBDConnectionState,
@@ -1094,15 +1038,16 @@ private fun DashboardHeader(
     recordingActive: Boolean,
     isGPSTracking: Boolean,
     activeAlerts: List<ActiveAlert>,
+    dtcResponse: DTCResponse?,
     onStartGPSTrack: () -> Unit,
     onStopGPSTrack: () -> Unit
 ) {
     val colors = LocalAppColors.current
     val connectionColor = when {
-        emulatorMode -> colors.gaugeOrange
-        connectionState is OBDConnectionState.Connected -> colors.gaugeGreen
-        connectionState is OBDConnectionState.Connecting -> colors.gaugeYellow
-        connectionState is OBDConnectionState.Error -> colors.gaugeRed
+        emulatorMode -> colors.warning
+        connectionState is OBDConnectionState.Connected -> colors.success
+        connectionState is OBDConnectionState.Connecting -> colors.caution
+        connectionState is OBDConnectionState.Error -> colors.critical
         else -> colors.textSecondary
     }
     val connectionText = when {
@@ -1114,444 +1059,357 @@ private fun DashboardHeader(
         else -> stringResource(R.string.status_disconnected)
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = colors.surfaceCard,
-        border = androidx.compose.foundation.BorderStroke(1.dp, colors.borderSubtle)
+    // Top status pill
+    GlassCard(
+        padding = 12.dp,
+        accentEdge = connectionColor
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(AppRadius.sm))
+                    .background(colors.gradientAccent),
+                contentAlignment = Alignment.Center
             ) {
+                Text(
+                    "C",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = colors.surfaceBlack,
+                    fontWeight = FontWeight.Black
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(connectionColor, RoundedCornerShape(5.dp))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.app_name),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.textPrimary
+                        text = "canop-obd",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPure,
+                        fontWeight = FontWeight.Bold
                     )
                     if (emulatorMode) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = colors.gaugeOrange.copy(alpha = 0.2f)
-                        ) {
-                            Text(
-                                text = "SIM",
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colors.gaugeOrange,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                            )
-                        }
+                        Spacer(Modifier.width(6.dp))
+                        StatusPill(text = "SIM", color = colors.warning)
                     }
                 }
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusDot(color = connectionColor, size = 6.dp, pulse = true)
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = connectionText,
-                        fontSize = 12.sp,
-                        color = connectionColor,
-                        fontWeight = FontWeight.Medium
+                        style = MaterialTheme.typography.bodySmall,
+                        color = connectionColor
                     )
-                    if (connectionState is OBDConnectionState.Connected || emulatorMode) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        if (!emulatorMode) {
-                            ConnectionQualityBadge(stats = connectionStats, colors = colors)
-                        }
-                        if (remoteServerRunning) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(Icons.Filled.Wifi, contentDescription = null, tint = colors.gaugeGreen, modifier = Modifier.size(14.dp))
-                            Text(stringResource(R.string.status_remote, remoteConnectedClients), fontSize = 11.sp, color = colors.gaugeGreen)
-                        }
+                    if (connectionState is OBDConnectionState.Connected && !emulatorMode) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "· ${connectionStats.quality.label}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textTertiary
+                        )
+                    }
+                    if (remoteServerRunning) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "· ${remoteConnectedClients} PC",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.success
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                QuickActionButton(
-                    icon = Icons.Filled.DirectionsCar,
-                    label = stringResource(R.string.trip_title),
-                    color = colors.textSecondary,
-                    onClick = onToggleTripComputer
+            IconButton(onClick = onToggleSettings) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = colors.textTertiary
                 )
-                QuickActionButton(
-                    icon = Icons.Filled.LocalGasStation,
-                    label = stringResource(R.string.fuel_economy_title),
-                    color = colors.textSecondary,
-                    onClick = onToggleFuelEconomy
-                )
-                QuickActionButton(
-                    icon = Icons.Filled.Build,
-                    label = stringResource(R.string.maintenance_title),
-                    color = colors.textSecondary,
-                    onClick = onToggleMaintenance
-                )
-                QuickActionButton(
-                    icon = Icons.Filled.Speed,
-                    label = stringResource(R.string.perf_test_title),
-                    color = colors.textSecondary,
-                    onClick = onTogglePerformanceTest
-                )
-                QuickActionButton(
-                    icon = Icons.AutoMirrored.Filled.ShowChart,
-                    label = stringResource(R.string.trend),
-                    color = colors.textSecondary,
-                    onClick = onToggleTrendGraph
-                )
-                QuickActionButton(
-                    icon = Icons.Filled.Route,
-                    label = stringResource(R.string.trip_history_title),
-                    color = colors.textSecondary,
-                    onClick = onToggleTripHistory
-                )
-                QuickActionButton(
-                    icon = if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
-                    label = stringResource(R.string.gps_track),
-                    color = if (isGPSTracking) colors.gaugeGreen else colors.textSecondary,
-                    onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                QuickActionButton(
-                    icon = Icons.Filled.Dashboard,
-                    label = stringResource(R.string.customize_dashboard),
-                    color = colors.accent,
-                    onClick = onToggleCustomization
-                )
-                QuickActionButton(
-                    icon = Icons.Filled.Settings,
-                    label = stringResource(R.string.settings),
-                    color = colors.textSecondary,
-                    onClick = onToggleSettings
-                )
-                QuickActionButton(
-                    icon = Icons.Filled.FlashOn,
-                    label = "Quick",
-                    color = colors.gaugeOrange,
-                    onClick = onToggleQuickActions
-                )
-                QuickActionButton(
-                    icon = Icons.Filled.Bluetooth,
-                    label = stringResource(R.string.bluetooth),
-                    color = colors.accent,
-                    onClick = onToggleDevicePicker
-                )
-                if (connectionState is OBDConnectionState.Connected) {
-                    QuickActionButton(
-                        icon = Icons.Filled.ElectricBolt,
-                        label = stringResource(R.string.dashboard_power),
-                        color = colors.gaugeYellow,
-                        onClick = onTogglePowerCalculator
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.SportsScore,
-                        label = stringResource(R.string.dashboard_driving_style),
-                        color = colors.gaugeGreen,
-                        onClick = onToggleDriveScore
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.LightMode,
-                        label = stringResource(R.string.dashboard_shift_light),
-                        color = colors.gaugeOrange,
-                        onClick = onToggleShiftLight
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Info,
-                        label = stringResource(R.string.dashboard_vehicle_profile),
-                        color = colors.highlight,
-                        onClick = _onToggleCarProfile
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.DirectionsCar,
-                        label = "Profile",
-                        color = colors.gaugeGreen,
-                        onClick = onToggleVehicleProfileManager
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.BugReport,
-                        label = stringResource(R.string.dashboard_known_issues),
-                        color = colors.gaugeYellow,
-                        onClick = onToggleKnownIssues
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.SettingsRemote,
-                        label = "Komfort",
-                        color = colors.gaugeCyan,
-                        onClick = onToggleComfortControl
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Code,
-                        label = "Codierung",
-                        color = colors.gaugeOrange,
-                        onClick = onToggleCodingDialog
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Air,
-                        label = stringResource(R.string.dashboard_turbo),
-                        color = colors.accent,
-                        onClick = onToggleTurboMonitor
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.SettingsApplications,
-                        label = stringResource(R.string.dashboard_timing_chain),
-                        color = colors.accent,
-                        onClick = onToggleTimingChainMonitor
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Timer,
-                        label = stringResource(R.string.dashboard_turbo_cooldown),
-                        color = colors.gaugeCyan,
-                        onClick = onToggleTurboCooldown
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Tv,
-                        label = stringResource(R.string.hud_mode),
-                        color = colors.gaugeCyan,
-                        onClick = onToggleHUDMode
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Verified,
-                        label = stringResource(R.string.readiness),
-                        color = colors.gaugeGreen,
-                        onClick = onToggleReadiness
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Biotech,
-                        label = stringResource(R.string.diagnostics),
-                        color = colors.accent,
-                        onClick = onToggleDiagnostics
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Analytics,
-                        label = stringResource(R.string.analysis),
-                        color = colors.accent,
-                        onClick = onToggleDataAnalysis
-                    )
-                    QuickActionButton(
-                        icon = if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
-                        label = stringResource(R.string.alerts),
-                        color = if (activeAlerts.isNotEmpty()) colors.gaugeRed else colors.textSecondary,
-                        onClick = onToggleAlertSettings
-                    )
-                    QuickActionButton(
-                        icon = if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
-                        label = stringResource(R.string.remote_server),
-                        color = if (remoteServerRunning) colors.gaugeGreen else colors.accent,
-                        onClick = onToggleRemoteDialog
-                    )
-                    QuickActionButton(
-                        icon = if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
-                        label = stringResource(R.string.data_log),
-                        color = if (recordingActive) colors.gaugeRed else colors.accent,
-                        onClick = onToggleDataLog
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Sensors,
-                        label = stringResource(R.string.sensors),
-                        color = colors.accent,
-                        onClick = onTogglePIDScreen
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Warning,
-                        label = stringResource(R.string.fault_codes),
-                        color = colors.gaugeYellow,
-                        onClick = onToggleDTCDialog
-                    )
-                    QuickActionButton(
-                        icon = Icons.Filled.Close,
-                        label = stringResource(R.string.disconnect),
-                        color = colors.gaugeRed,
-                        onClick = onDisconnect
-                    )
-                }
             }
         }
     }
-}
 
-@Composable
-private fun QuickActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(8.dp),
-        color = Color.Transparent
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(4.dp)
+    Spacer(Modifier.height(8.dp))
+
+    // Primary quick-action row (most used)
+    GlassCard(padding = 12.dp) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = color,
-                modifier = Modifier.size(22.dp)
+            QuickTile(
+                icon = Icons.Filled.DirectionsCar,
+                label = "Trip",
+                onClick = onToggleTripComputer
+            )
+            QuickTile(
+                icon = Icons.Filled.LocalGasStation,
+                label = "Verbrauch",
+                onClick = onToggleFuelEconomy
+            )
+            QuickTile(
+                icon = Icons.Filled.Build,
+                label = "Wartung",
+                onClick = onToggleMaintenance
+            )
+            QuickTile(
+                icon = Icons.Filled.Speed,
+                label = "0-100",
+                onClick = onTogglePerformanceTest
+            )
+            QuickTile(
+                icon = Icons.AutoMirrored.Filled.ShowChart,
+                label = "Trend",
+                onClick = onToggleTrendGraph
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        DividerLine()
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickTile(
+                icon = Icons.Filled.Route,
+                label = "Historie",
+                onClick = onToggleTripHistory
+            )
+            QuickTile(
+                icon = if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
+                label = "GPS",
+                isActive = isGPSTracking,
+                accentColor = if (isGPSTracking) colors.success else null,
+                onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() }
+            )
+            QuickTile(
+                icon = Icons.Filled.Dashboard,
+                label = "Layout",
+                accentColor = colors.accent,
+                onClick = onToggleCustomization
+            )
+            QuickTile(
+                icon = Icons.Filled.FlashOn,
+                label = "Quick",
+                accentColor = colors.warning,
+                onClick = onToggleQuickActions
+            )
+            QuickTile(
+                icon = Icons.Filled.Bluetooth,
+                label = "BT",
+                accentColor = colors.primary,
+                onClick = onToggleDevicePicker
             )
         }
     }
-}
 
-@Composable
-private fun ConnectionQualityBadge(stats: ConnectionStats, colors: AppColors) {
-    val color = when (stats.quality) {
-        ConnectionQuality.EXCELLENT -> colors.gaugeGreen
-        ConnectionQuality.GOOD -> colors.gaugeGreen.copy(alpha = 0.8f)
-        ConnectionQuality.FAIR -> colors.gaugeYellow
-        ConnectionQuality.POOR -> colors.gaugeRed
-        else -> colors.textSecondary
-    }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(color)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(text = stats.quality.label, fontSize = 10.sp, color = color)
-    }
-}
+    Spacer(Modifier.height(8.dp))
 
-@Composable
-private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector? = null, colors: AppColors) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = colors.textDim,
-                modifier = Modifier.size(14.dp)
+    // Secondary quick-action row (extended features)
+    GlassCard(padding = 12.dp) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickTile(
+                icon = Icons.Filled.Sensors,
+                label = "Sensoren",
+                accentColor = colors.primary,
+                onClick = onTogglePIDScreen
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            QuickTile(
+                icon = Icons.Filled.Warning,
+                label = "DTC",
+                accentColor = colors.caution,
+                badgeColor = if (dtcResponse != null && dtcResponse.codes.isNotEmpty()) colors.critical else null,
+                onClick = onToggleDTCDialog
+            )
+            QuickTile(
+                icon = Icons.Filled.Analytics,
+                label = "Daten",
+                accentColor = colors.primary,
+                onClick = onToggleDataAnalysis
+            )
+            QuickTile(
+                icon = Icons.Filled.Verified,
+                label = "Ready",
+                accentColor = colors.success,
+                onClick = onToggleReadiness
+            )
+            QuickTile(
+                icon = Icons.Filled.Biotech,
+                label = "Diagnose",
+                accentColor = colors.primary,
+                onClick = onToggleDiagnostics
+            )
         }
-        Text(
-            text = title,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = colors.textDim
-        )
+        Spacer(Modifier.height(10.dp))
+        DividerLine()
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickTile(
+                icon = Icons.Filled.Air,
+                label = "Turbo",
+                accentColor = colors.primary,
+                onClick = onToggleTurboMonitor
+            )
+            QuickTile(
+                icon = Icons.Filled.SettingsApplications,
+                label = "Kette",
+                accentColor = colors.primary,
+                onClick = onToggleTimingChainMonitor
+            )
+            QuickTile(
+                icon = Icons.Filled.ElectricBolt,
+                label = "Power",
+                accentColor = colors.caution,
+                onClick = onTogglePowerCalculator
+            )
+            QuickTile(
+                icon = Icons.Filled.SportsScore,
+                label = "Stil",
+                accentColor = colors.success,
+                onClick = onToggleDriveScore
+            )
+            QuickTile(
+                icon = Icons.Filled.LightMode,
+                label = "Blitz",
+                accentColor = colors.warning,
+                onClick = onToggleShiftLight
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        DividerLine()
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickTile(
+                icon = Icons.Filled.Info,
+                label = "Fahrzeug",
+                accentColor = colors.primary,
+                onClick = onToggleVehicleInfo
+            )
+            QuickTile(
+                icon = Icons.Filled.BugReport,
+                label = "Probleme",
+                accentColor = colors.caution,
+                onClick = onToggleKnownIssues
+            )
+            QuickTile(
+                icon = Icons.Filled.SettingsRemote,
+                label = "Komfort",
+                accentColor = colors.info,
+                onClick = onToggleComfortControl
+            )
+            QuickTile(
+                icon = Icons.Filled.Code,
+                label = "Codier.",
+                accentColor = colors.warning,
+                onClick = onToggleCodingDialog
+            )
+            QuickTile(
+                icon = Icons.Filled.Tv,
+                label = "HUD",
+                accentColor = colors.info,
+                onClick = onToggleHUDMode
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        DividerLine()
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickTile(
+                icon = if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
+                label = "Log",
+                isActive = recordingActive,
+                accentColor = if (recordingActive) colors.critical else colors.primary,
+                onClick = onToggleDataLog
+            )
+            QuickTile(
+                icon = if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
+                label = "Remote",
+                isActive = remoteServerRunning,
+                accentColor = if (remoteServerRunning) colors.success else colors.primary,
+                onClick = onToggleRemoteDialog
+            )
+            QuickTile(
+                icon = Icons.Filled.Timer,
+                label = "Cooldown",
+                accentColor = colors.info,
+                onClick = onToggleTurboCooldown
+            )
+            QuickTile(
+                icon = if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
+                label = "Alarm",
+                isActive = activeAlerts.isNotEmpty(),
+                accentColor = if (activeAlerts.isNotEmpty()) colors.critical else colors.textTertiary,
+                onClick = onToggleAlertSettings
+            )
+            QuickTile(
+                icon = Icons.Filled.Close,
+                label = "Trennen",
+                accentColor = colors.critical,
+                onClick = onDisconnect
+            )
+        }
     }
 }
 
 @Composable
 private fun AlertBanner(alerts: List<ActiveAlert>, colors: AppColors) {
     val alert = alerts.firstOrNull() ?: return
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = colors.gaugeRed.copy(alpha = 0.2f)
+    val alertColor = colors.critical
+    AccentCard(
+        accentColor = alertColor,
+        padding = 12.dp
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.NotificationImportant,
-                contentDescription = stringResource(R.string.alert),
-                tint = colors.gaugeRed,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (alerts.size > 1) "${alert.message} (+${alerts.size - 1})" else alert.message,
-                fontSize = 11.sp,
-                color = colors.gaugeRed
-            )
-        }
-    }
-}
-
-@Composable
-private fun DevicePickerDialog(
-    devices: List<BluetoothDeviceInfo>,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val colors = LocalAppColors.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = colors.surface,
-        title = {
-            Text(stringResource(R.string.choose_adapter), color = colors.textPrimary)
-        },
-        text = {
-            if (devices.isEmpty()) {
-                Text(stringResource(R.string.no_paired_devices), color = colors.textSecondary)
-            } else {
-                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                    items(devices, key = { it.address }) { device ->
-                        DeviceListItem(
-                            name = device.name,
-                            address = device.address,
-                            onClick = { onSelect(device.address) },
-                            colors = colors
-                        )
-                    }
-                }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(AppRadius.sm))
+                    .background(alertColor.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.NotificationImportant,
+                    contentDescription = null,
+                    tint = alertColor,
+                    modifier = Modifier.size(16.dp)
+                )
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel), color = colors.accent)
-            }
-        }
-    )
-}
-
-@Composable
-private fun DeviceListItem(
-    name: String,
-    address: String,
-    onClick: () -> Unit,
-    colors: AppColors
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        color = Color.Transparent
-    ) {
-        Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Bluetooth, contentDescription = null, tint = colors.accent, modifier = Modifier.size(32.dp))
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(name, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colors.textPrimary)
-                Text(address, fontSize = 11.sp, color = colors.textSecondary)
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "WARNUNG",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = alertColor,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (alerts.size > 1) "${alert.message} (+${alerts.size - 1})" else alert.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textPrimary
+                )
             }
         }
     }
 }
 
+// ---------------------------------------------------------------------------
+// SYSTEM DIAGNOSE — Battery / EGR / EVAP / SAI / Emissions / Turbo mini cards
+// ---------------------------------------------------------------------------
 @Composable
 private fun SystemDiagnoseCard(
     batteryAnalysis: com.canopobd.data.domain.BatteryHealthAnalyzer.BatteryAnalysis?,
@@ -1565,174 +1423,143 @@ private fun SystemDiagnoseCard(
     wastegateResult: com.canopobd.data.domain.WastegateHealthAnalyzer.WastegateAnalysis?,
     colors: AppColors
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.MedicalServices,
-                    contentDescription = null,
-                    tint = colors.accent,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Systemdiagnose",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = colors.textPrimary
-                )
+    GlassCard(padding = 12.dp) {
+        SectionHeaderInline(title = "Systemdiagnose", icon = Icons.Filled.MedicalServices)
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val batteryColor = when {
+                batteryAnalysis == null -> colors.textTertiary
+                batteryAnalysis.healthScore >= 80 -> colors.success
+                batteryAnalysis.healthScore >= 50 -> colors.caution
+                else -> colors.critical
+            }
+            val egrColor = when {
+                egrAnalysis == null -> colors.textTertiary
+                egrAnalysis.healthScore >= 80 -> colors.success
+                egrAnalysis.healthScore >= 50 -> colors.caution
+                else -> colors.critical
+            }
+            val evapColor = when {
+                evapAnalysis == null -> colors.textTertiary
+                evapAnalysis.healthScore >= 80 -> colors.success
+                evapAnalysis.healthScore >= 50 -> colors.caution
+                else -> colors.critical
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                val batteryColor = when {
-                    batteryAnalysis == null -> colors.textSecondary
-                    batteryAnalysis.healthScore >= 80 -> colors.gaugeGreen
-                    batteryAnalysis.healthScore >= 50 -> colors.gaugeYellow
-                    else -> colors.gaugeRed
-                }
-                val egrColor = when {
-                    egrAnalysis == null -> colors.textSecondary
-                    egrAnalysis.healthScore >= 80 -> colors.gaugeGreen
-                    egrAnalysis.healthScore >= 50 -> colors.gaugeYellow
-                    else -> colors.gaugeRed
-                }
-                val evapColor = when {
-                    evapAnalysis == null -> colors.textSecondary
-                    evapAnalysis.healthScore >= 80 -> colors.gaugeGreen
-                    evapAnalysis.healthScore >= 50 -> colors.gaugeYellow
-                    else -> colors.gaugeRed
-                }
-
-                MiniStatusCard(
-                    label = "Batterie",
-                    icon = Icons.Filled.BatteryChargingFull,
-                    value = "%.1fV".format(batteryAnalysis?.status?.voltage ?: 0.0),
-                    subValue = "${batteryAnalysis?.healthScore?.toInt() ?: 0}%",
-                    color = batteryColor,
-                    colors = colors,
-                    modifier = Modifier.weight(1f)
-                )
-
-                MiniStatusCard(
-                    label = "EGR",
-                    icon = Icons.Filled.Eco,
-                    value = "%.1f%%".format(egrAnalysis?.flowDeviation ?: 0.0),
-                    subValue = "${egrAnalysis?.healthScore?.toInt() ?: 0}%",
-                    color = egrColor,
-                    colors = colors,
-                    modifier = Modifier.weight(1f)
-                )
-
-                MiniStatusCard(
-                    label = "EVAP",
-                    icon = Icons.Filled.Cloud,
-                    value = "%.1f%%".format(evapAnalysis?.purgeEfficiency ?: 0.0),
-                    subValue = "${evapAnalysis?.healthScore?.toInt() ?: 0}%",
-                    color = evapColor,
-                    colors = colors,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                val saiColor = when {
-                    saiAnalysis == null -> colors.textSecondary
-                    saiAnalysis.healthScore >= 80 -> colors.gaugeGreen
-                    saiAnalysis.healthScore >= 50 -> colors.gaugeYellow
-                    else -> colors.gaugeRed
-                }
-                val emPct = if (emissionsReadiness != null) {
-                    if (emissionsReadiness.totalCount > 0) (emissionsReadiness.completedCount * 100) / emissionsReadiness.totalCount else 0
-                } else 0
-                val emColor = when {
-                    emissionsReadiness == null -> colors.textSecondary
-                    emPct >= 80 -> colors.gaugeGreen
-                    emPct >= 50 -> colors.gaugeYellow
-                    else -> colors.gaugeRed
-                }
-                val turboColor = when {
-                    turboSpoolResult == null && turboEfficiencyResult == null && boostLeakResult == null && wastegateResult == null -> colors.textSecondary
-                    else -> colors.gaugeGreen
-                }
-
-                MiniStatusCard(
-                    label = "SAI",
-                    icon = Icons.Filled.Air,
-                    value = if (saiAnalysis?.status?.isActive == true) "An" else "Aus",
-                    subValue = "${saiAnalysis?.healthScore?.toInt() ?: 0}%",
-                    color = saiColor,
-                    colors = colors,
-                    modifier = Modifier.weight(1f)
-                )
-
-                MiniStatusCard(
-                    label = "Abgas",
-                    icon = Icons.Filled.Verified,
-                    value = "${emPct}%",
-                    subValue = null,
-                    color = emColor,
-                    colors = colors,
-                    modifier = Modifier.weight(1f),
-                    progress = emPct / 100f
-                )
-
-                Card(
-                    modifier = Modifier.weight(1f),
-                    colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Air,
-                                contentDescription = null,
-                                tint = turboColor,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Turbo", fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(4.dp).background(if (turboSpoolResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("Spool", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(4.dp).background(if (turboEfficiencyResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("Effiz.", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(4.dp).background(if (boostLeakResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("Leak", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(4.dp).background(if (wastegateResult != null) colors.gaugeGreen else colors.textDim, RoundedCornerShape(2.dp)))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("WG", fontSize = 8.sp, color = colors.textSecondary, maxLines = 1)
-                            }
-                        }
-                    }
-                }
-            }
+            MiniStatusCard(
+                label = "Batterie",
+                icon = Icons.Filled.BatteryChargingFull,
+                value = "%.1fV".format(batteryAnalysis?.status?.voltage ?: 0.0),
+                subValue = "${batteryAnalysis?.healthScore?.toInt() ?: 0}%",
+                color = batteryColor,
+                colors = colors,
+                modifier = Modifier.weight(1f)
+            )
+            MiniStatusCard(
+                label = "EGR",
+                icon = Icons.Filled.Eco,
+                value = "%.1f%%".format(egrAnalysis?.flowDeviation ?: 0.0),
+                subValue = "${egrAnalysis?.healthScore?.toInt() ?: 0}%",
+                color = egrColor,
+                colors = colors,
+                modifier = Modifier.weight(1f)
+            )
+            MiniStatusCard(
+                label = "EVAP",
+                icon = Icons.Filled.Cloud,
+                value = "%.1f%%".format(evapAnalysis?.purgeEfficiency ?: 0.0),
+                subValue = "${evapAnalysis?.healthScore?.toInt() ?: 0}%",
+                color = evapColor,
+                colors = colors,
+                modifier = Modifier.weight(1f)
+            )
         }
+
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val saiColor = when {
+                saiAnalysis == null -> colors.textTertiary
+                saiAnalysis.healthScore >= 80 -> colors.success
+                saiAnalysis.healthScore >= 50 -> colors.caution
+                else -> colors.critical
+            }
+            val emPct = if (emissionsReadiness != null) {
+                if (emissionsReadiness.totalCount > 0) (emissionsReadiness.completedCount * 100) / emissionsReadiness.totalCount else 0
+            } else 0
+            val emColor = when {
+                emissionsReadiness == null -> colors.textTertiary
+                emPct >= 80 -> colors.success
+                emPct >= 50 -> colors.caution
+                else -> colors.critical
+            }
+            val turboColor = when {
+                turboSpoolResult == null && turboEfficiencyResult == null && boostLeakResult == null && wastegateResult == null -> colors.textTertiary
+                else -> colors.success
+            }
+
+            MiniStatusCard(
+                label = "SAI",
+                icon = Icons.Filled.Air,
+                value = if (saiAnalysis?.status?.isActive == true) "An" else "Aus",
+                subValue = "${saiAnalysis?.healthScore?.toInt() ?: 0}%",
+                color = saiColor,
+                colors = colors,
+                modifier = Modifier.weight(1f)
+            )
+            MiniStatusCard(
+                label = "Abgas",
+                icon = Icons.Filled.Verified,
+                value = "${emPct}%",
+                subValue = null,
+                color = emColor,
+                colors = colors,
+                modifier = Modifier.weight(1f),
+                progress = emPct / 100f
+            )
+            MiniStatusCard(
+                label = "Turbo",
+                icon = Icons.Filled.Air,
+                value = when {
+                    wastegateResult != null && wastegateResult.healthScore < 70 -> "WG!"
+                    boostLeakResult?.severity?.severity ?: -1 > 0 -> "LEAK"
+                    turboEfficiencyResult != null -> "OK"
+                    else -> "—"
+                },
+                subValue = null,
+                color = turboColor,
+                colors = colors,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeaderInline(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+    val colors = LocalAppColors.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = colors.textPrimary,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -1747,10 +1574,11 @@ private fun MiniStatusCard(
     modifier: Modifier = Modifier,
     progress: Float? = null
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = colors.surfaceCard),
-        shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.md))
+            .background(colors.surfaceRaised.copy(alpha = 0.5f))
+            .border(1.dp, color.copy(alpha = 0.25f), RoundedCornerShape(AppRadius.md))
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1760,24 +1588,25 @@ private fun MiniStatusCard(
                     tint = color,
                     modifier = Modifier.size(12.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(label, fontSize = 9.sp, color = colors.textSecondary, maxLines = 1)
+                Spacer(Modifier.width(4.dp))
+                Text(label, style = MaterialTheme.typography.labelSmall, color = colors.textTertiary, maxLines = 1)
             }
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = value,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                style = GaugeTypography.valueSmall,
                 color = color,
                 maxLines = 1
             )
             if (subValue != null) {
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = subValue,
-                    fontSize = 9.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = color
                 )
             } else if (progress != null) {
+                Spacer(Modifier.height(2.dp))
                 LinearProgressIndicator(
                     progress = progress,
                     modifier = Modifier
@@ -1785,7 +1614,7 @@ private fun MiniStatusCard(
                         .height(3.dp)
                         .clip(RoundedCornerShape(2.dp)),
                     color = color,
-                    trackColor = color.copy(alpha = 0.2f)
+                    trackColor = color.copy(alpha = 0.15f)
                 )
             }
         }
@@ -1801,69 +1630,179 @@ private fun DashboardFooter(
     currentTrip: GPSTrip?,
     colors: AppColors
 ) {
-    Column {
+    GlassCard(padding = 10.dp) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Batt: %.1fV".format(obdData.batteryVoltage),
-                fontSize = 12.sp,
+            FooterStat(
+                label = "BATT",
+                value = "%.1fV".format(obdData.batteryVoltage),
                 color = when {
-                    obdData.batteryVoltage in 12f..13.5f -> colors.gaugeGreen
-                    obdData.batteryVoltage in 11.5f..12f -> colors.gaugeOrange
-                    obdData.batteryVoltage > 0 && obdData.batteryVoltage < 11.5f -> colors.gaugeRed
-                    else -> colors.textSecondary
+                    obdData.batteryVoltage in 12f..13.5f -> colors.success
+                    obdData.batteryVoltage in 11.5f..12f -> colors.warning
+                    obdData.batteryVoltage > 0 && obdData.batteryVoltage < 11.5f -> colors.critical
+                    else -> colors.textTertiary
                 }
             )
-            Text(
-                text = "${pollMode.label} | Load: %.0f%%".format(obdData.absoluteLoadValue),
-                fontSize = 12.sp,
+            FooterStat(
+                label = "LOAD",
+                value = "%.0f%%".format(obdData.absoluteLoadValue),
                 color = when {
-                    obdData.absoluteLoadValue > 90 -> colors.gaugeOrange
-                    obdData.absoluteLoadValue > 80 -> colors.gaugeYellow
-                    else -> colors.textSecondary
+                    obdData.absoluteLoadValue > 90 -> colors.warning
+                    obdData.absoluteLoadValue > 80 -> colors.caution
+                    else -> colors.textPrimary
                 }
             )
-            Text(
-                text = if (connectionStats.quality != ConnectionQuality.UNKNOWN) connectionStats.quality.label else "",
-                fontSize = 11.sp,
+            FooterStat(
+                label = "MODE",
+                value = pollMode.label,
+                color = colors.primary
+            )
+            FooterStat(
+                label = "CONN",
+                value = if (connectionStats.quality != ConnectionQuality.UNKNOWN) connectionStats.quality.label else "—",
                 color = when (connectionStats.quality) {
-                    ConnectionQuality.EXCELLENT, ConnectionQuality.GOOD -> colors.gaugeGreen
-                    ConnectionQuality.FAIR -> colors.gaugeYellow
-                    ConnectionQuality.POOR -> colors.gaugeRed
-                    else -> colors.textSecondary
+                    ConnectionQuality.EXCELLENT, ConnectionQuality.GOOD -> colors.success
+                    ConnectionQuality.FAIR -> colors.caution
+                    ConnectionQuality.POOR -> colors.critical
+                    else -> colors.textTertiary
                 }
             )
         }
-
         if (isGPSTracking && currentTrip != null) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "GPS: %.1f km tracked".format(currentTrip.distanceKm),
-                fontSize = 11.sp,
-                color = colors.gaugeGreen,
+            Spacer(Modifier.height(6.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+                horizontalArrangement = Arrangement.Center
+            ) {
+                StatusDot(color = colors.success, size = 6.dp, pulse = true)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "GPS aktiv · %.1f km".format(currentTrip.distanceKm),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.success
+                )
+            }
         }
-
         if (connectionStats.quality == ConnectionQuality.POOR) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = colors.gaugeRed.copy(alpha = 0.2f),
-                modifier = Modifier.fillMaxWidth()
+            Spacer(Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(AppRadius.sm))
+                    .background(colors.critical.copy(alpha = 0.12f))
+                    .border(1.dp, colors.critical.copy(alpha = 0.3f), RoundedCornerShape(AppRadius.sm))
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
             ) {
                 Text(
                     text = stringResource(R.string.conn_quality_poor_message),
-                    fontSize = 10.sp,
-                    color = colors.gaugeRed,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.critical,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun FooterStat(label: String, value: String, color: Color) {
+    val colors = LocalAppColors.current
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.textTertiary,
+            fontSize = 9.sp
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = value,
+            style = GaugeTypography.valueTiny,
+            color = color
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// DEVICE PICKER
+// ---------------------------------------------------------------------------
+@Composable
+private fun DevicePickerDialog(
+    devices: List<BluetoothDeviceInfo>,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = LocalAppColors.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.surfaceBase,
+        titleContentColor = colors.textPure,
+        textContentColor = colors.textSecondary,
+        title = {
+            Text(stringResource(R.string.choose_adapter), style = MaterialTheme.typography.titleLarge)
+        },
+        text = {
+            if (devices.isEmpty()) {
+                Text(stringResource(R.string.no_paired_devices))
+            } else {
+                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                    items(devices, key = { it.address }) { device ->
+                        DeviceListItem(
+                            name = device.name,
+                            address = device.address,
+                            onClick = { onSelect(device.address) },
+                            colors = colors
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel), color = colors.primary)
+            }
+        }
+    )
+}
+
+@Composable
+private fun DeviceListItem(
+    name: String,
+    address: String,
+    onClick: () -> Unit,
+    colors: AppColors
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppRadius.sm))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(AppRadius.sm))
+                .background(colors.primary.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Bluetooth,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(name, style = MaterialTheme.typography.titleSmall, color = colors.textPrimary)
+            Text(address, style = MaterialTheme.typography.bodySmall, color = colors.textTertiary)
         }
     }
 }
