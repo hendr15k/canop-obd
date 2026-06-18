@@ -192,14 +192,14 @@ class CANRepository(private val connection: ELM327BTConnection) {
             mode22Client.readMultipleDIDs(dids).collect { results ->
                 if (results.isNotEmpty()) {
                     _turboMonitoringData.value = TurboMonitoringData(
-                        engineTorque = results["220001"]?.let { parseTorque(it) } ?: 0.0,
-                        boostActual = results["220002"]?.let { parsePressure(it) } ?: 0.0,
-                        boostTarget = results["220003"]?.let { parsePressure(it) } ?: 0.0,
-                        wastegateDuty = results["220004"]?.let { parsePercent(it) } ?: 0.0,
-                        turboSpeed = results["220005"]?.let { parseSpeed(it) } ?: 0.0,
-                        turboInletTemp = results["220006"]?.let { parseTemperature(it) } ?: 0.0,
-                        turboOutletTemp = results["220007"]?.let { parseTemperature(it) } ?: 0.0,
-                        chargeAirTemp = results["220008"]?.let { parseTemperature(it) } ?: 0.0,
+                        engineTorque = results["0001"]?.let { parseTorque(it) } ?: 0.0,
+                        boostActual = results["0002"]?.let { parsePressure(it) } ?: 0.0,
+                        boostTarget = results["0003"]?.let { parsePressure(it) } ?: 0.0,
+                        wastegateDuty = results["0004"]?.let { parsePercent(it) } ?: 0.0,
+                        turboSpeed = results["0005"]?.let { parseSpeed(it) } ?: 0.0,
+                        turboInletTemp = results["0006"]?.let { parseTemperature(it) } ?: 0.0,
+                        turboOutletTemp = results["0007"]?.let { parseTemperature(it) } ?: 0.0,
+                        chargeAirTemp = results["0008"]?.let { parseTemperature(it) } ?: 0.0,
                         timestamp = System.currentTimeMillis()
                     )
                 }

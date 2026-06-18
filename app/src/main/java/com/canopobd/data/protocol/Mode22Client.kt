@@ -227,7 +227,7 @@ class Mode22Client(private val connection: ELM327BTConnection) {
 
     fun readDID(did: String): Flow<ByteArray?> = flow {
         try {
-            val cleanDid = did.uppercase().replace(" ", "").replace("0X", "").replace("22", "")
+            val cleanDid = did.uppercase().replace(" ", "").removePrefix("0X").removePrefix("22")
             val command = "22$cleanDid"
             val response = connection.sendRawCommand(command)
             val data = parseDIDResponse(response, cleanDid)
@@ -249,7 +249,7 @@ class Mode22Client(private val connection: ELM327BTConnection) {
     fun readMultipleDIDs(dids: List<String>): Flow<Map<String, ByteArray?>> = flow {
         val results = mutableMapOf<String, ByteArray?>()
         for (did in dids) {
-            val cleanDid = did.uppercase().replace(" ", "").replace("0X", "").replace("22", "")
+            val cleanDid = did.uppercase().replace(" ", "").removePrefix("0X").removePrefix("22")
             try {
                 val command = "22$cleanDid"
                 val response = connection.sendRawCommand(command)
@@ -357,7 +357,7 @@ class Mode22Client(private val connection: ELM327BTConnection) {
     }
 
     fun getCachedValue(did: String): ByteArray? {
-        val cleanDid = did.uppercase().replace("22", "")
+        val cleanDid = did.uppercase().removePrefix("22")
         return _cachedValues.value[cleanDid]
     }
 

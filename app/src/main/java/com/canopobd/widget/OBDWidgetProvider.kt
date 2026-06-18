@@ -17,7 +17,7 @@ class OBDWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val prefs: SharedPreferences = context.getSharedPreferences("canop_obd_widget", Context.MODE_PRIVATE)
+        val prefs: SharedPreferences = context.getSharedPreferences("canop_obd_prefs", Context.MODE_PRIVATE)
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_obd)

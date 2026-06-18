@@ -694,6 +694,8 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
     fun getStoredVin(): String = storedVin
 
+    private var remoteClientsJob: Job? = null
+
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT): Result<Int> {
         val bridge = remoteBridge ?: return Result.failure(IllegalStateException("Not connected to ELM327"))
         val result = bridge.startServer(port)
@@ -701,11 +703,19 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
             _remoteServerIp.value = bridge.getLocalIpAddress()
             _remoteServerPort.value = bridge.serverPort.value
             _remoteServerRunning.value = true
+            remoteClientsJob?.cancel()
+            remoteClientsJob = scope.launch {
+                bridge.connectedClients.collect { count ->
+                    _remoteConnectedClients.value = count
+                }
+            }
         }
         return result
     }
 
     fun stopRemoteServer() {
+        remoteClientsJob?.cancel()
+        remoteClientsJob = null
         remoteBridge?.stopServer()
         _remoteServerRunning.value = false
         _remoteConnectedClients.value = 0

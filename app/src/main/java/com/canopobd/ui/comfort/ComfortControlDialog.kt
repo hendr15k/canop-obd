@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.ui.theme.LocalAppColors
 import com.canopobd.ui.theme.AppColors
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -883,6 +882,7 @@ private fun WindowControlSimulatorCard(
     var lastCommand by remember { mutableStateOf("") }
     var isConnected by remember { mutableStateOf(false) }
     var blinkState by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -987,15 +987,15 @@ private fun WindowControlSimulatorCard(
                         isSending = true
                         lastCommand = "Alle Runter"
                         onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_DRIVER_DOWN))
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             delay(100)
                             onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_PASSENGER_DOWN))
                         }
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             delay(200)
                             onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_LEFT_DOWN))
                         }
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             delay(300)
                             onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_RIGHT_DOWN))
                         }
@@ -1017,15 +1017,15 @@ private fun WindowControlSimulatorCard(
                         isSending = true
                         lastCommand = "Alle Hoch"
                         onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_DRIVER_UP))
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             delay(100)
                             onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_PASSENGER_UP))
                         }
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             delay(200)
                             onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_LEFT_UP))
                         }
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             delay(300)
                             onSendRealFrame(WindowCommands.CAN_ID_PORTEC, WindowCommands.parseHexData(WindowCommands.WINDOW_REAR_RIGHT_UP))
                         }
