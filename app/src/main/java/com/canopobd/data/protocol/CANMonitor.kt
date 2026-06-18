@@ -339,8 +339,9 @@ class CANMonitor(private val connection: ELM327BTConnection) {
             val part = parts[i]
             val canIdPattern = Regex("^[0-9A-Fa-f]{3,8}$")
 
-            if (part.matches(canIdPattern) && (part.length == 3 || part.length == 4)) {
+            if (part.matches(canIdPattern) && (part.length == 3 || part.length == 4 || part.length == 8)) {
                 val canId = part
+                val isExtendedId = part.length == 8
                 i++
                 if (i < parts.size) {
                     val dlcByte = parts[i]
@@ -366,7 +367,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
                             timestamp = System.currentTimeMillis(),
                             canId = canId,
                             data = dataBytes.toByteArray(),
-                            isExtended = canId.length > 4,
+                            isExtended = isExtendedId,
                             dlc = dataBytes.size
                         ))
                     }

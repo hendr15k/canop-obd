@@ -456,6 +456,8 @@ class OBDRepository(
     }
 
     fun cleanup() {
+        runCatching { connection?.disconnect() }
+        runCatching { remoteBridge?.stopServer() }
         scope.cancel()
     }
 

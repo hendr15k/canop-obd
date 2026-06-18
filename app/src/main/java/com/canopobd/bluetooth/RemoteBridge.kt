@@ -101,6 +101,7 @@ class RemoteBridge(
         }
         serverSocket = null
         _isServerRunning.value = false
+        scope.cancel()
     }
 
     private inner class ClientHandler(

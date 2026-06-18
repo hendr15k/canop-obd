@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Looper
+import android.util.Log
 import com.canopobd.data.local.CanopoDatabase
 import com.canopobd.data.local.TripEntity
 import com.canopobd.data.local.TripLocationEntity
@@ -96,7 +97,7 @@ class GPSTracker(private val context: Context) {
                     )
                 }
                 _tripHistory.value = trips
-            } catch (_: Exception) { }
+            } catch (e: Exception) { Log.w("GPSTracker", "loadTripHistory failed", e) }
         }
     }
 
@@ -187,7 +188,7 @@ class GPSTracker(private val context: Context) {
                     )
                 }
                 db.tripLocationDao().insertAll(locationEntities)
-            } catch (_: Exception) { }
+            } catch (e: Exception) { Log.w("GPSTracker", "saveTripLocation batch failed", e) }
         }
     }
 
@@ -271,7 +272,7 @@ class GPSTracker(private val context: Context) {
         scope.launch {
             try {
                 db.tripDao().deleteAll()
-            } catch (_: Exception) { }
+            } catch (e: Exception) { Log.w("GPSTracker", "clearTripHistory DB delete failed", e) }
         }
     }
 

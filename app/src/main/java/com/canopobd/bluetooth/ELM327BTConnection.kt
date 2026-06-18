@@ -662,7 +662,7 @@ class ELM327BTConnection(
             Result.success(Unit)
         } catch (e: Exception) {
             _isConnected.value = false
-            try { socket?.close() } catch (_: Exception) { }
+            try { socket?.close() } catch (e: Exception) { Log.w("ELM327BT", "socket close in disconnect failed", e) }
             Result.failure(e)
         }
     }

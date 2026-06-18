@@ -333,8 +333,8 @@ class Mode22Client(private val connection: ELM327BTConnection) {
         val expectedPrefix = "62${expectedDid.uppercase()}"
         if (!cleaned.uppercase().startsWith(expectedPrefix)) {
             val genericPrefix = "62"
-            if (cleaned.uppercase().startsWith(genericPrefix) && cleaned.length > 6) {
-                val dataHex = cleaned.substring(4)
+            if (cleaned.uppercase().startsWith(genericPrefix) && cleaned.length > 2 + expectedDid.length) {
+                val dataHex = cleaned.substring(2 + expectedDid.length)
                 return parseHexString(dataHex)
             }
             return null
