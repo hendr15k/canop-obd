@@ -540,13 +540,13 @@ object BCMProtocol {
         }
         
         private fun parseTCMStatusByte(data: ByteArray): TCMStatus {
-            val byte0 = data.getOrNull(0)?.toInt() ?: 0
-            val byte1 = data.getOrNull(1)?.toInt() ?: 0
-            val byte2 = data.getOrNull(2)?.toInt() ?: 0
-            val byte3 = data.getOrNull(3)?.toInt() ?: 0
-            val byte4 = data.getOrNull(4)?.toInt() ?: 0
-            val byte5 = data.getOrNull(5)?.toInt() ?: 0
-            val byte6 = data.getOrNull(6)?.toInt() ?: 0
+            val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
+            val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
+            val byte2 = data.getOrNull(2)?.toInt()?.and(0xFF) ?: 0
+            val byte3 = data.getOrNull(3)?.toInt()?.and(0xFF) ?: 0
+            val byte4 = data.getOrNull(4)?.toInt()?.and(0xFF) ?: 0
+            val byte5 = data.getOrNull(5)?.toInt()?.and(0xFF) ?: 0
+            val byte6 = data.getOrNull(6)?.toInt()?.and(0xFF) ?: 0
             
             val gear = when (byte0 and 0x0F) {
                 0x01 -> 1
@@ -585,18 +585,18 @@ object BCMProtocol {
         }
         
         private fun parseECMStatusByte(data: ByteArray): ECMStatus {
-            val byte0 = data.getOrNull(0)?.toInt() ?: 0
-            val byte1 = data.getOrNull(1)?.toInt() ?: 0
-            val byte2 = data.getOrNull(2)?.toInt() ?: 0
-            val byte3 = data.getOrNull(3)?.toInt() ?: 0
-            val byte4 = data.getOrNull(4)?.toInt() ?: 0
-            val byte5 = data.getOrNull(5)?.toInt() ?: 0
-            val byte6 = data.getOrNull(6)?.toInt() ?: 0
-            
-            val rpm = ((byte0.toInt() and 0xFF) * 256 + (byte1.toInt() and 0xFF)).toDouble() / 4.0
-            val speed = ((byte2.toInt() and 0xFF) * 256 + (byte3.toInt() and 0xFF)).toDouble()
+            val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
+            val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
+            val byte2 = data.getOrNull(2)?.toInt()?.and(0xFF) ?: 0
+            val byte3 = data.getOrNull(3)?.toInt()?.and(0xFF) ?: 0
+            val byte4 = data.getOrNull(4)?.toInt()?.and(0xFF) ?: 0
+            val byte5 = data.getOrNull(5)?.toInt()?.and(0xFF) ?: 0
+            val byte6 = data.getOrNull(6)?.toInt()?.and(0xFF) ?: 0
+
+            val rpm = (byte0 * 256 + byte1).toDouble() / 4.0
+            val speed = (byte2 * 256 + byte3).toDouble()
             val coolant = if (byte4 in 1..200) byte4 - 40 else 0
-            val throttle = ((byte5.toInt() and 0xFF) * 100.0 / 255.0)
+            val throttle = (byte5 * 100.0 / 255.0)
             val load = ((byte6.toInt() and 0xFF) * 100.0 / 255.0)
             
             return ECMStatus(

@@ -868,7 +868,6 @@ class ELM327BTConnection(
         return response
             .replace("\r", " ")
             .replace("\n", " ")
-            .replace(" ", "")
             .replace(">", "")
             .trim()
             .filter { it.isDigit() || it.isLetter() || it == ' ' || it == ':' }

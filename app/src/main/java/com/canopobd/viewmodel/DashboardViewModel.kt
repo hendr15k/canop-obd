@@ -1,6 +1,5 @@
 package com.canopobd.viewmodel
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -56,7 +55,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 
-@SuppressLint("MissingPermission")
 class DashboardViewModel private constructor(
     application: Application
 ) : ViewModel() {

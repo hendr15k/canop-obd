@@ -274,7 +274,8 @@ class Mode22Client(private val connection: ELM327BTConnection) {
         )
         for (did in priorityDIDs) {
             try {
-                val command = "22$did"
+                val cleanDid = did.uppercase().removePrefix("22")
+                val command = "22$cleanDid"
                 val response = connection.sendRawCommand(command)
                 if (!response.contains("ERROR") && !response.contains("UNABLE") &&
                     !response.contains("NO DATA") && response.length > 10) {
