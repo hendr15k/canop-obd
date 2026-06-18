@@ -50,6 +50,7 @@ import com.canopobd.data.local.MaintenanceEntity
 import com.canopobd.data.repository.OBDRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -2315,6 +2316,9 @@ private fun startTurboAnalysisCollection() {
 
     override fun onCleared() {
         _turboAnalysisJob.value?.cancel()
+        turboViewModel.viewModelScope.cancel()
+        safetyViewModel.viewModelScope.cancel()
+        ecoScoreViewModel.viewModelScope.cancel()
         repository.cleanup()
         repository.disconnect()
         super.onCleared()

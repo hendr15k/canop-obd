@@ -106,7 +106,7 @@ class GPSTracker(private val context: Context) {
 
         tripId = UUID.randomUUID().toString().take(8).uppercase()
         tripStartTime = System.currentTimeMillis()
-        tripLocations = mutableListOf()
+        tripLocations = java.util.Collections.synchronizedList(mutableListOf())
         tripDistanceMeters = 0.0
         lastLocation = null
 

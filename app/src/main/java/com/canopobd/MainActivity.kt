@@ -483,6 +483,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     // TPMS & Climate State
     val showTPMSDialog by viewModel.showTPMSDialog.collectAsState()
     val showClimateControl by viewModel.showClimateControl.collectAsState()
+    val tpmsData by viewModel.tpmsData.collectAsState()
+    val tcmReading by viewModel.tcmReading.collectAsState()
+    val ecmReading by viewModel.ecmReading.collectAsState()
 
     // Safety & ECO State
     val showSafetySystems by viewModel.showSafetySystems.collectAsState()
@@ -742,7 +745,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showTPMSDialog = showTPMSDialog,
         onToggleTPMSDialog = viewModel::toggleTPMSDialog,
         onTPMSReset = viewModel::onTPMSReset,
-        tpmsData = viewModel.tpmsData.value,
+        tpmsData = tpmsData,
         showClimateControl = showClimateControl,
         onToggleClimateControl = viewModel::toggleClimateControl,
         onSendClimateCommand = viewModel::onSendClimateCommand,
@@ -759,8 +762,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showCarProfile = showCarProfile,
         _showTurboCooldown = showTurboCooldown,
         turboCooldownState = turboCooldownState,
-        tcmReading = viewModel.tcmReading.value,
-        ecmReading = viewModel.ecmReading.value,
+        tcmReading = tcmReading,
+        ecmReading = ecmReading,
         safetySummary = safetySummary,
         ecoScoreData = ecoScoreData,
         gpsSpeedKmh = gpsSpeedForTest,
