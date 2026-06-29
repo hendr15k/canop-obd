@@ -219,6 +219,10 @@ class TurboEfficiencyAnalyzer(
      * Bewertet Wastegate-Zustand
      */
     private fun evaluateWastegate(duty: Double, actualBoost: Double, targetBoost: Double): Int {
+        val boostDeviation = if (targetBoost > 0.01) {
+            abs((actualBoost - targetBoost) / targetBoost) * 100.0
+        } else 0.0
+
         return when {
             // Wastegate fast immer offen
             duty > WG_DUTY_STUCK_OPEN -> 25
@@ -226,6 +230,9 @@ class TurboEfficiencyAnalyzer(
             duty < WG_DUTY_STUCK_CLOSED -> 30
             // Leerlauf: Wastegate sollte offen sein
             targetBoost < 0.05 && duty < WG_DUTY_IDLE_MIN -> 50
+            // Große Boost-Abweichung trotz normalem Duty-Bereich
+            boostDeviation > 30.0 -> 50
+            boostDeviation > 15.0 -> 70
             // Normaler Bereich
             duty in WG_DUTY_STUCK_CLOSED..WG_DUTY_STUCK_OPEN -> 95
             else -> 70

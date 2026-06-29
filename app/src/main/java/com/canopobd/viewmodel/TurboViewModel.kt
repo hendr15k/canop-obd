@@ -38,7 +38,6 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateFromOBDData(data: OBDData, carProfile: CarProfile) {
         val calibration = AstraJ14TurboCalibration.INSTANCE
-        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
         val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
@@ -65,7 +64,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         } else 0.0
         turboEfficiency.value = efficiencyFactor
 
-        updateTurboDataInternal(data, carProfile, calibration, boostAnalysis)
+        updateTurboDataInternal(data, carProfile, boostAnalysis)
         updateOilDataInternal(data)
     }
 
@@ -75,7 +74,6 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         driveSession: DriveSession
     ) {
         val calibration = AstraJ14TurboCalibration.INSTANCE
-        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
         val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
@@ -102,14 +100,13 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         } else 0.0
         turboEfficiency.value = efficiencyFactor
 
-        updateTurboDataInternal(data, carProfile, calibration, boostAnalysis)
+        updateTurboDataInternal(data, carProfile, boostAnalysis)
         updateOilDataInternal(data)
     }
 
     private fun updateTurboDataInternal(
         data: OBDData,
         carProfile: CarProfile,
-        calibration: AstraJ14TurboCalibration,
         boostAnalysis: BoostAnalysis
     ) {
         val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
@@ -122,6 +119,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         val healthScore = when {
             overboostActive -> 40
             underboostDetected -> 50
+            boostAnalysis.status == BoostStatus.HIGH -> 75
             relativeBoostBar > targetRelativeBar * 0.85 -> 90
             else -> 100
         }

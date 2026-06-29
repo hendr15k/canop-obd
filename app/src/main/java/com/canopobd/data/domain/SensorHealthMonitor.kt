@@ -718,6 +718,11 @@ class SensorHealthMonitor(
                 score -= 50
                 diagnosis = "$sensorName-Sensorfehler (Unterbereich)"
             }
+            temp > maxValid -> {
+                issues.add(ValidationIssue.RANGE_OUT_OF_BOUNDS)
+                score -= 50
+                diagnosis = "$sensorName-Sensorfehler (Oberbereich): ${temp.toInt()}°C"
+            }
             temp > criticalThreshold -> {
                 issues.add(ValidationIssue.RANGE_OUT_OF_BOUNDS)
                 score -= 40

@@ -288,7 +288,6 @@ class EGTMonitor(
         }
 
         val diff = abs(input.egtBank1 - input.egtBank2)
-        val avgEGT = (input.egtBank1 + input.egtBank2) / 2.0
 
         val score = when {
             diff < CYLINDER_BALANCE_WARNING -> 100
@@ -312,22 +311,23 @@ class EGTMonitor(
         input: EGTInput
     ): String {
         val baseInfo = "EGT: ${"%.0f".format(input.egtBank1)}°C. Trend: ${trend.label}. Stress: ${"%.0f".format(thermalStress)} Einheiten."
+        val balanceInfo = if (cylinderBalance > CYLINDER_BALANCE_WARNING) " Zylinder-Differenz: ${"%.0f".format(cylinderBalance)}°C." else ""
 
         return when (status) {
             EGTStatus.NORMAL, EGTStatus.OPTIMAL -> {
-                "Abgastemperatur normal. $baseInfo"
+                "Abgastemperatur normal. $baseInfo$balanceInfo"
             }
             EGTStatus.ELEVATED -> {
-                "EGT leicht erhöht. $baseInfo. Vielleicht höhere Fahrstufe."
+                "EGT leicht erhöht. $baseInfo$balanceInfo. Vielleicht höhere Fahrstufe."
             }
             EGTStatus.HIGH -> {
-                "EGT hoch. $baseInfo. Kühlung prüfen, evtl. Turbo-Leck."
+                "EGT hoch. $baseInfo$balanceInfo. Kühlung prüfen, evtl. Turbo-Leck."
             }
             EGTStatus.CRITICAL -> {
-                "EGT kritisch hoch! $baseInfo. Sofort reduzieren!"
+                "EGT kritisch hoch! $baseInfo$balanceInfo. Sofort reduzieren!"
             }
             EGTStatus.OVERHEAT -> {
-                "EGT UEBERHITZUNG! $baseInfo. Motor abschalten!"
+                "EGT UEBERHITZUNG! $baseInfo$balanceInfo. Motor abschalten!"
             }
             EGTStatus.NO_DATA -> {
                 "Keine EGT-Daten verfügbar."
@@ -344,26 +344,28 @@ class EGTMonitor(
         thermalStress: Double,
         input: EGTInput
     ): String {
+        val stressHint = if (thermalStress > 100) " Hoher thermischer Stress — Ölwechsel prüfen." else ""
+        val trendHint = if (trend == EGTTrend.RISING) " EGT steigt — Last reduzieren!" else ""
         return when (status) {
             EGTStatus.NORMAL, EGTStatus.OPTIMAL -> {
-                "EGT im Normalbereich. Regelmäßige Beobachtung."
+                "EGT im Normalbereich. Regelmäßige Beobachtung.$stressHint"
             }
             EGTStatus.ELEVATED -> {
                 "EGT beobachten. Bei ${input.boostPressureKpa.toInt()} kPa Boost: " +
-                        "eventuell höhere Kühlmitteltemperatur erlaubt."
+                        "eventuell höhere Kühlmitteltemperatur erlaubt.$trendHint"
             }
             EGTStatus.HIGH -> {
                 "EGT reduzieren. Nicht mit Volllast fahren. " +
-                        "Kühlmittelstand und -temperatur prüfen."
+                        "Kühlmittelstand und -temperatur prüfen.$stressHint$trendHint"
             }
             EGTStatus.CRITICAL -> {
                 "EGT kritisch! Nicht mit Last fahren. " +
                         "Turbo und Kühlung sofort prüfen. " +
-                        "Nur notwendige Fahrten mit reduzierter Last."
+                        "Nur notwendige Fahrten mit reduzierter Last.$stressHint"
             }
             EGTStatus.OVERHEAT -> {
                 "SOFORT anhalten! Motor abkühlen lassen. " +
-                        "Nicht erneut starten bis < 700°C."
+                        "Nicht erneut starten bis < 700°C.$stressHint"
             }
             EGTStatus.NO_DATA -> {
                 "EGT-Sensor oder -Daten nicht verfügbar."

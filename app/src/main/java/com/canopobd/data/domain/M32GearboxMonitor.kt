@@ -394,6 +394,7 @@ class M32GearboxMonitor(
         input: GearboxInput
     ): String {
         val kmSinceLastChange = input.totalKm % 60000.0
+        val issueDetail = if (issues.isNotEmpty()) " Probleme: ${issues.joinToString(", ") { it.label }}." else ""
 
         return when (health) {
             GearboxHealth.HEALTHY -> {
@@ -408,17 +409,17 @@ class M32GearboxMonitor(
             GearboxHealth.EARLY_WEAR -> {
                 "Bei ${input.totalKm.toInt()} km: Getriebeöl-Wechsel durchfuehren. " +
                         "Laegergeraeusche beobachten. " +
-                        "Empfohlenes Öl: Dexron VI ATF."
+                        "Empfohlenes Öl: Dexron VI ATF.$issueDetail"
             }
             GearboxHealth.WEAR_DETECTED -> {
                 "Getriebe-Inspizierung bei Fachwerkstatt empfohlen. " +
                         "Laeger und Synchronringe pruefen. " +
-                        "Getriebeöl-Wechsel mit Qualitaetsöl."
+                        "Getriebeöl-Wechsel mit Qualitaetsöl.$issueDetail"
             }
             GearboxHealth.CRITICAL -> {
                 "SOFORT Werkstatt aufsuchen! " +
                         "Getriebe braucht sofortige Reparatur oder Austausch. " +
-                        "Nur noetigste Fahrten."
+                        "Nur noetigste Fahrten.$issueDetail"
             }
             GearboxHealth.UNKNOWN -> {
                 "Getriebeölstand und -zustand pruefen. " +

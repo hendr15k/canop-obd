@@ -146,7 +146,7 @@ data class TPMSData(
     val minPressure: Double get() = pressures.min()
     val pressureDifference: Double get() = maxPressure - minPressure
 
-    val maxTemp: Double get() = temperatures.max()?.toDouble() ?: 0.0
+    val maxTemp: Double get() = temperatures.maxOrNull()?.toDouble() ?: 0.0
 
     val isLowPressure: Boolean get() = when (unit) {
         "PSI" -> minPressure < AstraJSafetyThresholds.TPMS_LOW_PRESSURE_PSI && minPressure > 0.0
@@ -336,11 +336,15 @@ object SafetyDTCMappings {
 
     fun getDTCSeverity(code: String): DtcSeverity {
         val normalized = code.uppercase()
+        val plainCode = normalized.substringBefore(" ").trim()
+        val embeddedDesc = normalized.substringAfter(" ", "").trim()
+        val lookedUpDesc = ALL_DTCS[plainCode]?.uppercase() ?: ""
+        val desc = if (lookedUpDesc.isNotEmpty()) lookedUpDesc else embeddedDesc
         return when {
-            normalized.startsWith("C0") && (normalized.contains("CIRCUIT") || normalized.contains("MODULE")) -> DtcSeverity.CRITICAL
             normalized.startsWith("B0") -> DtcSeverity.CRITICAL
-            normalized.startsWith("C0") && normalized.contains("RANGE") -> DtcSeverity.WARNING
-            normalized.startsWith("C0") && normalized.contains("PERFORMANCE") -> DtcSeverity.WARNING
+            normalized.startsWith("C0") && (desc.contains("CIRCUIT") || desc.contains("MODULE") || desc.contains("PUMPE") || desc.contains("BREMSE")) -> DtcSeverity.CRITICAL
+            normalized.startsWith("C0") && (desc.contains("RANGE") || desc.contains("PERFORMANCE") || desc.contains("LEISTUNG") || desc.contains("BEREICH")) -> DtcSeverity.WARNING
+            normalized.startsWith("C0") -> DtcSeverity.CRITICAL
             else -> DtcSeverity.INFO
         }
     }

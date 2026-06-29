@@ -30,7 +30,7 @@ class RemoteBridge(
 
     private var serverSocket: ServerSocket? = null
     private var serverJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val clients = CopyOnWriteArrayList<ClientHandler>()
 
     companion object {
@@ -102,6 +102,7 @@ class RemoteBridge(
         serverSocket = null
         _isServerRunning.value = false
         scope.cancel()
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     }
 
     private inner class ClientHandler(

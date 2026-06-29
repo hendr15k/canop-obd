@@ -237,11 +237,10 @@ class PCVMonitor(
         return when {
             score >= 75 -> PCVHealth.HEALTHY
             hasPCVDTC && score < 40 -> {
-                // Unterscheide zwischen Verstopfung und Leakage basierend auf Trimm
-                PCVHealth.PLUGGED  // Standardannahme bei PCV-DTC
+                PCVHealth.PLUGGED
             }
             score >= 45 -> PCVHealth.PLUGGED
-            else -> PCVHealth.PLUGGED
+            else -> PCVHealth.LEAKING
         }
     }
 
