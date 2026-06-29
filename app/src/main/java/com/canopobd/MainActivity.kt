@@ -483,6 +483,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     // TPMS & Climate State
     val showTPMSDialog by viewModel.showTPMSDialog.collectAsState()
     val showClimateControl by viewModel.showClimateControl.collectAsState()
+    val showWindowControl by viewModel.showWindowControl.collectAsState()
     val tpmsData by viewModel.tpmsData.collectAsState()
     val tcmReading by viewModel.tcmReading.collectAsState()
     val ecmReading by viewModel.ecmReading.collectAsState()
@@ -564,6 +565,18 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
             externalState = viewModel.climateState.value,
             onClimateStateChange = { newState ->
                 viewModel.updateClimateState(newState)
+            }
+        )
+    }
+
+    if (showWindowControl) {
+        com.canopobd.ui.window.WindowControlDialog(
+            initialState = viewModel.windowState.value,
+            onCommand = viewModel::onSendWindowCommand,
+            onDismiss = viewModel::toggleWindowControl,
+            externalState = viewModel.windowState.value,
+            onWindowStateChange = { newState ->
+                viewModel.updateWindowState(newState)
             }
         )
     }
@@ -749,6 +762,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showClimateControl = showClimateControl,
         onToggleClimateControl = viewModel::toggleClimateControl,
         onSendClimateCommand = viewModel::onSendClimateCommand,
+        showWindowControl = showWindowControl,
+        onToggleWindowControl = viewModel::toggleWindowControl,
+        onSendWindowCommand = viewModel::onSendWindowCommand,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
         emulatorMode = emulatorMode,

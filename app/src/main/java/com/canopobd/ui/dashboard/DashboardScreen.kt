@@ -89,6 +89,8 @@ import com.canopobd.ui.profile.SavedProfile
 import com.canopobd.ui.tpms.TPMSDialog
 import com.canopobd.ui.climate.ClimateControlDialog
 import com.canopobd.ui.climate.ClimateCommand
+import com.canopobd.ui.window.WindowControlDialog
+import com.canopobd.data.domain.WindowAction
 import com.canopobd.ui.components.TCMECMCANStatusCard
 import kotlin.math.abs
 
@@ -285,6 +287,9 @@ fun DashboardScreen(
     showClimateControl: Boolean,
     onToggleClimateControl: () -> Unit,
     onSendClimateCommand: (com.canopobd.ui.climate.ClimateCommand) -> Unit,
+    showWindowControl: Boolean,
+    onToggleWindowControl: () -> Unit,
+    onSendWindowCommand: (WindowAction) -> Unit,
     tcmReading: com.canopobd.data.repository.OBDRepository.TCMReading,
     ecmReading: com.canopobd.data.repository.OBDRepository.ECMReading,
     safetySummary: com.canopobd.data.model.SafetySummary = com.canopobd.data.model.SafetySummary(),
@@ -367,6 +372,7 @@ fun DashboardScreen(
                         _onToggleCarProfile = _onToggleCarProfile,
                         onToggleTurboCooldown = onToggleTurboCooldown,
                         onToggleComfortControl = onToggleComfortControl,
+                        onToggleWindowControl = onToggleWindowControl,
                         onToggleCodingDialog = onToggleCodingDialog,
                         onToggleQuickActions = onToggleQuickActions,
                         onToggleVehicleProfileManager = onToggleVehicleProfileManager,
@@ -707,6 +713,15 @@ fun DashboardScreen(
                 onDismiss = onToggleClimateControl
             )
         }
+        if (showWindowControl) {
+            WindowControlDialog(
+                initialState = com.canopobd.data.domain.WindowState(),
+                onCommand = onSendWindowCommand,
+                onDismiss = onToggleWindowControl,
+                externalState = null,
+                onWindowStateChange = null
+            )
+        }
         if (showQuickActions) {
             QuickActionsDialog(
                 onDismiss = onToggleQuickActions,
@@ -1025,6 +1040,7 @@ private fun DashboardHeader(
     _onToggleCarProfile: () -> Unit,
     onToggleTurboCooldown: () -> Unit,
     onToggleComfortControl: () -> Unit,
+    onToggleWindowControl: () -> Unit,
     onToggleCodingDialog: () -> Unit,
     onToggleQuickActions: () -> Unit,
     onToggleVehicleProfileManager: () -> Unit,
@@ -1302,6 +1318,12 @@ private fun DashboardHeader(
                 label = "Komfort",
                 accentColor = colors.info,
                 onClick = onToggleComfortControl
+            )
+            QuickTile(
+                icon = Icons.Filled.Window,
+                label = "Fenster",
+                accentColor = colors.gaugeCyan,
+                onClick = onToggleWindowControl
             )
             QuickTile(
                 icon = Icons.Filled.Code,

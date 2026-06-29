@@ -289,6 +289,12 @@ class DashboardViewModel private constructor(
     private val _climateState = MutableStateFlow(com.canopobd.ui.climate.ClimateState())
     val climateState: StateFlow<com.canopobd.ui.climate.ClimateState> = _climateState.asStateFlow()
 
+    private val _showWindowControl = MutableStateFlow(false)
+    val showWindowControl: StateFlow<Boolean> = _showWindowControl.asStateFlow()
+
+    private val _windowState = MutableStateFlow(com.canopobd.data.domain.WindowState())
+    val windowState: StateFlow<com.canopobd.data.domain.WindowState> = _windowState.asStateFlow()
+
     val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
@@ -1122,6 +1128,22 @@ class DashboardViewModel private constructor(
 
     fun updateClimateState(state: com.canopobd.ui.climate.ClimateState) {
         _climateState.value = state
+    }
+
+    fun toggleWindowControl() { _showWindowControl.value = !_showWindowControl.value }
+
+    fun updateWindowState(state: com.canopobd.data.domain.WindowState) {
+        _windowState.value = state
+    }
+
+    fun onSendWindowCommand(command: com.canopobd.data.domain.WindowAction) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(command)
+            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
+                _windowState.value, command
+            )
+            repository.sendRawCommand(bytesToHex(frame))
+        }
     }
 
     fun onSendBCMCommand(command: ComfortCommand) {
