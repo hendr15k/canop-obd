@@ -301,6 +301,9 @@ class DashboardViewModel private constructor(
     private val _windowIsMoving = MutableStateFlow(false)
     val windowIsMoving: StateFlow<Boolean> = _windowIsMoving.asStateFlow()
 
+    private val _windowExpressMode = MutableStateFlow(false)
+    val windowExpressMode: StateFlow<Boolean> = _windowExpressMode.asStateFlow()
+
     private var windowAutoStopJob: kotlinx.coroutines.Job? = null
 
     val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
@@ -1146,8 +1149,10 @@ class DashboardViewModel private constructor(
 
     fun toggleWindowChildLock() { _windowChildLock.value = !_windowChildLock.value }
 
+    fun toggleWindowExpressMode() { _windowExpressMode.value = !_windowExpressMode.value }
+
     fun onSendWindowPosition(target: com.canopobd.data.domain.WindowTarget, percent: Int) {
-        if (_windowChildLock.value && target != com.canopobd.data.domain.WindowTarget.ALL) return
+        if (_windowChildLock.value) return
         viewModelScope.launch(Dispatchers.IO) {
             val frame = com.canopobd.data.domain.WindowControlMonitor.buildSetPosition(target, percent)
             _windowState.value = com.canopobd.data.domain.WindowControlMonitor.applyPositionPreset(
@@ -1171,10 +1176,26 @@ class DashboardViewModel private constructor(
         }
     }
 
+    fun onSendSunroofCommand(action: com.canopobd.data.domain.WindowAction) {
+        if (_windowChildLock.value && action != com.canopobd.data.domain.WindowAction.SUNROOF_CLOSE) {
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(action)
+            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
+                _windowState.value, action
+            )
+            repository.sendRawCommand(bytesToHex(frame))
+            if (action.name.startsWith("SUNROOF_") &&
+                action != com.canopobd.data.domain.WindowAction.SUNROOF_STOP
+            ) {
+                scheduleWindowAutoStop()
+            }
+        }
+    }
+
     fun onSendWindowCommand(command: com.canopobd.data.domain.WindowAction) {
-        if (_windowChildLock.value && command != com.canopobd.data.domain.WindowAction.ALL_UP &&
-            command != com.canopobd.data.domain.WindowAction.ALL_UP
-        ) {
+        if (_windowChildLock.value && command != com.canopobd.data.domain.WindowAction.ALL_UP) {
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -1189,13 +1210,17 @@ class DashboardViewModel private constructor(
         }
     }
 
-    @Suppress("MagicNumber")
     private fun scheduleWindowAutoStop() {
         windowAutoStopJob?.cancel()
+        val delayMs = if (_windowExpressMode.value) {
+            com.canopobd.data.domain.AUTO_STOP_DELAY_EXPRESS_MS
+        } else {
+            com.canopobd.data.domain.AUTO_STOP_DELAY_NORMAL_MS
+        }
         _windowIsMoving.value = true
         windowAutoStopJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                kotlinx.coroutines.delay(4_000)
+                kotlinx.coroutines.delay(delayMs)
                 val stopFrame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(
                     com.canopobd.data.domain.WindowAction.ALL_STOP
                 )

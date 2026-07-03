@@ -486,6 +486,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showWindowControl by viewModel.showWindowControl.collectAsState()
     val windowChildLock by viewModel.windowChildLock.collectAsState()
     val windowIsMoving by viewModel.windowIsMoving.collectAsState()
+    val windowExpressMode by viewModel.windowExpressMode.collectAsState()
     val windowOpenCount = remember { derivedStateOf {
         com.canopobd.data.domain.WindowControlMonitor.evaluate(viewModel.windowState.value).openWindowCount
     } }.value
@@ -582,13 +583,16 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
             onSetPosition = viewModel::onSendWindowPosition,
             onVentilateAll = viewModel::onSendWindowVentilateAll,
             onToggleChildLock = viewModel::toggleWindowChildLock,
+            onToggleExpressMode = viewModel::toggleWindowExpressMode,
+            onSunroofCommand = viewModel::onSendSunroofCommand,
             onPollStatus = viewModel::pollWindowStatus,
             externalState = viewModel.windowState.value,
             onWindowStateChange = { newState ->
                 viewModel.updateWindowState(newState)
             },
             childLock = windowChildLock,
-            isMoving = windowIsMoving
+            isMoving = windowIsMoving,
+            expressMode = windowExpressMode
         )
     }
 
@@ -779,9 +783,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onSendWindowPosition = viewModel::onSendWindowPosition,
         onSendWindowVentilateAll = viewModel::onSendWindowVentilateAll,
         onToggleWindowChildLock = viewModel::toggleWindowChildLock,
+        onToggleWindowExpressMode = viewModel::toggleWindowExpressMode,
+        onSendSunroofCommand = viewModel::onSendSunroofCommand,
         onPollWindowStatus = viewModel::pollWindowStatus,
         windowChildLock = windowChildLock,
         windowIsMoving = windowIsMoving,
+        windowExpressMode = windowExpressMode,
         windowOpenCount = windowOpenCount,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,

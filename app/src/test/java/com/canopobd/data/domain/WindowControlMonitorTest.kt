@@ -233,7 +233,7 @@ class WindowControlMonitorTest {
 
     @Test
     fun `WindowState isFullyOpen returns true when all 100`() {
-        val state = WindowState(100, 100, 100, 100)
+        val state = WindowState(100, 100, 100, 100, 100)
         assertTrue(state.isFullyOpen())
         assertFalse(state.isFullyClosed())
     }
@@ -461,5 +461,133 @@ class WindowControlMonitorTest {
     @Test
     fun `WindowPresets VENTILATE_PERCENT is 20`() {
         assertEquals(20, WindowPresets.VENTILATE_PERCENT)
+    }
+
+    @Test
+    fun `WindowTarget SUNROOF maps to byte 0x05`() {
+        assertEquals(0x05, WindowTarget.SUNROOF.toByte())
+    }
+
+    @Test
+    fun `WindowTarget fromByte 0x05 returns SUNROOF`() {
+        assertEquals(WindowTarget.SUNROOF, WindowTarget.fromByte(0x05))
+    }
+
+    @Test
+    fun `commandForAction SUNROOF_OPEN returns 2EFF0864`() {
+        val hex = WindowControlMonitor.commandForAction(WindowAction.SUNROOF_OPEN)
+            .joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF0864", hex)
+    }
+
+    @Test
+    fun `commandForAction SUNROOF_CLOSE returns 2EFF0800`() {
+        val hex = WindowControlMonitor.commandForAction(WindowAction.SUNROOF_CLOSE)
+            .joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF0800", hex)
+    }
+
+    @Test
+    fun `commandForAction SUNROOF_VENT returns 2EFF0832`() {
+        val hex = WindowControlMonitor.commandForAction(WindowAction.SUNROOF_VENT)
+            .joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF0832", hex)
+    }
+
+    @Test
+    fun `commandForAction SUNROOF_STOP returns 2EFF08FF`() {
+        val hex = WindowControlMonitor.commandForAction(WindowAction.SUNROOF_STOP)
+            .joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF08FF", hex)
+    }
+
+    @Test
+    fun `updateStateFromAction SUNROOF_OPEN sets sunroofPos to 100`() {
+        val state = WindowState()
+        val newState = WindowControlMonitor.updateStateFromAction(state, WindowAction.SUNROOF_OPEN)
+        assertEquals(100, newState.sunroofPos)
+    }
+
+    @Test
+    fun `updateStateFromAction SUNROOF_CLOSE sets sunroofPos to 0`() {
+        val state = WindowState(sunroofPos = 50)
+        val newState = WindowControlMonitor.updateStateFromAction(state, WindowAction.SUNROOF_CLOSE)
+        assertEquals(0, newState.sunroofPos)
+    }
+
+    @Test
+    fun `updateStateFromAction SUNROOF_VENT sets sunroofPos to 50`() {
+        val state = WindowState()
+        val newState = WindowControlMonitor.updateStateFromAction(state, WindowAction.SUNROOF_VENT)
+        assertEquals(50, newState.sunroofPos)
+    }
+
+    @Test
+    fun `updateStateFromAction SUNROOF_STOP preserves state`() {
+        val state = WindowState(sunroofPos = 30)
+        val newState = WindowControlMonitor.updateStateFromAction(state, WindowAction.SUNROOF_STOP)
+        assertEquals(30, newState.sunroofPos)
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse parses sunroof position at index 4`() {
+        val bytes = byteArrayOf(
+            0x62.toByte(), 0xFF.toByte(), 0x02.toByte(),
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x32
+        )
+        val state = WindowControlMonitor.parseStatusFromDidResponse(bytes)
+        assertNotNull(state)
+        assertEquals(50, state!!.sunroofPos)
+    }
+
+    @Test
+    fun `WindowState anyOpen detects sunroof open`() {
+        val state = WindowState(driverPos = 0, passengerPos = 0, rearLeftPos = 0, rearRightPos = 0, sunroofPos = 50)
+        assertTrue(state.anyOpen())
+    }
+
+    @Test
+    fun `WindowState isFullyClosed requires sunroof closed`() {
+        val state = WindowState(sunroofPos = 30)
+        assertFalse(state.isFullyClosed())
+    }
+
+    @Test
+    fun `WindowState positionFor SUNROOF returns sunroofPos`() {
+        val state = WindowState(sunroofPos = 80)
+        assertEquals(80, state.positionFor(WindowTarget.SUNROOF))
+    }
+
+    @Test
+    fun `WindowState withPosition SUNROOF sets sunroofPos`() {
+        val state = WindowState()
+        val newState = state.withPosition(WindowTarget.SUNROOF, 60)
+        assertEquals(60, newState.sunroofPos)
+    }
+
+    @Test
+    fun `evaluate detects sunroof open separate from windows`() {
+        val state = WindowState(sunroofPos = 100)
+        val result = WindowControlMonitor.evaluate(state)
+        assertTrue(result.sunroofOpen)
+        assertTrue(result.anyOpen)
+        assertFalse(result.allOpen)
+        assertEquals(85, result.safetyScore)
+        assertNotNull(result.warning)
+    }
+
+    @Test
+    fun `evaluate warning when only sunroof open`() {
+        val state = WindowState(sunroofPos = 60)
+        val result = WindowControlMonitor.evaluate(state)
+        assertTrue(result.sunroofOpen)
+        assertNotNull(result.warning)
+        assertTrue(result.warning!!.contains("Schiebedach"))
+    }
+
+    @Test
+    fun `AUTO_STOP_DELAY constants are correct`() {
+        assertEquals(4_000L, com.canopobd.data.domain.AUTO_STOP_DELAY_NORMAL_MS)
+        assertEquals(1_500L, com.canopobd.data.domain.AUTO_STOP_DELAY_EXPRESS_MS)
     }
 }

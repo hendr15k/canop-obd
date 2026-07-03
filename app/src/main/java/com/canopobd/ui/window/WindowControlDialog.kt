@@ -49,17 +49,20 @@ fun WindowControlDialog(
     onSetPosition: (WindowTarget, Int) -> Unit = { _, _ -> },
     onVentilateAll: () -> Unit = {},
     onToggleChildLock: () -> Unit = {},
+    onToggleExpressMode: () -> Unit = {},
+    onSunroofCommand: (WindowAction) -> Unit = {},
     onPollStatus: () -> Unit = {},
     externalState: WindowState? = null,
     onWindowStateChange: ((WindowState) -> Unit)? = null,
     childLock: Boolean = false,
-    isMoving: Boolean = false
+    isMoving: Boolean = false,
+    expressMode: Boolean = false
 ) {
     val colors = LocalAppColors.current
     var localState by remember { mutableStateOf(externalState ?: initialState) }
     val evaluation = remember(localState) {
         WindowControlMonitor.evaluate(localState).run {
-            WindowControlMonitorEval(openWindowCount, safetyScore, warning)
+            WindowControlMonitorEval(openWindowCount, sunroofOpen, safetyScore, warning)
         }
     }
     var pendingAction by remember { mutableStateOf<WindowAction?>(null) }
@@ -169,6 +172,23 @@ fun WindowControlDialog(
                     )
                 }
 
+                SunroofSection(
+                    sunroofPos = localState.sunroofPos,
+                    isLocked = childLock,
+                    colors = colors,
+                    onOpen = { onSunroofCommand(WindowAction.SUNROOF_OPEN) },
+                    onClose = { onSunroofCommand(WindowAction.SUNROOF_CLOSE) },
+                    onVent = { onSunroofCommand(WindowAction.SUNROOF_VENT) },
+                    onStop = { onSunroofCommand(WindowAction.SUNROOF_STOP) }
+                )
+
+                SettingsRow(
+                    expressMode = expressMode,
+                    childLock = childLock,
+                    colors = colors,
+                    onToggleExpress = onToggleExpressMode
+                )
+
                 WindowInfoBanner(colors = colors)
             }
         },
@@ -186,6 +206,7 @@ private fun actionForTarget(target: WindowTarget, isUp: Boolean): WindowAction =
     WindowTarget.REAR_LEFT -> if (isUp) WindowAction.REAR_LEFT_UP else WindowAction.REAR_LEFT_DOWN
     WindowTarget.REAR_RIGHT -> if (isUp) WindowAction.REAR_RIGHT_UP else WindowAction.REAR_RIGHT_DOWN
     WindowTarget.ALL -> if (isUp) WindowAction.ALL_UP else WindowAction.ALL_DOWN
+    WindowTarget.SUNROOF -> if (isUp) WindowAction.SUNROOF_CLOSE else WindowAction.SUNROOF_OPEN
 }
 
 @Suppress("FunctionNaming")
@@ -332,6 +353,7 @@ private fun ChildLockBanner(colors: AppColors, onToggleChildLock: () -> Unit) {
 
 internal data class WindowControlMonitorEval(
     val openWindowCount: Int,
+    val sunroofOpen: Boolean,
     val safetyScore: Int,
     val warning: String?
 )
@@ -555,6 +577,182 @@ private fun WindowActionButton(
             Icon(icon, contentDescription = null, tint = tintColor, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.height(2.dp))
             Text(label, color = tintColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Suppress("FunctionNaming", "LongMethod")
+@Composable
+private fun SunroofSection(
+    sunroofPos: Int,
+    isLocked: Boolean,
+    colors: AppColors,
+    onOpen: () -> Unit,
+    onClose: () -> Unit,
+    onVent: () -> Unit,
+    onStop: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (sunroofPos > 0) {
+                                    colors.gaugeCyan.copy(alpha = 0.2f)
+                                } else {
+                                    colors.surfaceElevated
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "$sunroofPos%",
+                            color = if (sunroofPos > 0) colors.gaugeCyan else colors.textDim,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            "Schiebedach",
+                            color = colors.textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "Fenster 5 (BCM 0xFF08)",
+                            color = colors.textDim,
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                SunroofAction(
+                    label = "Oeffnen",
+                    icon = Icons.Filled.OpenInFull,
+                    colors = colors,
+                    enabled = !isLocked,
+                    modifier = Modifier.weight(1f),
+                    onClick = onOpen
+                )
+                SunroofAction(
+                    label = "Lueften",
+                    icon = Icons.Filled.Air,
+                    colors = colors,
+                    enabled = !isLocked,
+                    modifier = Modifier.weight(1f),
+                    onClick = onVent
+                )
+                SunroofAction(
+                    label = "Schliessen",
+                    icon = Icons.Filled.Close,
+                    colors = colors,
+                    enabled = !isLocked,
+                    modifier = Modifier.weight(1f),
+                    onClick = onClose
+                )
+                SunroofAction(
+                    label = "Stopp",
+                    icon = Icons.Filled.Stop,
+                    colors = colors,
+                    enabled = !isLocked,
+                    modifier = Modifier.weight(1f),
+                    onClick = onStop
+                )
+            }
+        }
+    }
+}
+
+@Suppress("FunctionNaming")
+@Composable
+private fun SunroofAction(
+    label: String,
+    icon: ImageVector,
+    colors: AppColors,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val tint = if (enabled) colors.accent else colors.textDim.copy(alpha = 0.4f)
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp),
+        color = if (enabled) colors.surfaceElevated else colors.surfaceElevated.copy(alpha = 0.4f),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(label, color = tint, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+@Suppress("FunctionNaming")
+@Composable
+private fun SettingsRow(
+    expressMode: Boolean,
+    childLock: Boolean,
+    colors: AppColors,
+    onToggleExpress: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceCard
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.FlashOn,
+                contentDescription = null,
+                tint = if (expressMode) colors.warning else colors.textDim,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Express-Modus",
+                    color = colors.textPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    if (expressMode) "Auto-Stopp nach 1,5s" else "Auto-Stopp nach 4s",
+                    color = colors.textDim,
+                    fontSize = 10.sp
+                )
+            }
+            Switch(
+                checked = expressMode || childLock,
+                onCheckedChange = { onToggleExpress() },
+                enabled = !childLock
+            )
         }
     }
 }

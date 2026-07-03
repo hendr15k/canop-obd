@@ -296,7 +296,10 @@ fun DashboardScreen(
     onPollWindowStatus: () -> Unit,
     windowChildLock: Boolean,
     windowIsMoving: Boolean,
+    windowExpressMode: Boolean,
     windowOpenCount: Int,
+    onSendSunroofCommand: (WindowAction) -> Unit,
+    onToggleWindowExpressMode: () -> Unit,
     tcmReading: com.canopobd.data.repository.OBDRepository.TCMReading,
     ecmReading: com.canopobd.data.repository.OBDRepository.ECMReading,
     safetySummary: com.canopobd.data.model.SafetySummary = com.canopobd.data.model.SafetySummary(),
@@ -392,6 +395,7 @@ fun DashboardScreen(
                         onStopGPSTrack = onStopGPSTracking,
                         windowChildLock = windowChildLock,
                         windowIsMoving = windowIsMoving,
+                        windowExpressMode = windowExpressMode,
                         windowOpenCount = windowOpenCount
                     )
                 }
@@ -731,11 +735,14 @@ fun DashboardScreen(
                 onSetPosition = onSendWindowPosition,
                 onVentilateAll = onSendWindowVentilateAll,
                 onToggleChildLock = onToggleWindowChildLock,
+                onToggleExpressMode = onToggleWindowExpressMode,
+                onSunroofCommand = onSendSunroofCommand,
                 onPollStatus = onPollWindowStatus,
                 externalState = null,
                 onWindowStateChange = null,
                 childLock = windowChildLock,
-                isMoving = windowIsMoving
+                isMoving = windowIsMoving,
+                expressMode = windowExpressMode
             )
         }
         if (showQuickActions) {
@@ -1069,6 +1076,7 @@ private fun DashboardHeader(
     onStopGPSTrack: () -> Unit,
     windowChildLock: Boolean,
     windowIsMoving: Boolean,
+    windowExpressMode: Boolean,
     windowOpenCount: Int
 ) {
     val colors = LocalAppColors.current
