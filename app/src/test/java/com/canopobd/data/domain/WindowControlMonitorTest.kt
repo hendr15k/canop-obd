@@ -261,4 +261,205 @@ class WindowControlMonitorTest {
         assertEquals(0, state.rearRightPos)
         assertTrue(state.isFullyClosed())
     }
+
+    @Test
+    fun `WindowTarget fromByte 0x01 returns DRIVER`() {
+        assertEquals(WindowTarget.DRIVER, WindowTarget.fromByte(0x01))
+    }
+
+    @Test
+    fun `WindowTarget fromByte 0x02 returns PASSENGER`() {
+        assertEquals(WindowTarget.PASSENGER, WindowTarget.fromByte(0x02))
+    }
+
+    @Test
+    fun `WindowTarget fromByte 0x03 returns REAR_LEFT`() {
+        assertEquals(WindowTarget.REAR_LEFT, WindowTarget.fromByte(0x03))
+    }
+
+    @Test
+    fun `WindowTarget fromByte 0x04 returns REAR_RIGHT`() {
+        assertEquals(WindowTarget.REAR_RIGHT, WindowTarget.fromByte(0x04))
+    }
+
+    @Test
+    fun `WindowTarget fromByte 0x00 returns ALL`() {
+        assertEquals(WindowTarget.ALL, WindowTarget.fromByte(0x00))
+    }
+
+    @Test
+    fun `WindowTarget fromByte unknown returns null`() {
+        assertNull(WindowTarget.fromByte(0x99))
+    }
+
+    @Test
+    fun `WindowTarget toByte maps to BCM window constant`() {
+        assertEquals(0x01, WindowTarget.DRIVER.toByte())
+        assertEquals(0x02, WindowTarget.PASSENGER.toByte())
+        assertEquals(0x03, WindowTarget.REAR_LEFT.toByte())
+        assertEquals(0x04, WindowTarget.REAR_RIGHT.toByte())
+        assertEquals(0x00, WindowTarget.ALL.toByte())
+    }
+
+    @Test
+    fun `buildSetPosition uses target window byte and percent`() {
+        val frame = WindowControlMonitor.buildSetPosition(WindowTarget.REAR_LEFT, 50)
+        val hex = frame.joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF020332", hex)
+    }
+
+    @Test
+    fun `buildSetPosition clamps percent to 100`() {
+        val frame = WindowControlMonitor.buildSetPosition(WindowTarget.DRIVER, 150)
+        val hex = frame.joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF020164", hex)
+    }
+
+    @Test
+    fun `buildSetPosition clamps negative to zero`() {
+        val frame = WindowControlMonitor.buildSetPosition(WindowTarget.DRIVER, -50)
+        val hex = frame.joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF020100", hex)
+    }
+
+    @Test
+    fun `commandForAction ALL_VENTILATE returns 20 percent frame for index 0x00`() {
+        val frame = WindowControlMonitor.commandForAction(WindowAction.ALL_VENTILATE)
+        val hex = frame.joinToString("") { "%02X".format(it) }
+        assertEquals("2EFF020014", hex)
+    }
+
+    @Test
+    fun `updateStateFromAction ALL_VENTILATE sets all windows to 20 percent`() {
+        val state = WindowState()
+        val newState = WindowControlMonitor.updateStateFromAction(state, WindowAction.ALL_VENTILATE)
+        assertEquals(20, newState.driverPos)
+        assertEquals(20, newState.passengerPos)
+        assertEquals(20, newState.rearLeftPos)
+        assertEquals(20, newState.rearRightPos)
+    }
+
+    @Test
+    fun `applyPositionPreset sets single window position`() {
+        val state = WindowState()
+        val newState = WindowControlMonitor.applyPositionPreset(state, WindowTarget.DRIVER, 50)
+        assertEquals(50, newState.driverPos)
+        assertEquals(0, newState.passengerPos)
+    }
+
+    @Test
+    fun `applyPositionPreset with ALL sets all windows`() {
+        val state = WindowState()
+        val newState = WindowControlMonitor.applyPositionPreset(state, WindowTarget.ALL, 75)
+        assertEquals(75, newState.driverPos)
+        assertEquals(75, newState.passengerPos)
+        assertEquals(75, newState.rearLeftPos)
+        assertEquals(75, newState.rearRightPos)
+    }
+
+    @Test
+    fun `WindowState withPosition clamps and stores per target`() {
+        val state = WindowState()
+        val s1 = state.withPosition(WindowTarget.DRIVER, 150)
+        assertEquals(100, s1.driverPos)
+        val s2 = state.withPosition(WindowTarget.REAR_LEFT, -10)
+        assertEquals(0, s2.rearLeftPos)
+    }
+
+    @Test
+    fun `WindowState positionFor target returns matching position`() {
+        val state = WindowState(driverPos = 30, passengerPos = 50, rearLeftPos = 70, rearRightPos = 90)
+        assertEquals(30, state.positionFor(WindowTarget.DRIVER))
+        assertEquals(50, state.positionFor(WindowTarget.PASSENGER))
+        assertEquals(70, state.positionFor(WindowTarget.REAR_LEFT))
+        assertEquals(90, state.positionFor(WindowTarget.REAR_RIGHT))
+    }
+
+    @Test
+    fun `WindowState positionFor ALL returns 100 if any open`() {
+        val state = WindowState(driverPos = 0, passengerPos = 0, rearLeftPos = 30, rearRightPos = 0)
+        assertEquals(100, state.positionFor(WindowTarget.ALL))
+    }
+
+    @Test
+    fun `WindowState positionFor ALL returns 0 if all closed`() {
+        val state = WindowState()
+        assertEquals(0, state.positionFor(WindowTarget.ALL))
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse returns null for empty bytes`() {
+        assertNull(WindowControlMonitor.parseStatusFromDidResponse(ByteArray(0)))
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse returns null for non FF02 DID`() {
+        val bytes = byteArrayOf(
+            0x62.toByte(), 0xFF.toByte(), 0x99.toByte(), 0x50, 0x50, 0x50, 0x50
+        )
+        assertNull(WindowControlMonitor.parseStatusFromDidResponse(bytes))
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse parses four window positions`() {
+        val bytes = byteArrayOf(
+            0x62.toByte(),
+            0xFF.toByte(),
+            0x02.toByte(),
+            0x05,
+            0x32,
+            0x4B,
+            0x64
+        )
+        val state = WindowControlMonitor.parseStatusFromDidResponse(bytes)
+        assertNotNull(state)
+        assertEquals(5, state!!.driverPos)
+        assertEquals(50, state.passengerPos)
+        assertEquals(75, state.rearLeftPos)
+        assertEquals(100, state.rearRightPos)
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse treats 0xFF as closed`() {
+        val bytes = byteArrayOf(
+            0x62.toByte(), 0xFF.toByte(), 0x02.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()
+        )
+        val state = WindowControlMonitor.parseStatusFromDidResponse(bytes)
+        assertNotNull(state)
+        assertEquals(0, state!!.driverPos)
+        assertEquals(0, state.passengerPos)
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse treats 0x00 as closed`() {
+        val bytes = byteArrayOf(
+            0x62.toByte(), 0xFF.toByte(), 0x02.toByte(), 0x00, 0x00, 0x00, 0x00
+        )
+        val state = WindowControlMonitor.parseStatusFromDidResponse(bytes)
+        assertNotNull(state)
+        assertEquals(0, state!!.driverPos)
+    }
+
+    @Test
+    fun `parseStatusFromDidResponse caps values above 100`() {
+        val bytes = byteArrayOf(
+            0x62.toByte(), 0xFF.toByte(), 0x02.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()
+        )
+        val state = WindowControlMonitor.parseStatusFromDidResponse(bytes)
+        assertNotNull(state)
+        assertTrue(state!!.driverPos <= 100)
+    }
+
+    @Test
+    fun `WindowPresets POSITIONS contains 25 50 and 75 percent`() {
+        val percents = WindowPresets.POSITIONS.map { it.percent }
+        assertTrue(percents.contains(25))
+        assertTrue(percents.contains(50))
+        assertTrue(percents.contains(75))
+    }
+
+    @Test
+    fun `WindowPresets VENTILATE_PERCENT is 20`() {
+        assertEquals(20, WindowPresets.VENTILATE_PERCENT)
+    }
 }

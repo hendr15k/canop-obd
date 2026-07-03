@@ -295,6 +295,14 @@ class DashboardViewModel private constructor(
     private val _windowState = MutableStateFlow(com.canopobd.data.domain.WindowState())
     val windowState: StateFlow<com.canopobd.data.domain.WindowState> = _windowState.asStateFlow()
 
+    private val _windowChildLock = MutableStateFlow(false)
+    val windowChildLock: StateFlow<Boolean> = _windowChildLock.asStateFlow()
+
+    private val _windowIsMoving = MutableStateFlow(false)
+    val windowIsMoving: StateFlow<Boolean> = _windowIsMoving.asStateFlow()
+
+    private var windowAutoStopJob: kotlinx.coroutines.Job? = null
+
     val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
 
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
@@ -1136,13 +1144,84 @@ class DashboardViewModel private constructor(
         _windowState.value = state
     }
 
+    fun toggleWindowChildLock() { _windowChildLock.value = !_windowChildLock.value }
+
+    fun onSendWindowPosition(target: com.canopobd.data.domain.WindowTarget, percent: Int) {
+        if (_windowChildLock.value && target != com.canopobd.data.domain.WindowTarget.ALL) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val frame = com.canopobd.data.domain.WindowControlMonitor.buildSetPosition(target, percent)
+            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.applyPositionPreset(
+                _windowState.value, target, percent
+            )
+            repository.sendRawCommand(bytesToHex(frame))
+        }
+    }
+
+    fun onSendWindowVentilateAll() {
+        if (_windowChildLock.value) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(
+                com.canopobd.data.domain.WindowAction.ALL_VENTILATE
+            )
+            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
+                _windowState.value, com.canopobd.data.domain.WindowAction.ALL_VENTILATE
+            )
+            repository.sendRawCommand(bytesToHex(frame))
+            scheduleWindowAutoStop()
+        }
+    }
+
     fun onSendWindowCommand(command: com.canopobd.data.domain.WindowAction) {
+        if (_windowChildLock.value && command != com.canopobd.data.domain.WindowAction.ALL_UP &&
+            command != com.canopobd.data.domain.WindowAction.ALL_UP
+        ) {
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(command)
             _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
                 _windowState.value, command
             )
             repository.sendRawCommand(bytesToHex(frame))
+            if (command.name.endsWith("_UP") || command.name.endsWith("_DOWN")) {
+                scheduleWindowAutoStop()
+            }
+        }
+    }
+
+    @Suppress("MagicNumber")
+    private fun scheduleWindowAutoStop() {
+        windowAutoStopJob?.cancel()
+        _windowIsMoving.value = true
+        windowAutoStopJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                kotlinx.coroutines.delay(4_000)
+                val stopFrame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(
+                    com.canopobd.data.domain.WindowAction.ALL_STOP
+                )
+                repository.sendRawCommand(bytesToHex(stopFrame))
+            } catch (_: kotlinx.coroutines.CancellationException) {
+            } finally {
+                _windowIsMoving.value = false
+            }
+        }
+    }
+
+    fun pollWindowStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val raw = repository.sendRawCommand("22FF02")
+            if (raw == null) return@launch
+            val cleaned = raw.replace(" ", "").replace("\r", "").replace("\n", "")
+            if (cleaned.length < 8) return@launch
+            val bytes = try {
+                cleaned.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+            } catch (_: NumberFormatException) {
+                return@launch
+            }
+            val parsed = com.canopobd.data.domain.WindowControlMonitor.parseStatusFromDidResponse(bytes)
+            if (parsed != null) {
+                _windowState.value = parsed
+            }
         }
     }
 

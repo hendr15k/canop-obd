@@ -484,6 +484,11 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showTPMSDialog by viewModel.showTPMSDialog.collectAsState()
     val showClimateControl by viewModel.showClimateControl.collectAsState()
     val showWindowControl by viewModel.showWindowControl.collectAsState()
+    val windowChildLock by viewModel.windowChildLock.collectAsState()
+    val windowIsMoving by viewModel.windowIsMoving.collectAsState()
+    val windowOpenCount = remember { derivedStateOf {
+        com.canopobd.data.domain.WindowControlMonitor.evaluate(viewModel.windowState.value).openWindowCount
+    } }.value
     val tpmsData by viewModel.tpmsData.collectAsState()
     val tcmReading by viewModel.tcmReading.collectAsState()
     val ecmReading by viewModel.ecmReading.collectAsState()
@@ -574,10 +579,16 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
             initialState = viewModel.windowState.value,
             onCommand = viewModel::onSendWindowCommand,
             onDismiss = viewModel::toggleWindowControl,
+            onSetPosition = viewModel::onSendWindowPosition,
+            onVentilateAll = viewModel::onSendWindowVentilateAll,
+            onToggleChildLock = viewModel::toggleWindowChildLock,
+            onPollStatus = viewModel::pollWindowStatus,
             externalState = viewModel.windowState.value,
             onWindowStateChange = { newState ->
                 viewModel.updateWindowState(newState)
-            }
+            },
+            childLock = windowChildLock,
+            isMoving = windowIsMoving
         )
     }
 
@@ -765,6 +776,13 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         showWindowControl = showWindowControl,
         onToggleWindowControl = viewModel::toggleWindowControl,
         onSendWindowCommand = viewModel::onSendWindowCommand,
+        onSendWindowPosition = viewModel::onSendWindowPosition,
+        onSendWindowVentilateAll = viewModel::onSendWindowVentilateAll,
+        onToggleWindowChildLock = viewModel::toggleWindowChildLock,
+        onPollWindowStatus = viewModel::pollWindowStatus,
+        windowChildLock = windowChildLock,
+        windowIsMoving = windowIsMoving,
+        windowOpenCount = windowOpenCount,
         appThemeMode = appThemeMode,
         onSetAppThemeMode = viewModel::setAppThemeMode,
         emulatorMode = emulatorMode,

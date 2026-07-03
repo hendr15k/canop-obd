@@ -290,6 +290,13 @@ fun DashboardScreen(
     showWindowControl: Boolean,
     onToggleWindowControl: () -> Unit,
     onSendWindowCommand: (WindowAction) -> Unit,
+    onSendWindowPosition: (com.canopobd.data.domain.WindowTarget, Int) -> Unit,
+    onSendWindowVentilateAll: () -> Unit,
+    onToggleWindowChildLock: () -> Unit,
+    onPollWindowStatus: () -> Unit,
+    windowChildLock: Boolean,
+    windowIsMoving: Boolean,
+    windowOpenCount: Int,
     tcmReading: com.canopobd.data.repository.OBDRepository.TCMReading,
     ecmReading: com.canopobd.data.repository.OBDRepository.ECMReading,
     safetySummary: com.canopobd.data.model.SafetySummary = com.canopobd.data.model.SafetySummary(),
@@ -382,7 +389,10 @@ fun DashboardScreen(
                         activeAlerts = activeAlerts,
                         dtcResponse = dtcResponse,
                         onStartGPSTrack = onStartGPSTracking,
-                        onStopGPSTrack = onStopGPSTracking
+                        onStopGPSTrack = onStopGPSTracking,
+                        windowChildLock = windowChildLock,
+                        windowIsMoving = windowIsMoving,
+                        windowOpenCount = windowOpenCount
                     )
                 }
 
@@ -718,8 +728,14 @@ fun DashboardScreen(
                 initialState = com.canopobd.data.domain.WindowState(),
                 onCommand = onSendWindowCommand,
                 onDismiss = onToggleWindowControl,
+                onSetPosition = onSendWindowPosition,
+                onVentilateAll = onSendWindowVentilateAll,
+                onToggleChildLock = onToggleWindowChildLock,
+                onPollStatus = onPollWindowStatus,
                 externalState = null,
-                onWindowStateChange = null
+                onWindowStateChange = null,
+                childLock = windowChildLock,
+                isMoving = windowIsMoving
             )
         }
         if (showQuickActions) {
@@ -1050,7 +1066,10 @@ private fun DashboardHeader(
     activeAlerts: List<ActiveAlert>,
     dtcResponse: DTCResponse?,
     onStartGPSTrack: () -> Unit,
-    onStopGPSTrack: () -> Unit
+    onStopGPSTrack: () -> Unit,
+    windowChildLock: Boolean,
+    windowIsMoving: Boolean,
+    windowOpenCount: Int
 ) {
     val colors = LocalAppColors.current
     val connectionColor = when {
@@ -1319,10 +1338,19 @@ private fun DashboardHeader(
                 accentColor = colors.info,
                 onClick = onToggleComfortControl
             )
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             QuickTile(
                 icon = Icons.Filled.Window,
                 label = "Fenster",
                 accentColor = colors.gaugeCyan,
+                isActive = windowIsMoving,
+                badgeColor = if (windowChildLock) colors.warning else if (windowOpenCount > 0) colors.gaugeCyan else null,
+                badgeText = if (windowChildLock) "🔒" else if (windowOpenCount > 0) "$windowOpenCount" else null,
                 onClick = onToggleWindowControl
             )
             QuickTile(
