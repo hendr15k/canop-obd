@@ -100,6 +100,7 @@ fun DashboardScreen(
     obdData: OBDData,
     devices: List<BluetoothDeviceInfo>,
     showDevicePicker: Boolean,
+    lastDevice: BluetoothDeviceInfo?,
     dtcResponse: DTCResponse?,
     recordingActive: Boolean,
     recordedData: List<DataRecord>,
@@ -168,6 +169,7 @@ fun DashboardScreen(
     importedData: List<CsvImportEntry>,
     onConnect: (String) -> Unit,
     onDisconnect: () -> Unit,
+    onConnectLastDevice: () -> Unit,
     onToggleDevicePicker: () -> Unit,
     onToggleDTCDialog: () -> Unit,
     onClearDTCs: () -> Unit,
@@ -354,12 +356,14 @@ fun DashboardScreen(
                         remoteServerRunning = remoteServerRunning,
                         remoteConnectedClients = remoteConnectedClients,
                         emulatorMode = emulatorMode,
+                        lastDevice = lastDevice,
+                        onConnectLastDevice = onConnectLastDevice,
+                        onToggleDevicePicker = onToggleDevicePicker,
                         onToggleTripComputer = onToggleTripComputer,
                         onToggleTrendGraph = onToggleTrendGraph,
                         onToggleSettings = onToggleSettings,
                         onToggleCustomization = onToggleCustomization,
                         onToggleHUDMode = onToggleHUDMode,
-                        onToggleDevicePicker = onToggleDevicePicker,
                         onToggleRemoteDialog = onToggleRemoteDialog,
                         onToggleDataLog = onToggleDataLog,
                         onTogglePIDScreen = onTogglePIDScreen,
@@ -1035,13 +1039,10 @@ private fun DashboardHeader(
     remoteServerRunning: Boolean,
     remoteConnectedClients: Int,
     emulatorMode: Boolean,
-    onToggleTripComputer: () -> Unit,
-    onToggleTrendGraph: () -> Unit,
-    onToggleSettings: () -> Unit,
-    onToggleCustomization: () -> Unit,
-    onToggleHUDMode: () -> Unit,
+    lastDevice: BluetoothDeviceInfo?,
+    onConnectLastDevice: () -> Unit,
     onToggleDevicePicker: () -> Unit,
-    onToggleRemoteDialog: () -> Unit,
+    onToggleTripComputer: () -> Unit,
     onToggleDataLog: () -> Unit,
     onTogglePIDScreen: () -> Unit,
     onToggleDTCDialog: () -> Unit,
@@ -1159,6 +1160,22 @@ private fun DashboardHeader(
                     }
                 }
             }
+            // Prominent Bluetooth Connect/Disconnect button.
+            //
+            // Replaces the implicit "open picker → tap device" two-step flow that was previously
+            // hidden behind the BT QuickTile. Behaviour:
+            //  - Disconnected → one-tap reconnect to last device, OR open picker if none remembered
+            //  - Connecting  → disabled with spinner feedback
+            //  - Connected    → disconnects
+            //  - Error        → same as Disconnected (retry path)
+            //  - Emulator     → hidden (irrelevant)
+            BluetoothConnectButton(
+                connectionState = connectionState,
+                emulatorMode = emulatorMode,
+                hasLastDevice = lastDevice != null,
+                onConnectLast = onConnectLastDevice,
+                onDisconnect = onDisconnect
+            )
             IconButton(onClick = onToggleSettings) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
@@ -1777,6 +1794,87 @@ private fun FooterStat(label: String, value: String, color: Color) {
             style = GaugeTypography.valueTiny,
             color = color
         )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// BLUETOOTH CONNECT BUTTON (Dashboard header)
+// ---------------------------------------------------------------------------
+@Composable
+private fun BluetoothConnectButton(
+    connectionState: OBDConnectionState,
+    emulatorMode: Boolean,
+    hasLastDevice: Boolean,
+    onConnectLast: () -> Unit,
+    onDisconnect: () -> Unit
+) {
+    if (emulatorMode) return // Emulator mode doesn't need a connect button.
+
+    val colors = LocalAppColors.current
+    val isConnecting = connectionState is OBDConnectionState.Connecting
+    val isConnected = connectionState is OBDConnectionState.Connected
+
+    val (label, icon, accent) = when {
+        isConnecting -> Triple(
+            stringResource(R.string.bt_button_connecting),
+            Icons.Filled.BluetoothSearching,
+            colors.caution
+        )
+        isConnected -> Triple(
+            stringResource(R.string.bt_button_disconnect),
+            Icons.Filled.BluetoothConnected,
+            colors.success
+        )
+        hasLastDevice -> Triple(
+            stringResource(R.string.bt_button_reconnect),
+            Icons.Filled.Bluetooth,
+            colors.primary
+        )
+        else -> Triple(
+            stringResource(R.string.bt_button_connect),
+            Icons.Filled.Bluetooth,
+            colors.primary
+        )
+    }
+
+    Surface(
+        onClick = {
+            if (isConnecting) return@Surface
+            if (isConnected) onDisconnect() else onConnectLast()
+        },
+        enabled = !isConnecting,
+        shape = RoundedCornerShape(AppRadius.sm),
+        color = accent.copy(alpha = 0.16f),
+        contentColor = accent,
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.45f)),
+        modifier = Modifier.padding(horizontal = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isConnecting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = accent
+                )
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = accent,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }
 

@@ -311,6 +311,16 @@ class DashboardViewModel private constructor(
     private val _devices = MutableStateFlow<List<BluetoothDeviceInfo>>(emptyList())
     val devices: StateFlow<List<BluetoothDeviceInfo>> = _devices.asStateFlow()
 
+    /**
+     * The last successfully-connected Bluetooth device (persisted in SharedPreferences).
+     * Null if no device has ever been connected or if the persisted address is no longer paired.
+     * Re-evaluated every time [refreshDevices] runs so the dashboard "Connect" button knows
+     * whether it can auto-reconnect to the last adapter or must open the device picker.
+     */
+    val lastDevice: StateFlow<BluetoothDeviceInfo?> = _devices
+        .map { list -> list.firstOrNull { it.address == repository.getLastDevice() } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     private val _showDevicePicker = MutableStateFlow(false)
     val showDevicePicker: StateFlow<Boolean> = _showDevicePicker.asStateFlow()
 
@@ -574,6 +584,26 @@ class DashboardViewModel private constructor(
         _showDevicePicker.value = false
         repository.connect(deviceAddress)
         initializeCANRepository()
+    }
+
+    /**
+     * One-tap reconnect to the most recently-used paired device.
+     *
+     * Behaviour:
+     *  - If [lastDevice] is available (was previously connected AND still paired) → connects directly.
+     *  - Otherwise → falls back to opening the device picker.
+     *
+     * Returns true if a direct connection was triggered, false if the picker was opened instead.
+     */
+    fun connectLastDevice(): Boolean {
+        val target = lastDevice.value
+        return if (target != null) {
+            connect(target.address)
+            true
+        } else {
+            toggleDevicePicker()
+            false
+        }
     }
 
     private fun initializeCANRepository() {
