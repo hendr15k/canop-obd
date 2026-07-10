@@ -374,6 +374,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val obdData by viewModel.obdData.collectAsState()
     val devices by viewModel.devices.collectAsState()
     val showDevicePicker by viewModel.showDevicePicker.collectAsState()
+    val lastDevice by viewModel.lastDevice.collectAsState()
     val dtcResponse by viewModel.dtcResponse.collectAsState()
     val recordingActive by viewModel.recordingActive.collectAsState()
     val recordedData by viewModel.recordedData.collectAsState()
@@ -601,6 +602,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         obdData = obdData,
         devices = devices,
         showDevicePicker = showDevicePicker,
+        lastDevice = lastDevice,
         dtcResponse = dtcResponse,
         recordingActive = recordingActive,
         recordedData = recordedData,
@@ -659,6 +661,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         importedData = importedData,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
+        onConnectLastDevice = viewModel::connectLastDevice,
         onToggleDevicePicker = viewModel::toggleDevicePicker,
         onToggleDTCDialog = viewModel::toggleDTCDialog,
         onClearDTCs = viewModel::clearDTCs,

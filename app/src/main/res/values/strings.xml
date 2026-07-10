@@ -29,6 +29,12 @@
     <string name="no_paired_devices">No paired devices.\nPlease pair your ELM327 in Android Bluetooth settings.</string>
     <string name="cancel">Cancel</string>
 
+    <!-- Bluetooth header button -->
+    <string name="bt_button_connect">Connect</string>
+    <string name="bt_button_reconnect">Reconnect</string>
+    <string name="bt_button_connecting">Connecting…</string>
+    <string name="bt_button_disconnect">Disconnect</string>
+
     <!-- Settings dialog -->
     <string name="settings_title">Settings</string>
     <string name="close">Close</string>
