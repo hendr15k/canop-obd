@@ -1805,6 +1805,37 @@ private fun FooterStat(label: String, value: String, color: Color) {
 // ---------------------------------------------------------------------------
 // BLUETOOTH CONNECT BUTTON (Dashboard header)
 // ---------------------------------------------------------------------------
+
+/** Visual state of the BluetoothConnectButton — derived from connection state. */
+private data class BtButtonVisual(
+    @androidx.annotation.StringRes val labelRes: Int,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val accent: androidx.compose.ui.graphics.Color,
+    val isBusy: Boolean
+)
+
+@Composable
+private fun rememberBtButtonVisual(
+    connectionState: OBDConnectionState,
+    hasLastDevice: Boolean
+): BtButtonVisual {
+    val colors = LocalAppColors.current
+    return when {
+        connectionState is OBDConnectionState.Connecting -> BtButtonVisual(
+            R.string.bt_button_connecting, Icons.Filled.BluetoothSearching, colors.caution, true
+        )
+        connectionState is OBDConnectionState.Connected -> BtButtonVisual(
+            R.string.bt_button_disconnect, Icons.Filled.BluetoothConnected, colors.success, false
+        )
+        hasLastDevice -> BtButtonVisual(
+            R.string.bt_button_reconnect, Icons.Filled.Bluetooth, colors.primary, false
+        )
+        else -> BtButtonVisual(
+            R.string.bt_button_connect, Icons.Filled.Bluetooth, colors.primary, false
+        )
+    }
+}
+
 @Composable
 private fun BluetoothConnectButton(
     connectionState: OBDConnectionState,
@@ -1813,70 +1844,39 @@ private fun BluetoothConnectButton(
     onConnectLast: () -> Unit,
     onDisconnect: () -> Unit
 ) {
-    if (emulatorMode) return // Emulator mode doesn't need a connect button.
-
-    val colors = LocalAppColors.current
-    val isConnecting = connectionState is OBDConnectionState.Connecting
+    if (emulatorMode) return
+    val visual = rememberBtButtonVisual(connectionState, hasLastDevice)
     val isConnected = connectionState is OBDConnectionState.Connected
-
-    val (label, icon, accent) = when {
-        isConnecting -> Triple(
-            stringResource(R.string.bt_button_connecting),
-            Icons.Filled.BluetoothSearching,
-            colors.caution
-        )
-        isConnected -> Triple(
-            stringResource(R.string.bt_button_disconnect),
-            Icons.Filled.BluetoothConnected,
-            colors.success
-        )
-        hasLastDevice -> Triple(
-            stringResource(R.string.bt_button_reconnect),
-            Icons.Filled.Bluetooth,
-            colors.primary
-        )
-        else -> Triple(
-            stringResource(R.string.bt_button_connect),
-            Icons.Filled.Bluetooth,
-            colors.primary
-        )
-    }
-
     Surface(
-        onClick = {
-            if (isConnecting) return@Surface
-            if (isConnected) onDisconnect() else onConnectLast()
-        },
-        enabled = !isConnecting,
+        onClick = { if (!visual.isBusy) (if (isConnected) onDisconnect() else onConnectLast()) },
+        enabled = !visual.isBusy,
         shape = RoundedCornerShape(AppRadius.sm),
-        color = accent.copy(alpha = 0.16f),
-        contentColor = accent,
-        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.45f)),
+        color = visual.accent.copy(alpha = 0.16f),
+        contentColor = visual.accent,
+        border = androidx.compose.foundation.BorderStroke(1.dp, visual.accent.copy(alpha = 0.45f)),
         modifier = Modifier.padding(horizontal = 4.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (isConnecting) {
+            if (visual.isBusy) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(14.dp),
-                    strokeWidth = 2.dp,
-                    color = accent
+                    modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = visual.accent
                 )
             } else {
                 Icon(
-                    imageVector = icon,
+                    imageVector = visual.icon,
                     contentDescription = null,
-                    tint = accent,
+                    tint = visual.accent,
                     modifier = Modifier.size(16.dp)
                 )
             }
             Spacer(Modifier.width(6.dp))
             Text(
-                text = label,
+                text = stringResource(visual.labelRes),
                 style = MaterialTheme.typography.labelMedium,
-                color = accent,
+                color = visual.accent,
                 fontWeight = FontWeight.SemiBold
             )
         }
