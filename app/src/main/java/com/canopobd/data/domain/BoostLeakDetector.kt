@@ -533,6 +533,7 @@ class BoostLeakDetector(
     /**
      * Generiert Empfehlung
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun generateRecommendation(
         severity: LeakSeverity,
         location: LeakLocation,

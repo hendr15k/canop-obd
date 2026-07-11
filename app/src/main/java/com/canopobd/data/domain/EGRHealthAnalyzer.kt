@@ -197,6 +197,7 @@ class EGRHealthAnalyzer {
         return 100
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun checkTemperaturePlausibility(egrTemp: Double, coolantTemp: Double, rpm: Double): Boolean {
         if (egrTemp <= 0 && coolantTemp > 70) return false
         if (egrTemp > EGR_MAX_TEMP) return false

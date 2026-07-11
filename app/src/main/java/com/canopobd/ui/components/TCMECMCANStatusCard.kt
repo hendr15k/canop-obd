@@ -284,6 +284,7 @@ private fun TCMStatusSection(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ECMStatusSection(
     rpm: Double,

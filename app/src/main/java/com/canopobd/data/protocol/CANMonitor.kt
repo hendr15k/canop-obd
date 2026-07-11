@@ -244,15 +244,12 @@ class CANMonitor(private val connection: ELM327BTConnection) {
 
     fun getMessagesPerSecond(): Flow<Int> = flow {
         var lastCount = 0
-        var lastTime = System.currentTimeMillis()
         while (true) {
             delay(1000)
             val currentCount = _messages.value.size
-            val currentTime = System.currentTimeMillis()
             val rate = currentCount - lastCount
             emit(rate)
             lastCount = currentCount
-            lastTime = currentTime
         }
     }.flowOn(Dispatchers.Default)
 
@@ -291,6 +288,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
         }
     }.flowOn(Dispatchers.IO)
 
+    @Suppress("UNUSED_PARAMETER")
     suspend fun requestStandardPID(canId: String, pid: String, dataLength: Int = 8): Flow<CANMessage?> = flow {
         if (!isInitialized) {
             emit(null)

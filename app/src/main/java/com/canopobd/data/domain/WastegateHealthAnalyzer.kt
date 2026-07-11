@@ -54,6 +54,7 @@ class WastegateHealthAnalyzer {
         private const val HISTORY_SIZE = 20
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun analyze(
         wastegateDuty: Double,
         avgWastegateDuty: Double,

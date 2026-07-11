@@ -154,6 +154,7 @@ class EmissionsReadinessAnalyzer {
         return (baseScore - penalty - runtimePenalty + 20).coerceIn(0, 100)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun determineEmissionsStatus(
         monitors: List<com.canopobd.data.model.EmissionsReadinessMonitor>,
         hasDTC: Boolean,
@@ -171,6 +172,7 @@ class EmissionsReadinessAnalyzer {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateDiagnosis(
         monitors: List<com.canopobd.data.model.EmissionsReadinessMonitor>,
         status: EmissionsStatus,
@@ -201,6 +203,7 @@ class EmissionsReadinessAnalyzer {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateRecommendation(
         monitors: List<com.canopobd.data.model.EmissionsReadinessMonitor>,
         status: EmissionsStatus,

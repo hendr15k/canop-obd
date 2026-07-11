@@ -126,7 +126,8 @@ private fun OverboostTimer(
     )
 
     val infiniteTransition = rememberInfiniteTransition()
-    val pulseAlpha by infiniteTransition.animateFloat(
+    @Suppress("UNUSED_VARIABLE")
+    val _pulseAlpha by infiniteTransition.animateFloat(
         initialValue = if (isActive) 0.7f else 0f,
         targetValue = if (isActive) 1f else 0f,
         animationSpec = infiniteRepeatable(
@@ -231,7 +232,8 @@ private fun BoostVsTarget(
         else -> colors.gaugeRed
     }
 
-    val animatedCurrent by animateFloatAsState(
+    @Suppress("UNUSED_VARIABLE")
+    val _animatedCurrent by animateFloatAsState(
         targetValue = currentBoost.toFloat(),
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "current_boost"
@@ -506,7 +508,8 @@ private fun OverboostStatus(
     }
 
     val infiniteTransition = rememberInfiniteTransition()
-    val pulseAlpha by infiniteTransition.animateFloat(
+    @Suppress("UNUSED_VARIABLE")
+    val _pulseAlpha by infiniteTransition.animateFloat(
         initialValue = if (turboData.overboostActive) 0.6f else 0f,
         targetValue = if (turboData.overboostActive) 1f else 0f,
         animationSpec = infiniteRepeatable(

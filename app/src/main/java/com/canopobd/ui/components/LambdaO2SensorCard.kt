@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -105,7 +106,7 @@ fun LambdaO2SensorCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ShowChart,
+                                imageVector = Icons.AutoMirrored.Filled.ShowChart,
                                 contentDescription = null,
                                 tint = colors.gaugeCyan,
                                 modifier = Modifier.size(12.dp)
@@ -321,6 +322,7 @@ private fun PostCatSensorSection(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun StatusBadge(
     status: LambdaStatus,

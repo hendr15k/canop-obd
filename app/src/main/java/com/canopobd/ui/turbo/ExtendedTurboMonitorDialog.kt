@@ -243,13 +243,15 @@ private fun BoostAnalysisGauge(
     val deviation = actualBar - targetBar
     val deviationPercent = if (targetBar > 0) (deviation / targetBar * 100.0) else 0.0
 
-    val animatedBoost by animateFloatAsState(
+    @Suppress("UNUSED_VARIABLE")
+    val _animatedBoost by animateFloatAsState(
         targetValue = actualBar.toFloat(),
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "boost_actual"
     )
 
-    val animatedTarget by animateFloatAsState(
+    @Suppress("UNUSED_VARIABLE")
+    val _animatedTarget by animateFloatAsState(
         targetValue = targetBar.toFloat(),
         animationSpec = tween(400),
         label = "boost_target"
@@ -700,6 +702,7 @@ private fun WastegateHealthCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun WarningLine(text: String, color: Color, colors: AppColors) {
     Row(
@@ -927,6 +930,7 @@ private fun TurboRpmCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ChargeAirTempCard(
     chargeAirTemp: Double,
@@ -957,7 +961,8 @@ private fun ChargeAirTempCard(
     val targetEfficiency = calibration.intercoolerEfficiencyTarget
     val isEfficient = intercoolerEfficiency >= targetEfficiency
 
-    val animatedTemp by animateFloatAsState(
+    @Suppress("UNUSED_VARIABLE")
+    val _animatedTemp by animateFloatAsState(
         targetValue = chargeAirTemp.toFloat(),
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "charge_temp"

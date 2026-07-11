@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.BluetoothSearching
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 
@@ -94,6 +95,7 @@ import com.canopobd.data.domain.WindowAction
 import com.canopobd.ui.components.TCMECMCANStatusCard
 import kotlin.math.abs
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun DashboardScreen(
     connectionState: OBDConnectionState,
@@ -1059,6 +1061,7 @@ private fun SecondaryGaugeGrid(
 // ---------------------------------------------------------------------------
 // DASHBOARD HEADER — Hero status with quick-access action bar
 // ---------------------------------------------------------------------------
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun DashboardHeader(
     connectionState: OBDConnectionState,
@@ -1709,7 +1712,7 @@ private fun MiniStatusCard(
             } else if (progress != null) {
                 Spacer(Modifier.height(2.dp))
                 LinearProgressIndicator(
-                    progress = progress,
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp)
@@ -1849,7 +1852,7 @@ private fun rememberBtButtonVisual(
     val colors = LocalAppColors.current
     return when {
         connectionState is OBDConnectionState.Connecting -> BtButtonVisual(
-            R.string.bt_button_connecting, Icons.Filled.BluetoothSearching, colors.caution, true
+            R.string.bt_button_connecting, Icons.AutoMirrored.Filled.BluetoothSearching, colors.caution, true
         )
         connectionState is OBDConnectionState.Connected -> BtButtonVisual(
             R.string.bt_button_disconnect, Icons.Filled.BluetoothConnected, colors.success, false

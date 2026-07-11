@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -138,13 +140,14 @@ private fun getCategoryIcon(iconName: String): ImageVector {
         "Lock" -> Icons.Default.Lock
         "Circle" -> Icons.Default.Circle
         "BugReport" -> Icons.Default.BugReport
-        "VolumeUp" -> Icons.Default.VolumeUp
+        "VolumeUp" -> Icons.AutoMirrored.Filled.VolumeUp
         "Crop" -> Icons.Default.Crop
         "Build" -> Icons.Default.Build
         else -> Icons.Default.Settings
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun AstraJCodingDialog(
     codingResult: AstraJCodingModels.CodingResult?,
@@ -259,7 +262,7 @@ fun AstraJCodingDialog(
                             ProfileApplyPreview(
                                 profile = selectedProfile!!,
                                 codingInProgress = codingInProgress,
-                                onApplyAll = { profile, enabledOptions ->
+                                onApplyAll = { _, enabledOptions ->
                                     enabledOptions.forEach { (opt, value) ->
                                         onApplyOption(opt, value)
                                     }
@@ -1210,6 +1213,7 @@ private fun CodingOptionCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun CodingOptionDetail(
     option: AstraJCodingModels.CodingOption,
@@ -1550,6 +1554,7 @@ private fun CodingOptionDetail(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ProfileSelector(
     onSelectProfile: (AstraJCodingModels.CodingProfile) -> Unit,
@@ -1674,6 +1679,7 @@ private fun ProfileCardItem(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ProfileApplyPreview(
     profile: AstraJCodingModels.CodingProfile,
@@ -1763,7 +1769,7 @@ private fun ProfileApplyPreview(
             )
         }
 
-        itemsIndexed(profileChanges) { index, (option, current, target) ->
+        itemsIndexed(profileChanges) { _, (option, current, target) ->
             val isEnabled = enabledChanges[option.id] == true
 
             Card(
@@ -1809,7 +1815,7 @@ private fun ProfileApplyPreview(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
                             Icon(
-                                imageVector = Icons.Default.ArrowForward,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)

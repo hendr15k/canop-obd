@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronRight
@@ -1057,6 +1058,7 @@ fun IconButtonBox(
 // ---------------------------------------------------------------------------
 // QUICK TILE — large icon + label for menu/dashboard entry points
 // ---------------------------------------------------------------------------
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun QuickTile(
     icon: ImageVector,
@@ -1529,7 +1531,7 @@ fun EmptyState(
         }
         if (actionLabel != null && onAction != null) {
             Spacer(Modifier.height(20.dp))
-            GradientButton(text = actionLabel, onClick = onAction, icon = Icons.Filled.ArrowForward)
+            GradientButton(text = actionLabel, onClick = onAction, icon = Icons.AutoMirrored.Filled.ArrowForward)
         }
     }
 }

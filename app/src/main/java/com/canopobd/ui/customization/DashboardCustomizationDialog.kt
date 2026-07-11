@@ -62,7 +62,6 @@ fun DashboardCustomizationDialog(
     onPrimaryGaugesChange: (Set<String>) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val colors = LocalAppColors.current
 
     DialogShell(
         onDismiss = onDismiss,

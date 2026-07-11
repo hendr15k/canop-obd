@@ -200,6 +200,7 @@ fun TuningStageIndicator(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun StageProgressBar(
     stage: TuningStage,

@@ -191,6 +191,7 @@ fun TurboHealthCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun HealthScoreBadge(
     score: Int,
@@ -758,6 +759,7 @@ private fun CriticalWarnings(
  * Berechnet den Turbo-Gesundheitsscore (0-100)
  * Kalibriert für BorgWarner KP39 / A14NET
  */
+@Suppress("UNUSED_PARAMETER")
 private fun calculateTurboHealthScore(
     turboData: TurboData,
     oilData: OilData,
@@ -852,6 +854,7 @@ private fun getHealthLabel(score: Int): String {
 /**
  * Gibt die Beschreibung für den Gesundheitsscore zurück
  */
+@Suppress("UNUSED_PARAMETER")
 private fun getHealthDescription(score: Int, turboData: TurboData): String {
     return when {
         score >= 90 -> "Turbolader funktioniert einwandfrei"

@@ -29,6 +29,7 @@ import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 import java.util.concurrent.TimeUnit
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun TripComputerDialog(
     tripData: TripData,

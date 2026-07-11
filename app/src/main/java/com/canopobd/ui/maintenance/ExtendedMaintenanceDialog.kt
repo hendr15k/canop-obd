@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -361,7 +361,7 @@ private fun ServiceEntryCard(
                     ((currentKm - service.lastServiceKm).toFloat() / service.intervalKm.toFloat()).coerceIn(0f, 1f)
                 } else 0f
             LinearProgressIndicator(
-                progress = progressValue,
+                progress = { progressValue },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp)
@@ -395,7 +395,7 @@ private fun ServiceEntryCard(
 
             if (expanded) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Divider(color = canopoSurface, thickness = 1.dp)
+                HorizontalDivider(color = canopoSurface, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 ServiceDetailRow("Intervall", "${String.format("%,d", service.intervalKm)} km / ${service.intervalMonths} Monate")
@@ -1420,6 +1420,7 @@ object AstraJServicePlan {
         )
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun calcStatus(currentKm: Int, lastKm: Int, intervalKm: Int, intervalMonths: Int): ServiceStatus {
         val kmRemaining = (lastKm + intervalKm) - currentKm
         return when {

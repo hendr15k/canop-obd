@@ -319,6 +319,7 @@ private fun RpmGearBar(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun GearboxInfoCard(
     gearResult: GearResult,

@@ -9,6 +9,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -158,6 +163,7 @@ fun MaintenanceDialog(
 /**
  * Tab für Wartungsarbeiten mit erweiterten Erinnerungen
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun MaintenanceTab(
     reminders: List<MaintenanceReminder>,
@@ -337,6 +343,7 @@ private fun OverviewItem(
 /**
  * Erweiterte Wartungserinnerungs-Karte
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ExtendedMaintenanceReminderCard(
     reminder: MaintenanceReminder,
@@ -426,7 +433,7 @@ private fun ExtendedMaintenanceReminderCard(
             
             // Fortschrittsbalken
             LinearProgressIndicator(
-                progress = (reminder.progressPercent / 100f).coerceIn(0f, 1f),
+                progress = { (reminder.progressPercent / 100f).coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)
@@ -773,7 +780,7 @@ private fun StatBar(label: String, percent: Int, color: Color) {
         }
         Spacer(modifier = Modifier.height(4.dp))
         LinearProgressIndicator(
-            progress = percent / 100f,
+            progress = { percent / 100f },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
@@ -784,6 +791,7 @@ private fun StatBar(label: String, percent: Int, color: Color) {
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun OilTempZonesCard(stats: OilTempStatistics) {
     Surface(
@@ -851,10 +859,10 @@ private fun OilTempTrendCard(stats: OilTempStatistics) {
         ) {
             Icon(
                 when (stats.trend) {
-                    TrendDirection.IMPROVING -> Icons.Filled.TrendingDown
-                    TrendDirection.WORSENING -> Icons.Filled.TrendingUp
-                    TrendDirection.STABLE -> Icons.Filled.TrendingFlat
-                    TrendDirection.UNKNOWN -> Icons.Filled.HelpOutline
+                    TrendDirection.IMPROVING -> Icons.AutoMirrored.Filled.TrendingDown
+                    TrendDirection.WORSENING -> Icons.AutoMirrored.Filled.TrendingUp
+                    TrendDirection.STABLE -> Icons.AutoMirrored.Filled.TrendingFlat
+                    TrendDirection.UNKNOWN -> Icons.AutoMirrored.Filled.HelpOutline
                 },
                 contentDescription = null,
                 tint = when (stats.trend) {
@@ -1164,10 +1172,10 @@ private fun FuelTrendCard(stats: FuelConsumptionStatistics) {
         ) {
             Icon(
                 when (stats.trend) {
-                    TrendDirection.IMPROVING -> Icons.Filled.TrendingDown
-                    TrendDirection.WORSENING -> Icons.Filled.TrendingUp
-                    TrendDirection.STABLE -> Icons.Filled.TrendingFlat
-                    TrendDirection.UNKNOWN -> Icons.Filled.HelpOutline
+                    TrendDirection.IMPROVING -> Icons.AutoMirrored.Filled.TrendingDown
+                    TrendDirection.WORSENING -> Icons.AutoMirrored.Filled.TrendingUp
+                    TrendDirection.STABLE -> Icons.AutoMirrored.Filled.TrendingFlat
+                    TrendDirection.UNKNOWN -> Icons.AutoMirrored.Filled.HelpOutline
                 },
                 contentDescription = null,
                 tint = when (stats.trend) {
@@ -1652,7 +1660,7 @@ private fun IntervalEditDialog(
 private fun getIconForMaintenanceType(type: MaintenanceType) = when (type) {
     MaintenanceType.OIL_CHANGE -> Icons.Filled.OilBarrel
     MaintenanceType.TIRES -> Icons.Filled.TireRepair
-    MaintenanceType.INSPECTION -> Icons.Filled.Assignment
+    MaintenanceType.INSPECTION -> Icons.AutoMirrored.Filled.Assignment
     MaintenanceType.BRAKE_PADS -> Icons.Filled.Warning
     MaintenanceType.AIR_FILTER -> Icons.Filled.Air
     MaintenanceType.TRANSMISSION_FLUID -> Icons.Filled.Settings

@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -135,7 +137,7 @@ fun DiagnosticsDialog(
             }
 
             // PSA/Stellantis CAN IDs
-            item { SectionHeader(title = "PSA/Stellantis CAN-IDs", icon = Icons.Filled.CompareArrows) }
+            item { SectionHeader(title = "PSA/Stellantis CAN-IDs", icon = Icons.AutoMirrored.Filled.CompareArrows) }
             item {
                 InfoTableCard(
                     items = listOf(
@@ -150,7 +152,7 @@ fun DiagnosticsDialog(
                 )
             }
 
-            item { SectionHeader(title = "${stringResource(R.string.diagnostics_supported_pids)} (${supportedPIDs.size})", icon = Icons.Filled.List) }
+            item { SectionHeader(title = "${stringResource(R.string.diagnostics_supported_pids)} (${supportedPIDs.size})", icon = Icons.AutoMirrored.Filled.List) }
             item {
                 if (supportedPIDs.isEmpty()) {
                     Text(

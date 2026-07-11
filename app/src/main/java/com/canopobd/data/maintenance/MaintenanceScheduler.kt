@@ -611,6 +611,7 @@ object MaintenanceScheduler {
         val total: Double get() = urgentTotal + warningTotal + infoTotal
     }
     
+    @Suppress("UNUSED_PARAMETER")
     private fun findLastServiceKm(type: MaintenanceType, currentKm: Int): Int {
         return lastServiceData[type]?.lastServiceKm ?: 0
     }

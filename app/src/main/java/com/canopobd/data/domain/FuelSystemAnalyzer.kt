@@ -217,6 +217,7 @@ class FuelSystemAnalyzer(
     /**
      * Bewertet Kraftstoffrail-Druck
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun evaluateRailPressure(
         pressureBar: Double,
         engineLoad: Double,
@@ -281,6 +282,7 @@ class FuelSystemAnalyzer(
     /**
      * Bewertet Injektor-Gesundheit basierend auf Trimm-Mustern und Kraftstoffverbrauch
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun evaluateInjectors(
         stftB1: Double, ltftB1: Double,
         stftB2: Double, ltftB2: Double,

@@ -80,6 +80,7 @@ fun DiagnosticDetailDialog(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ProblemCategoryView(
     selectedCategory: ProblemCategory,
@@ -151,7 +152,7 @@ private fun ProblemCategoryView(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(filteredCases) { index, problemCase ->
+                itemsIndexed(filteredCases) { _, problemCase ->
                     ProblemCaseCard(
                         problemCase = problemCase,
                         onClick = { onCaseClick(problemCase) }

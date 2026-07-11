@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -306,7 +308,7 @@ private fun TripAverageSection(avgL100km: Double, currentL100km: Double) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Filled.TrendingUp, contentDescription = null,
+                    Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null,
                     tint = canopoAccent, modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -528,6 +530,7 @@ private fun FuelCostCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun CO2Section(co2PerKm: Double, avgL100km: Double) {
     val co2Color = when {
@@ -658,7 +661,7 @@ private fun WorkshopComparisonCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Filled.CompareArrows, contentDescription = null,
+                    Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null,
                     tint = canopoSecondary, modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -805,7 +808,7 @@ private fun FuelHistorySection(
             }
 
             if (expanded) {
-                Divider(color = borderSubtle, thickness = 1.dp)
+                HorizontalDivider(color = borderSubtle, thickness = 1.dp)
 
                 history.forEach { entry ->
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
@@ -846,7 +849,7 @@ private fun FuelHistorySection(
                         }
                     }
                     if (history.isNotEmpty() && entry != history.last()) {
-                        Divider(
+                        HorizontalDivider(
                             color = borderSubtle.copy(alpha = 0.5f),
                             thickness = 0.5.dp,
                             modifier = Modifier.padding(horizontal = 16.dp)

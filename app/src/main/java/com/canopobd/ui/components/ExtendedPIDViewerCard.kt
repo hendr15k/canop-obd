@@ -75,7 +75,7 @@ fun ExtendedPIDViewerCard(
                     label = "Drehmoment",
                     value = data.engineTorque,
                     unit = "Nm",
-                    progress = data.engineTorque?.let { (it / 220.0).coerceIn(0.0, 1.0).toFloat() },
+                    progress = (data.engineTorque / 220.0).coerceIn(0.0, 1.0).toFloat(),
                     progressColor = colors.gaugeYellow,
                     modifier = Modifier.weight(1f)
                 )
@@ -84,7 +84,7 @@ fun ExtendedPIDViewerCard(
                     label = "Ladedruck",
                     value = data.relativeBoostBar,
                     unit = "bar",
-                    progress = data.relativeBoostBar?.let { (it / 1.5).coerceIn(0.0, 1.0).toFloat() },
+                    progress = (data.relativeBoostBar / 1.5).coerceIn(0.0, 1.0).toFloat(),
                     progressColor = colors.gaugeGreen,
                     modifier = Modifier.weight(1f)
                 )
@@ -100,7 +100,7 @@ fun ExtendedPIDViewerCard(
                     label = "Wastegate",
                     value = data.wastegateDuty,
                     unit = "%",
-                    progress = data.wastegateDuty?.let { (it / 100.0).toFloat() },
+                    progress = (data.wastegateDuty / 100.0).toFloat(),
                     progressColor = when {
                         data.wastegateDuty > 80 -> colors.gaugeOrange
                         data.wastegateDuty < 30 -> colors.gaugeRed
@@ -280,7 +280,7 @@ private fun PIDValueDisplay(
             if (progress != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
-                    progress = progress,
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)

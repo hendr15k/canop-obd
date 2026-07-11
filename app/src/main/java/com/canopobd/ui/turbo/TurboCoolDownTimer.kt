@@ -181,7 +181,7 @@ fun TurboCoolDownDialog(
                 @Suppress("DEPRECATION")
                 val progressFloat = coolDownState.progress.coerceIn(0f, 1f)
                 LinearProgressIndicator(
-                    progress = progressFloat,
+                    progress = { progressFloat },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)

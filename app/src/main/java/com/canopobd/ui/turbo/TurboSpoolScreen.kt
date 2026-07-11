@@ -548,6 +548,7 @@ private fun TurboHealthScore(score: Int, colors: AppColors) {
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun TurboRpmGauge(
     rpm: Double,

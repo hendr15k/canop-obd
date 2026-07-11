@@ -45,7 +45,7 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -267,6 +267,7 @@ private fun TimelineTab(scheduler: MaintenanceScheduler, currentKm: Int) {
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun TimelineHeaderCard(scheduler: MaintenanceScheduler, currentKm: Int) {
     val nextService = scheduler.getNextService()
@@ -415,7 +416,7 @@ private fun TimelineEntryCard(
                     Spacer(modifier = Modifier.height(6.dp))
                     val progress = ((currentKm - (entry.dueKm - 15000)).toFloat() / 15000).coerceIn(0f, 1f)
                     LinearProgressIndicator(
-                        progress = progress,
+                        progress = { progress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(3.dp)
@@ -452,7 +453,6 @@ private fun ServiceItemsTab(
     onCompleteMaintenance: (String, Int) -> Unit
 ) {
     val allItems = remember { scheduler.getAllScheduledMaintenance() }
-    var selectedType by remember { mutableStateOf<MaintenanceType?>(null) }
 
     LazyColumn {
         item {
@@ -565,7 +565,7 @@ private fun ServiceItemCard(
             Spacer(modifier = Modifier.height(6.dp))
             val progressValue = ((currentKm - item.lastServiceKm).toFloat() / item.intervalKm.toFloat()).coerceIn(0f, 1f)
             LinearProgressIndicator(
-                progress = progressValue,
+                progress = { progressValue },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp)
@@ -576,7 +576,7 @@ private fun ServiceItemCard(
 
             if (expanded) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Divider(color = canopoSurface, thickness = 1.dp)
+                HorizontalDivider(color = canopoSurface, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 DetailRow("OEM Teilenummer", item.partNumber)
@@ -963,7 +963,7 @@ private fun PartCard(part: PartInfo) {
 
             if (expanded) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Divider(color = canopoSurface, thickness = 1.dp)
+                HorizontalDivider(color = canopoSurface, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(

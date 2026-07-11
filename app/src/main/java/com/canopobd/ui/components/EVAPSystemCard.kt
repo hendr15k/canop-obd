@@ -159,6 +159,7 @@ fun EVAPSystemCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun SystemStatusBadge(
     status: EVAPSystemStatus,

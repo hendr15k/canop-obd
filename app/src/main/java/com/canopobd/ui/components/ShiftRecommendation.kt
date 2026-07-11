@@ -77,6 +77,7 @@ object ShiftRecommendationEngine {
      * Estimated current gear based on RPM and speed ratio
      * Uses the A14NET typical gear ratios at ~100 km/h as reference points
      */
+    @Suppress("UNUSED_PARAMETER")
     fun estimateGear(rpm: Double, speedKmh: Double, calibration: EngineCalibration = A14NET_CALIBRATION): Int {
         if (speedKmh < 5 || rpm < 800) return 0  // Invalid / stationary
         if (rpm > 7000) return 6  // High RPM must be low gear
@@ -268,6 +269,7 @@ object ShiftRecommendationEngine {
     /**
      * Get recommended RPM range for a specific mode and gear
      */
+    @Suppress("UNUSED_PARAMETER")
     fun getRecommendedRpmRange(
         mode: ShiftMode,
         calibration: EngineCalibration = A14NET_CALIBRATION
@@ -283,6 +285,7 @@ object ShiftRecommendationEngine {
      * Calculate fuel efficiency estimate based on current operating point
      * Returns relative efficiency 0.0-1.0 where 1.0 is optimal
      */
+    @Suppress("UNUSED_PARAMETER")
     fun estimateRelativeEfficiency(
         rpm: Double,
         throttle: Double,

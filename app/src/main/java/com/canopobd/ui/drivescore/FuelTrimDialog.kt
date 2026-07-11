@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,6 +57,7 @@ import kotlin.math.min
  * - Ansaugkrümmer-Lecks (besonders am Boost-Bereich)
  * - Kraftstoffdruck-Probleme
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun FuelTrimDialog(
     fuelTrimAnalysis: FuelTrimAnalysis?,
@@ -362,9 +366,9 @@ private fun TrimBankCard(
                 
                 // Richtung-Pfeil
                 val directionIcon = when {
-                    totalTrim > 3 -> Icons.Filled.TrendingUp
-                    totalTrim < -3 -> Icons.Filled.TrendingDown
-                    else -> Icons.Filled.TrendingFlat
+                    totalTrim > 3 -> Icons.AutoMirrored.Filled.TrendingUp
+                    totalTrim < -3 -> Icons.AutoMirrored.Filled.TrendingDown
+                    else -> Icons.AutoMirrored.Filled.TrendingFlat
                 }
                 val directionColor = when {
                     totalTrim > 3 -> gaugeOrange
@@ -411,7 +415,7 @@ private fun TrimBankCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            Divider(color = borderSubtle, thickness = 1.dp)
+            HorizontalDivider(color = borderSubtle, thickness = 1.dp)
             
             Spacer(modifier = Modifier.height(10.dp))
             
@@ -805,7 +809,7 @@ private fun TechnicalReferenceCard() {
                 ReferenceRow("LTFT", "Langzeit-Speicher (adaptiv)", gaugeCyan)
                 ReferenceRow("+ Wert", "Mehr Kraftstoff (mageres Gemisch)", gaugeOrange)
                 ReferenceRow("- Wert", "Weniger Kraftstoff (fettes Gemisch)", gaugeCyan)
-                Divider(color = borderSubtle, thickness = 0.5.dp)
+                HorizontalDivider(color = borderSubtle, thickness = 0.5.dp)
                 ReferenceRow("A14NET ECU", "Bosch ME17.9.22 / Delco E78", textSecondary)
                 ReferenceRow("Normal", "±5% im geschlossenen Regelkreis", gaugeGreen)
                 ReferenceRow("Warnung", "±10-15% — Wartung prüfen", gaugeYellow)

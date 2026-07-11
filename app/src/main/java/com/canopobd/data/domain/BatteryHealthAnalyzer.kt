@@ -292,6 +292,7 @@ class BatteryHealthAnalyzer {
         return (CCA_NEW * ageFactor * voltageFactor).toInt().coerceIn(CCA_MIN_CRITICAL, CCA_NEW)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateDiagnosis(
         health: com.canopobd.data.model.BatteryHealth,
         chargingHealth: ChargingSystemHealth,

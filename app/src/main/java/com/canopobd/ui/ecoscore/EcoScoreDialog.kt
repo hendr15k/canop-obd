@@ -32,6 +32,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.canopobd.data.model.*
 import com.canopobd.ui.theme.*
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun EcoScoreDialog(
     ecoScore: EcoScoreData,

@@ -211,6 +211,7 @@ fun EGRHealthCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ValveStatusBadge(
     status: EGRValveStatus,

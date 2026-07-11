@@ -174,11 +174,9 @@ class OilConditionMonitor(
     /**
      * Bewertet Oeltemperatur
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun evaluateTemperature(oilTemp: Double, coolantTemp: Double): Int {
         if (oilTemp <= 0) return 50  // Keine Daten
-
-        // Oeltemp solltehoeher als Kuehlmitteltemperatur sein (bei Betrieb)
-        val tempDiff = oilTemp - coolantTemp
 
         return when {
             oilTemp > OIL_TEMP_CRITICAL -> 5
@@ -360,6 +358,7 @@ class OilConditionMonitor(
     /**
      * Generiert Wartungsempfehlung
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun generateRecommendation(
         condition: OilCondition,
         input: OilInput,

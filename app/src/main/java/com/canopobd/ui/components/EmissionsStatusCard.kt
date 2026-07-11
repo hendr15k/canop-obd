@@ -188,6 +188,7 @@ fun EmissionsStatusCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun InspectionStatusBadge(
     isReady: Boolean,

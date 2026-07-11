@@ -80,8 +80,8 @@ class LambdaO2SensorAnalyzer {
         val issues = mutableListOf<LambdaIssue>()
 
         val dtcScore = evaluateDTCs(input.activeDTCs, issues)
-        val (preCatScore, preCatVoltage) = evaluatePreCatSensor(input, issues)
-        val (postCatScore, postCatVoltage) = evaluatePostCatSensor(input, issues)
+        val (preCatScore, _) = evaluatePreCatSensor(input, issues)
+        val (postCatScore, _) = evaluatePostCatSensor(input, issues)
         val crossCountRate = calculateCrossCountRate(input.voltageHistoryB1S1)
         val crossCountScore = evaluateCrossCount(crossCountRate)
         val (catalystEff, catalystScore) = evaluateCatalystEfficiency(input, issues)
@@ -90,7 +90,7 @@ class LambdaO2SensorAnalyzer {
                 preCatScore * WEIGHT_VOLTAGE +
                 crossCountScore * WEIGHT_CROSS_COUNT +
                 catalystScore * WEIGHT_CATALYST) / 100
-        val adjustedScore = rawScore.coerceIn(0, 100)
+        rawScore.coerceIn(0, 100)
 
         val preCatLambda = calculateLambdaValue(input.o2VoltageB1S1)
         val preCatHeaterOK = checkHeaterStatus(input, false)
@@ -351,6 +351,7 @@ class LambdaO2SensorAnalyzer {
         }.coerceIn(0.5, 2.0)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateDiagnosis(
         preCat: com.canopobd.data.model.LambdaSensorStatus,
         postCat: com.canopobd.data.model.LambdaSensorStatus?,
@@ -379,6 +380,7 @@ class LambdaO2SensorAnalyzer {
         return parts.joinToString(" ")
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateRecommendation(
         preCat: com.canopobd.data.model.LambdaSensorStatus,
         postCat: com.canopobd.data.model.LambdaSensorStatus?,

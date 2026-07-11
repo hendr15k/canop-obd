@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -141,7 +142,7 @@ fun DriveStyleCard(
                 DriveStyleStatItem(
                     label = stringResource(R.string.drive_style_overboost),
                     value = "$overboostUsageCount",
-                    icon = Icons.Filled.TrendingUp,
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
                     color = when {
                         overboostUsageCount > 10 -> colors.gaugeOrange
                         overboostUsageCount > 5 -> colors.gaugeYellow

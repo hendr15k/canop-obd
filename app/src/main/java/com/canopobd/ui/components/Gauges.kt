@@ -599,6 +599,7 @@ object GaugeConfig {
 // ---------------------------------------------------------------------------
 // TREND GAUGE — gauge with embedded sparkline
 // ---------------------------------------------------------------------------
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun TrendGauge(
     value: Float,

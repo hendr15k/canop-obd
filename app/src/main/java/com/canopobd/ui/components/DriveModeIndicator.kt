@@ -124,12 +124,6 @@ private fun CompactDriveModeIndicator(
         DriveMode.SPORT -> "SPORT"
     }
 
-    val modeIcon = when (mode) {
-        DriveMode.ECO -> "🌿"
-        DriveMode.NORMAL -> "⚖️"
-        DriveMode.SPORT -> "⚡"
-    }
-
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -170,6 +164,7 @@ private fun CompactDriveModeIndicator(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun FullDriveModeIndicator(
     mode: DriveMode,
@@ -301,6 +296,7 @@ private fun FullDriveModeIndicator(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ModeBar(
     label: String,
@@ -341,6 +337,7 @@ private fun ModeBar(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun DriveModeIndicators(
     throttle: Double,
@@ -405,6 +402,7 @@ private fun DriveModeIndicators(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun IndicatorRow(
     label: String,
@@ -552,6 +550,7 @@ object OpelDriveModeDetector {
     }
 
     // SPORT-Score berechnen (0.0 = nicht SPORT, 1.0 = sehr SPORT)
+    @Suppress("UNUSED_PARAMETER")
     fun calculateSportScore(
         throttle: Double,
         rpm: Double,

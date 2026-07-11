@@ -473,7 +473,7 @@ private fun BrakePadRow(label: String, wear: Int) {
             modifier = Modifier.width(48.dp)
         )
         LinearProgressIndicator(
-            progress = wear / 100f,
+            progress = { wear / 100f },
             modifier = Modifier
                 .weight(1f)
                 .height(8.dp)

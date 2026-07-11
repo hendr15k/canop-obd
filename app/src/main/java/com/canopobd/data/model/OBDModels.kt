@@ -883,6 +883,7 @@ data class PowerCalculation(
     val isValid: Boolean = false
 ) {
     companion object {
+        @Suppress("UNUSED_PARAMETER")
         fun calculate(mafGS: Double, rpm: Double, intakeTempC: Double = 25.0, veFactor: Double = 0.85): PowerCalculation {
             if (mafGS <= 0.0 || rpm <= 0.0 || rpm > 8000.0) {
                 return PowerCalculation()

@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -513,7 +514,7 @@ private fun WindowButton(
             }
         }
         LinearProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier.width(80.dp).height(4.dp),
             color = colors.gaugeGreen,
             trackColor = colors.surface
@@ -521,6 +522,7 @@ private fun WindowButton(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun MirrorControlCard(
     isFolded: Boolean,
@@ -765,6 +767,7 @@ private fun WiperControlCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 private fun updateWindowState(state: ComfortState, action: ComfortAction, value: Any?): ComfortState {
     return when (action) {
         ComfortAction.WINDOW_DRIVER_UP -> state.copy(driverWindow = (state.driverWindow + 0.2f).coerceAtMost(1f))
@@ -1291,7 +1294,7 @@ private fun CANFrameSenderCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
-                    Icons.Filled.Send,
+                    Icons.AutoMirrored.Filled.Send,
                     null,
                     tint = if (isSending) colors.dark else Color.White,
                     modifier = Modifier.size(16.dp)

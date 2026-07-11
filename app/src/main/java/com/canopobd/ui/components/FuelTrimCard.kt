@@ -40,7 +40,6 @@ fun FuelTrimCard(
             FuelTrimAnalyzer.TrimStatus.MODERATELY_RICH -> colors.gaugeOrange
             FuelTrimAnalyzer.TrimStatus.SEVERELY_LEAN,
             FuelTrimAnalyzer.TrimStatus.SEVERELY_RICH -> colors.gaugeRed
-            else -> colors.textSecondary
         },
         animationSpec = tween(300),
         label = "statusColor"

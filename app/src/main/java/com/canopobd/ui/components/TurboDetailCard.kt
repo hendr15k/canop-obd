@@ -7,6 +7,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -682,6 +685,7 @@ private fun TurboEfficiencyIndicator(
  * Berechnet den erweiterten Turbo-Gesundheitsscore (0-100)
  * Kalibriert für BorgWarner KP39 / A14NET
  */
+@Suppress("UNUSED_PARAMETER")
 private fun calculateTurboDetailHealthScore(
     turboData: TurboData,
     carProfile: CarProfile
@@ -744,8 +748,8 @@ private fun getTurboDetailHealthDescription(score: Int): String = when {
 
 private fun getTurboHealthTrend(score: Int): androidx.compose.ui.graphics.vector.ImageVector {
     return when {
-        score >= 80 -> Icons.Filled.TrendingUp
-        score >= 50 -> Icons.Filled.TrendingFlat
-        else -> Icons.Filled.TrendingDown
+        score >= 80 -> Icons.AutoMirrored.Filled.TrendingUp
+        score >= 50 -> Icons.AutoMirrored.Filled.TrendingFlat
+        else -> Icons.AutoMirrored.Filled.TrendingDown
     }
 }

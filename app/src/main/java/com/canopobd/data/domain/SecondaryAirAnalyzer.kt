@@ -131,6 +131,7 @@ class SecondaryAirAnalyzer {
         return if (isColdStartPhase && isColdEngine) 90 else 100
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun evaluateO2Response(input: SAIInput, issues: MutableList<SAIIssue>): Int {
         if (!input.saActive) return 85
 
@@ -188,6 +189,7 @@ class SecondaryAirAnalyzer {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateRecommendation(status: com.canopobd.data.model.SAIStatus, issues: List<SAIIssue>, input: SAIInput): String {
         return when {
             issues.isEmpty() -> "Keine Massnahmen erforderlich."

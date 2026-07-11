@@ -33,6 +33,7 @@ data class TireData(
     val isNok: Boolean = false
 )
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun TPMSDialog(
     onTPMSReset: () -> Unit,
@@ -191,7 +192,7 @@ fun TPMSDialog(
                         )
                         Spacer(Modifier.height(6.dp))
                         LinearProgressIndicator(
-                            progress = resetProgress,
+                            progress = { resetProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)

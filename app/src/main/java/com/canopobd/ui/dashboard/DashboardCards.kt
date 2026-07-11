@@ -441,6 +441,7 @@ fun KnownIssuesCard(
 // ============================================================================
 // ANALYZER SUMMARY ROW — Compact summary of various analyzers
 // ============================================================================
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun AnalyzerSummaryRow(
     gearboxResult: com.canopobd.data.domain.M32GearboxMonitor.GearboxAnalysis?,
@@ -1019,6 +1020,7 @@ fun TuningStageIndicator(
 // ============================================================================
 // VEHICLE INFO CARD
 // ============================================================================
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun VehicleInfoCard(
     vin: String?,
@@ -1243,6 +1245,7 @@ fun ExtendedPIDViewerCard(
 // ============================================================================
 // TCM/ECM CAN STATUS CARD
 // ============================================================================
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun TCMECMCANStatusCard(
     tcmCurrentGear: Int,
@@ -1621,7 +1624,6 @@ fun TurboDetailCard(
 ) {
     val colors = LocalAppColors.current
     val c = if (isHealthy) colors.success else colors.warning
-    val deviation = abs(actualBoost - targetBoost)
     GlassCard(
         modifier = modifier,
         onClick = onClick,

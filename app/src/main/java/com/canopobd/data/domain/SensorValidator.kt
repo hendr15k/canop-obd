@@ -75,6 +75,7 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration?) {
         return ValidationResult.Valid
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun validateBoost(boostBar: Double?, barometric: Double?): ValidationResult {
         if (boostBar == null) return ValidationResult.Unavailable
 

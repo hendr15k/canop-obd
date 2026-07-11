@@ -202,6 +202,7 @@ class EVAPSystemAnalyzer {
         return score.coerceIn(0, 100)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun detectLeak(
         pressure: Double,
         dtcCodes: List<String>,
@@ -242,6 +243,7 @@ class EVAPSystemAnalyzer {
         return abs(pressure - target)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateDiagnosis(status: com.canopobd.data.model.EVAPStatus, issues: List<EVAPIssue>, input: EVAPInput): String {
         return when {
             issues.isEmpty() -> {
@@ -267,6 +269,7 @@ class EVAPSystemAnalyzer {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun generateRecommendation(status: com.canopobd.data.model.EVAPStatus, issues: List<EVAPIssue>, input: EVAPInput): String {
         return when {
             issues.isEmpty() -> "Keine Massnahmen erforderlich."

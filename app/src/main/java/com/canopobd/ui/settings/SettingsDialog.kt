@@ -26,6 +26,7 @@ import com.canopobd.data.model.PollMode
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun SettingsDialog(
     pollRate: Long,
@@ -344,7 +345,6 @@ private fun UnitSelector(
     ) {
         MeasurementUnit.entries.forEach { unit ->
             val isSelected = selectedUnit == unit
-            val accent = if (isSelected) colors.primary else colors.borderDefault
             Column(
                 modifier = Modifier
                     .weight(1f)

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -133,7 +134,7 @@ fun FuelEconomyDialog(
 
                 item {
                     Spacer(Modifier.height(4.dp))
-                    SectionHeader(title = stringResource(R.string.fuel_economy_avg), icon = Icons.Filled.TrendingFlat)
+                    SectionHeader(title = stringResource(R.string.fuel_economy_avg), icon = Icons.AutoMirrored.Filled.TrendingFlat)
                 }
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

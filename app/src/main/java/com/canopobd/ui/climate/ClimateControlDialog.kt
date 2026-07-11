@@ -198,7 +198,7 @@ fun ClimateControlDialog(
                                 },
                                 colors = colors
                             )
-                            Divider(
+                            VerticalDivider(
                                 modifier = Modifier
                                     .width(1.dp)
                                     .height(100.dp),

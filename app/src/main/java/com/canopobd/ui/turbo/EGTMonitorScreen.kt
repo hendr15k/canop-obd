@@ -289,6 +289,7 @@ private fun EGTThresholdMarker(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun EGTThresholds(
     currentEGT: Double,

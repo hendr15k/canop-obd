@@ -83,6 +83,7 @@ class OBDEmulator(
         currentGear = 1
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun applyActiveProfile(timeSeconds: Double) {
         val profile = activeDrivingProfile ?: return
         val elapsedSec = (simulationTime - profileStartTime) / 1000.0
@@ -185,10 +186,6 @@ class OBDEmulator(
         val timeSeconds = simulationTime / 1000.0
         accumulatedDistance += currentSpeed * (pollIntervalMs / 3_600_000.0)
 
-        val noise = { base: Double, amplitude: Double ->
-            base + (sin(timeSeconds * 3.7) * amplitude * 0.3 + cos(timeSeconds * 2.3) * amplitude * 0.2)
-        }
-
         return OBDData(
             rpm = currentRpm,
             speed = currentSpeed,
@@ -285,7 +282,6 @@ class OBDEmulator(
     }
 
     fun generateMode22Data(): Mode22TurboData {
-        val timeSeconds = simulationTime / 1000.0
         return Mode22TurboData(
             turboBoostActual = currentBoost * 100,
             turboBoostTarget = calculateTargetBoost() * 100,

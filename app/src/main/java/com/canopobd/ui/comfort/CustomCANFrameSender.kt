@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -292,7 +293,7 @@ fun CustomCANFrameSenderDialog(
                             enabled = canIdValid && (data.isEmpty() || dataValid),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                         ) {
-                            Icon(Icons.Filled.Send, null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("SENDEN")
                         }

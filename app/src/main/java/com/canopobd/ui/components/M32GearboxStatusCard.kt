@@ -37,6 +37,7 @@ import com.canopobd.ui.theme.LocalAppColors
  * - Wartungsintervall
  * - Deutsche Warnmeldungen
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun M32GearboxStatusCard(
     modifier: Modifier = Modifier,
@@ -76,20 +77,6 @@ fun M32GearboxStatusCard(
 
     val gearRatio = remember(inputSpeedRpm, outputSpeedRpm) {
         if (outputSpeedRpm > 0) inputSpeedRpm / outputSpeedRpm else 0.0
-    }
-
-    // Gangerkennung über RPM/Speed-Verhältnis (Getrag M32)
-    val detectedGear = remember(currentRpm, vehicleSpeedKmh) {
-        detectM32Gear(currentRpm, vehicleSpeedKmh)
-    }
-
-    val gearDisplayText = remember(detectedGear) {
-        when (detectedGear) {
-            0 -> "N"
-            -1 -> "R"
-            in 1..6 -> "$detectedGear. Gang"
-            else -> "–"
-        }
     }
 
     val maintenanceInfo = remember(lastFluidChangeKm, currentKm) {

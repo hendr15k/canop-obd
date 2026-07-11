@@ -41,6 +41,7 @@ data class BoostLeakResult(
 
 enum class LeakSeverity { NONE, MINOR, MODERATE, SEVERE }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun BoostLeakTestScreen(
     turboData: TurboData,

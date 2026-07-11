@@ -341,8 +341,6 @@ object AstraJ14TurboMaintenanceData {
         MaintenanceType.TIRES -> REIFEN
         MaintenanceType.INSPECTION -> TUV_INSPECTION
         MaintenanceType.TURBO_BOOST_CHECK -> TURBO_INSPECTION
-        else -> null
     }
 }
 
-fun ClosedRange<Double>.contains(value: Double): Boolean = value in start..endInclusive

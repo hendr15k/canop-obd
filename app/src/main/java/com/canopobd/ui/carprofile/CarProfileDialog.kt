@@ -84,7 +84,8 @@ private fun ProfileCard(
     colors: com.canopobd.ui.theme.AppColors
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+    @Suppress("UNUSED_VARIABLE")
+    val _rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
 
     Surface(
         modifier = Modifier
