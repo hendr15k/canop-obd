@@ -34,7 +34,9 @@ import com.canopobd.data.protocol.CANMonitor
 import com.canopobd.data.protocol.CANFilterMode
 import com.canopobd.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.collectLatest
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -505,8 +507,8 @@ private fun CANMessageRow(
     showTimestamp: Boolean,
     colors: com.canopobd.ui.theme.AppColors
 ) {
-    val timeFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
-    val timestamp = remember(message.timestamp) { timeFormat.format(Date(message.timestamp)) }
+    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault()) }
+    val timestamp = remember(message.timestamp) { timeFormat.format(Instant.ofEpochMilli(message.timestamp)) }
 
     val canIdColor = when {
         message.canId.startsWith("7E") -> colors.accent
@@ -593,14 +595,13 @@ data class PerIdStat(
     val lastSeen: Long
 )
 
+private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
+
 private fun formatTimestamp(timestamp: Long): String {
     val diff = System.currentTimeMillis() - timestamp
     return when {
         diff < 1000 -> "now"
         diff < 60000 -> "${diff / 1000}s"
-        else -> {
-            val formatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            formatter.format(Date(timestamp))
-        }
+        else -> timeFormatter.format(Instant.ofEpochMilli(timestamp))
     }
 }

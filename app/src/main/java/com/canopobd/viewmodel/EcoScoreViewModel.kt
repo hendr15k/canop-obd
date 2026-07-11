@@ -11,6 +11,13 @@ import kotlin.math.min
 
 class EcoScoreViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val FUEL_TANK_LITERS = 52.0
+        // Combined conversion factor from MAF [g/s] and speed [km/h]
+        // to instantaneous fuel consumption; recipe: 3600 s/h / (14.7 stoich × 750 g/L).
+        private const val MAF_CONVERSION_FACTOR = 12128.4
+    }
+
     private val _ecoScore = MutableStateFlow(EcoScoreData())
     val ecoScore: StateFlow<EcoScoreData> = _ecoScore.asStateFlow()
 
@@ -82,14 +89,14 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
 
     private fun updateEfficiency(data: OBDData, fuelLevelPercent: Double) {
         val fuelUsedLiters = if (tripStartFuelLiters == 0.0) 0.0 else
-            max(0.0, tripStartFuelLiters - (fuelLevelPercent / 100.0 * 52.0))
+            max(0.0, tripStartFuelLiters - (fuelLevelPercent / 100.0 * FUEL_TANK_LITERS))
 
         if (tripStartFuelLiters == 0.0 && fuelLevelPercent > 0) {
-            tripStartFuelLiters = fuelLevelPercent / 100.0 * 52.0
+            tripStartFuelLiters = fuelLevelPercent / 100.0 * FUEL_TANK_LITERS
         }
 
         val instantConsumption = if (data.mafRate > 0 && data.speed > 0) {
-            (data.mafRate * 3600.0) / (data.speed * 12128.4)
+            (data.mafRate * 3600.0) / (data.speed * MAF_CONVERSION_FACTOR)
         } else 0.0
 
         val averageConsumption = if (tripDistanceKm > 0 && fuelUsedLiters > 0) {

@@ -57,6 +57,7 @@ class OBDRepository(
     private val _recordedData = MutableStateFlow<List<DataRecord>>(emptyList())
     val recordedData: StateFlow<List<DataRecord>> = _recordedData.asStateFlow()
     private val recordedDataBuffer = mutableListOf<DataRecord>()
+    private val MAX_RECORDED_SAMPLES = 10_000
 
     private val _pollRate = MutableStateFlow(500L)
     val pollRate: StateFlow<Long> = _pollRate.asStateFlow()
@@ -822,6 +823,10 @@ class OBDRepository(
         )
         synchronized(recordedDataBuffer) {
             recordedDataBuffer.add(record)
+            if (recordedDataBuffer.size > MAX_RECORDED_SAMPLES) {
+                val removeCount = recordedDataBuffer.size - MAX_RECORDED_SAMPLES
+                recordedDataBuffer.subList(0, removeCount).clear()
+            }
             if (recordedDataBuffer.size % 50 == 0) {
                 _recordedData.value = recordedDataBuffer.toList()
             }
@@ -931,28 +936,27 @@ class OBDRepository(
         val d = _obdData.value
         val now = System.currentTimeMillis()
         val cooldownMs = cfg.cooldownSeconds * 1000L
-        val hysteresisMs = cfg.hysteresisSeconds * 1000L
 
         val candidateAlerts = mutableListOf<ActiveAlert>()
 
         candidateAlerts.addAll(evaluateThreshold(
             AlertType.SPEED, cfg.speedWarningEnabled, d.speed.toFloat(), cfg.speedWarning,
-            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            AlertSeverity.WARNING,
             "Geschwindigkeit: %.0f > %.0f km/h"
         ))
         candidateAlerts.addAll(evaluateThreshold(
             AlertType.COOLANT, cfg.coolantWarningEnabled, d.coolantTemp.toFloat(), cfg.coolantWarning,
-            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            AlertSeverity.WARNING,
             "Kühlmittel: %.0f°C > %.0f°C"
         ))
         candidateAlerts.addAll(evaluateThresholdLow(
             AlertType.FUEL, cfg.fuelWarningEnabled, d.fuelLevel.toFloat(), cfg.fuelWarning,
-            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            AlertSeverity.WARNING,
             "Kraftstoff: %.0f%% < %.0f%%"
         ))
         candidateAlerts.addAll(evaluateThreshold(
             AlertType.RPM, cfg.rpmWarningEnabled, d.rpm.toFloat(), cfg.rpmWarning,
-            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            AlertSeverity.WARNING,
             "Drehzahl: %.0f > %.0f rpm"
         ))
         candidateAlerts.addAll(evaluateBatteryAlert(cfg))
@@ -978,7 +982,7 @@ class OBDRepository(
 
     private fun evaluateThreshold(
         type: AlertType, enabled: Boolean, value: Float, threshold: Float,
-        severity: AlertSeverity, hysteresisSeconds: Int, messageFormat: String
+        severity: AlertSeverity, messageFormat: String
     ): List<ActiveAlert> {
         if (!enabled) return emptyList()
         if (value > threshold) {
@@ -995,7 +999,7 @@ class OBDRepository(
 
     private fun evaluateThresholdLow(
         type: AlertType, enabled: Boolean, value: Float, threshold: Float,
-        severity: AlertSeverity, hysteresisSeconds: Int, messageFormat: String
+        severity: AlertSeverity, messageFormat: String
     ): List<ActiveAlert> {
         if (!enabled) return emptyList()
         if (value in 0.1f..threshold) {

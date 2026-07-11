@@ -25,6 +25,9 @@ import com.canopobd.R
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 /**
@@ -74,7 +77,8 @@ fun ChainTensionerWarningCard(
 
     val lastCheckedText = remember(lastCheckedTimestamp) {
         if (lastCheckedTimestamp > 0L) {
-            SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMAN).format(Date(lastCheckedTimestamp))
+            val fmt = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault())
+            fmt.format(Instant.ofEpochMilli(lastCheckedTimestamp))
         } else {
             "—"
         }

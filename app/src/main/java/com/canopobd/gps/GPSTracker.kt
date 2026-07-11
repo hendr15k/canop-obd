@@ -19,7 +19,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @SuppressLint("MissingPermission")
@@ -220,20 +222,18 @@ class GPSTracker(private val context: Context) {
 
     fun exportToGPX(): String {
         val trip = _currentTrip.value ?: return ""
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
+        val dateFormat = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC)
 
         return buildString {
             appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
             appendLine("""<gpx version="1.1" creator="canop-obd">""")
             appendLine("  <trk>")
-            appendLine("    <name>Trip ${trip.id} - ${dateFormat.format(Date(trip.startTime))}</name>")
+            appendLine("    <name>Trip ${trip.id} - ${dateFormat.format(Instant.ofEpochMilli(trip.startTime))}</name>")
             appendLine("    <trkseg>")
             for (loc in trip.locations) {
                 appendLine("""      <trkpt lat="${loc.latitude}" lon="${loc.longitude}">""")
                 appendLine("""        <ele>${loc.altitude}</ele>""")
-                appendLine("""        <time>${dateFormat.format(Date(loc.timestamp))}</time>""")
+                appendLine("""        <time>${dateFormat.format(Instant.ofEpochMilli(loc.timestamp))}</time>""")
                 appendLine("      </trkpt>")
             }
             appendLine("    </trkseg>")
@@ -244,7 +244,6 @@ class GPSTracker(private val context: Context) {
 
     fun exportToKML(): String {
         val trip = _currentTrip.value ?: return ""
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
 
         return buildString {
             appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")

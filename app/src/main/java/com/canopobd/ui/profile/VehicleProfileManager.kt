@@ -162,9 +162,13 @@ private fun ProfileCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(profile.name, color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(profile.vehicle, color = colors.textSecondary, fontSize = 12.sp)
+                val profileDateText = remember(profile.timestamp) {
+                    java.time.Instant.ofEpochMilli(profile.timestamp)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
+                }
                 Text(
-                    java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
-                        .format(java.util.Date(profile.timestamp)),
+                    profileDateText,
                     color = colors.textDim,
                     fontSize = 10.sp
                 )
