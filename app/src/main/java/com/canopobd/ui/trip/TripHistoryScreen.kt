@@ -44,6 +44,13 @@ fun TripHistoryScreen(
     var selectedTripIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showCompareDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(selectedTripIds.size) {
+        if (compareMode && selectedTripIds.size < 2) {
+            compareMode = false
+            selectedTripIds = emptySet()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,7 +82,7 @@ fun TripHistoryScreen(
                                 onClick = { showCompareDialog = true },
                                 enabled = selectedTripIds.size >= 2
                             ) {
-                                Icon(Icons.Filled.Compare, "Vergleichen")
+                                Icon(Icons.AutoMirrored.Filled.CompareArrows, "Vergleichen")
                             }
                         } else {
                             IconButton(onClick = { compareMode = true }) {
@@ -207,7 +214,11 @@ fun TripHistoryScreen(
         if (selectedTrips.size >= 2) {
             TripComparisonDialog(
                 trips = selectedTrips,
-                onDismiss = { showCompareDialog = false }
+                onDismiss = {
+                    showCompareDialog = false
+                    compareMode = false
+                    selectedTripIds = emptySet()
+                }
             )
         }
     }
