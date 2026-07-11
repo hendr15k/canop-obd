@@ -25,7 +25,29 @@ data class AlertConfigEntity(
     val rpmWarning: Float = 6000f,
     val rpmWarningEnabled: Boolean = false,
     val batteryLowWarning: Float = 11.5f,
-    val batteryLowWarningEnabled: Boolean = true
+    val batteryLowWarningEnabled: Boolean = true,
+    val boostWarning: Float = 0.85f,
+    val boostWarningEnabled: Boolean = false,
+    val boostCritical: Float = 1.35f,
+    val boostCriticalEnabled: Boolean = true,
+    val egtWarning: Float = 850f,
+    val egtWarningEnabled: Boolean = true,
+    val egtCritical: Float = 950f,
+    val egtCriticalEnabled: Boolean = true,
+    val oilTempWarning: Float = 120f,
+    val oilTempWarningEnabled: Boolean = true,
+    val oilTempCritical: Float = 135f,
+    val oilTempCriticalEnabled: Boolean = true,
+    val turboSpeedWarning: Float = 180000f,
+    val turboSpeedWarningEnabled: Boolean = false,
+    val chargeAirTempWarning: Float = 65f,
+    val chargeAirTempWarningEnabled: Boolean = false,
+    val fuelTrimWarning: Float = 15f,
+    val fuelTrimWarningEnabled: Boolean = false,
+    val soundEnabled: Boolean = false,
+    val vibrationEnabled: Boolean = true,
+    val hysteresisSeconds: Int = 10,
+    val cooldownSeconds: Int = 60
 )
 
 @Entity(tableName = "shift_light_config")

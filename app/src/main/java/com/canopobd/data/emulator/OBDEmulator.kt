@@ -22,10 +22,38 @@ class OBDEmulator(
     private var driveCyclePhase = 0
     private var accumulatedDistance = 0.0
 
+    private var activeDrivingProfile: DrivingCycleProfile? = null
+    private var profileStartTime = 0L
+    private var currentGear = 1
+
+    private val gearRatios = doubleArrayOf(3.727, 2.044, 1.357, 1.034, 0.825, 0.667, 3.46)
+    private val finalDrive = 3.83
+    private val turboTimeConstantMs = 350.0
+    private val redlineRpm = 6500.0
+    private val idleRpm = 850.0
+
     enum class VehicleType {
         OPEL_ASTRA_J_14T,
         GENERIC_TURBO,
         GENERIC_NA
+    }
+
+    sealed class DrivingCycleProfile {
+        object UrbanCycle : DrivingCycleProfile()
+        object HighwayCycle : DrivingCycleProfile()
+        object SpiritedDrive : DrivingCycleProfile()
+        object ColdStartWarmup : DrivingCycleProfile()
+        object TrackDay : DrivingCycleProfile()
+
+        data class CustomWaypoint(
+            val waypoints: List<Waypoint>
+        ) : DrivingCycleProfile()
+
+        data class Waypoint(
+            val timeSeconds: Double,
+            val throttle: Double,
+            val targetSpeed: Double = -1.0
+        )
     }
 
     fun connect() {
@@ -40,16 +68,119 @@ class OBDEmulator(
         currentBoost = 0.0
         driveCyclePhase = 0
         accumulatedDistance = 0.0
+        currentGear = 1
+        activeDrivingProfile = null
+        profileStartTime = 0
     }
 
     fun disconnect() {
         engineRunning = false
     }
 
+    fun loadDrivingCycle(profile: DrivingCycleProfile) {
+        activeDrivingProfile = profile
+        profileStartTime = simulationTime
+        currentGear = 1
+    }
+
+    private fun applyActiveProfile(timeSeconds: Double) {
+        val profile = activeDrivingProfile ?: return
+        val elapsedSec = (simulationTime - profileStartTime) / 1000.0
+
+        when (profile) {
+            DrivingCycleProfile.UrbanCycle -> applyUrbanCycle(elapsedSec)
+            DrivingCycleProfile.HighwayCycle -> applyHighwayCycle(elapsedSec)
+            DrivingCycleProfile.SpiritedDrive -> applySpiritedDrive(elapsedSec)
+            DrivingCycleProfile.ColdStartWarmup -> applyColdStartWarmup(elapsedSec)
+            DrivingCycleProfile.TrackDay -> applyTrackDay(elapsedSec)
+            is DrivingCycleProfile.CustomWaypoint -> applyCustomWaypoint(profile, elapsedSec)
+        }
+    }
+
+    private fun applyUrbanCycle(elapsedSec: Double) {
+        val cycleTime = elapsedSec % 60.0
+        throttlePosition = when {
+            cycleTime < 5 -> 0.0
+            cycleTime < 10 -> 25.0
+            cycleTime < 20 -> 50.0
+            cycleTime < 25 -> 30.0
+            cycleTime < 35 -> 15.0
+            cycleTime < 40 -> 5.0
+            cycleTime < 50 -> 60.0
+            else -> 20.0
+        }
+    }
+
+    private fun applyHighwayCycle(elapsedSec: Double) {
+        val cycleTime = elapsedSec % 90.0
+        throttlePosition = when {
+            cycleTime < 10 -> 30.0
+            cycleTime < 30 -> 50.0
+            cycleTime < 60 -> 40.0
+            cycleTime < 75 -> 65.0
+            else -> 30.0
+        }
+    }
+
+    private fun applySpiritedDrive(elapsedSec: Double) {
+        val cycleTime = elapsedSec % 45.0
+        throttlePosition = when {
+            cycleTime < 3 -> 95.0
+            cycleTime < 5 -> 30.0
+            cycleTime < 8 -> 80.0
+            cycleTime < 10 -> 40.0
+            cycleTime < 15 -> 70.0
+            cycleTime < 20 -> 20.0
+            cycleTime < 25 -> 90.0
+            else -> 50.0
+        }
+    }
+
+    private fun applyColdStartWarmup(elapsedSec: Double) {
+        throttlePosition = when {
+            elapsedSec < 30 -> 0.0
+            elapsedSec < 60 -> 5.0
+            elapsedSec < 120 -> 15.0
+            elapsedSec < 180 -> 25.0
+            elapsedSec < 240 -> 30.0
+            elapsedSec < 300 -> 40.0
+            elapsedSec < 360 -> 50.0
+            else -> 35.0
+        }
+    }
+
+    private fun applyTrackDay(elapsedSec: Double) {
+        val cycleTime = elapsedSec % 90.0
+        throttlePosition = when {
+            cycleTime < 10 -> 100.0
+            cycleTime < 12 -> 30.0
+            cycleTime < 15 -> 100.0
+            cycleTime < 18 -> 100.0
+            cycleTime < 20 -> 30.0
+            cycleTime < 30 -> 100.0
+            cycleTime < 35 -> 30.0
+            cycleTime < 45 -> 100.0
+            cycleTime < 50 -> 100.0
+            cycleTime < 55 -> 30.0
+            cycleTime < 60 -> 100.0
+            cycleTime < 70 -> 30.0
+            else -> 100.0
+        }
+    }
+
+    private fun applyCustomWaypoint(profile: DrivingCycleProfile.CustomWaypoint, elapsedSec: Double) {
+        val activeWaypoint = profile.waypoints
+            .filter { it.timeSeconds <= elapsedSec }
+            .maxByOrNull { it.timeSeconds }
+        activeWaypoint?.let {
+            throttlePosition = it.throttle
+        }
+    }
+
     fun generateData(pollIntervalMs: Long = 500): OBDData {
         simulationTime += pollIntervalMs
 
-        updateSimulation()
+        updateSimulation(pollIntervalMs / 1000.0)
 
         val timeSeconds = simulationTime / 1000.0
         accumulatedDistance += currentSpeed * (pollIntervalMs / 3_600_000.0)
@@ -186,31 +317,77 @@ class OBDEmulator(
         driveCyclePhase = (driveCyclePhase + 1) % 8
     }
 
-    private fun updateSimulation() {
-        currentRpm += (targetRpm - currentRpm) * 0.1
-        currentRpm += (Math.random() - 0.5) * 20
+    private fun updateSimulation(dtSeconds: Double) {
+        setThrottleInternal(throttlePosition)
 
-        if (currentCoolantTemp < 90) {
-            currentCoolantTemp += 0.02
+        val rpmApproach = (targetRpm - currentRpm) * (dtSeconds * 4.0).coerceAtMost(1.0)
+        currentRpm += rpmApproach + (Math.random() - 0.5) * 15
+        currentRpm = currentRpm.coerceIn(idleRpm, redlineRpm)
+
+        updateGear()
+        updateSpeedFromGear(dtSeconds)
+
+        val warmupDelta = if (currentCoolantTemp < 90) {
+            0.4 + (throttlePosition / 100.0) * 0.3
+        } else -0.05
+        currentCoolantTemp += warmupDelta + (Math.random() - 0.5) * 0.1
+        currentCoolantTemp = currentCoolantTemp.coerceIn(20.0, 105.0)
+
+        updateTurboDynamics(dtSeconds)
+
+        currentFuelLevel = max(0.0, currentFuelLevel - calculateFuelRate() * dtSeconds * 0.0001)
+    }
+
+    private fun updateTurboDynamics(dtSeconds: Double) {
+        val targetBoost = calculateTargetBoost()
+        val tauSeconds = turboTimeConstantMs / 1000.0
+        val alpha = (dtSeconds / tauSeconds).coerceIn(0.0, 1.0)
+        currentBoost += (targetBoost - currentBoost) * alpha
+        currentBoost += (Math.random() - 0.5) * 0.01
+        currentBoost = currentBoost.coerceIn(0.0, 1.5)
+    }
+
+    private fun updateGear() {
+        if (currentRpm > redlineRpm * 0.85 && currentGear < gearRatios.size) {
+            currentGear++
+        } else if (currentRpm < 1800 && currentGear > 1) {
+            currentGear--
         }
+    }
 
-        if (throttlePosition > 10 && currentRpm > 2000) {
-            currentBoost = min(1.0, throttlePosition / 100 * 0.8 + (currentRpm - 2000) / 8000 * 0.2)
-            currentBoost += (Math.random() - 0.5) * 0.02
-        } else {
-            currentBoost = max(0.0, currentBoost - 0.02)
+    private fun updateSpeedFromGear(dtSeconds: Double) {
+        if (currentGear < 1 || currentGear > gearRatios.size) {
+            currentGear = 1
+            return
         }
+        val ratio = gearRatios[currentGear - 1]
+        val speedAtGear = (currentRpm / ratio) / finalDrive * 2.32 * 60.0 / 1000.0
+        val speedDelta = speedAtGear - currentSpeed
+        val maxDelta = 8.0 * dtSeconds
+        val appliedDelta = speedDelta.coerceIn(-maxDelta * 2.0, maxDelta)
+        currentSpeed = max(0.0, currentSpeed + appliedDelta)
+        currentSpeed = currentSpeed.coerceAtMost(220.0)
+    }
 
-        currentSpeed = when {
-            throttlePosition < 1 -> max(0.0, currentSpeed - 0.5)
-            throttlePosition < 20 -> min(50.0, currentSpeed + 0.3)
-            throttlePosition < 50 -> min(100.0, currentSpeed + 0.5)
-            throttlePosition < 80 -> min(160.0, currentSpeed + 0.8)
-            else -> min(210.0, currentSpeed + 1.0)
+    private fun setThrottleInternal(position: Double) {
+        throttlePosition = position.coerceIn(0.0, 100.0)
+        targetRpm = when {
+            throttlePosition < 1 -> idleRpm
+            throttlePosition < 10 -> idleRpm + throttlePosition * 100
+            throttlePosition < 30 -> idleRpm + throttlePosition * 120
+            throttlePosition < 60 -> 2500.0 + (throttlePosition - 30) * 50
+            throttlePosition < 80 -> 4000.0 + (throttlePosition - 60) * 75
+            else -> 5500.0 + (throttlePosition - 80) * 50
         }
-        currentSpeed = currentSpeed.coerceAtLeast(0.0)
+        targetRpm = targetRpm.coerceIn(idleRpm, redlineRpm)
+    }
 
-        currentFuelLevel = max(0.0, currentFuelLevel - throttlePosition * 0.00001)
+    private fun calculateShortTermFuelTrim(timeSec: Double): Double {
+        val coldStartEnrichment = if (currentCoolantTemp < 60) {
+            (60.0 - currentCoolantTemp) * 0.3
+        } else 0.0
+        val decelCutoff = if (throttlePosition < 1 && currentRpm > 1500) -8.0 else 0.0
+        return -1.5 + sin(timeSec * 0.3) * 2 + coldStartEnrichment + decelCutoff
     }
 
     private fun calculateEngineLoad(): Double {

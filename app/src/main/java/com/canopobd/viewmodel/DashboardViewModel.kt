@@ -31,10 +31,7 @@ import com.canopobd.data.domain.BoostLeakDetector
 import com.canopobd.data.domain.WastegateHealthAnalyzer
 import com.canopobd.data.domain.SensorHealthMonitor
 import com.canopobd.data.domain.OilHealthPredictor
-import com.canopobd.data.domain.SensorValidator
 import com.canopobd.data.domain.ValidationResult
-import com.canopobd.protocol.BCMCommandMapper
-import com.canopobd.protocol.BCMProtocol
 import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.notifications.MaintenanceNotificationManager
 import com.canopobd.data.domain.DriveStyleAnalyzer
@@ -75,6 +72,10 @@ class DashboardViewModel private constructor(
     private val safetyViewModel = SafetyViewModel(application)
     private val ecoScoreViewModel = EcoScoreViewModel(application)
     private val accelerationTimer = com.canopobd.data.domain.AccelerationTimer()
+
+    private val analyzerManager = AnalyzerManager()
+    private lateinit var comfortController: ComfortController
+    private val dtcProcessor = DTCProcessor()
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val repository = OBDRepository(context, bluetoothManager?.adapter)
@@ -163,19 +164,6 @@ class DashboardViewModel private constructor(
 
     private var lastMaintenanceCheckTime = 0L
     private val sessionNotifiedMaintenance = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, MaintenanceNotificationManager.Urgency>>()
-
-    // Oil thermal stress tracking
-    private var oilTimeAbove110C = 0.0
-    private var oilTimeAbove115C = 0.0
-    private var oilTimeAbove120C = 0.0
-    private var oilShortTripCount = 0
-    private var lastOilTempSampleTime = 0L
-    private var lastOilTempWasCold = true
-
-    // Turbo spool time tracking
-    private var turboSpoolTracking = false
-    private var turboSpoolStartTime = 0L
-    private var turboSpoolStartBoost = 0.0
 
     private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
     val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
@@ -286,25 +274,18 @@ class DashboardViewModel private constructor(
     private val _showClimateControl = MutableStateFlow(false)
     val showClimateControl: StateFlow<Boolean> = _showClimateControl.asStateFlow()
 
-    private val _climateState = MutableStateFlow(com.canopobd.ui.climate.ClimateState())
-    val climateState: StateFlow<com.canopobd.ui.climate.ClimateState> = _climateState.asStateFlow()
+    val climateState: StateFlow<com.canopobd.ui.climate.ClimateState> get() = comfortController.climateState
 
     private val _showWindowControl = MutableStateFlow(false)
     val showWindowControl: StateFlow<Boolean> = _showWindowControl.asStateFlow()
 
-    private val _windowState = MutableStateFlow(com.canopobd.data.domain.WindowState())
-    val windowState: StateFlow<com.canopobd.data.domain.WindowState> = _windowState.asStateFlow()
+    val windowState: StateFlow<com.canopobd.data.domain.WindowState> get() = comfortController.windowState
 
-    private val _windowChildLock = MutableStateFlow(false)
-    val windowChildLock: StateFlow<Boolean> = _windowChildLock.asStateFlow()
+    val windowChildLock: StateFlow<Boolean> get() = comfortController.windowChildLock
 
-    private val _windowIsMoving = MutableStateFlow(false)
-    val windowIsMoving: StateFlow<Boolean> = _windowIsMoving.asStateFlow()
+    val windowIsMoving: StateFlow<Boolean> get() = comfortController.windowIsMoving
 
-    private val _windowExpressMode = MutableStateFlow(false)
-    val windowExpressMode: StateFlow<Boolean> = _windowExpressMode.asStateFlow()
-
-    private var windowAutoStopJob: kotlinx.coroutines.Job? = null
+    val windowExpressMode: StateFlow<Boolean> get() = comfortController.windowExpressMode
 
     val codingInProgress: StateFlow<Boolean> = _codingInProgress.asStateFlow()
 
@@ -378,164 +359,54 @@ class DashboardViewModel private constructor(
     val sportScore = MutableStateFlow(0.0)
     val drivingStyle = MutableStateFlow(DriveStyle.ECONOMICAL)
 
-    // Emissions Analyzer State
-    private val batteryAnalyzer = BatteryHealthAnalyzer()
-    private val egrAnalyzer = EGRHealthAnalyzer()
-    private val evapAnalyzer = EVAPSystemAnalyzer()
-    private val saiAnalyzer = SecondaryAirAnalyzer()
-    private val lambdaAnalyzer = LambdaO2SensorAnalyzer()
-    private val readinessAnalyzer = EmissionsReadinessAnalyzer()
+    // Emissions Analyzer State - delegated to analyzerManager
+    val batteryHealth: StateFlow<BatteryStatus> get() = analyzerManager.batteryHealth
+    val batteryHealthScore: StateFlow<Int> get() = analyzerManager.batteryHealthScore
+    val batteryAnalysis: StateFlow<BatteryHealthAnalyzer.BatteryAnalysis?> get() = analyzerManager.batteryAnalysis
 
-    private val oilConditionMonitor = OilConditionMonitor()
-    private val pcvMonitor = PCVMonitor()
-    private val lambdaBalanceAnalyzer = LambdaBalanceAnalyzer()
-    private val fuelConsumptionAnalyzer = FuelConsumptionAnalyzer()
-    private val m32GearboxMonitor = M32GearboxMonitor()
-    private val chainTensionerAnalyzer = ChainTensionerAnalyzer()
-    private val egtMonitor = EGTMonitor()
-    private val coolantHealthMonitor = CoolantSystemHealth()
-    private val turboSpoolAnalyzer = TurboSpoolAnalyzer()
-    private val turboEfficiencyAnalyzer = TurboEfficiencyAnalyzer()
-    private val boostLeakDetector = BoostLeakDetector()
-    private val wastegateHealthAnalyzer = WastegateHealthAnalyzer()
-    private val sensorHealthMonitor = SensorHealthMonitor()
-    private val driveStyleAnalyzer = DriveStyleAnalyzer()
-    private val drivingEfficiencyScorer = DrivingEfficiencyScorer()
-    private val fuelSystemAnalyzer = FuelSystemAnalyzer()
-    private val oilHealthPredictor = OilHealthPredictor()
-    private val sensorValidator = SensorValidator(com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE)
-    private val fuelTrimAnalyzer = FuelTrimAnalyzer()
+    val egrHealth: StateFlow<EGRHealth> get() = analyzerManager.egrHealth
+    val egrAnalysis: StateFlow<EGRHealthAnalyzer.EGRAnalysis?> get() = analyzerManager.egrAnalysis
 
-    val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
-    val batteryHealthScore = MutableStateFlow(100)
-    val batteryAnalysis = MutableStateFlow<BatteryHealthAnalyzer.BatteryAnalysis?>(null)
+    val evapStatus: StateFlow<EVAPStatus> get() = analyzerManager.evapStatus
+    val evapAnalysis: StateFlow<EVAPSystemAnalyzer.EVAPAnalysis?> get() = analyzerManager.evapAnalysis
 
-    val egrHealth = MutableStateFlow(EGRHealth(EGRStatus.CLOSED, 0.0, 0.0, 100))
-    val egrAnalysis = MutableStateFlow<EGRHealthAnalyzer.EGRAnalysis?>(null)
+    val saiStatus: StateFlow<SAIStatus> get() = analyzerManager.saiStatus
+    val saiAnalysis: StateFlow<SecondaryAirAnalyzer.SAIAnalysis?> get() = analyzerManager.saiAnalysis
 
-    val evapStatus = MutableStateFlow(EVAPStatus(0.0, 0.0, false, null))
-    val evapAnalysis = MutableStateFlow<EVAPSystemAnalyzer.EVAPAnalysis?>(null)
+    val lambdaAnalysis: StateFlow<LambdaO2SensorAnalyzer.LambdaAnalysis?> get() = analyzerManager.lambdaAnalysis
 
-    val saiStatus = MutableStateFlow(SAIStatus(false, 0L, 100))
-    val saiAnalysis = MutableStateFlow<SecondaryAirAnalyzer.SAIAnalysis?>(null)
+    val emissionsReadiness: StateFlow<EmissionsReadinessAnalyzer.ReadinessAnalysis?> get() = analyzerManager.emissionsReadiness
 
-    val lambdaAnalysis = MutableStateFlow<LambdaO2SensorAnalyzer.LambdaAnalysis?>(null)
+    // Extended Analyzer States - delegated to analyzerManager
+    val oilConditionResult: StateFlow<OilConditionMonitor.OilAnalysis> get() = analyzerManager.oilConditionResult
+    val pcvResult: StateFlow<PCVMonitor.PCVAnalysis> get() = analyzerManager.pcvResult
+    val lambdaBalanceData: StateFlow<LambdaBalanceAnalyzer.LambdaBalance> get() = analyzerManager.lambdaBalanceData
+    val fuelConsumptionData: StateFlow<FuelConsumptionAnalyzer.FuelConsumptionData> get() = analyzerManager.fuelConsumptionData
+    val gearboxResult: StateFlow<M32GearboxMonitor.GearboxAnalysis> get() = analyzerManager.gearboxResult
+    val chainTensionerResult: StateFlow<ChainTensionerAnalyzer.ChainTensionerAnalysis> get() = analyzerManager.chainTensionerResult
+    val egtResult: StateFlow<EGTMonitor.EGTAnalysis> get() = analyzerManager.egtResult
+    val coolantResult: StateFlow<CoolantSystemHealth.CoolantAnalysis> get() = analyzerManager.coolantResult
+    val oilHealthPrediction: StateFlow<OilHealthPredictor.OilHealthPredictionResult> get() = analyzerManager.oilHealthPrediction
+    val sensorValidationResult: StateFlow<ValidationResult> get() = analyzerManager.sensorValidationResult
+    val turboSpoolResult: StateFlow<TurboSpoolAnalyzer.SpoolAnalysis> get() = analyzerManager.turboSpoolResult
+    val turboEfficiencyResult: StateFlow<TurboEfficiencyAnalyzer.TurboEfficiencyAnalysis> get() = analyzerManager.turboEfficiencyResult
+    val boostLeakResult: StateFlow<BoostLeakDetector.BoostLeakAnalysis> get() = analyzerManager.boostLeakResult
+    val wastegateResult: StateFlow<WastegateHealthAnalyzer.WastegateAnalysis> get() = analyzerManager.wastegateResult
+    val sensorHealthSummary: StateFlow<SensorHealthMonitor.SensorHealthSummary> get() = analyzerManager.sensorHealthSummary
+    val driveStyleResult: StateFlow<DriveStyleAnalyzer.DriveStyleAnalysis> get() = analyzerManager.driveStyleResult
+    val drivingEfficiencyResult: StateFlow<DrivingEfficiencyScorer.EfficiencyScore> get() = analyzerManager.drivingEfficiencyResult
+    val fuelSystemResult: StateFlow<FuelSystemAnalyzer.FuelSystemAnalysis> get() = analyzerManager.fuelSystemResult
 
-    val emissionsReadiness = MutableStateFlow<EmissionsReadinessAnalyzer.ReadinessAnalysis?>(null)
-
-    // Extended Analyzer States
-    val oilConditionResult = MutableStateFlow(OilConditionMonitor.OilAnalysis(
-        condition = OilConditionMonitor.OilCondition.UNKNOWN, healthScore = 0,
-        oilLifeRemaining = 0.0, remainingKm = 0, remainingDays = 0,
-        temperatureHealth = 0, pressureHealth = 0, contaminationRisk = 0,
-        diagnosis = "", recommendation = "", oilType = ""
-    ))
-    val pcvResult = MutableStateFlow(PCVMonitor.PCVAnalysis(
-        health = PCVMonitor.PCVHealth.UNKNOWN, healthScore = 0, mafDeviation = 0.0,
-        totalTrimDeviation = 0.0, oilConsumptionStatus = "", diagnosis = "", recommendation = ""
-    ))
-    val lambdaBalanceData = MutableStateFlow(LambdaBalanceAnalyzer.LambdaBalance())
-    val fuelConsumptionData = MutableStateFlow(FuelConsumptionAnalyzer.FuelConsumptionData())
-    val gearboxResult = MutableStateFlow(M32GearboxMonitor.GearboxAnalysis(
-        health = M32GearboxMonitor.GearboxHealth.UNKNOWN, healthScore = 0,
-        detectedIssues = emptyList(), shiftQualityScore = 0, rpmSpeedRatioAnomaly = 0,
-        bearingWearIndicator = 0, oilConditionScore = 0, diagnosis = "", recommendation = ""
-    ))
-    val chainTensionerResult = MutableStateFlow(ChainTensionerAnalyzer.ChainTensionerAnalysis(
-        health = ChainTensionerAnalyzer.ChainTensionerHealth.UNKNOWN, healthScore = 0,
-        dtcPenalty = 0, rattlePenalty = 0, rpmStabilityPenalty = 0, timingVariancePenalty = 0,
-        diagnosis = "", recommendation = "", chainElongationEstimate = ""
-    ))
-    val egtResult = MutableStateFlow(EGTMonitor.EGTAnalysis(
-        status = EGTMonitor.EGTStatus.NO_DATA, healthScore = 0,
-        trend = EGTMonitor.EGTTrend.STABLE, thermalStressIndex = 0.0,
-        thermalStressHours = 0.0, cylinderBalance = 0.0, estimatedEgtMax = 0.0,
-        egtDeviation = 0.0, diagnosis = "", recommendation = "", warningFlags = emptyList()
-    ))
-    val coolantResult = MutableStateFlow(CoolantSystemHealth.CoolantAnalysis(
-        status = CoolantSystemHealth.CoolantSystemStatus.UNKNOWN, healthScore = 0,
-        thermostatState = CoolantSystemHealth.ThermostatState.UNKNOWN,
-        thermostatOpeningTemp = 0.0, waterPumpEfficiency = 0, leakProbability = 0,
-        coolantTempStable = true, diagnosis = "", recommendation = "", detectedIssues = emptyList()
-    ))
-    val oilHealthPrediction = MutableStateFlow(OilHealthPredictor.OilHealthPredictionResult(
-        prediction = OilHealthPredictor.OilHealthPrediction.UNKNOWN,
-        healthScore = 0, thermalStressIndex = 0.0, degradationPercent = 0.0,
-        effectiveOilAgeKm = 0.0, kmSinceOilChange = 0.0, recommendedChangeKm = 0,
-        recommendedChangeDays = 0, thermalLoadScore = 0, drivingPatternScore = 0,
-        consumptionScore = 0, diagnosis = "", recommendation = "", oilType = ""
-    ))
-    val sensorValidationResult: MutableStateFlow<ValidationResult> = MutableStateFlow(ValidationResult.Unavailable)
-    val turboSpoolResult = MutableStateFlow(TurboSpoolAnalyzer.SpoolAnalysis(
-        status = TurboSpoolAnalyzer.SpoolStatus.INSUFFICIENT_DATA, healthScore = 0,
-        spoolTimeSeconds = 0.0, expectedSpoolTime = 0.0, spoolDeviation = 0.0,
-        wastegateResponse = 0.0, turboAcceleration = 0.0, diagnosis = "",
-        recommendation = "", trendIndicator = TurboSpoolAnalyzer.SpoolTrend.UNKNOWN
-    ))
-    val turboEfficiencyResult = MutableStateFlow(TurboEfficiencyAnalyzer.TurboEfficiencyAnalysis(
-        efficiency = TurboEfficiencyAnalyzer.TurboEfficiency.GOOD, healthScore = 0,
-        boostEfficiency = 0.0, responseTimeScore = 0, wastegateHealthScore = 0,
-        egtTrendScore = 0, intercoolerEfficiency = 0.0, boostDeviation = 0.0,
-        diagnosis = "", recommendation = ""
-    ))
-    val boostLeakResult = MutableStateFlow(BoostLeakDetector.BoostLeakAnalysis(
-        severity = BoostLeakDetector.LeakSeverity.UNKNOWN,
-        likelyLocation = BoostLeakDetector.LeakLocation.UNKNOWN, healthScore = -1,
-        boostDeviationPercent = 0.0, turboBoostCorrelation = 0.0,
-        tempDeltaAnomaly = 0.0, mafDeviation = 0.0, confidencePercent = 0,
-        diagnosis = "", recommendation = "", detectedIndicators = emptyList()
-    ))
-    val wastegateResult = MutableStateFlow(WastegateHealthAnalyzer.WastegateAnalysis(
-        condition = WastegateHealthAnalyzer.WastegateCondition.UNKNOWN,
-        currentDutyPercent = 0.0, avgDutyPercent = 0.0, boostDeviation = 0.0,
-        healthScore = 0, diagnosis = "", recommendation = ""
-    ))
-    val sensorHealthSummary = MutableStateFlow(SensorHealthMonitor.SensorHealthSummary(
-        overallHealthScore = 0, overallStatus = SensorHealthMonitor.HealthStatus.UNKNOWN,
-        sensorHealths = emptyMap(), criticalIssues = emptyList(), recommendations = emptyList()
-    ))
-    val driveStyleResult = MutableStateFlow(DriveStyleAnalyzer.DriveStyleAnalysis(
-        driveStyle = DriveStyleAnalyzer.DriveStyle.BALANCED, ecoScore = 0, sportScore = 0,
-        wearScore = 0, rpmDistribution = DriveStyleAnalyzer.RPMDistribution(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-        throttleSmoothness = 0, brakingPattern = 0, overboostFrequency = 0.0,
-        shiftQuality = 0, feedback = "", detailedFeedback = emptyList()
-    ))
-    val drivingEfficiencyResult = MutableStateFlow(DrivingEfficiencyScorer.EfficiencyScore())
-    val fuelSystemResult = MutableStateFlow(FuelSystemAnalyzer.FuelSystemAnalysis(
-        health = FuelSystemAnalyzer.FuelSystemHealth.UNKNOWN, healthScore = 0,
-        detectedIssues = emptyList(), fuelRailPressureDeviation = 0.0,
-        trimHealthScore = 0, injectorHealthScore = 0, carbonBuildupRisk = 0,
-        diagnosis = "", recommendation = ""
-    ))
-
-    data class ExtendedAnalyzerSummary(
-        val oilHealth: String = "Unbekannt",
-        val pcvHealth: String = "Unbekannt",
-        val chainHealth: String = "Unbekannt",
-        val gearboxHealth: String = "Unbekannt",
-        val coolantHealth: String = "Unbekannt",
-        val boostLeakRisk: String = "Unbekannt",
-        val overallScore: Int = 0,
-        val criticalWarnings: List<String> = emptyList()
-    )
-
-    val extendedAnalyzerData = MutableStateFlow(ExtendedAnalyzerSummary())
-
-    private val _voltageHistory = MutableStateFlow<List<Double>>(emptyList())
-    private val _o2VoltageHistory = MutableStateFlow<List<Double>>(emptyList())
+    val extendedAnalyzerData: StateFlow<AnalyzerManager.ExtendedAnalyzerSummary> get() = analyzerManager.extendedAnalyzerData
 
     // Warning System
     val criticalWarnings = MutableStateFlow<List<VehicleWarning>>(emptyList())
 
     // DTC Processing
-    private val _processedDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
-    val processedDTCs: StateFlow<List<ProcessedDTC>> = _processedDTCs.asStateFlow()
-    private val _criticalDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
-    val criticalDTCs: StateFlow<List<ProcessedDTC>> = _criticalDTCs.asStateFlow()
-    private val _warningDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
-    val warningDTCs: StateFlow<List<ProcessedDTC>> = _warningDTCs.asStateFlow()
-    private val _infoDTCs = MutableStateFlow<List<ProcessedDTC>>(emptyList())
-    val infoDTCs: StateFlow<List<ProcessedDTC>> = _infoDTCs.asStateFlow()
+    val processedDTCs: StateFlow<List<ProcessedDTC>> get() = dtcProcessor.processedDTCs
+    val criticalDTCs: StateFlow<List<ProcessedDTC>> get() = dtcProcessor.criticalDTCs
+    val warningDTCs: StateFlow<List<ProcessedDTC>> get() = dtcProcessor.warningDTCs
+    val infoDTCs: StateFlow<List<ProcessedDTC>> get() = dtcProcessor.infoDTCs
 
     // Mode 22 State
     private val _supportedMode22Pids = MutableStateFlow<List<String>>(emptyList())
@@ -550,6 +421,7 @@ class DashboardViewModel private constructor(
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     init {
+        comfortController = ComfortController(viewModelScope) { repository.sendRawCommand(it) }
         viewModelScope.launch(Dispatchers.IO) {
             val items = repository.loadMaintenanceItems()
             val shiftConfig = repository.loadShiftLightConfig()
@@ -1036,276 +908,49 @@ class DashboardViewModel private constructor(
     }
 
     fun onSendClimateCommand(command: com.canopobd.ui.climate.ClimateCommand) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val frame = when (command) {
-                is com.canopobd.ui.climate.ClimateCommand.AC_ON -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isACEnabled = true)
-                    _climateState.value = newState
-                    val frame = BCMProtocol.Climate.acOnFrame()
-                    bytesToHex(frame)
-                }
-                is com.canopobd.ui.climate.ClimateCommand.AC_OFF -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isACEnabled = false)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.acOffFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.AUTO_MODE -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isAutoMode = true, fanSpeed = 3)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.autoModeFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.RECIRC_ON -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isRecirculation = true)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.recirculationFrame(true).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.RECIRC_OFF -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isRecirculation = false)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.recirculationFrame(false).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isFrontDefrost = true)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.defrostFrontFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.DEFROST_FRONT_OFF -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isFrontDefrost = false)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.defrostFrontOffFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isRearDefrost = true)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.defrostRearFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.DEFROST_REAR_OFF -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isRearDefrost = false)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.defrostRearOffFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isMirrorDefrost = true)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.defrostAllFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.DEFROST_MIRRORS_OFF -> {
-                    val current = _climateState.value
-                    val newState = current.copy(isMirrorDefrost = false)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.defrostMirrorsOffFrame().let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.FAN_OFF -> {
-                    val current = _climateState.value
-                    val newState = current.copy(fanSpeed = 0)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.blowerSpeedFrame(0).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_UP -> {
-                    val current = _climateState.value
-                    val newSpeed = (current.fanSpeed + 1).coerceAtMost(6)
-                    val newState = current.copy(fanSpeed = newSpeed)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.blowerSpeedFrame(newSpeed).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_DOWN -> {
-                    val current = _climateState.value
-                    val newSpeed = (current.fanSpeed - 1).coerceAtLeast(0)
-                    val newState = current.copy(fanSpeed = newSpeed)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.blowerSpeedFrame(newSpeed).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_1 -> {
-                    val current = _climateState.value
-                    val newState = current.copy(fanSpeed = 1)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.blowerSpeedFrame(1).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.FAN_SPEED_3 -> {
-                    val current = _climateState.value
-                    val newState = current.copy(fanSpeed = 3)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.blowerSpeedFrame(3).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.FAN_MAX -> {
-                    val current = _climateState.value
-                    val newState = current.copy(fanSpeed = 6)
-                    _climateState.value = newState
-                    BCMProtocol.Climate.blowerSpeedFrame(6).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.SET_TEMP_DRIVER -> {
-                    val current = _climateState.value
-                    BCMProtocol.Climate.temperatureFrame(current.driverTemp).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.SET_TEMP_PASSENGER -> {
-                    val current = _climateState.value
-                    BCMProtocol.Climate.temperatureFrame(current.passengerTemp).let { bytesToHex(it) }
-                }
-                is com.canopobd.ui.climate.ClimateCommand.TOGGLE_SYNC -> {
-                    val current = _climateState.value
-                    val newState = current.copy(syncEnabled = !current.syncEnabled)
-                    _climateState.value = newState
-                    Log.d(TAG, "Sync toggled: ${newState.syncEnabled}")
-                    null
-                }
-            }
-            frame?.let { repository.sendRawCommand(it) }
-        }
-    }
-
-    private fun bytesToHex(bytes: ByteArray): String {
-        return bytes.joinToString("") { "%02X".format(it) }
+        comfortController.sendClimateCommand(command)
     }
 
     fun updateClimateState(state: com.canopobd.ui.climate.ClimateState) {
-        _climateState.value = state
+        comfortController.updateClimateState(state)
     }
 
     fun toggleWindowControl() { _showWindowControl.value = !_showWindowControl.value }
 
     fun updateWindowState(state: com.canopobd.data.domain.WindowState) {
-        _windowState.value = state
+        comfortController.updateWindowState(state)
     }
 
-    fun toggleWindowChildLock() { _windowChildLock.value = !_windowChildLock.value }
+    fun toggleWindowChildLock() { comfortController.toggleWindowChildLock() }
 
-    fun toggleWindowExpressMode() { _windowExpressMode.value = !_windowExpressMode.value }
+    fun toggleWindowExpressMode() { comfortController.toggleWindowExpressMode() }
 
     fun onSendWindowPosition(target: com.canopobd.data.domain.WindowTarget, percent: Int) {
-        if (_windowChildLock.value) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val frame = com.canopobd.data.domain.WindowControlMonitor.buildSetPosition(target, percent)
-            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.applyPositionPreset(
-                _windowState.value, target, percent
-            )
-            repository.sendRawCommand(bytesToHex(frame))
-        }
+        comfortController.sendWindowPosition(target, percent)
     }
 
     fun onSendWindowVentilateAll() {
-        if (_windowChildLock.value) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(
-                com.canopobd.data.domain.WindowAction.ALL_VENTILATE
-            )
-            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
-                _windowState.value, com.canopobd.data.domain.WindowAction.ALL_VENTILATE
-            )
-            repository.sendRawCommand(bytesToHex(frame))
-            scheduleWindowAutoStop()
-        }
+        comfortController.sendWindowVentilateAll()
     }
 
     fun onSendSunroofCommand(action: com.canopobd.data.domain.WindowAction) {
-        if (_windowChildLock.value && action != com.canopobd.data.domain.WindowAction.SUNROOF_CLOSE) {
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(action)
-            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
-                _windowState.value, action
-            )
-            repository.sendRawCommand(bytesToHex(frame))
-            if (action.name.startsWith("SUNROOF_") &&
-                action != com.canopobd.data.domain.WindowAction.SUNROOF_STOP
-            ) {
-                scheduleWindowAutoStop()
-            }
-        }
+        comfortController.sendSunroofCommand(action)
     }
 
     fun onSendWindowCommand(command: com.canopobd.data.domain.WindowAction) {
-        if (_windowChildLock.value && command != com.canopobd.data.domain.WindowAction.ALL_UP) {
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            val frame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(command)
-            _windowState.value = com.canopobd.data.domain.WindowControlMonitor.updateStateFromAction(
-                _windowState.value, command
-            )
-            repository.sendRawCommand(bytesToHex(frame))
-            if (command.name.endsWith("_UP") || command.name.endsWith("_DOWN")) {
-                scheduleWindowAutoStop()
-            }
-        }
-    }
-
-    private fun scheduleWindowAutoStop() {
-        windowAutoStopJob?.cancel()
-        val delayMs = if (_windowExpressMode.value) {
-            com.canopobd.data.domain.AUTO_STOP_DELAY_EXPRESS_MS
-        } else {
-            com.canopobd.data.domain.AUTO_STOP_DELAY_NORMAL_MS
-        }
-        _windowIsMoving.value = true
-        windowAutoStopJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                kotlinx.coroutines.delay(delayMs)
-                val stopFrame = com.canopobd.data.domain.WindowControlMonitor.commandForAction(
-                    com.canopobd.data.domain.WindowAction.ALL_STOP
-                )
-                repository.sendRawCommand(bytesToHex(stopFrame))
-            } catch (_: kotlinx.coroutines.CancellationException) {
-            } finally {
-                _windowIsMoving.value = false
-            }
-        }
+        comfortController.sendWindowCommand(command)
     }
 
     fun pollWindowStatus() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val raw = repository.sendRawCommand("22FF02")
-            if (raw == null) return@launch
-            val cleaned = raw.replace(" ", "").replace("\r", "").replace("\n", "")
-            if (cleaned.length < 8) return@launch
-            val bytes = try {
-                cleaned.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-            } catch (_: NumberFormatException) {
-                return@launch
-            }
-            val parsed = com.canopobd.data.domain.WindowControlMonitor.parseStatusFromDidResponse(bytes)
-            if (parsed != null) {
-                _windowState.value = parsed
-            }
-        }
+        comfortController.pollWindowStatus { repository.sendRawCommand(it) }
     }
 
     fun onSendBCMCommand(command: ComfortCommand) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val action = BCMCommandMapper.actionToATCommand(command.action.name, command.value)
-            if (action != null) {
-                repository.sendRawCommand(action)
-            }
-        }
+        comfortController.sendBCMCommand(command)
     }
 
     fun executeQuickAction(actionId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            when (actionId) {
-                "dtc_clear" -> repository.clearDTCs()
-                "dtc_read" -> repository.readDTCs()
-                "vin_read" -> repository.getStoredVin()
-                "tpms_reset" -> repository.sendRawCommand("310302")
-                "oil_reset" -> repository.sendRawCommand("310303")
-                "inspection_reset" -> repository.sendRawCommand("310304")
-                else -> {
-                    val atCmd = BCMCommandMapper.actionToATCommand(actionId.uppercase())
-                    if (atCmd != null) {
-                        repository.sendRawCommand(atCmd)
-                    }
-                }
-            }
-        }
+        comfortController.executeQuickAction(actionId, repository)
     }
 
     fun applyCodingOption(option: AstraJCodingModels.CodingOption, value: AstraJCodingModels.CodingValue) {
@@ -1610,7 +1255,7 @@ private fun startTurboAnalysisCollection() {
         _turboAnalysisJob.value = viewModelScope.launch(Dispatchers.Default) {
             obdData
                 .filter { data -> data.rpm > 0 }
-                .conflate() // Limit to latest update only
+                .conflate()
                 .collect { data ->
                     updateAllTurboMetrics(data)
                     updateEmissionsAnalyzers(data)
@@ -1624,126 +1269,24 @@ private fun startTurboAnalysisCollection() {
 
     private fun updateEmissionsAnalyzers(data: OBDData) {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
-        // Use synchronized list to avoid concurrent modification
-        val history = synchronized(_voltageHistory) {
-            val h = _voltageHistory.value.toMutableList()
-            if (data.batteryVoltage > 0) {
-                h.add(data.batteryVoltage)
-                if (h.size > 60) h.removeAt(0)
-                _voltageHistory.value = h
-            }
-            h.toList() // Return a snapshot for use outside synchronized block
-        }
-        val o2History = synchronized(_o2VoltageHistory) {
-            val o2 = _o2VoltageHistory.value.toMutableList()
-            if (data.o2VoltageB1S1 > 0) {
-                o2.add(data.o2VoltageB1S1)
-                if (o2.size > 60) o2.removeAt(0)
-                _o2VoltageHistory.value = o2
-            }
-            o2.toList() // Return a snapshot for use outside synchronized block
-        }
-
-        updateBatteryAnalysis(data, dtcCodes, history)
-        updateEGRAnalysis(data, dtcCodes)
-        updateEVAPAnalysis(data, dtcCodes)
-        updateSAIAnalysis(data, dtcCodes)
-        updateLambdaAnalysis(data, dtcCodes, o2History)
-    }
-
-    private fun updateBatteryAnalysis(data: OBDData, dtcCodes: List<String>, history: List<Double>) {
-        val input = BatteryHealthAnalyzer.BatteryInput(
-            voltageHistory = history,
-            currentVoltage = data.batteryVoltage,
-            engineRpm = data.rpm,
-            alternatorDuty = data.alternatorDuty,
-            controlModuleVoltage = data.controlModuleVoltage,
-            activeDTCs = dtcCodes,
-            coolantTemp = data.coolantTemp
+        analyzerManager.updateEmissionsAnalyzers(
+            data = data,
+            dtcCodes = dtcCodes,
+            onVoltageHistoryUpdate = { },
+            onO2VoltageHistoryUpdate = { }
         )
-        val result = batteryAnalyzer.analyze(input)
-        batteryHealth.value = result.status
-        batteryHealthScore.value = result.healthScore
-        batteryAnalysis.value = result
     }
 
-    private fun updateEGRAnalysis(data: OBDData, dtcCodes: List<String>) {
-        val input = EGRHealthAnalyzer.EGRInput(
-            commandedEGR = data.commandedEGR,
-            egrTemp = data.egrTemp,
-            engineLoad = data.engineLoad,
-            rpm = data.rpm,
-            coolantTemp = data.coolantTemp,
-            intakeTemp = data.intakeTemp,
-            mafRate = data.mafRate,
-            stftB1 = data.shortTermFuelTrimB1,
-            ltftB1 = data.longTermFuelTrimB1,
-            activeDTCs = dtcCodes
-        )
-        val result = egrAnalyzer.analyze(input)
-        egrHealth.value = result.health
-        egrAnalysis.value = result
-    }
-
-    private fun updateEVAPAnalysis(data: OBDData, dtcCodes: List<String>) {
-        val input = EVAPSystemAnalyzer.EVAPInput(
-            commandedEvapPurge = data.commandedEvapPurge,
-            fuelLevel = data.fuelLevel,
-            coolantTemp = data.coolantTemp,
-            engineRpm = data.rpm,
-            engineLoad = data.engineLoad,
-            activeDTCs = dtcCodes
-        )
-        val result = evapAnalyzer.analyze(input)
-        evapStatus.value = result.status
-        evapAnalysis.value = result
-    }
-
-    private fun updateSAIAnalysis(data: OBDData, dtcCodes: List<String>) {
-        val saActive = data.coolantTemp < 65.0 && data.rpm > 0 && data.rpm < 2000 && data.runTime > 5 && data.runTime < 120
-        val input = SecondaryAirAnalyzer.SAIInput(
-            saActive = saActive,
-            engineRpm = data.rpm,
-            coolantTemp = data.coolantTemp,
-            intakeTemp = data.intakeTemp,
-            o2VoltageB1S1 = data.o2VoltageB1S1,
-            engineRuntimeSeconds = data.runTime,
-            activeDTCs = dtcCodes
-        )
-        val result = saiAnalyzer.analyze(input)
-        saiStatus.value = result.status
-        saiAnalysis.value = result
-    }
-
-    private fun updateLambdaAnalysis(data: OBDData, dtcCodes: List<String>, o2History: List<Double>) {
-        val input = LambdaO2SensorAnalyzer.LambdaInput(
-            o2VoltageB1S1 = data.o2VoltageB1S1,
-            o2VoltageB1S2 = data.o2VoltageB1S2,
-            fuelAirRatio = data.fuelAirRatio,
-            stftB1 = data.shortTermFuelTrimB1,
-            ltftB1 = data.longTermFuelTrimB1,
-            coolantTemp = data.coolantTemp,
-            engineLoad = data.engineLoad,
-            rpm = data.rpm,
-            catalystTemp = data.catalystTemp,
-            engineRuntimeSeconds = data.runTime,
-            activeDTCs = dtcCodes,
-            voltageHistoryB1S1 = o2History
-        )
-        val result = lambdaAnalyzer.analyze(input)
-        lambdaAnalysis.value = result
-    }
-
-    fun analyzeReadiness(readinessBits: Int): EmissionsReadinessAnalyzer.ReadinessAnalysis {
+    fun analyzeReadiness(readinessBits: Int): com.canopobd.data.domain.EmissionsReadinessAnalyzer.ReadinessAnalysis {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
-        val input = EmissionsReadinessAnalyzer.ReadinessInput(
+        val input = com.canopobd.data.domain.EmissionsReadinessAnalyzer.ReadinessInput(
             readinessBits = readinessBits,
             activeDTCs = dtcCodes,
             engineRuntimeSeconds = obdData.value.runTime,
             coolantTemp = obdData.value.coolantTemp
         )
-        val result = readinessAnalyzer.analyze(input)
-        emissionsReadiness.value = result
+        val result = analyzerManager.readinessAnalyzer.analyze(input)
+        analyzerManager.emissionsReadiness.value = result
         return result
     }
 
@@ -1751,311 +1294,17 @@ private fun startTurboAnalysisCollection() {
 
     private fun updateExtendedAnalyzers(data: OBDData) {
         val dtcCodes = dtcResponse.value?.codes?.map { it.code } ?: emptyList()
-
-        // Accumulate oil thermal stress tracking
-        val oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp
-        val now = System.currentTimeMillis()
-        if (lastOilTempSampleTime > 0 && oilTemp > 0) {
-            val dtHours = (now - lastOilTempSampleTime) / 3_600_000.0
-            if (oilTemp > 110) oilTimeAbove110C += dtHours
-            if (oilTemp > 115) oilTimeAbove115C += dtHours
-            if (oilTemp > 120) oilTimeAbove120C += dtHours
-            // Short trip detection: engine was cold, now warm
-            if (lastOilTempWasCold && data.coolantTemp > 70 && data.runTime < 600) {
-                oilShortTripCount++
-            }
-        }
-        lastOilTempWasCold = oilTemp < 70 || data.coolantTemp < 70
-        lastOilTempSampleTime = now
-
-        try {
-            val oilInput = OilConditionMonitor.OilInput(
-                oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.coolantTemp,
-                oilPressure = 0.0,
-                coolantTemp = data.coolantTemp,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad,
-                speed = data.speed
-            )
-            oilConditionResult.value = oilConditionMonitor.analyze(oilInput)
-        } catch (e: Exception) { Log.w(TAG, "OilConditionMonitor failed", e) }
-
-        try {
-            val oilHealthInput = OilHealthPredictor.OilHealthInput(
-                oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp,
-                coolantTemp = data.coolantTemp,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad,
-                boostPressureKpa = data.boostPressure,
-                totalKm = currentKm.value.toDouble(),
-                lastOilChangeKm = _maintenanceItems.value.find { it.type == com.canopobd.data.model.MaintenanceType.OIL_CHANGE }?.lastServiceKm?.toDouble() ?: 0.0,
-                lastOilChangeTimestamp = _maintenanceItems.value.find { it.type == com.canopobd.data.model.MaintenanceType.OIL_CHANGE }?.lastServiceDate ?: 0L,
-                engineRuntimeSec = data.runTime,
-                drivingPattern = determineDrivingPattern(data),
-                timeAbove110C = oilTimeAbove110C,
-                timeAbove115C = oilTimeAbove115C,
-                timeAbove120C = oilTimeAbove120C,
-                shortTripCount = oilShortTripCount,
-                oilConsumptionLPer1000Km = estimateOilConsumption(data)
-            )
-            oilHealthPrediction.value = oilHealthPredictor.analyze(oilHealthInput)
-        } catch (e: Exception) { Log.w(TAG, "OilHealthPredictor failed", e) }
-
-        try {
-            sensorValidator.addMaf(data.mafRate)
-            sensorValidator.addRpm(data.rpm)
-            sensorValidationResult.value = sensorValidator.validateMaf(data.mafRate)
-            val boostBar = if (data.boostPressure > 0) (data.boostPressure - data.barometricPressure).coerceAtLeast(0.0) / 100.0 else null
-            val boostValidation = sensorValidator.validateBoost(boostBar, data.barometricPressure)
-            val coolantValidation = sensorValidator.validateCoolant(data.coolantTemp)
-            val rpmValidation = sensorValidator.validateRpm(data.rpm)
-            val aggregatedResult = when {
-                sensorValidationResult.value is com.canopobd.data.domain.ValidationResult.Invalid -> sensorValidationResult.value
-                boostValidation is com.canopobd.data.domain.ValidationResult.Invalid -> boostValidation
-                coolantValidation is com.canopobd.data.domain.ValidationResult.Invalid -> coolantValidation
-                rpmValidation is com.canopobd.data.domain.ValidationResult.Invalid -> rpmValidation
-                boostValidation is com.canopobd.data.domain.ValidationResult.Suspicious -> boostValidation
-                coolantValidation is com.canopobd.data.domain.ValidationResult.Suspicious -> coolantValidation
-                rpmValidation is com.canopobd.data.domain.ValidationResult.Suspicious -> rpmValidation
-                else -> sensorValidationResult.value
-            }
-            sensorValidationResult.value = aggregatedResult
-        } catch (e: Exception) { Log.w(TAG, "SensorValidator failed", e) }
-
-        try {
-            val expectedMaf = data.rpm * 0.01
-            val pcvInput = PCVMonitor.PCVInput(
-                activeDTCs = dtcCodes,
-                mafRate = data.mafRate,
-                mafExpectedAtRpm = expectedMaf,
-                stft = data.shortTermFuelTrimB1,
-                ltft = data.longTermFuelTrimB1,
-                intakeManifoldPressure = data.intakePressure,
-                rpm = data.rpm,
-                coolantTemp = data.coolantTemp,
-                engineLoad = data.engineLoad,
-                throttle = data.throttle
-            )
-            pcvResult.value = pcvMonitor.analyze(pcvInput)
-        } catch (e: Exception) { Log.w(TAG, "PCVMonitor failed", e) }
-
-        try {
-            lambdaBalanceAnalyzer.addLambdaSample(data.fuelAirRatio.takeIf { it > 0 } ?: 1.0)
-            lambdaBalanceData.value = lambdaBalanceAnalyzer.analyzeCurrentSequence()
-        } catch (e: Exception) { Log.w(TAG, "LambdaBalanceAnalyzer failed", e) }
-
-        try {
-            if (data.speed > 5.0 && data.mafRate > 0) {
-                val l100km = fuelConsumptionAnalyzer.calculateFromMAF(data.mafRate, data.speed)
-                fuelConsumptionData.value = fuelConsumptionData.value.copy(
-                    instantL100km = l100km,
-                    avgL100km = if (l100km > 0) (fuelConsumptionData.value.avgL100km + l100km) / 2.0 else fuelConsumptionData.value.avgL100km
-                )
-            }
-        } catch (e: Exception) { Log.w(TAG, "FuelConsumptionAnalyzer failed", e) }
-
-        try {
-            val tcmData = canRepository?.transmissionData?.value
-            val m32Input = M32GearboxMonitor.GearboxInput(
-                rpmHistory = listOf(data.rpm),
-                speedHistory = listOf(data.speed),
-                gearPosition = tcmData?.gear ?: 0,
-                clutchPosition = if (tcmData?.clutchStatus == "slipping") 1.0 else if (tcmData?.gear != null && tcmData.gear > 0) 0.0 else 0.5,
-                transmissionTemp = tcmData?.oilTemp ?: data.coolantTemp.toDouble(),
-                activeDTCs = dtcCodes
-            )
-            gearboxResult.value = m32GearboxMonitor.analyze(m32Input)
-        } catch (e: Exception) { Log.w(TAG, "M32GearboxMonitor failed", e) }
-
-        try {
-            val chainInput = ChainTensionerAnalyzer.ChainTensionerInput(
-                activeDTCs = dtcCodes,
-                coldStartRattleDurationSec = if (_timingChainState.value.coldStartRattleDetected) _timingChainState.value.coldSampleCount.toDouble() * 0.5 else 0.0,
-                idleRpmVariance = _timingChainState.value.idleRpmVariation,
-                timingAdvanceVariance = if (timingAdvanceBuffer.size >= 3) {
-                    val mean = timingAdvanceBuffer.average()
-                    timingAdvanceBuffer.map { (it - mean) * (it - mean) }.sum() / timingAdvanceBuffer.size
-                } else 0.0,
-                currentRpm = data.rpm,
-                timingAdvance = data.timingAdvance,
-                coolantTemp = data.coolantTemp,
-                engineRuntimeSec = data.runTime
-            )
-            chainTensionerResult.value = chainTensionerAnalyzer.analyze(chainInput)
-        } catch (e: Exception) { Log.w(TAG, "ChainTensionerAnalyzer failed", e) }
-
-        try {
-            val egtInput = EGTMonitor.EGTInput(
-                egtBank1 = data.egtBank1,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad,
-                coolantTemp = data.coolantTemp
-            )
-            egtResult.value = egtMonitor.analyze(egtInput)
-        } catch (e: Exception) { Log.w(TAG, "EGTMonitor failed", e) }
-
-        try {
-            val coolantInput = CoolantSystemHealth.CoolantInput(
-                coolantTemp = data.coolantTemp,
-                intakeTemp = data.intakeTemp,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad,
-                engineRuntimeSec = data.runTime
-            )
-            coolantResult.value = coolantHealthMonitor.analyze(coolantInput)
-        } catch (e: Exception) { Log.w(TAG, "CoolantSystemHealth failed", e) }
-
-        try {
-            sensorHealthSummary.value = sensorHealthMonitor.analyzeSensors(data)
-        } catch (e: Exception) { Log.w(TAG, "SensorHealthMonitor failed", e) }
-
-        try {
-            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val boostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostBar = calibration.normalBoostTargetBar
-            wastegateResult.value = wastegateHealthAnalyzer.analyze(
-                wastegateDuty = wastegateDuty.value,
-                avgWastegateDuty = wastegateDuty.value,
-                targetBoost = targetBoostBar,
-                actualBoost = boostBar,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad
-            )
-        } catch (e: Exception) { Log.w(TAG, "WastegateHealthAnalyzer failed", e) }
-
-        try {
-            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostBar = calibration.normalBoostTargetBar
-
-            val boostLeakInput = BoostLeakDetector.BoostLeakInput(
-                boostActualBar = actualBoostBar,
-                boostTargetBar = targetBoostBar,
-                wastegateDuty = data.wastegateControl,
-                turboRpm = data.turboRpm,
-                chargeAirTemp = data.chargeAirCoolerTemp,
-                intakeTemp = data.intakeTemp,
-                mafRate = data.mafRate,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad,
-                throttle = data.throttle,
-                exhaustPressure = data.exhaustPressure,
-                stftB1 = data.shortTermFuelTrimB1,
-                ltftB1 = data.longTermFuelTrimB1
-            )
-            boostLeakResult.value = boostLeakDetector.analyze(boostLeakInput)
-        } catch (e: Exception) { Log.w(TAG, "BoostLeakDetector failed", e) }
-
-        try {
-            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostBar = calibration.normalBoostTargetBar
-
-            val turboEfficiencyInput = TurboEfficiencyAnalyzer.TurboInput(
-                boostActualBar = actualBoostBar,
-                boostTargetBar = targetBoostBar,
-                wastegateDuty = data.wastegateControl,
-                turboRpm = data.turboRpm,
-                egtBank1 = data.egtBank1,
-                egtBank2 = data.egtBank2,
-                rpm = data.rpm,
-                engineLoad = data.engineLoad,
-                throttle = data.throttle,
-                chargeAirTemp = data.chargeAirCoolerTemp,
-                intakeTemp = data.intakeTemp,
-                coolantTemp = data.coolantTemp,
-                boostPressureKpa = absoluteBoostKpa,
-                wastegateControl = data.wastegateControl,
-                totalKm = currentKm.value.toDouble()
-            )
-            turboEfficiencyResult.value = turboEfficiencyAnalyzer.analyze(turboEfficiencyInput)
-        } catch (e: Exception) { Log.w(TAG, "TurboEfficiencyAnalyzer failed", e) }
-
-        try {
-            val calibration = com.canopobd.data.model.AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostAt80 = calibration.normalBoostTargetBar
-
-            val nowMs = System.currentTimeMillis()
-            val spoolTime = run {
-                // Track actual spool time: start when throttle crosses threshold,
-                // measure when boost reaches 80% of target
-                if (data.throttle > 80 && !turboSpoolTracking) {
-                    turboSpoolTracking = true
-                    turboSpoolStartTime = nowMs
-                    turboSpoolStartBoost = actualBoostBar
-                }
-                if (turboSpoolTracking && actualBoostBar >= targetBoostAt80 * 0.8) {
-                    val elapsed = (nowMs - turboSpoolStartTime) / 1000.0
-                    turboSpoolTracking = false
-                    if (elapsed > 0.1 && elapsed < 10.0) elapsed else 0.0
-                } else if (turboSpoolTracking && (nowMs - turboSpoolStartTime) > 10000) {
-                    turboSpoolTracking = false
-                    0.0
-                } else {
-                    0.0
-                }
-            }
-
-            val turboSpoolInput = TurboSpoolAnalyzer.SpoolInput(
-                throttleApplication = data.throttle,
-                boostAtThrottleApplication = actualBoostBar,
-                boostAt80Percent = targetBoostAt80,
-                targetBoostAt80 = targetBoostAt80,
-                spoolTimeSeconds = spoolTime,
-                wastegateDutyAtSpool = data.wastegateControl,
-                wastegateDutyIdle = wastegateDuty.value,
-                turboRpmAtSpool = data.turboRpm,
-                rpmAtThrottleApplication = data.rpm,
-                rpmAt80PercentBoost = data.rpm,
-                engineLoad = data.engineLoad,
-                intakeTemp = data.intakeTemp,
-                boostPressureKpa = absoluteBoostKpa
-            )
-            turboSpoolResult.value = turboSpoolAnalyzer.analyze(turboSpoolInput)
-        } catch (e: Exception) { Log.w(TAG, "TurboSpoolAnalyzer failed", e) }
-
-        try {
-            extendedAnalyzerData.value = ExtendedAnalyzerSummary(
-                oilHealth = oilConditionResult.value.condition.name,
-                pcvHealth = pcvResult.value.health.name,
-                chainHealth = chainTensionerResult.value.health.name,
-                gearboxHealth = gearboxResult.value.health.name,
-                coolantHealth = coolantResult.value.status.name,
-                boostLeakRisk = boostLeakResult.value.severity.name,
-                overallScore = calculateExtendedScore(),
-                criticalWarnings = buildExtendedWarnings()
-            )
-        } catch (e: Exception) { Log.w(TAG, "ExtendedAnalyzerSummary failed", e) }
-    }
-
-    private fun calculateExtendedScore(): Int {
-        var score = 100
-        if (oilConditionResult.value.condition != OilConditionMonitor.OilCondition.EXCELLENT &&
-            oilConditionResult.value.condition != OilConditionMonitor.OilCondition.UNKNOWN) score -= 15
-        if (pcvResult.value.health != PCVMonitor.PCVHealth.HEALTHY) score -= 15
-        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) score -= 20
-        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) score -= 15
-        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) score -= 10
-        return score.coerceIn(0, 100)
-    }
-
-    private fun buildExtendedWarnings(): List<String> {
-        val warnings = mutableListOf<String>()
-        if (oilConditionResult.value.condition == OilConditionMonitor.OilCondition.CRITICAL) warnings.add("Ölwechsel dringend erforderlich!")
-        if (pcvResult.value.health == PCVMonitor.PCVHealth.PLUGGED) warnings.add("PCV-Ventil verstopft!")
-        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) warnings.add("Steuerkette kritisch!")
-        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) warnings.add("Getriebe M32 kritisch!")
-        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) warnings.add("Kühlsystem Überhitzung!")
-        return warnings
+        val tcmData = canRepository?.transmissionData?.value
+        analyzerManager.updateExtendedAnalyzers(
+            data = data,
+            dtcCodes = dtcCodes,
+            currentKm = currentKm.value,
+            maintenanceItems = _maintenanceItems.value,
+            timingChainState = _timingChainState.value,
+            timingAdvanceBuffer = timingAdvanceBuffer,
+            wastegateDuty = wastegateDuty.value,
+            canTransmissionData = tcmData
+        )
     }
 
     private fun updateAllTurboMetrics(data: OBDData) {
@@ -2188,7 +1437,7 @@ private fun startTurboAnalysisCollection() {
 
     fun analyzeFuelSystem(): FuelSystemHealth {
         val data = repository.obdData.value
-        val status = fuelTrimAnalyzer.analyze(data.shortTermFuelTrimB1, data.longTermFuelTrimB1)
+        val status = analyzerManager.fuelTrimAnalyzer.analyze(data.shortTermFuelTrimB1, data.longTermFuelTrimB1)
 
         val health = when {
             status.isLean -> FuelSystemHealth.LEAN
@@ -2321,49 +1570,9 @@ private fun startTurboAnalysisCollection() {
 
     // ========== DTC Processing ==========
 
-    fun processDTC(dtc: String): ProcessedDTC {
-        val knownDTCs = mapOf(
-            "P0016" to ProcessedDTC("P0016", "Nockenwellen-Kurbelwellen-Korrelation Bank 1 Sensor A", DTCSeverity.CRITICAL, "Steuerkette", "Steuerkette, Kettenspanner und Sensoren prüfen"),
-            "P0017" to ProcessedDTC("P0017", "Nockenwellen-Kurbelwellen-Korrelation Bank 1 Sensor B", DTCSeverity.CRITICAL, "Steuerkette", "Steuerkette und Nockenwellenposition prüfen"),
-            "P0100" to ProcessedDTC("P0100", "Luftmassenmesser (MAF) - Stromkreisfehler", DTCSeverity.WARNING, "Sensor", "MAF-Sensor prüfen und reinigen"),
-            "P0101" to ProcessedDTC("P0101", "Luftmassenmesser (MAF) - Leistungsbereich", DTCSeverity.WARNING, "Sensor", "MAF-Sensor prüfen, Luftfilter wechseln"),
-            "P0102" to ProcessedDTC("P0102", "Luftmassenmesser (MAF) - Signaleingang niedrig", DTCSeverity.WARNING, "Sensor", "MAF-Sensor reinigen oder ersetzen"),
-            "P0103" to ProcessedDTC("P0103", "Luftmassenmesser (MAF) - Signaleingang hoch", DTCSeverity.WARNING, "Sensor", "MAF-Sensor prüfen"),
-            "P0116" to ProcessedDTC("P0116", "Kühlmitteltemperatur-Sensor - Plausibilitätsfehler", DTCSeverity.WARNING, "Sensor", "Temperatursensor prüfen"),
-            "P0117" to ProcessedDTC("P0117", "Kühlmitteltemperatur-Sensor - Signaleingang niedrig", DTCSeverity.WARNING, "Sensor", "Kühlmitteltemperatursensor ersetzen"),
-            "P0234" to ProcessedDTC("P0234", "Turbolader-Überladung (Overboost)", DTCSeverity.CRITICAL, "Turbo", "Wastegate und Ladedruckregelung prüfen"),
-            "P0235" to ProcessedDTC("P0235", "Turbolader-Überladungs-Sensor A", DTCSeverity.WARNING, "Turbo", "Ladedrucksensor prüfen"),
-            "P0340" to ProcessedDTC("P0340", "Nockenwellenpositionssensor - Stromkreisfehler", DTCSeverity.CRITICAL, "Sensor", "Sensor und Verkabelung prüfen"),
-            "P0341" to ProcessedDTC("P0341", "Nockenwellenpositionssensor - Leistungsbereich", DTCSeverity.CRITICAL, "Sensor", "Sensor prüfen, Steuerkette inspizieren"),
-            "P1100" to ProcessedDTC("P1100", "PCV-System (Crankcase Ventilation) Störung", DTCSeverity.WARNING, "PCV", "PCV-Ventil und Zylinderkopfhaube prüfen"),
-            "P1101" to ProcessedDTC("P1101", "Ansaugluftsystem - Luftleck erkannt", DTCSeverity.WARNING, "Ansaugung", "Saugrohr und Dichtungen auf Luftleck prüfen"),
-            "P1345" to ProcessedDTC("P1345", "Nockenwellen-Kurbelwellen-Phasenabweichung", DTCSeverity.CRITICAL, "Steuerkette", "Steuerkette und Kettenspanner ersetzen"),
-            "P0171" to ProcessedDTC("P0171", "System zu mager (Bank 1)", DTCSeverity.WARNING, "Kraftstoff", "MAF, O2-Sensor, Kraftstoffdruck und Luftleck prüfen"),
-            "P0172" to ProcessedDTC("P0172", "System zu fett (Bank 1)", DTCSeverity.WARNING, "Kraftstoff", "Einspritzventile, Kraftstoffdruck und O2-Sensor prüfen"),
-            "P0420" to ProcessedDTC("P0420", "Katalysator-Wirkung unter Schwellenwert (Bank 1)", DTCSeverity.WARNING, "Abgas", "Katalysator prüfen, O2-Sensoren messen"),
-            "P0562" to ProcessedDTC("P0562", "Systemspannung niedrig", DTCSeverity.INFO, "Elektrik", "Batterie und Lichtmaschine prüfen"),
-            "P0130" to ProcessedDTC("P0130", "O2-Sensor Stromkreis (Bank 1 Sensor 1)", DTCSeverity.WARNING, "Sensor", "O2-Sensor prüfen und ggf. ersetzen")
-        )
+    fun processDTC(dtc: String): ProcessedDTC = dtcProcessor.processDTC(dtc)
 
-        val upperCode = dtc.trim().uppercase()
-        return knownDTCs[upperCode] ?: ProcessedDTC(
-            code = upperCode,
-            description = "Astra J 1.4T DTC: $upperCode",
-            severity = DTCSeverity.INFO,
-            category = "Sonstige",
-            recommendation = "Herstellerspezifischen Diagnose-Code nachschlagen"
-        )
-    }
-
-    fun processAllDTCs() {
-        val response = dtcResponse.value ?: return
-        val allCodes = response.codes + response.pendingCodes
-        val processed = allCodes.map { processDTC(it.code) }
-        _processedDTCs.value = processed
-        _criticalDTCs.value = processed.filter { it.severity == DTCSeverity.CRITICAL }
-        _warningDTCs.value = processed.filter { it.severity == DTCSeverity.WARNING }
-        _infoDTCs.value = processed.filter { it.severity == DTCSeverity.INFO || it.severity == DTCSeverity.PERFORMANCE }
-    }
+    fun processAllDTCs() = dtcProcessor.processAllDTCs(dtcResponse.value)
 
     // ========== Mode 22 Data Handling ==========
 
@@ -2443,29 +1652,6 @@ private fun startTurboAnalysisCollection() {
         }
         _supportedMode22Pids.value = discovered
         return discovered
-    }
-
-    private fun determineDrivingPattern(data: OBDData): OilHealthPredictor.DrivingPattern {
-        val avgRpm = data.rpm
-        val load = data.engineLoad
-        val speed = data.speed
-        return when {
-            avgRpm > 5000 || load > 85 || speed > 180 -> OilHealthPredictor.DrivingPattern.TRACK
-            avgRpm > 3000 || load > 60 || speed > 120 -> OilHealthPredictor.DrivingPattern.SPORTY
-            avgRpm > 800 && speed < 30 && data.runTime < 600 -> OilHealthPredictor.DrivingPattern.SHORT_TRIP
-            load > 70 && data.runTime > 300 -> OilHealthPredictor.DrivingPattern.TOWING
-            speed < 5 && avgRpm < 800 -> OilHealthPredictor.DrivingPattern.EASY
-            else -> OilHealthPredictor.DrivingPattern.NORMAL
-        }
-    }
-
-    private fun estimateOilConsumption(data: OBDData): Double {
-        // A14NET typical oil consumption: 0.05-0.3 L/1000km depending on driving
-        val baseConsumption = 0.08
-        val loadFactor = data.engineLoad / 100.0
-        val rpmFactor = if (data.rpm > 4000) 2.0 else if (data.rpm > 3000) 1.5 else 1.0
-        val boostFactor = if (data.boostPressure > 150) 1.8 else if (data.boostPressure > 100) 1.3 else 1.0
-        return baseConsumption * rpmFactor * boostFactor * (1 + loadFactor)
     }
 
     override fun onCleared() {

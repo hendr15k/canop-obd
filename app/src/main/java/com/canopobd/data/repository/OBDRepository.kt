@@ -182,6 +182,8 @@ class OBDRepository(
     private val _alertConfig = MutableStateFlow(AlertConfig())
     val alertConfig: StateFlow<AlertConfig> = _alertConfig.asStateFlow()
 
+    private val lastAlertTrigger = mutableMapOf<AlertType, Long>()
+
     private val _activeAlerts = MutableStateFlow<List<ActiveAlert>>(emptyList())
     val activeAlerts: StateFlow<List<ActiveAlert>> = _activeAlerts.asStateFlow()
 
@@ -762,9 +764,33 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
     private fun recordData() {
         val d = _obdData.value
+        val loc = currentLocation.value
         _recordedData.update { list ->
             list + DataRecord(
-                d.timestamp, d.rpm, d.speed, d.coolantTemp, d.throttle, d.fuelLevel, d.batteryVoltage
+                timestamp = d.timestamp,
+                rpm = d.rpm,
+                speed = d.speed,
+                coolantTemp = d.coolantTemp,
+                throttle = d.throttle,
+                fuelLevel = d.fuelLevel,
+                batteryVoltage = d.batteryVoltage,
+                intakeTemp = d.intakeTemp,
+                oilTemp = d.oilTemp,
+                boostPressure = d.boostPressure,
+                barometricPressure = d.barometricPressure,
+                wastegateDuty = d.wastegateControl,
+                turboRpm = d.turboRpm,
+                egtBank1 = d.egtBank1,
+                egtBank2 = d.egtBank2,
+                chargeAirTemp = d.chargeAirCoolerTemp,
+                mafRate = d.mafRate,
+                engineLoad = d.engineLoad,
+                shortTermFuelTrimB1 = d.shortTermFuelTrimB1,
+                longTermFuelTrimB1 = d.longTermFuelTrimB1,
+                timingAdvance = d.timingAdvance,
+                latitude = loc?.latitude,
+                longitude = loc?.longitude,
+                altitude = loc?.altitude
             )
         }
     }
@@ -849,43 +875,217 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
     fun getLastDevice(): String? = prefs.getString("last_device", null)
 
-    fun exportToCsv(): String {
-        val sb = StringBuilder()
-        sb.appendLine("Timestamp,RPM,Speed,Coolant,Throttle,Fuel,Battery")
-        for (r in _recordedData.value) {
-            sb.appendLine("${r.timestamp},${r.rpm.toInt()},${r.speed.toInt()},${r.coolantTemp.toInt()},${r.throttle.toInt()},${r.fuelLevel.toInt()},${r.batteryVoltage}")
-        }
-        return sb.toString()
-    }
+    fun exportToCsv(): String = DataExporter.exportCsv(_recordedData.value, enhanced = true)
+
+    fun exportRecordedData(format: ExportFormat): String =
+        DataExporter.export(_recordedData.value, format)
 
     fun clearRecordedData() { _recordedData.value = emptyList() }
 
     private fun checkAlerts() {
         val cfg = _alertConfig.value
         val d = _obdData.value
-        val alerts = mutableListOf<ActiveAlert>()
+        val now = System.currentTimeMillis()
+        val cooldownMs = cfg.cooldownSeconds * 1000L
+        val hysteresisMs = cfg.hysteresisSeconds * 1000L
 
-        if (cfg.speedWarningEnabled && d.speed > cfg.speedWarning) {
-            alerts.add(ActiveAlert(AlertType.SPEED, d.speed.toFloat(), cfg.speedWarning,
-                "Geschwindigkeit: %.0f > %.0f".format(d.speed, cfg.speedWarning)))
+        val candidateAlerts = mutableListOf<ActiveAlert>()
+
+        candidateAlerts.addAll(evaluateThreshold(
+            AlertType.SPEED, cfg.speedWarningEnabled, d.speed.toFloat(), cfg.speedWarning,
+            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            "Geschwindigkeit: %.0f > %.0f km/h"
+        ))
+        candidateAlerts.addAll(evaluateThreshold(
+            AlertType.COOLANT, cfg.coolantWarningEnabled, d.coolantTemp.toFloat(), cfg.coolantWarning,
+            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            "Kühlmittel: %.0f°C > %.0f°C"
+        ))
+        candidateAlerts.addAll(evaluateThresholdLow(
+            AlertType.FUEL, cfg.fuelWarningEnabled, d.fuelLevel.toFloat(), cfg.fuelWarning,
+            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            "Kraftstoff: %.0f%% < %.0f%%"
+        ))
+        candidateAlerts.addAll(evaluateThreshold(
+            AlertType.RPM, cfg.rpmWarningEnabled, d.rpm.toFloat(), cfg.rpmWarning,
+            AlertSeverity.WARNING, cfg.hysteresisSeconds,
+            "Drehzahl: %.0f > %.0f rpm"
+        ))
+        candidateAlerts.addAll(evaluateBatteryAlert(cfg))
+        candidateAlerts.addAll(evaluateBoostAlerts(cfg, d))
+        candidateAlerts.addAll(evaluateEgtAlerts(cfg, d))
+        candidateAlerts.addAll(evaluateOilTempAlerts(cfg, d))
+        candidateAlerts.addAll(evaluateTurboSpeedAlert(cfg, d))
+        candidateAlerts.addAll(evaluateChargeAirTempAlert(cfg, d))
+        candidateAlerts.addAll(evaluateFuelTrimAlert(cfg, d))
+
+        val filtered = candidateAlerts.filter { alert ->
+            val lastTrigger = lastAlertTrigger[alert.type]
+            if (lastTrigger == null || now - lastTrigger > cooldownMs) {
+                lastAlertTrigger[alert.type] = now
+                true
+            } else {
+                false
+            }
         }
-        if (cfg.coolantWarningEnabled && d.coolantTemp > cfg.coolantWarning) {
-            alerts.add(ActiveAlert(AlertType.COOLANT, d.coolantTemp.toFloat(), cfg.coolantWarning,
-                "Kühlmittel: %.0f° > %.0f°".format(d.coolantTemp, cfg.coolantWarning)))
+
+        _activeAlerts.value = filtered
+    }
+
+    private fun evaluateThreshold(
+        type: AlertType, enabled: Boolean, value: Float, threshold: Float,
+        severity: AlertSeverity, hysteresisSeconds: Int, messageFormat: String
+    ): List<ActiveAlert> {
+        if (!enabled) return emptyList()
+        if (value > threshold) {
+            return listOf(ActiveAlert(
+                type = type,
+                severity = severity,
+                value = value,
+                threshold = threshold,
+                message = messageFormat.format(value, threshold)
+            ))
         }
-        if (cfg.fuelWarningEnabled && d.fuelLevel < cfg.fuelWarning && d.fuelLevel > 0) {
-            alerts.add(ActiveAlert(AlertType.FUEL, d.fuelLevel.toFloat(), cfg.fuelWarning,
-                "Kraftstoff: %.0f%% < %.0f%%".format(d.fuelLevel, cfg.fuelWarning)))
+        return emptyList()
+    }
+
+    private fun evaluateThresholdLow(
+        type: AlertType, enabled: Boolean, value: Float, threshold: Float,
+        severity: AlertSeverity, hysteresisSeconds: Int, messageFormat: String
+    ): List<ActiveAlert> {
+        if (!enabled) return emptyList()
+        if (value in 0.1f..threshold) {
+            return listOf(ActiveAlert(
+                type = type,
+                severity = severity,
+                value = value,
+                threshold = threshold,
+                message = messageFormat.format(value, threshold)
+            ))
         }
-        if (cfg.rpmWarningEnabled && d.rpm > cfg.rpmWarning) {
-            alerts.add(ActiveAlert(AlertType.RPM, d.rpm.toFloat(), cfg.rpmWarning,
-                "Drehzahl: %.0f > %.0f".format(d.rpm, cfg.rpmWarning)))
+        return emptyList()
+    }
+
+    private fun evaluateBatteryAlert(cfg: AlertConfig): List<ActiveAlert> {
+        if (!cfg.batteryLowWarningEnabled) return emptyList()
+        val d = _obdData.value
+        if (d.batteryVoltage <= 0 || d.batteryVoltage >= cfg.batteryLowWarning) return emptyList()
+        return listOf(ActiveAlert(
+            type = AlertType.BATTERY,
+            severity = AlertSeverity.WARNING,
+            value = d.batteryVoltage.toFloat(),
+            threshold = cfg.batteryLowWarning,
+            message = "Batterie: %.1fV < %.1fV".format(d.batteryVoltage, cfg.batteryLowWarning)
+        ))
+    }
+
+    private fun evaluateBoostAlerts(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
+        if (!cfg.boostWarningEnabled && !cfg.boostCriticalEnabled) return emptyList()
+        if (d.barometricPressure <= 0) return emptyList()
+        val absoluteBoost = if (d.boostPressure > 0) d.boostPressure else d.intakePressure
+        val boostBar = ((absoluteBoost - d.barometricPressure).coerceAtLeast(0.0) / 100.0).toFloat()
+        return when {
+            cfg.boostCriticalEnabled && boostBar > cfg.boostCritical -> listOf(ActiveAlert(
+                type = AlertType.BOOST,
+                severity = AlertSeverity.CRITICAL,
+                value = boostBar,
+                threshold = cfg.boostCritical,
+                message = "ÜBERLADUNG! Ladedruck %.2f bar > %.2f bar – SOFORT PEDAL LOSLASSEN".format(boostBar, cfg.boostCritical)
+            ))
+            cfg.boostWarningEnabled && boostBar > cfg.boostWarning -> listOf(ActiveAlert(
+                type = AlertType.BOOST,
+                severity = AlertSeverity.WARNING,
+                value = boostBar,
+                threshold = cfg.boostWarning,
+                message = "Ladedruck hoch: %.2f bar > %.2f bar".format(boostBar, cfg.boostWarning)
+            ))
+            else -> emptyList()
         }
-        if (cfg.batteryLowWarningEnabled && d.batteryVoltage > 0 && d.batteryVoltage < cfg.batteryLowWarning) {
-            alerts.add(ActiveAlert(AlertType.BATTERY, d.batteryVoltage.toFloat(), cfg.batteryLowWarning,
-                "Batterie: %.1fV < %.1fV".format(d.batteryVoltage, cfg.batteryLowWarning)))
+    }
+
+    private fun evaluateEgtAlerts(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
+        if (!cfg.egtWarningEnabled && !cfg.egtCriticalEnabled) return emptyList()
+        val egt = d.egtBank1.toFloat()
+        if (egt <= 0) return emptyList()
+        return when {
+            cfg.egtCriticalEnabled && egt > cfg.egtCritical -> listOf(ActiveAlert(
+                type = AlertType.EGT,
+                severity = AlertSeverity.CRITICAL,
+                value = egt,
+                threshold = cfg.egtCritical,
+                message = "Abgastemperatur kritisch! EGT %.0f°C > %.0f°C – Motorlast sofort reduzieren".format(egt, cfg.egtCritical)
+            ))
+            cfg.egtWarningEnabled && egt > cfg.egtWarning -> listOf(ActiveAlert(
+                type = AlertType.EGT,
+                severity = AlertSeverity.WARNING,
+                value = egt,
+                threshold = cfg.egtWarning,
+                message = "Abgastemperatur erhöht: %.0f°C > %.0f°C".format(egt, cfg.egtWarning)
+            ))
+            else -> emptyList()
         }
-        _activeAlerts.value = alerts
+    }
+
+    private fun evaluateOilTempAlerts(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
+        if (!cfg.oilTempWarningEnabled && !cfg.oilTempCriticalEnabled) return emptyList()
+        val oilTemp = (if (d.oilTempMode22 > 0) d.oilTempMode22 else d.oilTemp).toFloat()
+        if (oilTemp <= 0) return emptyList()
+        return when {
+            cfg.oilTempCriticalEnabled && oilTemp > cfg.oilTempCritical -> listOf(ActiveAlert(
+                type = AlertType.OIL_TEMP,
+                severity = AlertSeverity.CRITICAL,
+                value = oilTemp,
+                threshold = cfg.oilTempCritical,
+                message = "Öltemperatur kritisch! %.0f°C > %.0f°C".format(oilTemp, cfg.oilTempCritical)
+            ))
+            cfg.oilTempWarningEnabled && oilTemp > cfg.oilTempWarning -> listOf(ActiveAlert(
+                type = AlertType.OIL_TEMP,
+                severity = AlertSeverity.WARNING,
+                value = oilTemp,
+                threshold = cfg.oilTempWarning,
+                message = "Öltemperatur erhöht: %.0f°C > %.0f°C".format(oilTemp, cfg.oilTempWarning)
+            ))
+            else -> emptyList()
+        }
+    }
+
+    private fun evaluateTurboSpeedAlert(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
+        if (!cfg.turboSpeedWarningEnabled) return emptyList()
+        val turboRpm = d.turboRpm.toFloat()
+        if (turboRpm <= 0 || turboRpm <= cfg.turboSpeedWarning) return emptyList()
+        return listOf(ActiveAlert(
+            type = AlertType.TURBO_SPEED,
+            severity = AlertSeverity.CRITICAL,
+            value = turboRpm,
+            threshold = cfg.turboSpeedWarning,
+            message = "Turbo-Drehzahl überschritten: %.0f > %.0f rpm".format(turboRpm, cfg.turboSpeedWarning)
+        ))
+    }
+
+    private fun evaluateChargeAirTempAlert(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
+        if (!cfg.chargeAirTempWarningEnabled) return emptyList()
+        val cat = d.chargeAirCoolerTemp.toFloat()
+        if (cat <= 0 || cat <= cfg.chargeAirTempWarning) return emptyList()
+        return listOf(ActiveAlert(
+            type = AlertType.CHARGE_AIR_TEMP,
+            severity = AlertSeverity.WARNING,
+            value = cat,
+            threshold = cfg.chargeAirTempWarning,
+            message = "Ladelufttemperatur erhöht: %.0f°C > %.0f°C".format(cat, cfg.chargeAirTempWarning)
+        ))
+    }
+
+    private fun evaluateFuelTrimAlert(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
+        if (!cfg.fuelTrimWarningEnabled) return emptyList()
+        val totalTrim = kotlin.math.abs(d.shortTermFuelTrimB1 + d.longTermFuelTrimB1).toFloat()
+        if (totalTrim <= cfg.fuelTrimWarning) return emptyList()
+        return listOf(ActiveAlert(
+            type = AlertType.FUEL_TRIM,
+            severity = AlertSeverity.WARNING,
+            value = totalTrim,
+            threshold = cfg.fuelTrimWarning,
+            message = "Kraftstofftrim außerhalb Bereich: %.1f%% > ±%.1f%%".format(totalTrim, cfg.fuelTrimWarning)
+        ))
     }
 
     fun setAlertConfig(config: AlertConfig) {
@@ -901,6 +1101,28 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
             .putBoolean("alert_rpm_on", config.rpmWarningEnabled)
             .putFloat("alert_battery", config.batteryLowWarning)
             .putBoolean("alert_battery_on", config.batteryLowWarningEnabled)
+            .putFloat("alert_boost", config.boostWarning)
+            .putBoolean("alert_boost_on", config.boostWarningEnabled)
+            .putFloat("alert_boost_crit", config.boostCritical)
+            .putBoolean("alert_boost_crit_on", config.boostCriticalEnabled)
+            .putFloat("alert_egt", config.egtWarning)
+            .putBoolean("alert_egt_on", config.egtWarningEnabled)
+            .putFloat("alert_egt_crit", config.egtCritical)
+            .putBoolean("alert_egt_crit_on", config.egtCriticalEnabled)
+            .putFloat("alert_oil", config.oilTempWarning)
+            .putBoolean("alert_oil_on", config.oilTempWarningEnabled)
+            .putFloat("alert_oil_crit", config.oilTempCritical)
+            .putBoolean("alert_oil_crit_on", config.oilTempCriticalEnabled)
+            .putFloat("alert_turbo_rpm", config.turboSpeedWarning)
+            .putBoolean("alert_turbo_rpm_on", config.turboSpeedWarningEnabled)
+            .putFloat("alert_cat", config.chargeAirTempWarning)
+            .putBoolean("alert_cat_on", config.chargeAirTempWarningEnabled)
+            .putFloat("alert_fuel_trim", config.fuelTrimWarning)
+            .putBoolean("alert_fuel_trim_on", config.fuelTrimWarningEnabled)
+            .putBoolean("alert_sound", config.soundEnabled)
+            .putBoolean("alert_vibration", config.vibrationEnabled)
+            .putInt("alert_hysteresis", config.hysteresisSeconds)
+            .putInt("alert_cooldown", config.cooldownSeconds)
             .apply()
         scope.launch {
             alertConfigDao.insert(
@@ -915,7 +1137,29 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                     rpmWarning = config.rpmWarning,
                     rpmWarningEnabled = config.rpmWarningEnabled,
                     batteryLowWarning = config.batteryLowWarning,
-                    batteryLowWarningEnabled = config.batteryLowWarningEnabled
+                    batteryLowWarningEnabled = config.batteryLowWarningEnabled,
+                    boostWarning = config.boostWarning,
+                    boostWarningEnabled = config.boostWarningEnabled,
+                    boostCritical = config.boostCritical,
+                    boostCriticalEnabled = config.boostCriticalEnabled,
+                    egtWarning = config.egtWarning,
+                    egtWarningEnabled = config.egtWarningEnabled,
+                    egtCritical = config.egtCritical,
+                    egtCriticalEnabled = config.egtCriticalEnabled,
+                    oilTempWarning = config.oilTempWarning,
+                    oilTempWarningEnabled = config.oilTempWarningEnabled,
+                    oilTempCritical = config.oilTempCritical,
+                    oilTempCriticalEnabled = config.oilTempCriticalEnabled,
+                    turboSpeedWarning = config.turboSpeedWarning,
+                    turboSpeedWarningEnabled = config.turboSpeedWarningEnabled,
+                    chargeAirTempWarning = config.chargeAirTempWarning,
+                    chargeAirTempWarningEnabled = config.chargeAirTempWarningEnabled,
+                    fuelTrimWarning = config.fuelTrimWarning,
+                    fuelTrimWarningEnabled = config.fuelTrimWarningEnabled,
+                    soundEnabled = config.soundEnabled,
+                    vibrationEnabled = config.vibrationEnabled,
+                    hysteresisSeconds = config.hysteresisSeconds,
+                    cooldownSeconds = config.cooldownSeconds
                 )
             )
         }
@@ -951,23 +1195,58 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
     fun importCsvData(csvContent: String) {
         val entries = mutableListOf<CsvImportEntry>()
-        val lines = csvContent.lines().drop(1)
+        val lines = csvContent.lines().drop(1).filter { it.isNotBlank() }
+        if (lines.isEmpty()) {
+            _importedData.value = emptyList()
+            return
+        }
+
+        val header = csvContent.lineSequence().firstOrNull() ?: ""
+        val isTorqueFormat = header.contains("Device Time", ignoreCase = true) ||
+            header.contains("Torque", ignoreCase = true)
+        val isEnhanced = header.contains("Boost", ignoreCase = true) ||
+            header.contains("EGT", ignoreCase = true)
+
         for (line in lines) {
             val parts = line.split(",")
-            if (parts.size >= 7) {
-                try {
-                    entries.add(CsvImportEntry(
-                        timestamp = parts[0].toLongOrNull() ?: 0L,
-                        rpm = parts[1].toDoubleOrNull() ?: 0.0,
-                        speed = parts[2].toDoubleOrNull() ?: 0.0,
-                        coolantTemp = parts[3].toDoubleOrNull() ?: 0.0,
-                        throttle = parts[4].toDoubleOrNull() ?: 0.0,
-                        fuelLevel = parts[5].toDoubleOrNull() ?: 0.0,
-                        batteryVoltage = parts[6].toDoubleOrNull() ?: 0.0
-                    ))
-                } catch (e: Exception) {
-                    Log.w("OBDRepository", "Failed to parse CSV line: ${parts.joinToString(",")}", e)
+            try {
+                when {
+                    isTorqueFormat && parts.size >= 5 -> {
+                        entries.add(CsvImportEntry(
+                            timestamp = parts[0].toLongOrNull() ?: 0L,
+                            rpm = parts[5].toDoubleOrNull() ?: 0.0,
+                            speed = (parts[6].toDoubleOrNull() ?: 0.0) * 1.60934,
+                            coolantTemp = ((parts[7].toDoubleOrNull() ?: 0.0) - 32.0) * 5.0 / 9.0,
+                            throttle = parts[8].toDoubleOrNull() ?: 0.0,
+                            fuelLevel = parts[9].toDoubleOrNull() ?: 0.0,
+                            batteryVoltage = parts[10].toDoubleOrNull() ?: 0.0
+                        ))
+                    }
+                    isEnhanced && parts.size >= 22 -> {
+                        entries.add(CsvImportEntry(
+                            timestamp = parts[0].toLongOrNull() ?: 0L,
+                            rpm = parts[2].toDoubleOrNull() ?: 0.0,
+                            speed = parts[3].toDoubleOrNull() ?: 0.0,
+                            coolantTemp = parts[4].toDoubleOrNull() ?: 0.0,
+                            throttle = parts[5].toDoubleOrNull() ?: 0.0,
+                            fuelLevel = parts[6].toDoubleOrNull() ?: 0.0,
+                            batteryVoltage = parts[7].toDoubleOrNull() ?: 0.0
+                        ))
+                    }
+                    parts.size >= 7 -> {
+                        entries.add(CsvImportEntry(
+                            timestamp = parts[0].toLongOrNull() ?: 0L,
+                            rpm = parts[1].toDoubleOrNull() ?: 0.0,
+                            speed = parts[2].toDoubleOrNull() ?: 0.0,
+                            coolantTemp = parts[3].toDoubleOrNull() ?: 0.0,
+                            throttle = parts[4].toDoubleOrNull() ?: 0.0,
+                            fuelLevel = parts[5].toDoubleOrNull() ?: 0.0,
+                            batteryVoltage = parts[6].toDoubleOrNull() ?: 0.0
+                        ))
+                    }
                 }
+            } catch (e: Exception) {
+                Log.w("OBDRepository", "Failed to parse CSV line: ${parts.joinToString(",")}", e)
             }
         }
         _importedData.value = entries

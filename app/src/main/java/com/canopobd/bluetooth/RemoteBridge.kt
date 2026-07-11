@@ -2,8 +2,11 @@ package com.canopobd.bluetooth
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
+import android.os.Build
+import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,15 +44,28 @@ class RemoteBridge(
     @Suppress("DEPRECATION")
     fun getLocalIpAddress(): String {
         try {
-            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val ipInt = wifiManager.connectionInfo.ipAddress
-            return String.format(
-                "%d.%d.%d.%d",
-                ipInt and 0xff,
-                ipInt shr 8 and 0xff,
-                ipInt shr 16 and 0xff,
-                ipInt shr 24 and 0xff
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = connectivityManager.activeNetwork ?: return "0.0.0.0"
+                val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return "0.0.0.0"
+                if (!capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return "0.0.0.0"
+                val linkProperties = connectivityManager.getLinkProperties(network) ?: return "0.0.0.0"
+                return linkProperties.linkAddresses
+                    .firstOrNull { it.address is java.net.Inet4Address }
+                    ?.address
+                    ?.hostAddress
+                    ?: "0.0.0.0"
+            } else {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                val ipInt = wifiManager.connectionInfo.ipAddress
+                return String.format(
+                    "%d.%d.%d.%d",
+                    ipInt and 0xff,
+                    ipInt shr 8 and 0xff,
+                    ipInt shr 16 and 0xff,
+                    ipInt shr 24 and 0xff
+                )
+            }
         } catch (e: Exception) {
             return "0.0.0.0"
         }

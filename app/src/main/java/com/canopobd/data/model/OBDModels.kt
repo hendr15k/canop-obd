@@ -533,7 +533,24 @@ data class DataRecord(
     val coolantTemp: Double,
     val throttle: Double,
     val fuelLevel: Double,
-    val batteryVoltage: Double
+    val batteryVoltage: Double,
+    val intakeTemp: Double = 0.0,
+    val oilTemp: Double = 0.0,
+    val boostPressure: Double = 0.0,
+    val barometricPressure: Double = 0.0,
+    val wastegateDuty: Double = 0.0,
+    val turboRpm: Double = 0.0,
+    val egtBank1: Double = 0.0,
+    val egtBank2: Double = 0.0,
+    val chargeAirTemp: Double = 0.0,
+    val mafRate: Double = 0.0,
+    val engineLoad: Double = 0.0,
+    val shortTermFuelTrimB1: Double = 0.0,
+    val longTermFuelTrimB1: Double = 0.0,
+    val timingAdvance: Double = 0.0,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val altitude: Double? = null
 )
 
 data class TripData(
@@ -666,22 +683,54 @@ data class AlertConfig(
     val rpmWarning: Float = 6000f,
     val rpmWarningEnabled: Boolean = false,
     val batteryLowWarning: Float = 11.5f,
-    val batteryLowWarningEnabled: Boolean = true
+    val batteryLowWarningEnabled: Boolean = true,
+    val boostWarning: Float = 0.85f,
+    val boostWarningEnabled: Boolean = false,
+    val boostCritical: Float = 1.35f,
+    val boostCriticalEnabled: Boolean = true,
+    val egtWarning: Float = 850f,
+    val egtWarningEnabled: Boolean = true,
+    val egtCritical: Float = 950f,
+    val egtCriticalEnabled: Boolean = true,
+    val oilTempWarning: Float = 120f,
+    val oilTempWarningEnabled: Boolean = true,
+    val oilTempCritical: Float = 135f,
+    val oilTempCriticalEnabled: Boolean = true,
+    val turboSpeedWarning: Float = 180000f,
+    val turboSpeedWarningEnabled: Boolean = false,
+    val chargeAirTempWarning: Float = 65f,
+    val chargeAirTempWarningEnabled: Boolean = false,
+    val fuelTrimWarning: Float = 15f,
+    val fuelTrimWarningEnabled: Boolean = false,
+    val soundEnabled: Boolean = false,
+    val vibrationEnabled: Boolean = true,
+    val hysteresisSeconds: Int = 10,
+    val cooldownSeconds: Int = 60
 )
 
 data class ActiveAlert(
     val type: AlertType,
+    val severity: AlertSeverity,
     val value: Float,
     val threshold: Float,
-    val message: String
+    val message: String,
+    val timestamp: Long = System.currentTimeMillis()
 )
+
+enum class AlertSeverity { INFO, WARNING, CRITICAL }
 
 enum class AlertType(val label: String) {
     SPEED("Geschwindigkeit"),
     COOLANT("Kühlmitteltemperatur"),
     FUEL("Kraftstoff"),
     RPM("Drehzahl"),
-    BATTERY("Batterie")
+    BATTERY("Batterie"),
+    BOOST("Ladedruck"),
+    EGT("Abgastemperatur"),
+    OIL_TEMP("Öltemperatur"),
+    TURBO_SPEED("Turbo-Drehzahl"),
+    CHARGE_AIR_TEMP("Ladelufttemperatur"),
+    FUEL_TRIM("Kraftstofftrim")
 }
 
 data class CsvImportEntry(
