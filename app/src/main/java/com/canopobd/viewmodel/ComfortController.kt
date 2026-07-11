@@ -225,6 +225,11 @@ class ComfortController(
             val action = BCMCommandMapper.actionToATCommand(command.action.name, command.value)
             if (action != null) {
                 sendRawCommand(action)
+            } else {
+                android.util.Log.w(
+                    "ComfortController",
+                    "Unmapped BCM action: ${command.action.name} (no AT command for this vehicle)"
+                )
             }
         }
     }

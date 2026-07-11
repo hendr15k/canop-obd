@@ -686,23 +686,23 @@ class DashboardViewModel private constructor(
         // Subscribe to GPS updates for this test
         _performanceTestJob?.cancel()
         _performanceTestJob = viewModelScope.launch {
-            currentLocation.collect { loc ->
-                if (loc != null && _performanceTestState.value.isRunning) {
-                    val speedMs = loc.speed.toDouble()
-                    _gpsSpeedForTest.value = speedMs * 3.6
+            // Wait for each new GPS location update via first(), which suspends until the
+            // upstream StateFlow emits — replaces the old `collect { ... self-cancel ... }`
+            // pattern that was producing partial state mutations when the job cancelled itself.
+            runPerformanceTest@ while (true) {
+                val loc = currentLocation.first()
+                if (loc == null || !_performanceTestState.value.isRunning) continue@runPerformanceTest
+                val speedMs = loc.speed.toDouble()
+                _gpsSpeedForTest.value = speedMs * 3.6
 
-                    // Feed speed to the timer
-                    val timerState = accelerationTimer.update(speedMs, System.currentTimeMillis())
+                val timerState = accelerationTimer.update(speedMs, System.currentTimeMillis())
 
-                    // Update status message with current speed
-                    _performanceTestState.value = _performanceTestState.value.copy(
-                        statusMessage = "%.0f km/h".format(speedMs * 3.6)
-                    )
+                _performanceTestState.value = _performanceTestState.value.copy(
+                    statusMessage = "%.0f km/h".format(speedMs * 3.6)
+                )
 
-                    // Check if test finished
-                    if (timerState == com.canopobd.data.domain.AccelerationTimer.TimerState.FINISHED) {
-                        _performanceTestJob?.cancel()
-                        _performanceTestJob = null
+                when (timerState) {
+                    com.canopobd.data.domain.AccelerationTimer.TimerState.FINISHED -> {
                         val result = accelerationTimer.buildResult()
                         _currentAccelerationRun.value = result
                         if (result != null) {
@@ -719,16 +719,21 @@ class DashboardViewModel private constructor(
                                 statusMessage = "Fertig!"
                             )
                         }
-                    } else if (timerState == com.canopobd.data.domain.AccelerationTimer.TimerState.CANCELLED) {
-                        _performanceTestJob?.cancel()
-                        _performanceTestJob = null
+                        break@runPerformanceTest
+                    }
+                    com.canopobd.data.domain.AccelerationTimer.TimerState.CANCELLED -> {
                         _performanceTestState.value = _performanceTestState.value.copy(
                             isRunning = false,
                             statusMessage = "Abgebrochen"
                         )
+                        break@runPerformanceTest
                     }
+                    else -> Unit
                 }
             }
+            // Single cancellation point at end of collect so we never partially-mutate state mid-frame.
+            _performanceTestJob?.cancel()
+            _performanceTestJob = null
         }
     }
 
@@ -1307,10 +1312,12 @@ private fun startTurboAnalysisCollection() {
 
     private fun updateAllTurboMetrics(data: OBDData) {
         val currentSession = _driveSession.value
-        val updatedSession = currentSession.copy(
-            endTime = System.currentTimeMillis()
-        )
-        _driveSession.value = updatedSession
+        val newEndTime = System.currentTimeMillis()
+        val updatedSession = if (currentSession.endTime == 0L || newEndTime - currentSession.endTime >= 1000L) {
+            currentSession.copy(endTime = newEndTime).also { _driveSession.value = it }
+        } else {
+            currentSession
+        }
         turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
          _fuelRailPressure.value = data.fuelRailPressure

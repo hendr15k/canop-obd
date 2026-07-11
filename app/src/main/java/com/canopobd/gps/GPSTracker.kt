@@ -142,16 +142,17 @@ class GPSTracker(private val context: Context) {
         }
         locationCallback = null
 
-        if (tripLocations.isNotEmpty()) {
+        val snapshot = synchronized(tripLocations) { tripLocations.toList() }
+        if (snapshot.isNotEmpty()) {
             val trip = GPSTrip(
                 id = tripId,
                 startTime = tripStartTime,
                 endTime = System.currentTimeMillis(),
-                locations = tripLocations.toList(),
+                locations = snapshot,
                 distanceKm = tripDistanceMeters / 1000.0,
-                maxSpeedKmh = tripLocations.maxOfOrNull { it.speed * 3.6f }?.toDouble() ?: 0.0,
-                avgSpeedKmh = if (tripLocations.size > 1) {
-                    tripLocations.sumOf { (it.speed * 3.6).toDouble() } / tripLocations.size
+                maxSpeedKmh = snapshot.maxOfOrNull { it.speed * 3.6f }?.toDouble() ?: 0.0,
+                avgSpeedKmh = if (snapshot.size > 1) {
+                    snapshot.sumOf { (it.speed * 3.6).toDouble() } / snapshot.size
                 } else 0.0
             )
             _tripHistory.value = _tripHistory.value + trip

@@ -325,7 +325,24 @@ fun DashboardScreen(
         }
     }
 
-    val gaugeMap = remember(obdData) { buildGaugeMap(obdData, measurementUnit) }
+    val gaugeMap = remember(
+        obdData.rpm,
+        obdData.speed,
+        obdData.coolantTemp,
+        obdData.throttle,
+        obdData.engineLoad,
+        obdData.fuelLevel,
+        obdData.timingAdvance,
+        obdData.mafRate,
+        obdData.intakeTemp,
+        obdData.shortTermFuelTrimB1,
+        obdData.longTermFuelTrimB1,
+        obdData.absoluteLoadValue,
+        obdData.engineFuelRate,
+        obdData.acceleratorPosD,
+        obdData.hybridBatteryRemaining,
+        measurementUnit
+    ) { buildGaugeMap(obdData, measurementUnit) }
 
     val isCoolantCritical = obdData.coolantTemp > 105
     val isRpmCritical = obdData.rpm > 6000
@@ -421,7 +438,12 @@ fun DashboardScreen(
 
                 // ----- HERO STATS (RPM + Speed side-by-side) -----------------
                 item {
-                    HeroStatsRow(obdData = obdData, measurementUnit = measurementUnit, colors = colors)
+                    HeroStatsRow(
+                        rpm = obdData.rpm,
+                        speed = obdData.speed,
+                        measurementUnit = measurementUnit,
+                        colors = colors
+                    )
                 }
 
                 // ----- ANALYSIS ROW -----------------------------------------
@@ -838,14 +860,19 @@ private fun buildGaugeMap(data: OBDData, unit: MeasurementUnit): Map<String, Gau
 // HERO STATS — Big RPM + Speed display with glow effect
 // ---------------------------------------------------------------------------
 @Composable
-private fun HeroStatsRow(obdData: OBDData, measurementUnit: MeasurementUnit, colors: AppColors) {
+private fun HeroStatsRow(
+    rpm: Double,
+    speed: Double,
+    measurementUnit: MeasurementUnit,
+    colors: AppColors
+) {
     val rpmColor = when {
-        obdData.rpm > 6000 -> colors.critical
-        obdData.rpm > 5500 -> colors.warning
+        rpm > 6000 -> colors.critical
+        rpm > 5500 -> colors.warning
         else -> colors.primary
     }
     val speedColor = colors.secondary
-    val speedValue = measurementUnit.convertSpeed(obdData.speed)
+    val speedValue = measurementUnit.convertSpeed(speed)
 
     Box(
         modifier = Modifier
@@ -897,7 +924,7 @@ private fun HeroStatsRow(obdData: OBDData, measurementUnit: MeasurementUnit, col
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = obdData.rpm.toInt().toString(),
+                    text = rpm.toInt().toString(),
                     style = GaugeTypography.valueXL,
                     color = rpmColor
                 )

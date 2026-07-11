@@ -115,9 +115,11 @@ class OBDRepository(
     private var connectAttempt = java.util.concurrent.atomic.AtomicLong(0)
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val persistTripScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     val tripHistoryEntities: StateFlow<List<TripEntity>> = tripDao.getAll()
         .stateIn(scope, SharingStarted.Lazily, emptyList())
     private var pollingJob: Job? = null
+    private val tripLock = Any()
     private var tripStartTime: Long = 0L
     private var tripSamples: Long = 0L
     private var tripSpeedSum: Double = 0.0
@@ -428,29 +430,31 @@ class OBDRepository(
         _dtcResponse.value = null
         trendRecorder.clear()
         _trendHistory.value = TrendHistory()
-        // Save trip to Room Database
-                    val trip = _tripData.value
-                    if (trip.distanceKm > 0.1) {
-                        scope.launch {
-                            try {
-                                tripDao.insert(
-                                    TripEntity(
-                                        startTime = tripStartTime,
-                                        endTime = System.currentTimeMillis(),
-                                        distanceKm = trip.distanceKm.toFloat(),
-                                        avgSpeedKmh = trip.avgSpeedKmh.toFloat(),
-                                        maxSpeedKmh = trip.maxSpeedKmh.toFloat(),
-                                        avgRpm = trip.avgRpm,
-                                        maxRpm = trip.maxRpm,
-                                        fuelUsedLiters = trip.totalFuelUsed.toFloat(),
-                                        vin = storedVin
-                                    )
-                                )
-                            } catch (e: Exception) {
-                                Log.e("OBDRepository", "Failed to save trip to Room: ${e.message}")
-                            }
-                        }
-                    }
+        // Save trip to Room Database on a dedicated scope so cleanup()'s scope.cancel()
+        // doesn't interrupt the room insert before the user-disconnect writes are flushed.
+        val trip = _tripData.value
+        val capturedStartTime = synchronized(tripLock) { tripStartTime }
+        if (trip.distanceKm > 0.1) {
+            persistTripScope.launch {
+                try {
+                    tripDao.insert(
+                        TripEntity(
+                            startTime = capturedStartTime,
+                            endTime = System.currentTimeMillis(),
+                            distanceKm = trip.distanceKm.toFloat(),
+                            avgSpeedKmh = trip.avgSpeedKmh.toFloat(),
+                            maxSpeedKmh = trip.maxSpeedKmh.toFloat(),
+                            avgRpm = trip.avgRpm,
+                            maxRpm = trip.maxRpm,
+                            fuelUsedLiters = trip.totalFuelUsed.toFloat(),
+                            vin = storedVin
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e("OBDRepository", "Failed to save trip to Room: ${e.message}")
+                }
+            }
+        }
         saveTripData()
     }
 
@@ -478,6 +482,7 @@ class OBDRepository(
         runCatching { remoteBridge?.stopServer() }
         runCatching { gpsTracker.cleanup() }
         scope.cancel()
+        persistTripScope.cancel()
     }
 
     private fun resetConnectionStats() {
@@ -513,47 +518,51 @@ class OBDRepository(
     }
 
     private fun resetTripAccumulators() {
-        tripSamples = 0
-        tripSpeedSum = 0.0
-        tripRpmSum = 0.0
-        tripFuelUsedSum = 0.0
-        tripPrevSpeed = 0.0
-        tripPrevTimestamp = System.currentTimeMillis()
-        tripStartTime = tripPrevTimestamp
-        tripFuelStart = _obdData.value.fuelLevel
-        _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+        synchronized(tripLock) {
+            tripSamples = 0
+            tripSpeedSum = 0.0
+            tripRpmSum = 0.0
+            tripFuelUsedSum = 0.0
+            tripPrevSpeed = 0.0
+            tripPrevTimestamp = System.currentTimeMillis()
+            tripStartTime = tripPrevTimestamp
+            tripFuelStart = _obdData.value.fuelLevel
+            _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+        }
     }
 
     private fun updateTripData(speed: Double, rpm: Double, fuelRate: Double, fuelEndLevel: Double, now: Long) {
-        tripSamples++
-        tripSpeedSum += speed
-        tripRpmSum += rpm
-        tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
+        synchronized(tripLock) {
+            tripSamples++
+            tripSpeedSum += speed
+            tripRpmSum += rpm
+            tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
 
-        val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
-        if (dtHours > 0) {
-            val clampedSpeed = speed.coerceAtLeast(0.0)
-            val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
-            _tripData.value = _tripData.value.copy(
-                durationSeconds = (now - tripStartTime) / 1000L,
-                distanceKm = _tripData.value.distanceKm + distanceKm,
-                maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
-                avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
-                maxRpm = maxOf(_tripData.value.maxRpm, rpm),
-                avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
-                sampleCount = tripSamples,
-                totalFuelUsed = tripFuelUsedSum,
-                avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
-                    val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
-                    tripFuelUsedSum / elapsedHours
-                } else 0.0,
-                fuelStartLevel = tripFuelStart,
-                fuelEndLevel = fuelEndLevel,
-                vin = storedVin
-            )
+            val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
+            if (dtHours > 0) {
+                val clampedSpeed = speed.coerceAtLeast(0.0)
+                val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
+                _tripData.value = _tripData.value.copy(
+                    durationSeconds = (now - tripStartTime) / 1000L,
+                    distanceKm = _tripData.value.distanceKm + distanceKm,
+                    maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
+                    avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
+                    maxRpm = maxOf(_tripData.value.maxRpm, rpm),
+                    avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
+                    sampleCount = tripSamples,
+                    totalFuelUsed = tripFuelUsedSum,
+                    avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
+                        val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
+                        tripFuelUsedSum / elapsedHours
+                    } else 0.0,
+                    fuelStartLevel = tripFuelStart,
+                    fuelEndLevel = fuelEndLevel,
+                    vin = storedVin
+                )
+            }
+            tripPrevSpeed = speed.coerceAtLeast(0.0)
+            tripPrevTimestamp = now
         }
-        tripPrevSpeed = speed.coerceAtLeast(0.0)
-        tripPrevTimestamp = now
     }
 
     private fun updateTrendIfNeeded(data: OBDData, now: Long) {
@@ -910,13 +919,15 @@ class OBDRepository(
     }
 
     fun resetTrip() {
-        tripStartTime = System.currentTimeMillis()
-        tripSamples = 0
-        tripSpeedSum = 0.0
-        tripRpmSum = 0.0
-        tripFuelUsedSum = 0.0
-        tripFuelStart = _obdData.value.fuelLevel
-        _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+        synchronized(tripLock) {
+            tripStartTime = System.currentTimeMillis()
+            tripSamples = 0
+            tripSpeedSum = 0.0
+            tripRpmSum = 0.0
+            tripFuelUsedSum = 0.0
+            tripFuelStart = _obdData.value.fuelLevel
+            _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+        }
     }
 
     fun getLastDevice(): String? = prefs.getString("last_device", null)

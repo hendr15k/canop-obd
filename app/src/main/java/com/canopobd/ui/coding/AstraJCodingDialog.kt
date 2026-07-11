@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -364,7 +365,7 @@ private fun AstraJCodingTopBar(
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = if (hasNavigation) Icons.Default.ArrowBack else Icons.Default.Close,
+                    imageVector = if (hasNavigation) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
                     contentDescription = if (hasNavigation) "Zurück" else "Schließen"
                 )
             }
