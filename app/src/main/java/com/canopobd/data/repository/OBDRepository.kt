@@ -56,6 +56,7 @@ class OBDRepository(
 
     private val _recordedData = MutableStateFlow<List<DataRecord>>(emptyList())
     val recordedData: StateFlow<List<DataRecord>> = _recordedData.asStateFlow()
+    private val recordedDataBuffer = mutableListOf<DataRecord>()
 
     private val _pollRate = MutableStateFlow(500L)
     val pollRate: StateFlow<Long> = _pollRate.asStateFlow()
@@ -352,7 +353,12 @@ class OBDRepository(
             _lastError.value = null
             resetConnectionStats()
 
-            val device = bluetoothAdapter?.getRemoteDevice(address)
+            val device = try {
+                bluetoothAdapter?.getRemoteDevice(address)
+            } catch (e: SecurityException) {
+                Log.e("OBDRepository", "SecurityException getting remote device", e)
+                null
+            }
             if (device == null) {
                 val msg = "Device not found"
                 _connectionState.value = OBDConnectionState.Error(msg)
@@ -360,7 +366,15 @@ class OBDRepository(
                 return@launch
             }
 
-            val result = conn.connect(device)
+            val result = try {
+                conn.connect(device)
+            } catch (e: SecurityException) {
+                Log.e("OBDRepository", "SecurityException during connect", e)
+                Result.failure(e)
+            } catch (e: Exception) {
+                Log.e("OBDRepository", "Exception during connect", e)
+                Result.failure(e)
+            }
             if (result.isFailure) {
                 val msg = result.exceptionOrNull()?.message ?: "Connection failed"
                 _connectionState.value = OBDConnectionState.Error(msg)
@@ -406,6 +420,7 @@ class OBDRepository(
         stopGPSTracking()
         pollingJob?.cancel()
         pollingJob = null
+        flushRecordedData()
         connection?.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
@@ -471,7 +486,8 @@ class OBDRepository(
         _connectionStats.update { s ->
             val newSuccess = s.successCount + 1
             val newFailure = s.failureCount
-            val rate = newSuccess.toDouble() / (newSuccess + newFailure)
+            val total = (newSuccess + newFailure).coerceAtLeast(1)
+            val rate = newSuccess.toDouble() / total
             s.copy(
                 successCount = newSuccess,
                 failureCount = newFailure,
@@ -484,7 +500,8 @@ class OBDRepository(
         _connectionStats.update { s ->
             val newSuccess = s.successCount
             val newFailure = s.failureCount + 1
-            val rate = newSuccess.toDouble() / (newSuccess + newFailure)
+            val total = (newSuccess + newFailure).coerceAtLeast(1)
+            val rate = newSuccess.toDouble() / total
             s.copy(
                 successCount = newSuccess,
                 failureCount = newFailure,
@@ -493,16 +510,79 @@ class OBDRepository(
         }
     }
 
-    private fun startPolling(conn: ELM327BTConnection) {
-        pollingJob?.cancel()
-        tripStartTime = System.currentTimeMillis()
+    private fun resetTripAccumulators() {
         tripSamples = 0
         tripSpeedSum = 0.0
         tripRpmSum = 0.0
         tripFuelUsedSum = 0.0
         tripPrevSpeed = 0.0
-        tripPrevTimestamp = tripStartTime
+        tripPrevTimestamp = System.currentTimeMillis()
+        tripStartTime = tripPrevTimestamp
         tripFuelStart = _obdData.value.fuelLevel
+        _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+    }
+
+    private fun updateTripData(speed: Double, rpm: Double, fuelRate: Double, fuelEndLevel: Double, now: Long) {
+        tripSamples++
+        tripSpeedSum += speed
+        tripRpmSum += rpm
+        tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
+
+        val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
+        if (dtHours > 0) {
+            val clampedSpeed = speed.coerceAtLeast(0.0)
+            val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
+            _tripData.value = _tripData.value.copy(
+                durationSeconds = (now - tripStartTime) / 1000L,
+                distanceKm = _tripData.value.distanceKm + distanceKm,
+                maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
+                avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
+                maxRpm = maxOf(_tripData.value.maxRpm, rpm),
+                avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
+                sampleCount = tripSamples,
+                totalFuelUsed = tripFuelUsedSum,
+                avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
+                    val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
+                    tripFuelUsedSum / elapsedHours
+                } else 0.0,
+                fuelStartLevel = tripFuelStart,
+                fuelEndLevel = fuelEndLevel,
+                vin = storedVin
+            )
+        }
+        tripPrevSpeed = speed.coerceAtLeast(0.0)
+        tripPrevTimestamp = now
+    }
+
+    private fun updateTrendIfNeeded(data: OBDData, now: Long) {
+        if (now - lastTrendRecordTime >= trendRecordInterval) {
+            trendRecorder.record(
+                data.rpm, data.speed, data.coolantTemp, data.boostPressure,
+                data.wastegateControl, data.turboRpm, data.egtBank1, data.chargeAirCoolerTemp
+            )
+            _trendHistory.value = trendRecorder.getHistory()
+            lastTrendRecordTime = now
+        }
+    }
+
+    private fun updateWidgetPreferences(data: OBDData, now: Long) {
+        if (now - lastWidgetUpdateTime >= widgetUpdateInterval) {
+            lastWidgetUpdateTime = now
+            val unit = _measurementUnit.value
+            prefs.edit()
+                .putFloat("widget_rpm", data.rpm.toFloat())
+                .putFloat("widget_speed", unit.convertSpeed(data.speed).toFloat())
+                .putFloat("widget_coolant", unit.convertTemp(data.coolantTemp).toFloat())
+                .putFloat("widget_load", data.engineLoad.toFloat())
+                .putFloat("widget_fuel", data.fuelLevel.toFloat())
+                .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
+                .apply()
+        }
+    }
+
+    private fun startPolling(conn: ELM327BTConnection) {
+        pollingJob?.cancel()
+        resetTripAccumulators()
 
         pollingJob = scope.launch {
             while (isActive) {
@@ -512,37 +592,9 @@ class OBDRepository(
                     val speed = results[OBDPID.SPEED] ?: _obdData.value.speed
                     val rpm = results[OBDPID.RPM] ?: _obdData.value.rpm
                     val fuelRate = results[OBDPID.ENGINE_FUEL_RATE] ?: 0.0
-
-                    tripSamples++
-                    tripSpeedSum += speed
-                    tripRpmSum += rpm
-                    tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
-
                     val now = System.currentTimeMillis()
-                    val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
-                    if (dtHours > 0) {
-                        val clampedSpeed = speed.coerceAtLeast(0.0)
-                        val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
-                        _tripData.value = _tripData.value.copy(
-                            durationSeconds = (now - tripStartTime) / 1000L,
-                            distanceKm = _tripData.value.distanceKm + distanceKm,
-                            maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
-                            avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
-                            maxRpm = maxOf(_tripData.value.maxRpm, rpm),
-                            avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
-                            sampleCount = tripSamples,
-                            totalFuelUsed = tripFuelUsedSum,
-                            avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
-                                val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
-                                tripFuelUsedSum / elapsedHours
-                            } else 0.0,
-                            fuelStartLevel = tripFuelStart,
-                            fuelEndLevel = results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel,
-                            vin = storedVin
-                        )
-                    }
-                    tripPrevSpeed = speed.coerceAtLeast(0.0)
-                    tripPrevTimestamp = now
+
+                    updateTripData(speed, rpm, fuelRate, results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel, now)
 
                     _obdData.value = OBDData(
                         rpm = results[OBDPID.RPM] ?: _obdData.value.rpm,
@@ -589,10 +641,9 @@ class OBDRepository(
                         turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
                         vin = storedVin,
                         timestamp = now,
-distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
+                        distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                     )
 
-                    // Feed computed trip data to GPSTracker for persistence
                     gpsTracker.updateTripOBDData(
                         avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
                         maxRpm = results[OBDPID.RPM]?.let { maxOf(_tripData.value.maxRpm, it) } ?: _tripData.value.maxRpm,
@@ -625,7 +676,6 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                                 engineTorque = mode22Results[Mode22PIDs.ENGINE_TORQUE] ?: m.engineTorque,
                                 timestamp = System.currentTimeMillis()
                             )
-                            // Update OBDData with Mode 22 values
                             val current = _obdData.value
                             _obdData.value = current.copy(
                                 turboRpmMode22 = mode22Results[Mode22PIDs.TURBO_SPEED] ?: current.turboRpmMode22,
@@ -639,34 +689,8 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                         }
                     }
 
-                if (now - lastTrendRecordTime >= trendRecordInterval) {
-                    trendRecorder.record(
-                        _obdData.value.rpm,
-                        _obdData.value.speed,
-                        _obdData.value.coolantTemp,
-                        _obdData.value.boostPressure,
-                        _obdData.value.wastegateControl,
-                        _obdData.value.turboRpm,
-                        _obdData.value.egtBank1,
-                        _obdData.value.chargeAirCoolerTemp
-                    )
-                    _trendHistory.value = trendRecorder.getHistory()
-                    lastTrendRecordTime = now
-                }
-
-                    // Throttle widget prefs writes to reduce SharedPreferences race conditions
-                    if (now - lastWidgetUpdateTime >= widgetUpdateInterval) {
-                        lastWidgetUpdateTime = now
-                        val unit = _measurementUnit.value
-                        prefs.edit()
-                            .putFloat("widget_rpm", _obdData.value.rpm.toFloat())
-                            .putFloat("widget_speed", unit.convertSpeed(_obdData.value.speed).toFloat())
-                            .putFloat("widget_coolant", unit.convertTemp(_obdData.value.coolantTemp).toFloat())
-                            .putFloat("widget_load", _obdData.value.engineLoad.toFloat())
-                            .putFloat("widget_fuel", _obdData.value.fuelLevel.toFloat())
-                            .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
-                            .apply()
-                    }
+                    updateTrendIfNeeded(_obdData.value, now)
+                    updateWidgetPreferences(_obdData.value, now)
 
                     consecutivePollingFailures = 0
                     _lastError.value = null
@@ -757,41 +781,57 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
 
     fun startRecording() {
         _recordingActive.value = true
+        synchronized(recordedDataBuffer) { recordedDataBuffer.clear() }
         _recordedData.value = emptyList()
     }
 
-    fun stopRecording() { _recordingActive.value = false }
+    fun stopRecording() {
+        _recordingActive.value = false
+        flushRecordedData()
+    }
 
     private fun recordData() {
         val d = _obdData.value
         val loc = currentLocation.value
-        _recordedData.update { list ->
-            list + DataRecord(
-                timestamp = d.timestamp,
-                rpm = d.rpm,
-                speed = d.speed,
-                coolantTemp = d.coolantTemp,
-                throttle = d.throttle,
-                fuelLevel = d.fuelLevel,
-                batteryVoltage = d.batteryVoltage,
-                intakeTemp = d.intakeTemp,
-                oilTemp = d.oilTemp,
-                boostPressure = d.boostPressure,
-                barometricPressure = d.barometricPressure,
-                wastegateDuty = d.wastegateControl,
-                turboRpm = d.turboRpm,
-                egtBank1 = d.egtBank1,
-                egtBank2 = d.egtBank2,
-                chargeAirTemp = d.chargeAirCoolerTemp,
-                mafRate = d.mafRate,
-                engineLoad = d.engineLoad,
-                shortTermFuelTrimB1 = d.shortTermFuelTrimB1,
-                longTermFuelTrimB1 = d.longTermFuelTrimB1,
-                timingAdvance = d.timingAdvance,
-                latitude = loc?.latitude,
-                longitude = loc?.longitude,
-                altitude = loc?.altitude
-            )
+        val record = DataRecord(
+            timestamp = d.timestamp,
+            rpm = d.rpm,
+            speed = d.speed,
+            coolantTemp = d.coolantTemp,
+            throttle = d.throttle,
+            fuelLevel = d.fuelLevel,
+            batteryVoltage = d.batteryVoltage,
+            intakeTemp = d.intakeTemp,
+            oilTemp = d.oilTemp,
+            boostPressure = d.boostPressure,
+            barometricPressure = d.barometricPressure,
+            wastegateDuty = d.wastegateControl,
+            turboRpm = d.turboRpm,
+            egtBank1 = d.egtBank1,
+            egtBank2 = d.egtBank2,
+            chargeAirTemp = d.chargeAirCoolerTemp,
+            mafRate = d.mafRate,
+            engineLoad = d.engineLoad,
+            shortTermFuelTrimB1 = d.shortTermFuelTrimB1,
+            longTermFuelTrimB1 = d.longTermFuelTrimB1,
+            timingAdvance = d.timingAdvance,
+            latitude = loc?.latitude,
+            longitude = loc?.longitude,
+            altitude = loc?.altitude
+        )
+        synchronized(recordedDataBuffer) {
+            recordedDataBuffer.add(record)
+            if (recordedDataBuffer.size % 50 == 0) {
+                _recordedData.value = recordedDataBuffer.toList()
+            }
+        }
+    }
+
+    private fun flushRecordedData() {
+        synchronized(recordedDataBuffer) {
+            if (recordedDataBuffer.isNotEmpty()) {
+                _recordedData.value = recordedDataBuffer.toList()
+            }
         }
     }
 
@@ -880,7 +920,10 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
     fun exportRecordedData(format: ExportFormat): String =
         DataExporter.export(_recordedData.value, format)
 
-    fun clearRecordedData() { _recordedData.value = emptyList() }
+    fun clearRecordedData() {
+        synchronized(recordedDataBuffer) { recordedDataBuffer.clear() }
+        _recordedData.value = emptyList()
+    }
 
     private fun checkAlerts() {
         val cfg = _alertConfig.value
@@ -1425,21 +1468,14 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
         emulator = OBDEmulator()
         _connectionState.value = OBDConnectionState.Connected
         _detectedProtocol.value = "OBD Emulator (Simulated)"
-        tripStartTime = System.currentTimeMillis()
-        tripSamples = 0
-        tripSpeedSum = 0.0
-        tripRpmSum = 0.0
-        tripFuelUsedSum = 0.0
-        tripPrevSpeed = 0.0
-        tripPrevTimestamp = tripStartTime
-        tripFuelStart = _obdData.value.fuelLevel
-        _tripData.value = TripData(fuelStartLevel = tripFuelStart, vin = storedVin)
+        resetTripAccumulators()
         startEmulatorPolling()
     }
 
     fun disconnectEmulator() {
         emulatorPollingJob?.cancel()
         emulatorPollingJob = null
+        flushRecordedData()
         emulator?.disconnect()
         emulator = null
         _connectionState.value = OBDConnectionState.Disconnected
@@ -1462,63 +1498,9 @@ distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
                         _mode22Data.value = mode22
 
                         val now = System.currentTimeMillis()
-                        tripSamples++
-                        tripSpeedSum += data.speed
-                        tripRpmSum += data.rpm
-                        tripFuelUsedSum += data.engineFuelRate * (_pollRate.value / 3_600_000.0)
-
-                        if (now - lastTrendRecordTime >= trendRecordInterval) {
-                            trendRecorder.record(
-                                data.rpm,
-                                data.speed,
-                                data.coolantTemp,
-                                data.boostPressure,
-                                data.wastegateControl,
-                                data.turboRpm,
-                                data.egtBank1,
-                                data.chargeAirCoolerTemp
-                            )
-                            _trendHistory.value = trendRecorder.getHistory()
-                            lastTrendRecordTime = now
-                        }
-
-                        val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
-                        if (dtHours > 0) {
-                            val clampedSpeed = data.speed.coerceAtLeast(0.0)
-                            val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
-                            _tripData.value = _tripData.value.copy(
-                                durationSeconds = (now - tripStartTime) / 1000L,
-                                distanceKm = _tripData.value.distanceKm + distanceKm,
-                                maxSpeedKmh = maxOf(_tripData.value.maxSpeedKmh, clampedSpeed),
-                                avgSpeedKmh = tripSpeedSum / tripSamples.coerceAtLeast(1),
-                                maxRpm = maxOf(_tripData.value.maxRpm, data.rpm),
-                                avgRpm = tripRpmSum / tripSamples.coerceAtLeast(1),
-                                sampleCount = tripSamples,
-                                totalFuelUsed = tripFuelUsedSum,
-                                avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
-                                    val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
-                                    tripFuelUsedSum / elapsedHours
-                                } else 0.0,
-                                fuelStartLevel = tripFuelStart,
-                                fuelEndLevel = data.fuelLevel,
-                                vin = storedVin
-                            )
-                        }
-                        tripPrevSpeed = data.speed.coerceAtLeast(0.0)
-                        tripPrevTimestamp = now
-
-                        if (now - lastWidgetUpdateTime >= widgetUpdateInterval) {
-                            lastWidgetUpdateTime = now
-                            val unit = _measurementUnit.value
-                            prefs.edit()
-                                .putFloat("widget_rpm", data.rpm.toFloat())
-                                .putFloat("widget_speed", unit.convertSpeed(data.speed).toFloat())
-                                .putFloat("widget_coolant", unit.convertTemp(data.coolantTemp).toFloat())
-                                .putFloat("widget_load", data.engineLoad.toFloat())
-                                .putFloat("widget_fuel", data.fuelLevel.toFloat())
-                                .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
-                                .apply()
-                        }
+                        updateTripData(data.speed, data.rpm, data.engineFuelRate, data.fuelLevel, now)
+                        updateTrendIfNeeded(data, now)
+                        updateWidgetPreferences(data, now)
 
                         recordConnectionSuccess()
                         checkAlerts()

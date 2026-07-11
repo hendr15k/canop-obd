@@ -185,6 +185,8 @@ class AnalyzerManager {
     val extendedAnalyzerData = MutableStateFlow(ExtendedAnalyzerSummary())
 
     // --- Voltage histories ---
+    private val voltageDeque = ArrayDeque<Double>(65)
+    private val o2VoltageDeque = ArrayDeque<Double>(65)
     val voltageHistory = MutableStateFlow<List<Double>>(emptyList())
     val o2VoltageHistory = MutableStateFlow<List<Double>>(emptyList())
 
@@ -201,29 +203,36 @@ class AnalyzerManager {
     var turboSpoolStartTime = 0L
     var turboSpoolStartBoost = 0.0
 
+    private data class BoostBarValues(val actualBar: Double, val targetBar: Double, val absoluteBoostKpa: Double)
+
+    private fun calcBoostBarValues(data: OBDData): BoostBarValues {
+        val calibration = AstraJ14TurboCalibration.INSTANCE
+        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
+        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val actualBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
+        val targetBar = calibration.normalBoostTargetBar
+        return BoostBarValues(actualBar, targetBar, absoluteBoostKpa)
+    }
+
     fun updateEmissionsAnalyzers(
         data: OBDData,
         dtcCodes: List<String>,
         onVoltageHistoryUpdate: (List<Double>) -> Unit,
         onO2VoltageHistoryUpdate: (List<Double>) -> Unit
     ) {
-        val history = synchronized(voltageHistory) {
-            val h = voltageHistory.value.toMutableList()
+        val history = synchronized(voltageDeque) {
             if (data.batteryVoltage > 0) {
-                h.add(data.batteryVoltage)
-                if (h.size > 60) h.removeAt(0)
-                voltageHistory.value = h
+                voltageDeque.addLast(data.batteryVoltage)
+                if (voltageDeque.size > 60) voltageDeque.removeFirst()
             }
-            h.toList()
+            voltageDeque.toList()
         }
-        val o2History = synchronized(o2VoltageHistory) {
-            val o2 = o2VoltageHistory.value.toMutableList()
+        val o2History = synchronized(o2VoltageDeque) {
             if (data.o2VoltageB1S1 > 0) {
-                o2.add(data.o2VoltageB1S1)
-                if (o2.size > 60) o2.removeAt(0)
-                o2VoltageHistory.value = o2
+                o2VoltageDeque.addLast(data.o2VoltageB1S1)
+                if (o2VoltageDeque.size > 60) o2VoltageDeque.removeFirst()
             }
-            o2.toList()
+            o2VoltageDeque.toList()
         }
 
         onVoltageHistoryUpdate(history)
@@ -485,31 +494,22 @@ class AnalyzerManager {
         } catch (e: Exception) { Log.w(TAG, "SensorHealthMonitor failed", e) }
 
         try {
-            val calibration = AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val boostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostBar = calibration.normalBoostTargetBar
+            val boost = calcBoostBarValues(data)
             wastegateResult.value = wastegateHealthAnalyzer.analyze(
                 wastegateDuty = wastegateDuty,
                 avgWastegateDuty = wastegateDuty,
-                targetBoost = targetBoostBar,
-                actualBoost = boostBar,
+                targetBoost = boost.targetBar,
+                actualBoost = boost.actualBar,
                 rpm = data.rpm,
                 engineLoad = data.engineLoad
             )
         } catch (e: Exception) { Log.w(TAG, "WastegateHealthAnalyzer failed", e) }
 
         try {
-            val calibration = AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostBar = calibration.normalBoostTargetBar
-
+            val boost = calcBoostBarValues(data)
             val boostLeakInput = BoostLeakDetector.BoostLeakInput(
-                boostActualBar = actualBoostBar,
-                boostTargetBar = targetBoostBar,
+                boostActualBar = boost.actualBar,
+                boostTargetBar = boost.targetBar,
                 wastegateDuty = data.wastegateControl,
                 turboRpm = data.turboRpm,
                 chargeAirTemp = data.chargeAirCoolerTemp,
@@ -526,15 +526,10 @@ class AnalyzerManager {
         } catch (e: Exception) { Log.w(TAG, "BoostLeakDetector failed", e) }
 
         try {
-            val calibration = AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostBar = calibration.normalBoostTargetBar
-
+            val boost = calcBoostBarValues(data)
             val turboEfficiencyInput = TurboEfficiencyAnalyzer.TurboInput(
-                boostActualBar = actualBoostBar,
-                boostTargetBar = targetBoostBar,
+                boostActualBar = boost.actualBar,
+                boostTargetBar = boost.targetBar,
                 wastegateDuty = data.wastegateControl,
                 turboRpm = data.turboRpm,
                 egtBank1 = data.egtBank1,
@@ -545,7 +540,7 @@ class AnalyzerManager {
                 chargeAirTemp = data.chargeAirCoolerTemp,
                 intakeTemp = data.intakeTemp,
                 coolantTemp = data.coolantTemp,
-                boostPressureKpa = absoluteBoostKpa,
+                boostPressureKpa = boost.absoluteBoostKpa,
                 wastegateControl = data.wastegateControl,
                 totalKm = currentKm.toDouble()
             )
@@ -553,20 +548,17 @@ class AnalyzerManager {
         } catch (e: Exception) { Log.w(TAG, "TurboEfficiencyAnalyzer failed", e) }
 
         try {
-            val calibration = AstraJ14TurboCalibration.INSTANCE
-            val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-            val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
-            val actualBoostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
-            val targetBoostAt80 = calibration.normalBoostTargetBar
+            val boost = calcBoostBarValues(data)
+            val targetBoostAt80 = boost.targetBar
 
             val nowMs = System.currentTimeMillis()
             val spoolTime = run {
                 if (data.throttle > 80 && !turboSpoolTracking) {
                     turboSpoolTracking = true
                     turboSpoolStartTime = nowMs
-                    turboSpoolStartBoost = actualBoostBar
+                    turboSpoolStartBoost = boost.actualBar
                 }
-                if (turboSpoolTracking && actualBoostBar >= targetBoostAt80 * 0.8) {
+                if (turboSpoolTracking && boost.actualBar >= targetBoostAt80 * 0.8) {
                     val elapsed = (nowMs - turboSpoolStartTime) / 1000.0
                     turboSpoolTracking = false
                     if (elapsed > 0.1 && elapsed < 10.0) elapsed else 0.0
@@ -580,7 +572,7 @@ class AnalyzerManager {
 
             val turboSpoolInput = TurboSpoolAnalyzer.SpoolInput(
                 throttleApplication = data.throttle,
-                boostAtThrottleApplication = actualBoostBar,
+                boostAtThrottleApplication = boost.actualBar,
                 boostAt80Percent = targetBoostAt80,
                 targetBoostAt80 = targetBoostAt80,
                 spoolTimeSeconds = spoolTime,
@@ -591,7 +583,7 @@ class AnalyzerManager {
                 rpmAt80PercentBoost = data.rpm,
                 engineLoad = data.engineLoad,
                 intakeTemp = data.intakeTemp,
-                boostPressureKpa = absoluteBoostKpa
+                boostPressureKpa = boost.absoluteBoostKpa
             )
             turboSpoolResult.value = turboSpoolAnalyzer.analyze(turboSpoolInput)
         } catch (e: Exception) { Log.w(TAG, "TurboSpoolAnalyzer failed", e) }

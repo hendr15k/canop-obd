@@ -831,35 +831,11 @@ class DashboardViewModel private constructor(
         val tpms = repository.tpmsReading.value
         if (tpms.frontLeftPSI > 0 || tpms.frontRightPSI > 0 ||
             tpms.rearLeftPSI > 0 || tpms.rearRightPSI > 0) {
-            _tpmsData.value = listOf(
-                com.canopobd.ui.tpms.TireData(
-                    position = "Vorne Links",
-                    pressure = (tpms.frontLeftPSI * 0.0689476).toFloat(),
-                    temperature = tpms.frontLeftTemp,
-                    isLow = tpms.frontLeftPSI > 0 && tpms.frontLeftPSI < 28.0,
-                    sensorBattery = 0
-                ),
-                com.canopobd.ui.tpms.TireData(
-                    position = "Vorne Rechts",
-                    pressure = (tpms.frontRightPSI * 0.0689476).toFloat(),
-                    temperature = tpms.frontRightTemp,
-                    isLow = tpms.frontRightPSI > 0 && tpms.frontRightPSI < 28.0,
-                    sensorBattery = 0
-                ),
-                com.canopobd.ui.tpms.TireData(
-                    position = "Hinten Links",
-                    pressure = (tpms.rearLeftPSI * 0.0689476).toFloat(),
-                    temperature = tpms.rearLeftTemp,
-                    isLow = tpms.rearLeftPSI > 0 && tpms.rearLeftPSI < 28.0,
-                    sensorBattery = 0
-                ),
-                com.canopobd.ui.tpms.TireData(
-                    position = "Hinten Rechts",
-                    pressure = (tpms.rearRightPSI * 0.0689476).toFloat(),
-                    temperature = tpms.rearRightTemp,
-                    isLow = tpms.rearRightPSI > 0 && tpms.rearRightPSI < 28.0,
-                    sensorBattery = 0
-                )
+            _tpmsData.value = buildTireDataList(
+                flPressure = tpms.frontLeftPSI, flTemp = tpms.frontLeftTemp, flBattery = 0,
+                frPressure = tpms.frontRightPSI, frTemp = tpms.frontRightTemp, frBattery = 0,
+                rlPressure = tpms.rearLeftPSI, rlTemp = tpms.rearLeftTemp, rlBattery = 0,
+                rrPressure = tpms.rearRightPSI, rrTemp = tpms.rearRightTemp, rrBattery = 0
             )
         } else {
             syncTPMSFromSafety()
@@ -869,35 +845,31 @@ class DashboardViewModel private constructor(
     private fun syncTPMSFromSafety() {
         val safetySummary = safetyViewModel.safetySummary.value
         val tpms = safetySummary.tpmsData
-        _tpmsData.value = listOf(
-            com.canopobd.ui.tpms.TireData(
-                position = "Vorne Links",
-                pressure = (tpms.frontLeftPressure * 0.0689476).toFloat(),
-                temperature = tpms.frontLeftTemp,
-                isLow = tpms.frontLeftPressure > 0 && tpms.frontLeftPressure < 28.0,
-                sensorBattery = if (tpms.frontLeftPressure > 0) 100 else 0
-            ),
-            com.canopobd.ui.tpms.TireData(
-                position = "Vorne Rechts",
-                pressure = (tpms.frontRightPressure * 0.0689476).toFloat(),
-                temperature = tpms.frontRightTemp,
-                isLow = tpms.frontRightPressure > 0 && tpms.frontRightPressure < 28.0,
-                sensorBattery = if (tpms.frontRightPressure > 0) 100 else 0
-            ),
-            com.canopobd.ui.tpms.TireData(
-                position = "Hinten Links",
-                pressure = (tpms.rearLeftPressure * 0.0689476).toFloat(),
-                temperature = tpms.rearLeftTemp,
-                isLow = tpms.rearLeftPressure > 0 && tpms.rearLeftPressure < 28.0,
-                sensorBattery = if (tpms.rearLeftPressure > 0) 100 else 0
-            ),
-            com.canopobd.ui.tpms.TireData(
-                position = "Hinten Rechts",
-                pressure = (tpms.rearRightPressure * 0.0689476).toFloat(),
-                temperature = tpms.rearRightTemp,
-                isLow = tpms.rearRightPressure > 0 && tpms.rearRightPressure < 28.0,
-                sensorBattery = if (tpms.rearRightPressure > 0) 100 else 0
-            )
+        _tpmsData.value = buildTireDataList(
+            flPressure = tpms.frontLeftPressure, flTemp = tpms.frontLeftTemp,
+            flBattery = if (tpms.frontLeftPressure > 0) 100 else 0,
+            frPressure = tpms.frontRightPressure, frTemp = tpms.frontRightTemp,
+            frBattery = if (tpms.frontRightPressure > 0) 100 else 0,
+            rlPressure = tpms.rearLeftPressure, rlTemp = tpms.rearLeftTemp,
+            rlBattery = if (tpms.rearLeftPressure > 0) 100 else 0,
+            rrPressure = tpms.rearRightPressure, rrTemp = tpms.rearRightTemp,
+            rrBattery = if (tpms.rearRightPressure > 0) 100 else 0
+        )
+    }
+
+    private fun buildTireDataList(
+        flPressure: Double, flTemp: Int, flBattery: Int,
+        frPressure: Double, frTemp: Int, frBattery: Int,
+        rlPressure: Double, rlTemp: Int, rlBattery: Int,
+        rrPressure: Double, rrTemp: Int, rrBattery: Int
+    ): List<com.canopobd.ui.tpms.TireData> {
+        val psiToBar = 0.0689476
+        val lowThreshold = 28.0
+        return listOf(
+            com.canopobd.ui.tpms.TireData("Vorne Links", (flPressure * psiToBar).toFloat(), flTemp, isLow = flPressure > 0 && flPressure < lowThreshold, sensorBattery = flBattery),
+            com.canopobd.ui.tpms.TireData("Vorne Rechts", (frPressure * psiToBar).toFloat(), frTemp, isLow = frPressure > 0 && frPressure < lowThreshold, sensorBattery = frBattery),
+            com.canopobd.ui.tpms.TireData("Hinten Links", (rlPressure * psiToBar).toFloat(), rlTemp, isLow = rlPressure > 0 && rlPressure < lowThreshold, sensorBattery = rlBattery),
+            com.canopobd.ui.tpms.TireData("Hinten Rechts", (rrPressure * psiToBar).toFloat(), rrTemp, isLow = rrPressure > 0 && rrPressure < lowThreshold, sensorBattery = rrBattery)
         )
     }
 

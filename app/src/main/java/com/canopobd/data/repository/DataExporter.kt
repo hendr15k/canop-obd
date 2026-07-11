@@ -1,6 +1,11 @@
 package com.canopobd.data.repository
 
 import com.canopobd.data.model.DataRecord
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 enum class ExportFormat(val extension: String, val mimeType: String, val label: String) {
     CSV("csv", "text/csv", "CSV (Excel)"),
@@ -10,6 +15,22 @@ enum class ExportFormat(val extension: String, val mimeType: String, val label: 
 }
 
 object DataExporter {
+
+    private val isoFmt: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        .withZone(ZoneOffset.UTC)
+
+    private val isoOffsetFmt: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+        .withZone(ZoneOffset.UTC)
+
+    private val gpxTimeFmt: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        .withZone(ZoneOffset.UTC)
+
+    private val torqueFmt: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        .withZone(ZoneOffset.UTC)
 
     fun export(records: List<DataRecord>, format: ExportFormat): String {
         return when (format) {
@@ -40,11 +61,8 @@ object DataExporter {
         }
         for (r in records) {
             if (enhanced) {
-                val boostBar = if (r.barometricPressure > 0) {
-                    ((r.boostPressure - r.barometricPressure).coerceAtLeast(0.0) / 100.0)
-                } else 0.0
-                val time = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.GERMAN)
-                    .format(java.util.Date(r.timestamp))
+                val boostBar = calcBoostBar(r)
+                val time = isoFmt.format(Instant.ofEpochMilli(r.timestamp))
                 sb.append(
                     "${r.timestamp},${time}," +
                         "${r.rpm.toInt()},${r.speed.toInt()},${r.coolantTemp.toInt()},${r.throttle.toInt()}," +
@@ -73,41 +91,48 @@ object DataExporter {
     }
 
     fun exportJson(records: List<DataRecord>): String {
-        val sb = StringBuilder()
-        sb.appendLine("{")
-        sb.appendLine("""  "format": "Canopo OBD-II DataLog",""")
-        sb.appendLine("""  "version": 1,""")
-        sb.appendLine("""  "recordCount": ${records.size},""")
-        sb.appendLine("""  "exportedAt": "${java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.GERMAN).format(java.util.Date())}",""")
-        sb.appendLine("""  "records": [""")
-        records.forEachIndexed { idx, r ->
-            val boostBar = if (r.barometricPressure > 0) {
-                ((r.boostPressure - r.barometricPressure).coerceAtLeast(0.0) / 100.0)
-            } else 0.0
-            val time = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.GERMAN)
-                .format(java.util.Date(r.timestamp))
-            sb.appendLine(
-                """    {""" +
-                    """"timestamp":${r.timestamp},"timestampIso":"$time",""" +
-                    """"rpm":${r.rpm.toInt()},"speed":${r.speed.toInt()},"coolant":${r.coolantTemp.toInt()},""" +
-                    """"throttle":${r.throttle.toInt()},"fuel":${r.fuelLevel.toInt()},"battery":${r.batteryVoltage},""" +
-                    """"intake":${r.intakeTemp.toInt()},"oil":${r.oilTemp.toInt()},""" +
-                    """"boost":${r.boostPressure.toInt()},"baro":${r.barometricPressure.toInt()},"boostBar":${"%.3f".format(boostBar)},""" +
-                    """"wastegate":${r.wastegateDuty.toInt()},"turboRpm":${r.turboRpm.toInt()},""" +
-                    """"egt1":${r.egtBank1.toInt()},"egt2":${r.egtBank2.toInt()},""" +
-                    """"chargeAir":${r.chargeAirTemp.toInt()},"maf":${"%.2f".format(r.mafRate)},""" +
-                    """"load":${r.engineLoad.toInt()},"stft":${"%.1f".format(r.shortTermFuelTrimB1)},"ltft":${"%.1f".format(r.longTermFuelTrimB1)},""" +
-                    """"timingAdv":${r.timingAdvance.toInt()}""" +
-                    (if (r.latitude != null && r.longitude != null)
-                        ""","lat":${"%.6f".format(r.latitude)},"lon":${"%.6f".format(r.longitude)},"alt":${r.altitude ?: 0.0}"""
-                    else "") +
-                    """}""" +
-                    (if (idx < records.size - 1) "," else "")
-            )
+        val root = JSONObject()
+        root.put("format", "Canopo OBD-II DataLog")
+        root.put("version", 1)
+        root.put("recordCount", records.size)
+        root.put("exportedAt", isoOffsetFmt.format(Instant.now()))
+
+        val arr = JSONArray()
+        for (r in records) {
+            val obj = JSONObject().apply {
+                put("timestamp", r.timestamp)
+                put("timestampIso", isoOffsetFmt.format(Instant.ofEpochMilli(r.timestamp)))
+                put("rpm", r.rpm.toInt())
+                put("speed", r.speed.toInt())
+                put("coolant", r.coolantTemp.toInt())
+                put("throttle", r.throttle.toInt())
+                put("fuel", r.fuelLevel.toInt())
+                put("battery", r.batteryVoltage)
+                put("intake", r.intakeTemp.toInt())
+                put("oil", r.oilTemp.toInt())
+                put("boost", r.boostPressure.toInt())
+                put("baro", r.barometricPressure.toInt())
+                put("boostBar", "%.3f".format(calcBoostBar(r)))
+                put("wastegate", r.wastegateDuty.toInt())
+                put("turboRpm", r.turboRpm.toInt())
+                put("egt1", r.egtBank1.toInt())
+                put("egt2", r.egtBank2.toInt())
+                put("chargeAir", r.chargeAirTemp.toInt())
+                put("maf", "%.2f".format(r.mafRate))
+                put("load", r.engineLoad.toInt())
+                put("stft", "%.1f".format(r.shortTermFuelTrimB1))
+                put("ltft", "%.1f".format(r.longTermFuelTrimB1))
+                put("timingAdv", r.timingAdvance.toInt())
+                if (r.latitude != null && r.longitude != null) {
+                    put("lat", "%.6f".format(r.latitude))
+                    put("lon", "%.6f".format(r.longitude))
+                    put("alt", r.altitude ?: 0.0)
+                }
+            }
+            arr.put(obj)
         }
-        sb.appendLine("  ]")
-        sb.appendLine("}")
-        return sb.toString()
+        root.put("records", arr)
+        return root.toString(2)
     }
 
     fun exportGpxWithObd(records: List<DataRecord>): String {
@@ -116,18 +141,17 @@ object DataExporter {
         sb.appendLine("""<gpx version="1.1" creator="Canopo OBD" xmlns="http://www.topografix.com/GPX/1/1">""")
         sb.appendLine("""  <metadata>""")
         sb.appendLine("""    <name>Canopo OBD Track</name>""")
-        sb.appendLine("""    <time>${java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.GERMAN).format(java.util.Date())}</time>""")
+        sb.appendLine("""    <time>${gpxTimeFmt.format(Instant.now())}</time>""")
         sb.appendLine("""    <desc>OBD-II Telemetry Track (${records.size} points)</desc>""")
         sb.appendLine("""  </metadata>""")
         sb.appendLine("""  <trk>""")
         sb.appendLine("""    <name>OBD-II Track</name>""")
         sb.appendLine("""    <trkseg>""")
-        val timeFmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.GERMAN)
         val withGps = records.filter { it.latitude != null && it.longitude != null }
         if (withGps.isEmpty()) {
             sb.appendLine("""      <!-- No GPS data available - generating time-only track -->""")
             records.forEach { r ->
-                val time = timeFmt.format(java.util.Date(r.timestamp))
+                val time = gpxTimeFmt.format(Instant.ofEpochMilli(r.timestamp))
                 sb.appendLine("""      <trkpt lat="0.0" lon="0.0"><time>$time</time></trkpt>""")
             }
         } else {
@@ -135,10 +159,8 @@ object DataExporter {
                 val lat = r.latitude ?: continue
                 val lon = r.longitude ?: continue
                 val alt = r.altitude ?: 0.0
-                val time = timeFmt.format(java.util.Date(r.timestamp))
-                val boostBar = if (r.barometricPressure > 0) {
-                    ((r.boostPressure - r.barometricPressure).coerceAtLeast(0.0) / 100.0)
-                } else 0.0
+                val time = gpxTimeFmt.format(Instant.ofEpochMilli(r.timestamp))
+                val boostBar = calcBoostBar(r)
                 sb.appendLine(
                     """      <trkpt lat="${"%.6f".format(lat)}" lon="${"%.6f".format(lon)}">""" +
                         """<ele>${"%.1f".format(alt)}</ele><time>$time</time>""" +
@@ -171,9 +193,8 @@ object DataExporter {
                 "Short Term Fuel Trim (%),Long Term Fuel Trim (%)," +
                 "Timing Advance (°),MAF (lb/min)"
         )
-        val timeFmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.GERMAN)
         for (r in records) {
-            val time = timeFmt.format(java.util.Date(r.timestamp))
+            val time = torqueFmt.format(Instant.ofEpochMilli(r.timestamp))
             val lat = r.latitude ?: 0.0
             val lon = r.longitude ?: 0.0
             val altFt = (r.altitude ?: 0.0) * 3.28084
@@ -191,5 +212,11 @@ object DataExporter {
             )
         }
         return sb.toString()
+    }
+
+    private fun calcBoostBar(r: DataRecord): Double {
+        return if (r.barometricPressure > 0) {
+            ((r.boostPressure - r.barometricPressure).coerceAtLeast(0.0) / 100.0)
+        } else 0.0
     }
 }
