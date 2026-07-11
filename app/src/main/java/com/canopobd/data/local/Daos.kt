@@ -20,6 +20,9 @@ interface MaintenanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<MaintenanceEntity>)
 
+    @Query("UPDATE maintenance_items SET notes = :notes WHERE type = :type")
+    suspend fun updateNotes(type: String, notes: String)
+
     @Query("DELETE FROM maintenance_items")
     suspend fun deleteAll()
 }

@@ -802,7 +802,8 @@ data class MaintenanceItem(
     val lastServiceKm: Int = 0,
     val intervalKm: Int = 15000,
     val lastServiceDate: Long = 0L,
-    val currentKm: Int = 0
+    val currentKm: Int = 0,
+    val notes: String = ""
 ) {
     val kmRemaining: Int get() = (lastServiceKm + intervalKm) - currentKm
     val status: MaintenanceStatus get() = when {

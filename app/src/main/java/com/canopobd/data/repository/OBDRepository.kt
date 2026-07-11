@@ -1325,9 +1325,17 @@ class OBDRepository(
                     type = item.type.name,
                     lastServiceKm = item.lastServiceKm,
                     intervalKm = item.intervalKm,
-                    lastServiceDate = System.currentTimeMillis()
+                    lastServiceDate = System.currentTimeMillis(),
+                    notes = item.notes
                 )
             )
+        }
+    }
+
+    fun updateMaintenanceNotes(type: MaintenanceType, notes: String) {
+        prefs.edit().putString("maint_${type.name}_notes", notes).apply()
+        scope.launch {
+            maintenanceDao.updateNotes(type.name, notes)
         }
     }
 
@@ -1339,7 +1347,8 @@ class OBDRepository(
                     type = type,
                     lastServiceKm = km,
                     intervalKm = prefs.getInt("maint_${type.name}_interval", type.defaultInterval),
-                    lastServiceDate = prefs.getLong("maint_${type.name}_date", 0L)
+                    lastServiceDate = prefs.getLong("maint_${type.name}_date", 0L),
+                    notes = prefs.getString("maint_${type.name}_notes", "") ?: ""
                 )
             } else null
         }
@@ -1353,7 +1362,8 @@ class OBDRepository(
                     type = type,
                     lastServiceKm = entity.lastServiceKm,
                     intervalKm = entity.intervalKm,
-                    lastServiceDate = entity.lastServiceDate
+                    lastServiceDate = entity.lastServiceDate,
+                    notes = entity.notes
                 )
             }
         }
@@ -1365,6 +1375,7 @@ class OBDRepository(
             edit.remove("maint_${type.name}_km")
             edit.remove("maint_${type.name}_interval")
             edit.remove("maint_${type.name}_date")
+            edit.remove("maint_${type.name}_notes")
         }
         edit.apply()
         scope.launch { maintenanceDao.deleteAll() }

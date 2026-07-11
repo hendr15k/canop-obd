@@ -16,7 +16,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AppSettingsEntity::class,
         TripLocationEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class CanopoDatabase : RoomDatabase() {
@@ -48,6 +48,12 @@ abstract class CanopoDatabase : RoomDatabase() {
                     )
                 """)
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_trip_locations_tripId ON trip_locations(tripId)")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE maintenance_items ADD COLUMN notes TEXT NOT NULL DEFAULT ''")
             }
         }
 
@@ -85,7 +91,7 @@ abstract class CanopoDatabase : RoomDatabase() {
                     CanopoDatabase::class.java,
                     "canopo_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigrationOnDowngrade()
                     .build()
                 INSTANCE = instance

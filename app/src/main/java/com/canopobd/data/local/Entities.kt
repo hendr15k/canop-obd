@@ -10,7 +10,8 @@ data class MaintenanceEntity(
     @PrimaryKey val type: String,
     val lastServiceKm: Int,
     val intervalKm: Int,
-    val lastServiceDate: Long
+    val lastServiceDate: Long,
+    val notes: String = ""
 )
 
 @Entity(tableName = "alert_config")
