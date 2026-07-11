@@ -17,7 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.data.local.TripEntity
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -259,8 +261,8 @@ private fun TripCard(
     trip: TripEntity,
     onDelete: () -> Unit
 ) {
-    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.GERMAN) }
-    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.GERMAN) }
+    val dateFormat = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
+    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
     
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -273,12 +275,12 @@ private fun TripCard(
             ) {
                 Column {
                     Text(
-                        dateFormat.format(Date(trip.startTime)),
+                        dateFormat.format(Instant.ofEpochMilli(trip.startTime)),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "${timeFormat.format(Date(trip.startTime))} - ${timeFormat.format(Date(trip.endTime))}",
+                        "${timeFormat.format(Instant.ofEpochMilli(trip.startTime))} - ${timeFormat.format(Instant.ofEpochMilli(trip.endTime))}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )

@@ -306,19 +306,11 @@ class CANRepository(private val connection: ELM327BTConnection) {
             }
             canId in listOf("280", "288", "388") -> {
                 // BCM status frames — parse door/light status
-                if (data.size >= 4) {
+                if (data.size >= 2) {
                     val byte0 = data[0].toInt() and 0xFF
                     val byte1 = data[1].toInt() and 0xFF
-                    _bcmStatus.value = _bcmStatus.value?.copy(
-                        driverDoorOpen = (byte0 and 0x01) != 0,
-                        passengerDoorOpen = (byte0 and 0x02) != 0,
-                        rearLeftDoorOpen = (byte0 and 0x04) != 0,
-                        rearRightDoorOpen = (byte0 and 0x08) != 0,
-                        trunkOpen = (byte0 and 0x10) != 0,
-                        hoodOpen = (byte0 and 0x20) != 0,
-                        lightsOn = (byte1 and 0x01) != 0,
-                        hazardsOn = (byte1 and 0x02) != 0
-                    ) ?: BCMStatus(
+                    val existing = _bcmStatus.value ?: BCMStatus()
+                    _bcmStatus.value = existing.copy(
                         driverDoorOpen = (byte0 and 0x01) != 0,
                         passengerDoorOpen = (byte0 and 0x02) != 0,
                         rearLeftDoorOpen = (byte0 and 0x04) != 0,

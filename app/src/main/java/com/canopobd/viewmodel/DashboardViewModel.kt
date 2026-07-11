@@ -74,7 +74,7 @@ class DashboardViewModel private constructor(
     private val accelerationTimer = com.canopobd.data.domain.AccelerationTimer()
 
     private val analyzerManager = AnalyzerManager()
-    private lateinit var comfortController: ComfortController
+    private val comfortController by lazy { ComfortController(viewModelScope) { repository.sendRawCommand(it) } }
     private val dtcProcessor = DTCProcessor()
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -162,7 +162,7 @@ class DashboardViewModel private constructor(
     private val _currentKm = MutableStateFlow(viewModelPrefs.getInt("odometer_km", 0))
     val currentKm: StateFlow<Int> = _currentKm.asStateFlow()
 
-    private var lastMaintenanceCheckTime = 0L
+    @Volatile private var lastMaintenanceCheckTime = 0L
     private val sessionNotifiedMaintenance = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, MaintenanceNotificationManager.Urgency>>()
 
     private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
@@ -413,7 +413,8 @@ class DashboardViewModel private constructor(
     val extendedAnalyzerData: StateFlow<AnalyzerManager.ExtendedAnalyzerSummary> get() = analyzerManager.extendedAnalyzerData
 
     // Warning System
-    val criticalWarnings = MutableStateFlow<List<VehicleWarning>>(emptyList())
+    private val _criticalWarnings = MutableStateFlow<List<VehicleWarning>>(emptyList())
+    val criticalWarnings: StateFlow<List<VehicleWarning>> = _criticalWarnings.asStateFlow()
 
     // DTC Processing
     val processedDTCs: StateFlow<List<ProcessedDTC>> get() = dtcProcessor.processedDTCs
@@ -434,7 +435,6 @@ class DashboardViewModel private constructor(
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     init {
-        comfortController = ComfortController(viewModelScope) { repository.sendRawCommand(it) }
         viewModelScope.launch(Dispatchers.IO) {
             val items = repository.loadMaintenanceItems()
             val shiftConfig = repository.loadShiftLightConfig()
@@ -1126,19 +1126,29 @@ class DashboardViewModel private constructor(
 
     fun exportTripHistoryToCsv(callback: (String) -> Unit) {
         viewModelScope.launch {
-            val trips = tripHistoryEntities.value
-            val sb = StringBuilder()
-            val df = java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.GERMAN)
-            val tf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.GERMAN)
-            sb.appendLine("Datum,Uhrzeit Start,Uhrzeit Ende,Dauer (min),Strecke (km),Ø Geschw. (km/h),Max Geschw. (km/h),Ø RPM,Max RPM,Kraftstoff (L),Ø L/100km,VIN")
-            for (trip in trips) {
-                val durationMin = ((trip.endTime - trip.startTime) / 60000).toInt()
-                val fuelPer100 = if (trip.distanceKm > 0) (trip.fuelUsedLiters / trip.distanceKm * 100) else 0f
-                sb.appendLine("${df.format(java.util.Date(trip.startTime))},${tf.format(java.util.Date(trip.startTime))},${tf.format(java.util.Date(trip.endTime))},$durationMin,%.2f,%.1f,%.0f,%.0f,%.0f,%.2f,%.1f,${trip.vin}".format(
-                    trip.distanceKm, trip.avgSpeedKmh, trip.maxSpeedKmh, trip.avgRpm, trip.maxRpm, trip.fuelUsedLiters, fuelPer100
-                ))
+            try {
+                val trips = tripHistoryEntities.value
+                val sb = StringBuilder()
+                val df = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy", java.util.Locale.GERMAN)
+                    .withZone(java.time.ZoneId.systemDefault())
+                val tf = java.time.format.DateTimeFormatter.ofPattern("HH:mm", java.util.Locale.GERMAN)
+                    .withZone(java.time.ZoneId.systemDefault())
+                sb.appendLine("Datum,Uhrzeit Start,Uhrzeit Ende,Dauer (min),Strecke (km),Ø Geschw. (km/h),Max Geschw. (km/h),Ø RPM,Max RPM,Kraftstoff (L),Ø L/100km,VIN")
+                for (trip in trips) {
+                    val durationMin = ((trip.endTime - trip.startTime) / 60000).toInt()
+                    val fuelPer100 = if (trip.distanceKm > 0) (trip.fuelUsedLiters / trip.distanceKm * 100) else 0f
+                    val startStr = java.time.Instant.ofEpochMilli(trip.startTime).let { df.format(it) }
+                    val startTime = java.time.Instant.ofEpochMilli(trip.startTime).let { tf.format(it) }
+                    val endTime = java.time.Instant.ofEpochMilli(trip.endTime).let { tf.format(it) }
+                    sb.appendLine("$startStr,$startTime,$endTime,$durationMin,%.2f,%.1f,%.0f,%.0f,%.0f,%.2f,%.1f,${trip.vin}".format(
+                        trip.distanceKm, trip.avgSpeedKmh, trip.maxSpeedKmh, trip.avgRpm, trip.maxRpm, trip.fuelUsedLiters, fuelPer100
+                    ))
+                }
+                callback(sb.toString())
+            } catch (e: Exception) {
+                android.util.Log.w("DashboardVM", "exportTripHistoryToCsv failed", e)
+                callback("")
             }
-            callback(sb.toString())
         }
     }
 
@@ -1452,7 +1462,7 @@ private fun startTurboAnalysisCollection() {
         }
 
         val session = _driveSession.value
-        val totalSamples = session.rpmSamples.coerceAtLeast(1.0)
+        val totalSamples = session.rpmSampleCount.coerceAtLeast(1).toDouble()
         val ecoRatio = (session.coastingInGearSamples + session.deceleratingSamples).toDouble() / totalSamples
         val sportRatio = session.rpmAbove4500Samples.toDouble() / totalSamples
 
@@ -1474,7 +1484,7 @@ private fun startTurboAnalysisCollection() {
                 }
                 if (data.rpm > 0) {
                     val warnings = checkCriticalWarnings(data)
-                    criticalWarnings.value = warnings
+                    _criticalWarnings.value = warnings
                 }
                 val now = System.currentTimeMillis()
                 if (connectionState.value is OBDConnectionState.Connected &&

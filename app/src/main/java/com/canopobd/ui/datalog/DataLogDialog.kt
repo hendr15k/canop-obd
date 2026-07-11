@@ -29,7 +29,9 @@ import com.canopobd.R
 import com.canopobd.data.model.DataRecord
 import com.canopobd.ui.theme.*
 import java.io.File
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
@@ -175,7 +177,7 @@ private fun DataList(recordedData: List<DataRecord>) {
 
 @Composable
 private fun DataRecordItem(record: DataRecord) {
-    val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    val dateFormat = remember { DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     
     Row(
         modifier = Modifier
@@ -186,7 +188,7 @@ private fun DataRecordItem(record: DataRecord) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = dateFormat.format(Date(record.timestamp)),
+            text = dateFormat.format(Instant.ofEpochMilli(record.timestamp)),
             fontSize = 11.sp,
             color = textDim
         )

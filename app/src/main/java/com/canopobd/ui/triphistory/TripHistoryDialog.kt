@@ -19,7 +19,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.model.GPSTrip
 import com.canopobd.ui.theme.*
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
@@ -81,7 +83,10 @@ fun TripHistoryDialog(
                         }
                     }
                 } else {
-                    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMAN) }
+                    val dateFormat = remember {
+                        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.GERMAN)
+                            .withZone(ZoneId.systemDefault())
+                    }
 
                     LazyColumn {
                         items(trips.sortedByDescending { it.startTime }) { trip ->
@@ -96,7 +101,7 @@ fun TripHistoryDialog(
 }
 
 @Composable
-private fun TripCard(trip: GPSTrip, dateFormat: SimpleDateFormat) {
+private fun TripCard(trip: GPSTrip, dateFormat: DateTimeFormatter) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -113,7 +118,7 @@ private fun TripCard(trip: GPSTrip, dateFormat: SimpleDateFormat) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = dateFormat.format(Date(trip.startTime)),
+                            text = dateFormat.format(Instant.ofEpochMilli(trip.startTime)),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = textPrimary

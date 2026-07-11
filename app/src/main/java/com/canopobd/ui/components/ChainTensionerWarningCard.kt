@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import com.canopobd.R
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

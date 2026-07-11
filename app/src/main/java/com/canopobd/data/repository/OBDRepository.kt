@@ -184,7 +184,7 @@ class OBDRepository(
     private val _alertConfig = MutableStateFlow(AlertConfig())
     val alertConfig: StateFlow<AlertConfig> = _alertConfig.asStateFlow()
 
-    private val lastAlertTrigger = mutableMapOf<AlertType, Long>()
+    private val lastAlertTrigger = java.util.concurrent.ConcurrentHashMap<AlertType, Long>()
 
     private val _activeAlerts = MutableStateFlow<List<ActiveAlert>>(emptyList())
     val activeAlerts: StateFlow<List<ActiveAlert>> = _activeAlerts.asStateFlow()
