@@ -14,6 +14,7 @@ import com.google.android.gms.location.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -274,6 +275,11 @@ class GPSTracker(private val context: Context) {
                 db.tripDao().deleteAll()
             } catch (e: Exception) { Log.w("GPSTracker", "clearTripHistory DB delete failed", e) }
         }
+    }
+
+    fun cleanup() {
+        if (_isTracking.value) stopTracking()
+        scope.cancel()
     }
 
     fun updateTripOBDData(avgRpm: Double, maxRpm: Double, fuelUsedLiters: Float, vin: String) {

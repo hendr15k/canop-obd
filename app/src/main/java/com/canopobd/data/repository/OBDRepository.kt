@@ -475,6 +475,7 @@ class OBDRepository(
     fun cleanup() {
         runCatching { connection?.disconnect() }
         runCatching { remoteBridge?.stopServer() }
+        runCatching { gpsTracker.cleanup() }
         scope.cancel()
     }
 

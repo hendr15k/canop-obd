@@ -493,8 +493,9 @@ class AnalyzerManager {
             sensorHealthSummary.value = sensorHealthMonitor.analyzeSensors(data)
         } catch (e: Exception) { Log.w(TAG, "SensorHealthMonitor failed", e) }
 
+        val boost = calcBoostBarValues(data)
+
         try {
-            val boost = calcBoostBarValues(data)
             wastegateResult.value = wastegateHealthAnalyzer.analyze(
                 wastegateDuty = wastegateDuty,
                 avgWastegateDuty = wastegateDuty,
@@ -506,7 +507,6 @@ class AnalyzerManager {
         } catch (e: Exception) { Log.w(TAG, "WastegateHealthAnalyzer failed", e) }
 
         try {
-            val boost = calcBoostBarValues(data)
             val boostLeakInput = BoostLeakDetector.BoostLeakInput(
                 boostActualBar = boost.actualBar,
                 boostTargetBar = boost.targetBar,
@@ -526,7 +526,6 @@ class AnalyzerManager {
         } catch (e: Exception) { Log.w(TAG, "BoostLeakDetector failed", e) }
 
         try {
-            val boost = calcBoostBarValues(data)
             val turboEfficiencyInput = TurboEfficiencyAnalyzer.TurboInput(
                 boostActualBar = boost.actualBar,
                 boostTargetBar = boost.targetBar,
@@ -548,7 +547,6 @@ class AnalyzerManager {
         } catch (e: Exception) { Log.w(TAG, "TurboEfficiencyAnalyzer failed", e) }
 
         try {
-            val boost = calcBoostBarValues(data)
             val targetBoostAt80 = boost.targetBar
 
             val nowMs = System.currentTimeMillis()

@@ -169,6 +169,7 @@ class DashboardViewModel private constructor(
     val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
 
     private val _performanceTestState = MutableStateFlow(com.canopobd.data.model.PerformanceTestState())
+    private var _performanceTestJob: kotlinx.coroutines.Job? = null
     val performanceTestState: StateFlow<com.canopobd.data.model.PerformanceTestState> = _performanceTestState.asStateFlow()
 
     private val _currentAccelerationRun = MutableStateFlow<com.canopobd.data.model.AccelerationRun?>(null)
@@ -340,24 +341,36 @@ class DashboardViewModel private constructor(
     val turboHealthScore: StateFlow<Double> get() = turboViewModel.turboHealthScore
 
     // Chain Tensioner State
-    val chainHealthScore = MutableStateFlow(100.0)
-    val chainTensionerHealth = MutableStateFlow(ChainHealth.UNKNOWN)
-    val timingCorrelation = MutableStateFlow(0.0)
+    private val _chainHealthScore = MutableStateFlow(100.0)
+    val chainHealthScore: StateFlow<Double> = _chainHealthScore.asStateFlow()
+    private val _chainTensionerHealth = MutableStateFlow(ChainHealth.UNKNOWN)
+    val chainTensionerHealth: StateFlow<ChainHealth> = _chainTensionerHealth.asStateFlow()
+    private val _timingCorrelation = MutableStateFlow(0.0)
+    val timingCorrelation: StateFlow<Double> = _timingCorrelation.asStateFlow()
 
     // PCV State
-    val pcvHealthScore = MutableStateFlow(100.0)
-    val pcvHealth = MutableStateFlow(PCVHealth.UNKNOWN)
-    val oilConsumptionRate = MutableStateFlow(0.0)
+    private val _pcvHealthScore = MutableStateFlow(100.0)
+    val pcvHealthScore: StateFlow<Double> = _pcvHealthScore.asStateFlow()
+    private val _pcvHealth = MutableStateFlow(PCVHealth.UNKNOWN)
+    val pcvHealth: StateFlow<PCVHealth> = _pcvHealth.asStateFlow()
+    private val _oilConsumptionRate = MutableStateFlow(0.0)
+    val oilConsumptionRate: StateFlow<Double> = _oilConsumptionRate.asStateFlow()
 
     // Fuel System State
-    val fuelRailPressure = MutableStateFlow(0.0)
-    val injectionQuantity = MutableStateFlow(0.0)
-    val fuelSystemHealth = MutableStateFlow(FuelSystemHealth.UNKNOWN)
+    private val _fuelRailPressure = MutableStateFlow(0.0)
+    val fuelRailPressure: StateFlow<Double> = _fuelRailPressure.asStateFlow()
+    private val _injectionQuantity = MutableStateFlow(0.0)
+    val injectionQuantity: StateFlow<Double> = _injectionQuantity.asStateFlow()
+    private val _fuelSystemHealth = MutableStateFlow(FuelSystemHealth.UNKNOWN)
+    val fuelSystemHealth: StateFlow<FuelSystemHealth> = _fuelSystemHealth.asStateFlow()
 
     // Drive Style State
-    val ecoScore = MutableStateFlow(0.0)
-    val sportScore = MutableStateFlow(0.0)
-    val drivingStyle = MutableStateFlow(DriveStyle.ECONOMICAL)
+    private val _ecoScore = MutableStateFlow(0.0)
+    val ecoScore: StateFlow<Double> = _ecoScore.asStateFlow()
+    private val _sportScore = MutableStateFlow(0.0)
+    val sportScore: StateFlow<Double> = _sportScore.asStateFlow()
+    private val _drivingStyle = MutableStateFlow(DriveStyle.ECONOMICAL)
+    val drivingStyle: StateFlow<DriveStyle> = _drivingStyle.asStateFlow()
 
     // Emissions Analyzer State - delegated to analyzerManager
     val batteryHealth: StateFlow<BatteryStatus> get() = analyzerManager.batteryHealth
@@ -671,7 +684,8 @@ class DashboardViewModel private constructor(
         )
 
         // Subscribe to GPS updates for this test
-        viewModelScope.launch {
+        _performanceTestJob?.cancel()
+        _performanceTestJob = viewModelScope.launch {
             currentLocation.collect { loc ->
                 if (loc != null && _performanceTestState.value.isRunning) {
                     val speedMs = loc.speed.toDouble()
@@ -687,6 +701,8 @@ class DashboardViewModel private constructor(
 
                     // Check if test finished
                     if (timerState == com.canopobd.data.domain.AccelerationTimer.TimerState.FINISHED) {
+                        _performanceTestJob?.cancel()
+                        _performanceTestJob = null
                         val result = accelerationTimer.buildResult()
                         _currentAccelerationRun.value = result
                         if (result != null) {
@@ -704,6 +720,8 @@ class DashboardViewModel private constructor(
                             )
                         }
                     } else if (timerState == com.canopobd.data.domain.AccelerationTimer.TimerState.CANCELLED) {
+                        _performanceTestJob?.cancel()
+                        _performanceTestJob = null
                         _performanceTestState.value = _performanceTestState.value.copy(
                             isRunning = false,
                             statusMessage = "Abgebrochen"
@@ -715,6 +733,8 @@ class DashboardViewModel private constructor(
     }
 
     fun stopPerformanceTest() {
+        _performanceTestJob?.cancel()
+        _performanceTestJob = null
         if (_performanceTestState.value.isRunning) {
             // Try to get a result even if target wasn't reached
             accelerationTimer.cancel()
@@ -1134,10 +1154,6 @@ class DashboardViewModel private constructor(
         viewModelScope.launch { repository.deleteTrip(id) }
     }
 
-    fun clearTripHistory() {
-        viewModelScope.launch { repository.clearTripHistory() }
-    }
-
     fun startRemoteServer(port: Int = RemoteBridge.DEFAULT_PORT) {
         repository.startRemoteServer(port)
     }
@@ -1287,8 +1303,8 @@ private fun startTurboAnalysisCollection() {
         _driveSession.value = updatedSession
         turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
-         fuelRailPressure.value = data.fuelRailPressure
-         injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
+         _fuelRailPressure.value = data.fuelRailPressure
+         _injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
              data.mafRate / 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
          } else 0.0
      }
@@ -1358,9 +1374,9 @@ private fun startTurboAnalysisCollection() {
             else -> "Keine Maßnahmen erforderlich"
         }
 
-        chainHealthScore.value = score.toDouble()
-        chainTensionerHealth.value = chainHealth
-        timingCorrelation.value = correlation
+        _chainHealthScore.value = score.toDouble()
+        _chainTensionerHealth.value = chainHealth
+        _timingCorrelation.value = correlation
 
         return ChainHealthResult(
             healthScore = score,
@@ -1400,8 +1416,8 @@ private fun startTurboAnalysisCollection() {
         score = score.coerceIn(0, 100)
         if (score < 40) health = PCVHealth.FAILED
 
-        pcvHealthScore.value = score.toDouble()
-        pcvHealth.value = health
+        _pcvHealthScore.value = score.toDouble()
+        _pcvHealth.value = health
         return health
     }
 
@@ -1417,8 +1433,8 @@ private fun startTurboAnalysisCollection() {
             else -> FuelSystemHealth.NORMAL
         }
 
-        fuelSystemHealth.value = health
-        fuelRailPressure.value = data.fuelRailPressure
+        _fuelSystemHealth.value = health
+        _fuelRailPressure.value = data.fuelRailPressure
         return health
     }
 
@@ -1440,9 +1456,9 @@ private fun startTurboAnalysisCollection() {
         val ecoRatio = (session.coastingInGearSamples + session.deceleratingSamples).toDouble() / totalSamples
         val sportRatio = session.rpmAbove4500Samples.toDouble() / totalSamples
 
-        ecoScore.value = (ecoRatio * 100.0).coerceIn(0.0, 100.0)
-        sportScore.value = (sportRatio * 100.0).coerceIn(0.0, 100.0)
-        drivingStyle.value = style
+        _ecoScore.value = (ecoRatio * 100.0).coerceIn(0.0, 100.0)
+        _sportScore.value = (sportRatio * 100.0).coerceIn(0.0, 100.0)
+        _drivingStyle.value = style
         return style
     }
 
@@ -1627,6 +1643,7 @@ private fun startTurboAnalysisCollection() {
     }
 
     override fun onCleared() {
+        _performanceTestJob?.cancel()
         _turboAnalysisJob.value?.cancel()
         turboViewModel.viewModelScope.cancel()
         safetyViewModel.viewModelScope.cancel()

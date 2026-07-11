@@ -183,15 +183,6 @@ class ELM327BTConnection(
             "U0121" to "Lost Communication With ABS Module",
             "U0140" to "Lost Communication With BCM",
             "U0155" to "Lost Communication With Instrument Cluster",
-            "P0100" to "Mass Air Flow Circuit Malfunction",
-            "P0101" to "Mass Air Flow Circuit Range/Performance Problem",
-            "P0102" to "Mass Air Flow Circuit Low Input",
-            "P0103" to "Mass Air Flow Circuit High Input",
-            "P0170" to "Fuel System Too Rich (Bank 1)",
-            "P0171" to "Fuel System Too Lean (Bank 1)",
-            "P0172" to "Fuel System Too Rich (Bank 1)",
-            "P0173" to "Fuel System Too Rich (Bank 2)",
-            "P0174" to "Fuel System Too Lean (Bank 2)",
             "P0234" to "Turbocharger/Supercharger Overboost Condition",
             "P0235" to "Turbocharger Boost Sensor Circuit Malfunction",
             "P0236" to "Turbocharger Boost Sensor Range/Performance",
@@ -200,17 +191,8 @@ class ELM327BTConnection(
             "P0243" to "Turbocharger Wastegate Solenoid A Malfunction",
             "P0245" to "Turbocharger Wastegate Solenoid A Low Input",
             "P0246" to "Turbocharger Wastegate Solenoid A High Input",
-            "P0298" to "Engine Oil Temperature Too Low",
-            "P0299" to "Turbocharger/Supercharger Underboost Condition",
-            "P0500" to "Vehicle Speed Sensor Malfunction",
-            "P0506" to "Idle Control System RPM Lower Than Expected",
-            "P0507" to "Idle Control System RPM Higher Than Expected",
             "P0562" to "System Voltage Low",
             "P0563" to "System Voltage High",
-            "P0600" to "Serial Communication Link Malfunction",
-            "P0601" to "Control Module Read Only Memory Error",
-            "P0602" to "Control Module Programming Error",
-            "P0606" to "ECM/PCM Processor Fault",
             "P0685" to "ECM Relay Control Circuit Malfunction",
             "P1100" to "MAF Sensor Intermittent/Erratic High",
             "P1101" to "MAF Sensor Out of Self-Test Range",
@@ -218,172 +200,6 @@ class ELM327BTConnection(
             "P1489" to "High Speed Fan Control Circuit Malfunction",
             "P1490" to "Low Speed Fan Control Circuit Malfunction",
             "P1491" to "Fan System Performance",
-            "P1516" to "Intake Manifold Tuning Valve Performance",
-            "P1517" to "Intake Manifold Tuning Valve Control Circuit",
-            "P1518" to "Intake Manifold Tuning Valve Stuck Open",
-            "P1519" to "Intake Manifold Tuning Valve Stuck Closed",
-            "P1520" to "Intake Manifold Tuning Valve Circuit Malfunction",
-            "P1523" to "Variable Load Control Solenoid A Circuit",
-            "P1524" to "Variable Load Control Solenoid A Range/Performance",
-            "P1549" to "Turbocharger Boost Control Valve Malfunction",
-            "P1550" to "O2 Sensor Heater Circuit Malfunction (Bank 1)",
-            "P1571" to "Brake Pedal Switch Signal Malfunction",
-            "P1572" to "Brake Vacuum Pressure Sensor Circuit",
-            "P1573" to "Engine Torque Signal Circuit Malfunction",
-            "P1574" to "Engine Torque Signal Range/Performance",
-            "P1593" to "Loss of Intake Air Flow Signal",
-            "P1594" to "Throttle Position Sensor B Circuit",
-            "P1595" to "Throttle Position Sensor B Range/Performance",
-            "P1596" to "Throttle Position Sensor B Low Input",
-            "P1597" to "Throttle Position Sensor B High Input",
-            "P1600" to "Loss of Serial Communication",
-            "P1604" to "Control Module RAM Error",
-            "P1605" to "Control Module ROM Error",
-            "P1606" to "ECM Control Relay Circuit Malfunction",
-            "P1631" to "Throttle Position Sensor Performance",
-            "P1633" to "Throttle Position Sensor Range/Performance",
-            "P1639" to "Throttle Position Sensor B Performance",
-            "P1640" to "TCM Control Relay Circuit",
-            "P1655" to "Variable Load Control Solenoid B Circuit",
-            "P1656" to "Variable Load Control Solenoid B Range/Performance",
-            "P1657" to "Variable Load Control Solenoid B Malfunction",
-            "P1658" to "Wastegate Solenoid B Circuit",
-            "P1659" to "Wastegate Solenoid B Range/Performance",
-            "P0075" to "Intake Valve Control Solenoid Circuit (Bank 1)",
-            "P0076" to "Intake Valve Control Solenoid Circuit Low (Bank 1)",
-            "P0077" to "Intake Valve Control Solenoid Circuit High (Bank 1)",
-            "P0078" to "Exhaust Valve Control Solenoid Circuit (Bank 1)",
-            "P0079" to "Exhaust Valve Control Solenoid Circuit Low (Bank 1)",
-            "P007A" to "Intake Air Temperature Sensor Circuit Range/Performance",
-            "P007B" to "Intake Air Temperature Sensor Circuit Range/Performance (Bank 2)",
-            "P007C" to "Intake Air Temperature Sensor Circuit Low (Bank 1)",
-            "P007D" to "Intake Air Temperature Sensor Circuit High (Bank 1)",
-            "P0087" to "Fuel Rail Pressure Sensor Circuit Low",
-            "P0088" to "Fuel Rail Pressure Sensor Circuit High",
-            "P0089" to "Fuel Pressure Regulator Performance",
-            "P0090" to "Fuel Pressure Regulator Control Circuit",
-            "P0091" to "Fuel Pressure Regulator Control Circuit Low",
-            "P0092" to "Fuel Pressure Regulator Control Circuit High",
-            "P0093" to "Fuel System Leak Detected - Large Leak",
-            "P0094" to "Fuel System Leak Detected - Small Leak",
-            "P0095" to "Intake Air Temperature Sensor 2 Circuit Range/Performance",
-            "P0096" to "Intake Air Temperature Sensor 2 Circuit Range/Performance",
-            "P0097" to "Intake Air Temperature Sensor 2 Circuit Low",
-            "P0098" to "Intake Air Temperature Sensor 2 Circuit High",
-            "P0099" to "Intake Air Temperature Sensor 2 Circuit Intermittent",
-            "P009A" to "Intake Air Temperature Sensor Circuit Range/Performance (Bank 2)",
-            "P009B" to "Intake Air Temperature Sensor Circuit Low (Bank 2)",
-            "P009C" to "Intake Air Temperature Sensor Circuit High (Bank 2)",
-            "P009D" to "Intake Air Temperature Sensor Circuit Intermittent (Bank 2)",
-            "P0298" to "Engine Oil Temperature Too Low",
-            "P0299" to "Turbocharger/Supercharger Underboost Condition",
-            "P1105" to "MAP Sensor Reference Circuit",
-            "P1106" to "MAP Sensor Circuit Range/Performance",
-            "P1107" to "MAP Sensor Circuit Low Input",
-            "P1108" to "MAP Sensor Circuit High Input",
-            "P1110" to "Intake Air Temperature Sensor Circuit",
-            "P1111" to "Intake Air Temperature Sensor Circuit Range/Performance",
-            "P1112" to "Intake Air Temperature Sensor Circuit Low",
-            "P1113" to "Intake Air Temperature Sensor Circuit High",
-            "P1114" to "Intake Air Temperature Sensor 2 Circuit Low",
-            "P1115" to "Intake Air Temperature Sensor 2 Circuit High",
-            "P1116" to "Intake Air Temperature Sensor Circuit Range/Performance",
-            "P1117" to "Intake Air Temperature Sensor Circuit Intermittent",
-            "P1120" to "Accelerator Pedal Position Sensor 1",
-            "P1121" to "Accelerator Pedal Position Sensor 1 Range/Performance",
-            "P1122" to "Accelerator Pedal Position Sensor 1 Low",
-            "P1123" to "Accelerator Pedal Position Sensor 1 High",
-            "P1125" to "Accelerator Pedal Position Sensor 2",
-            "P1126" to "Accelerator Pedal Position Sensor 2 Range/Performance",
-            "P1127" to "Accelerator Pedal Position Sensor 2 Low",
-            "P1128" to "Accelerator Pedal Position Sensor 2 High",
-            "P1130" to "O2 Sensor Adaptive Trim Lean Limit (Bank 1 Sensor 1)",
-            "P1131" to "O2 Sensor 1 Insufficient Switching - Lean (Bank 1)",
-            "P1132" to "O2 Sensor 1 Insufficient Switching - Rich (Bank 1)",
-            "P1133" to "O2 Sensor 1 Insufficient Switching",
-            "P1134" to "O2 Sensor 1 Transition Time",
-            "P1135" to "O2 Sensor 1 Heater Circuit (Bank 1)",
-            "P1136" to "O2 Sensor 2 Heater Circuit (Bank 1)",
-            "P1137" to "O2 Sensor 2 Heater Circuit Low (Bank 1)",
-            "P1138" to "O2 Sensor 2 Heater Circuit High (Bank 1)",
-            "P1161" to "O2 Sensor Cross Counts (Bank 1 Sensor 1)",
-            "P1162" to "O2 Sensor 1 Heater Performance (Bank 1)",
-            "P1171" to "Fuel Trim Lean at WOT",
-            "P1172" to "Fuel Trim Rich at WOT",
-            "P1173" to "O2 Sensor 2 Heater Performance (Bank 1)",
-            "P1187" to "Engine Oil Temperature Sensor Circuit Low",
-            "P1188" to "Engine Oil Temperature Sensor Circuit High",
-            "P1189" to "Engine Oil Temperature Sensor Circuit Range/Performance",
-            "P1190" to "Engine Oil Temperature Sensor Circuit Intermittent",
-            "P1240" to "Turbo Boost Sensor Performance",
-            "P1241" to "Turbo Boost Pressure Low",
-            "P1242" to "Turbo Boost Pressure High (Overboost)",
-            "P1243" to "Turbocharger Speed Sensor Circuit",
-            "P1244" to "Turbocharger Speed Sensor Low",
-            "P1245" to "Turbocharger Speed Sensor High",
-            "P1246" to "Turbocharger Speed Sensor Range/Performance",
-            "P1247" to "Turbo Boost Pressure Control Performance",
-            "P1248" to "Turbo Boost Pressure Control Not Detected",
-            "P1249" to "Turbocharger Boost Pressure Actuator A Circuit",
-            "P1250" to "Turbocharger Boost Pressure Actuator A Circuit Low",
-            "P1251" to "Turbocharger Boost Pressure Actuator A Circuit High",
-            "P1252" to "Turbocharger Boost Pressure Actuator A Range/Performance",
-            "P1253" to "Turbocharger Boost Pressure Actuator A Stuck",
-            "P1254" to "Turbocharger Boost Pressure Actuator A Stuck Open",
-            "P1255" to "Turbocharger Boost Pressure Actuator A Stuck Closed",
-            "P1271" to "Throttle Position Sensor (TPS) Adaptation",
-            "P1272" to "Throttle Adaptation Not Learned",
-            "P1273" to "Throttle Position Sensor Adaptation Range",
-            "P1274" to "Throttle Position Sensor 1-2 Correlation",
-            "P1275" to "Throttle Body Control (Electronic)",
-            "P1276" to "Throttle Body Control Adaptation (2nd)",
-            "P1277" to "Throttle Body Control Range/Performance",
-            "P1278" to "Throttle Body Control Learned Position Not Set",
-            "P1345" to "Camshaft-Crankshaft Correlation (Bank 1)",
-            "P1346" to "Camshaft Position Sensor Circuit Range/Performance",
-            "P1347" to "Crankshaft Position - Camshaft Position Correlation (Bank 1)",
-            "P1351" to "Ignition Coil Control Circuit (Cylinder 1)",
-            "P1352" to "Ignition Coil Control Circuit (Cylinder 2)",
-            "P1353" to "Ignition Coil Control Circuit (Cylinder 3)",
-            "P1354" to "Ignition Coil Control Circuit (Cylinder 4)",
-            "P1355" to "Ignition Coil Primary Circuit (All Cylinders)",
-            "P1356" to "Ignition Coil Secondary Circuit (Cylinder 1)",
-            "P1357" to "Ignition Coil Secondary Circuit (Cylinder 2)",
-            "P1358" to "Ignition Coil Secondary Circuit (Cylinder 3)",
-            "P1359" to "Ignition Coil Secondary Circuit (Cylinder 4)",
-            "P1361" to "Control Module Ignition Bypass Circuit",
-            "P1362" to "Ignition Coil Control Circuit (Cylinder 1) - No Primary Voltage",
-            "P1363" to "Ignition Coil Control Circuit (Cylinder 2) - No Primary Voltage",
-            "P1364" to "Ignition Coil Control Circuit (Cylinder 3) - No Primary Voltage",
-            "P1365" to "Ignition Coil Control Circuit (Cylinder 4) - No Primary Voltage",
-            "P1366" to "Ignition Coil Control Circuit Low (Cylinder 1)",
-            "P1367" to "Ignition Coil Control Circuit Low (Cylinder 2)",
-            "P1368" to "Ignition Coil Control Circuit Low (Cylinder 3)",
-            "P1369" to "Ignition Coil Control Circuit Low (Cylinder 4)",
-            "P1370" to "Camshaft Position Sensor Circuit (Cylinder 1)",
-            "P1371" to "Camshaft Position Sensor Range/Performance (Cylinder 1)",
-            "P1372" to "Camshaft Position Sensor Circuit (Cylinder 2)",
-            "P1373" to "Camshaft Position Sensor Range/Performance (Cylinder 2)",
-            "P1374" to "Crankshaft Position Sensor Circuit (3X Signal)",
-            "P1375" to "Crankshaft Position Sensor Circuit (24X Signal)",
-            "P1376" to "Crankshaft Position Sensor Circuit Intermittent",
-            "P1404" to "EGR Valve Position Sensor Circuit",
-            "P1405" to "EGR Valve Position Sensor Circuit Range/Performance",
-            "P1406" to "EGR Valve Position Sensor Circuit Intermittent",
-            "P1407" to "EGR Valve Position Sensor Circuit Low",
-            "P1408" to "EGR Valve Position Sensor Circuit High",
-            "P1410" to "Exhaust Gas Recirculation Flow",
-            "P1411" to "Exhaust Gas Recirculation Flow Insufficient",
-            "P1412" to "Exhaust Gas Recirculation Flow Excessive",
-            "P1413" to "Exhaust Gas Recirculation Control Circuit Low",
-            "P1414" to "Exhaust Gas Recirculation Control Circuit High",
-            "P1415" to "Secondary Air Injection System (Bank 1)",
-            "P1416" to "Secondary Air Injection System (Bank 2)",
-            "P1516" to "Intake Manifold Tuning Valve Performance",
-            "P1517" to "Intake Manifold Tuning Valve Control Circuit",
-            "P1518" to "Intake Manifold Tuning Valve Stuck Open",
-            "P1519" to "Intake Manifold Tuning Valve Stuck Closed",
-            "P1520" to "Intake Manifold Tuning Valve Circuit Malfunction",
             "P1521" to "Intake Manifold Tuning Valve Performance",
             "P1522" to "Intake Manifold Tuning Valve Control Circuit Range",
             "P1523" to "Throttle Body Control (Limp-Home Mode)",
@@ -394,28 +210,13 @@ class ELM327BTConnection(
             "P1529" to "Accelerator Pedal Position Sensor 1 High",
             "P1530" to "Accelerator Pedal Position Sensor 2 Low",
             "P1531" to "Accelerator Pedal Position Sensor 2 High",
-            "P1549" to "Turbocharger Boost Control Valve Malfunction",
-            "P1550" to "O2 Sensor Heater Circuit Malfunction (Bank 1)",
             "P1554" to "O2 Sensor Heater Performance (Bank 1 Sensor 1)",
             "P1555" to "O2 Sensor Heater Performance (Bank 1 Sensor 2)",
-            "P1571" to "Brake Pedal Switch Signal Malfunction",
-            "P1572" to "Brake Vacuum Pressure Sensor Circuit",
-            "P1573" to "Engine Torque Signal Circuit Malfunction",
-            "P1574" to "Engine Torque Signal Range/Performance",
-            "P1593" to "Loss of Intake Air Flow Signal",
-            "P1594" to "Throttle Position Sensor B Circuit",
-            "P1595" to "Throttle Position Sensor B Range/Performance",
-            "P1596" to "Throttle Position Sensor B Low Input",
-            "P1597" to "Throttle Position Sensor B High Input",
             "P1598" to "Accelerator Pedal Position Sensor 1-2 Voltage Correlation",
             "P1599" to "Accelerator Pedal Position Sensor 1-2 Signal Correlation",
-            "P1600" to "Loss of Serial Communication",
             "P1601" to "Serial Communication Link Malfunction",
             "P1602" to "ECM/PCM Serial Communication Circuit",
             "P1603" to "ECM/PCM Internal Fault",
-            "P1604" to "Control Module RAM Error",
-            "P1605" to "Control Module ROM Error",
-            "P1606" to "ECM Control Relay Circuit Malfunction",
             "P1607" to "ECM Control Relay Performance",
             "P1608" to "ECM Control Relay Circuit Low",
             "P1609" to "ECM Control Relay Circuit High",
@@ -427,16 +228,12 @@ class ELM327BTConnection(
             "P1628" to "Theft Deterrent System Communication",
             "P1629" to "Theft Deterrent System Starter Disable Circuit",
             "P1630" to "Theft Deterrent System Fuel Disable Circuit",
-            "P1631" to "Throttle Position Sensor Performance",
             "P1632" to "Throttle Position Sensor Circuit - Signal Invalid",
-            "P1633" to "Throttle Position Sensor Range/Performance",
             "P1634" to "Throttle Position Sensor 1 Circuit - Signal Low",
             "P1635" to "Throttle Position Sensor 1 Circuit - Signal High",
             "P1636" to "Throttle Position Sensor 2 Circuit - Signal Low",
             "P1637" to "Throttle Position Sensor 2 Circuit - Signal High",
             "P1638" to "Throttle Position Sensor 2 Circuit - Signal Invalid",
-            "P1639" to "Throttle Position Sensor B Performance",
-            "P1640" to "TCM Control Relay Circuit",
             "P1641" to "Throttle Actuator Control Motor Circuit",
             "P1642" to "Throttle Actuator Control Motor Circuit Range/Performance",
             "P1643" to "Throttle Actuator Control Motor Circuit Low",
@@ -445,11 +242,6 @@ class ELM327BTConnection(
             "P1646" to "Throttle Actuator Control System - Idle Speed Low",
             "P1647" to "Throttle Actuator Control System - Idle Speed High",
             "P1648" to "Throttle Actuator Control System - Limp Home Mode",
-            "P1655" to "Variable Load Control Solenoid B Circuit",
-            "P1656" to "Variable Load Control Solenoid B Range/Performance",
-            "P1657" to "Variable Load Control Solenoid B Malfunction",
-            "P1658" to "Wastegate Solenoid B Circuit",
-            "P1659" to "Wastegate Solenoid B Range/Performance",
             "P2100" to "Throttle Actuator Control Motor Circuit Open",
             "P2101" to "Throttle Actuator Control Motor Circuit Range/Performance",
             "P2102" to "Throttle Actuator Control Motor Circuit Low",
@@ -635,13 +427,15 @@ class ELM327BTConnection(
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /**
      * Connect to a Bluetooth device (ELM327 adapter) with timeout
      */
     suspend fun connect(device: BluetoothDevice): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            scope.cancel()
+            scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
             socket?.close()
             socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
             bluetoothAdapter.cancelDiscovery()
@@ -771,25 +565,7 @@ class ELM327BTConnection(
         
         for (chunk in chars) {
             if (chunk.length == 4) {
-                val firstChar = when (chunk[0]) {
-                    '0' -> "P0"
-                    '1' -> "P1"
-                    '2' -> "P2"
-                    '3' -> "P3"
-                    '4' -> "C0"
-                    '5' -> "C1"
-                    '6' -> "C2"
-                    '7' -> "C3"
-                    '8' -> "B0"
-                    '9' -> "B1"
-                    'A', 'a' -> "B2"
-                    'B', 'b' -> "B3"
-                    'C', 'c' -> "U0"
-                    'D', 'd' -> "U1"
-                    'E', 'e' -> "U2"
-                    'F', 'f' -> "U3"
-                    else -> "P0"
-                }
+                val firstChar = dtcHexPrefix(chunk[0])
                 val code = "$firstChar${chunk.substring(1)}"
                 val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
                 codes.add(DiagnosticTroubleCode(code, description, pending))
@@ -898,6 +674,16 @@ class ELM327BTConnection(
         return chars.joinToString("")
     }
 
+    private fun dtcHexPrefix(ch: Char): String = when (ch) {
+        '0' -> "P0"; '1' -> "P1"; '2' -> "P2"; '3' -> "P3"
+        '4' -> "C0"; '5' -> "C1"; '6' -> "C2"; '7' -> "C3"
+        '8' -> "B0"; '9' -> "B1"
+        'A', 'a' -> "B2"; 'B', 'b' -> "B3"
+        'C', 'c' -> "U0"; 'D', 'd' -> "U1"
+        'E', 'e' -> "U2"; 'F', 'f' -> "U3"
+        else -> "P0"
+    }
+
     suspend fun readFreezeFrames(): List<FreezeFrame> = withContext(Dispatchers.IO) {
         try {
             val response = sendCommandWithTimeout("02")
@@ -907,13 +693,7 @@ class ELM327BTConnection(
             val frames = mutableListOf<FreezeFrame>()
             for (chunk in dtcChars) {
                 if (chunk.length == 4) {
-                    val firstChar = when (chunk[0]) {
-                        '0' -> "P0"; '1' -> "P1"; '2' -> "P2"; '3' -> "P3"
-                        '4' -> "C0"; '5' -> "C1"; '6' -> "C2"; '7' -> "C3"
-                        '8' -> "B0"; '9' -> "B1"; 'A', 'a' -> "B2"; 'B', 'b' -> "B3"
-                        'C', 'c' -> "U0"; 'D', 'd' -> "U1"; 'E', 'e' -> "U2"; 'F', 'f' -> "U3"
-                        else -> "P0"
-                    }
+                    val firstChar = dtcHexPrefix(chunk[0])
                     val code = "$firstChar${chunk.substring(1)}"
                     val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
                     val data = mutableMapOf<String, Double>()
@@ -1040,6 +820,7 @@ class ELM327BTConnection(
     fun disconnect() {
         _isConnected.value = false
         scope.cancel()
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         try {
             socket?.close()
         } catch (e: IOException) {
