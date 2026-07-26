@@ -239,9 +239,9 @@ class OilConditionMonitor(
 
         // Temperatur-Faktor (hoeher = schneller Alterung)
         val tempFactor = when {
-            oilTemp > OIL_TEMP_CRITICAL -> 1.5
-            oilTemp > OIL_TEMP_WARNING -> 1.2
-            oilTemp > OIL_TEMP_OPTIMAL_MAX -> 1.05
+            oilTemp > OIL_TEMP_CRITICAL -> 0.67
+            oilTemp > OIL_TEMP_WARNING -> 0.83
+            oilTemp > OIL_TEMP_OPTIMAL_MAX -> 0.95
             else -> 1.0
         }
 

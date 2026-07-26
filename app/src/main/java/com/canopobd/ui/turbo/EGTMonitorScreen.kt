@@ -192,7 +192,7 @@ private fun EGTGauge(
                     drawArc(
                         color = colors.gaugeGreen.copy(alpha = 0.4f),
                         startAngle = 135f,
-                        sweepAngle = warningPos - 135f,
+                        sweepAngle = warningPos,
                         useCenter = false,
                         topLeft = Offset(center.x - radius, center.y - radius),
                         size = Size(radius * 2, radius * 2),
@@ -201,7 +201,7 @@ private fun EGTGauge(
 
                     drawArc(
                         color = colors.gaugeOrange.copy(alpha = 0.4f),
-                        startAngle = warningPos,
+                        startAngle = 135f + warningPos,
                         sweepAngle = criticalPos - warningPos,
                         useCenter = false,
                         topLeft = Offset(center.x - radius, center.y - radius),
@@ -211,8 +211,8 @@ private fun EGTGauge(
 
                     drawArc(
                         color = colors.gaugeRed.copy(alpha = 0.4f),
-                        startAngle = criticalPos,
-                        sweepAngle = 270f + 135f - criticalPos,
+                        startAngle = 135f + criticalPos,
+                        sweepAngle = 270f - criticalPos,
                         useCenter = false,
                         topLeft = Offset(center.x - radius, center.y - radius),
                         size = Size(radius * 2, radius * 2),

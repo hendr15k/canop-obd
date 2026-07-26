@@ -203,7 +203,7 @@ class OBDEmulator(
             fuelRailPressure = 3800.0 + throttlePosition * 1500 + sin(timeSeconds * 2) * 100,
             commandedEGR = if (currentCoolantTemp > 80) (5.0 + sin(timeSeconds * 0.5) * 2) else 0.0,
             egrTemp = if (currentCoolantTemp > 80) currentCoolantTemp + 15 + sin(timeSeconds) * 5 else 30.0,
-            commandedEvapPurge = if (currentCoolantTemp > 60) 15.0 + throttlePosition * 10 else 5.0,
+            commandedEvapPurge = if (currentCoolantTemp > 60) 15.0 + throttlePosition * 0.10 else 5.0,
             barometricPressure = 101.0 + sin(timeSeconds * 0.01) * 2,
             o2VoltageB1S1 = 0.45 + sin(timeSeconds * 4) * 0.35,
             o2VoltageB1S2 = 0.45 + sin(timeSeconds * 4 + 1) * 0.35,
@@ -223,7 +223,7 @@ class OBDEmulator(
             vin = "W0LSHGE1SB1234567",
             timestamp = System.currentTimeMillis(),
             boostPressure = currentBoost,
-            vgtControl = 45.0 + throttlePosition * 20,
+            vgtControl = 45.0 + throttlePosition * 0.20,
             wastegateControl = calculateWastegateDuty(),
             exhaustPressure = 105.0 + currentBoost * 0.5,
             turboRpm = calculateTurboRpm(),
@@ -271,12 +271,12 @@ class OBDEmulator(
             coolantTempMode22 = currentCoolantTemp,
             intakeAirTempMode22 = currentCoolantTemp - 5 + sin(timeSeconds * 0.1) * 3,
             fuelRailPressureMode22 = 3800.0 + throttlePosition * 1500,
-            injectorPulseWidth = 2.5 + throttlePosition * 4 + currentRpm / 2000,
+            injectorPulseWidth = 2.5 + throttlePosition * 0.04 + currentRpm / 2000,
             vvtIntakeMode22 = sin(timeSeconds * 0.3) * 15,
             vvtExhaustMode22 = sin(timeSeconds * 0.25 + 1) * 10,
             fuelConsumptionInstant = calculateFuelRate(),
-            fuelConsumptionAverage = 6.5 + throttlePosition * 3,
-            afrRatioMode22 = 14.7 + sin(timeSeconds * 4) * 0.5,
+            fuelConsumptionAverage = 6.5 + throttlePosition * 0.03,
+            afrRatioMode22 = 1.0 + sin(timeSeconds * 4) * 0.05,
             distanceWithMil = accumulatedDistance
         )
     }
@@ -344,7 +344,7 @@ class OBDEmulator(
     }
 
     private fun updateGear() {
-        if (currentRpm > redlineRpm * 0.85 && currentGear < gearRatios.size) {
+        if (currentRpm > redlineRpm * 0.85 && currentGear < 6) {
             currentGear++
         } else if (currentRpm < 1800 && currentGear > 1) {
             currentGear--

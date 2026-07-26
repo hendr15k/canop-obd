@@ -42,10 +42,10 @@ class UDSClient(private val connection: ELM327BTConnection) {
 
         try {
             val positiveResponseId = (serviceId + 0x40).toString(16).uppercase().padStart(2, '0')
-            val negativeResponseId = (serviceId + 0x7F).toString(16).uppercase().padStart(2, '0')
+            val negativeResponseId = "7F"
 
-            if (cleaned.length >= 4 && cleaned.substring(0, 2).uppercase() == positiveResponseId) {
-                return cleaned.substring(4).chunked(2).mapNotNull { hex ->
+            if (cleaned.length >= 6 && cleaned.substring(0, 2).uppercase() == positiveResponseId) {
+                return cleaned.substring(6).chunked(2).mapNotNull { hex ->
                     if (hex.length == 2) {
                         try { hex.toInt(16).toByte() } catch (e: Exception) { null }
                     } else null
@@ -85,7 +85,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
         var retryCount = 0
         while (retryCount < MAX_RETRIES) {
             try {
-                val command = "103${sessionType.value.toString(16).padStart(2, '0')}"
+                val command = "10${sessionType.value.toString(16).padStart(2, '0')}"
                 Log.d(TAG, "UDS DiagnosticSessionControl: $command")
                 val response = withContext(Dispatchers.IO) {
                     connection.sendRawCommand(command)

@@ -100,7 +100,7 @@ data class RangeEstimation(
     val lastUpdated: Long = 0L
 ) {
     companion object {
-        const val ASTRA_J_TANK_LITERS = 52.0
+        const val ASTRA_J_TANK_LITERS = 56.0
         const val RESERVE_LITERS = 5.0
     }
 }

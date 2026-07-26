@@ -860,7 +860,7 @@ class ELM327BTConnection(
      * @return Raw response string from ELM327, or null if error
      */
     suspend fun sendMode22Command(pidCode: String): String? = withContext(Dispatchers.IO) {
-        val command = "22$pidCode"
+        val command = if (pidCode.startsWith("22")) pidCode else "22$pidCode"
         try {
             Log.d(TAG, "Sending Mode 22 command: $command")
             val response = sendCommandWithTimeout(command)
@@ -1374,7 +1374,7 @@ class ELM327BTConnection(
             val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
             
             if (!hex.contains("ERROR") && hex.length >= 10) {
-                val dtcStatus = hex.substring(6, 8).toInt(16)
+                val dtcStatus = hex.substring(4, 6).toInt(16)
                 info["dtcCount"] = (dtcStatus and 0x7F)
                 info["milOn"] = (dtcStatus and 0x80) != 0
                 info["ignitionType"] = when ((dtcStatus shr 6) and 0x03) {

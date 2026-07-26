@@ -330,7 +330,9 @@ private fun BoostVsTarget(
                     color = deviationColor
                 )
                 Text(
-                    text = "Effizienz: %.0f%%".format((currentBoost.coerceAtLeast(0.01) / targetBoost) * 100),
+                    text = "Effizienz: %.0f%%".format(
+                        if (targetBoost > 0.01) (currentBoost / targetBoost) * 100 else 0.0
+                    ),
                     fontSize = 11.sp,
                     color = colors.textSecondary
                 )

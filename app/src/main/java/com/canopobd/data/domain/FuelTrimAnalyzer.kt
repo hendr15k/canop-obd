@@ -168,7 +168,7 @@ class FuelTrimAnalyzer {
 
         val combined1 = stft1 + ltft1
         val combined2 = stft2 + ltft2
-        val worstTrim = maxOf(abs(combined1), abs(combined2))
+        val worstTrim = if (abs(combined1) >= abs(combined2)) combined1 else combined2
         val status = determineStatus(worstTrim)
         val healthScore = calculateHealthScoreBothBanks(combined1, combined2)
 

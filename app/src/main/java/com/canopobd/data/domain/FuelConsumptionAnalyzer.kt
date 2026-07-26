@@ -32,7 +32,7 @@ class FuelConsumptionAnalyzer {
 
     companion object {
         private const val FUEL_DENSITY = 0.75
-        private const val LPH_TO_L100_CONVERSION = 36.0
+        private const val LPH_TO_L100_CONVERSION = 100.0
         private const val MIN_SPEED_FOR_CALC = 5.0
         private const val SAMPLE_WINDOW_SIZE = 100
 

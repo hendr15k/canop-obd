@@ -153,6 +153,9 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration?) {
 
         if (position < 0 || position > 100) return ValidationResult.Invalid("Drosselklappe außerhalb Bereich")
 
+        throttleHistory.add(position)
+        if (throttleHistory.size > SENSOR_HISTORY_SIZE) throttleHistory.removeAt(0)
+
         // Stuck throttle detection
         if (throttleHistory.size >= 10) {
             val variance = throttleHistory.map { it - throttleHistory.average() }.map { it * it }.average()

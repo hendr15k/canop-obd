@@ -944,9 +944,9 @@ private fun ChargeAirTempCard(
     val wotMax = calibration.chargeAirTempWotMax.toDouble()
 
     val tempDrop = if (intakeAirTemp > 0 && chargeAirTemp > 0 && chargeAirTemp > intakeAirTemp) {
-        intakeAirTemp - chargeAirTemp
+        chargeAirTemp - intakeAirTemp
     } else if (intakeAirTemp > 0 && chargeAirTemp > 0) {
-        intakeAirTemp - chargeAirTemp
+        chargeAirTemp - intakeAirTemp
     } else 0.0
 
     val intercoolerEfficiency = when {

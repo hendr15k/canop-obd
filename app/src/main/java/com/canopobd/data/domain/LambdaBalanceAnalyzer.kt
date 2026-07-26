@@ -178,7 +178,7 @@ class LambdaBalanceAnalyzer {
         if (variance > 0.1) return LambdaStatus.FAULTED
         return when {
             avgLambda > 1.10 -> LambdaStatus.MODERATELY_LEAN
-            avgLambda > 1.05 -> LambdaStatus.SLIGHTLY_LEAN
+            avgLambda > 1.02 -> LambdaStatus.SLIGHTLY_LEAN
             avgLambda >= 0.98 -> LambdaStatus.PERFECT
             avgLambda >= 0.95 -> LambdaStatus.SLIGHTLY_RICH
             avgLambda >= 0.90 -> LambdaStatus.MODERATELY_RICH

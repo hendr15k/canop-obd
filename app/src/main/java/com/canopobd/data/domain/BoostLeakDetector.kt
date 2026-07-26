@@ -507,9 +507,11 @@ class BoostLeakDetector(
                         "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). Keine Leck-Indikatoren."
             }
             LeakSeverity.MINOR -> {
+                val devPct = if (input.boostTargetBar > 0.01)
+                    abs(input.boostActualBar - input.boostTargetBar) / input.boostTargetBar * 100.0 else 0.0
                 "Moegliches kleines Ladeluft-Leck erkannt. " +
                         "Bereich: ${location.label}. " +
-                        "Boost-Abweichung: ${"%.1f".format(abs(input.boostActualBar - input.boostTargetBar) / input.boostTargetBar * 100.0)}%."
+                        "Boost-Abweichung: ${"%.1f".format(devPct)}%."
             }
             LeakSeverity.MODERATE -> {
                 "Ladeluft-Leck erkannt (${indicators.size} Indikatoren). " +

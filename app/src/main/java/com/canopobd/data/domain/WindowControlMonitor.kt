@@ -241,7 +241,7 @@ object WindowControlMonitor {
         val sunroofOpen = state.sunroofPos > 0
         val totalOpen = openCount + if (sunroofOpen) 1 else 0
 
-        val allOpen = openCount == TOTAL_WINDOWS && !sunroofOpen
+        val allOpen = openCount == TOTAL_WINDOWS
         val anyOpen = openCount > 0 || sunroofOpen
 
         val warning = when {

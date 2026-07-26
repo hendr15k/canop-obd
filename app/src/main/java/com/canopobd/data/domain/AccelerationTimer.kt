@@ -40,7 +40,7 @@ class AccelerationTimer {
         fun targetSpeedForType(type: PerformanceTestType): Double = when (type) {
             PerformanceTestType.ZERO_100 -> TARGET_SPEED_100_MS
             PerformanceTestType.ZERO_200 -> TARGET_SPEED_200_MS
-            PerformanceTestType.HUNDRED_200 -> TARGET_SPEED_100_MS  // start at 100
+            PerformanceTestType.HUNDRED_200 -> TARGET_SPEED_200_MS
         }
 
         fun startSpeedForType(type: PerformanceTestType): Double = when (type) {

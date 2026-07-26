@@ -314,7 +314,7 @@ private fun WastegateCard(turboData: TurboData, colors: com.canopobd.ui.theme.Ap
                     .clip(RoundedCornerShape(4.dp))
                     .background(colors.surface)
             ) {
-                val normalized = (1f - (wgd / 100f).toFloat()).coerceIn(0f, 1f)
+                val normalized = (wgd / 100f).toFloat().coerceIn(0f, 1f)
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()

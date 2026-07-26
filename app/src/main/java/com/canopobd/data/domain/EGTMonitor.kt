@@ -292,7 +292,7 @@ class EGTMonitor(
         val score = when {
             diff < CYLINDER_BALANCE_WARNING -> 100
             diff < CYLINDER_BALANCE_CRITICAL -> {
-                100 - ((diff - CYLINDER_BALANCE_WARNING) / CYLINDER_BALANCE_CRITICAL * 40).toInt()
+                100 - ((diff - CYLINDER_BALANCE_WARNING) / (CYLINDER_BALANCE_CRITICAL - CYLINDER_BALANCE_WARNING) * 40).toInt()
             }
             else -> 20
         }

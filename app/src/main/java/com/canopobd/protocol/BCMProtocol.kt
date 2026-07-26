@@ -70,7 +70,7 @@ object BCMProtocol {
         const val SEAT_HEATING_STATUS = 0xFF09
         const val AMBIENT_LIGHT = 0xFF10
         const val CLIMATE_STATUS = 0xFF11
-        const val BCM_PART_NUMBER = 0xF192
+        const val BCM_PART_NUMBER = 0xF18C
         const val VIN = 0xF190
         const val ECU_HARDWARE = 0xF191
         const val ECU_SOFTWARE = 0xF192
@@ -210,7 +210,15 @@ object BCMProtocol {
         fun rearOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), 0x00.toByte())
         fun frontOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), 0x02.toByte())
         fun frontOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), 0x00.toByte())
-        fun steeringLevelFrame(level: Int) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), level.coerceIn(0, 3).toByte())
+        fun steeringLevelFrame(level: Int): ByteArray {
+            val value = when (level.coerceIn(0, 3)) {
+                1 -> STEERING_LEVEL_1
+                2 -> STEERING_LEVEL_2
+                3 -> STEERING_LEVEL_3
+                else -> STEERING_OFF
+            }
+            return byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), value.toByte())
+        }
     }
 
     object Wiper {
@@ -844,7 +852,7 @@ object BCMProtocol {
         if (clean.contains("ERROR") || clean.length < 10) return null
         val dataStart = clean.indexOf("62")
         if (dataStart < 0) return null
-        return try { clean.substring(dataStart + 8, dataStart + 10).toInt(16) } catch (_: Exception) { null }
+        return try { clean.substring(dataStart + 6, dataStart + 8).toInt(16) } catch (_: Exception) { null }
     }
 }
 

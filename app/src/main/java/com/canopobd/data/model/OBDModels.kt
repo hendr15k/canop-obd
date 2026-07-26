@@ -61,14 +61,14 @@ enum class OBDPID(
     COMMANDED_EVAPORATIVE_PURGE("012E", "Commanded Evap Purge", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
-    FUEL_TANK_LEVEL_INPUT("0130", "Fuel Tank Level Input", "%", 1, { b ->
+    FUEL_TANK_LEVEL_INPUT("012F", "Fuel Tank Level Input", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
-    WARMUPS_SINCE_DTC_CLEAR("0131", "Warmups since DTC Clear", "", 1, { b ->
+    WARMUPS_SINCE_DTC_CLEAR("0130", "Warmups since DTC Clear", "", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
-    DISTANCE_SINCE_DTC_CLEAR("0132", "Distance since DTC Clear", "km", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 4.0 else 0.0
+    DISTANCE_SINCE_DTC_CLEAR("0131", "Distance since DTC Clear", "km", 2, { b ->
+        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
     BAROMETRIC_PRESSURE("0133", "Barometric Pressure", "kPa", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
@@ -91,16 +91,16 @@ enum class OBDPID(
     ENGINE_FUEL_RATE("015E", "Engine Fuel Rate", "L/h", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 20.0 else 0.0
     }),
-    SHORT_TERM_FUEL_TRIM_BANK1("0161", "STFT Bank 1", "%", 1, { b ->
+    SHORT_TERM_FUEL_TRIM_BANK1("0106", "STFT Bank 1", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
-    LONG_TERM_FUEL_TRIM_BANK1("0162", "LTFT Bank 1", "%", 1, { b ->
+    LONG_TERM_FUEL_TRIM_BANK1("0107", "LTFT Bank 1", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
-    SHORT_TERM_FUEL_TRIM_BANK2("0163", "STFT Bank 2", "%", 1, { b ->
+    SHORT_TERM_FUEL_TRIM_BANK2("0108", "STFT Bank 2", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
-    LONG_TERM_FUEL_TRIM_BANK2("0164", "LTFT Bank 2", "%", 1, { b ->
+    LONG_TERM_FUEL_TRIM_BANK2("0109", "LTFT Bank 2", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 128) * 100.0 / 128.0 else 0.0
     }),
     FUEL_AIR_EQUIV_RATIO("0144", "Fuel Air Equiv Ratio", "", 2, { b ->
@@ -125,7 +125,7 @@ enum class OBDPID(
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
     BOOST_PRESSURE("0170", "Boost Pressure", "kPa", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) / 0.03125 else 0.0
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 0.03125 - 100.0 else 0.0
     }),
     VGT_CONTROL("0171", "VGT Control", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
@@ -151,13 +151,13 @@ enum class OBDPID(
     FUEL_SYSTEM_STATUS("0103", "Fuel System Status", "", 2, { b ->
         if (b.size >= 2) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
-    DEMAND_TORQUE("0061", "Driver Demand Torque", "%", 1, { b ->
+    DEMAND_TORQUE("0161", "Driver Demand Torque", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    ACTUAL_TORQUE("0062", "Actual Torque", "%", 1, { b ->
+    ACTUAL_TORQUE("0162", "Actual Torque", "%", 1, { b ->
         if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0
     }),
-    REFERENCE_TORQUE("0063", "Reference Torque", "Nm", 2, { b ->
+    REFERENCE_TORQUE("0163", "Reference Torque", "Nm", 2, { b ->
         if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
     ETHANOL_FUEL_PERCENT("0152", "Ethanol Fuel %", "%", 1, { b ->
@@ -1718,7 +1718,7 @@ data class ReadinessMonitorData(
     val incompleteCount: Int get() = monitors.count { it.status == MonitorSupport.INCOMPLETE }
     val supportedCount: Int get() = monitors.count { it.status != MonitorSupport.NOT_SUPPORTED }
     val totalCount: Int get() = monitors.size
-    val progressPercent: Float get() = if (supportedCount == 0) 0f else completedCount.toFloat() / supportedCount
+    val progressPercent: Float get() = if (supportedCount == 0) 0f else completedCount.toFloat() / supportedCount * 100f
     val allComplete: Boolean get() = monitors.all { it.status == MonitorSupport.COMPLETE || it.status == MonitorSupport.NOT_SUPPORTED }
     val hasIncompleteMonitors: Boolean get() = monitors.any { it.status == MonitorSupport.INCOMPLETE }
 }
