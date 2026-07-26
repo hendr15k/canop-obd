@@ -2,140 +2,127 @@
 
 <p align="center">
   <strong>OBD-II Diagnose-App für Opel Astra J 1.4 Turbo (A14NET)</strong><br>
-  Android | Kotlin | Jetpack Compose | Material Design 3
+  Android · Kotlin · Jetpack Compose · Material Design 3
 </p>
 
 <p align="center">
   <img src="https://github.com/hendr15k/canop-obd/actions/workflows/build.yml/badge.svg" alt="Build">
-  <img src="https://img.shields.io/badge/platform-Android%2026%2B-brightgreen" alt="Platform">
-  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
+  <img src="https://img.shields.io/badge/platform-Android%208.0%2B-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/kotlin-1.9.22-purple" alt="Kotlin">
   <img src="https://img.shields.io/badge/version-1.6.0-blue" alt="Version">
-  <img src="https://img.shields.io/badge/files-161-orange" alt="Files">
-  <img src="https://img.shields.io/badge/lines-76304-red" alt="Lines">
+  <img src="https://img.shields.io/badge/files-153-orange" alt="Files">
+  <img src="https://img.shields.io/badge/lines-78k-red" alt="Lines">
 </p>
 
 ---
 
-## Uber die App
+## Über die App
 
-canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert fur den **Opel Astra J (2012-2015) mit 1.4 Turbo Benzinmotor (A14NET/LUJ, 140 PS)**. Die App bietet uber 60+ Funktionen von Live-Dashboard uber Turbo-Monitoring bis hin zur Komfort-Steuerung.
+canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert für den **Opel Astra J (2012–2015) mit 1.4 Turbo Benzinmotor (A14NET/LUJ, 140 PS)**. Die App bietet über 60 Funktionen – von Live-Dashboard über Turbo-Monitoring bis hin zur Komfort-Steuerung.
 
-**Fahrzeug:** Opel Astra J 1.4 Turbo (A14NET) | 140 PS / 103 kW | 200 Nm | BorgWarner KP39 Turbolader | M32 6-Gang Getriebe | Bosch ME17.9.22 ECU
+**Fahrzeug:** Opel Astra J 1.4 Turbo (A14NET) · 140 PS / 103 kW · 200 Nm · BorgWarner KP39 Turbolader · M32 6-Gang Getriebe · Bosch ME17.9.22 ECU
 
 ---
 
 ## Features
 
 ### Dashboard
-- **3 primare Rundinstrumente** — Konfigurierbar (RPM, Geschwindigkeit, Ladedruck, etc.)
-- **6 sekundare Kompaktinstrumente** — Alle wichtigen Sensoren auf einen Blick
-- **Dynamische Farbcodierung** — Grun → Gelb → Orange → Rot basierend auf Schwellwerten
-- **Kritische Warnungen** — Hintergrund wechselt bei Uberhitzung, Redline oder Uberladung
-- **Kraftstoffwarnung** — Warnung bei niedrigem Tankstand
-- **Verbindungsqualitat** — Echtzeit-Anzeige (Excellent/Good/Fair/Poor)
-- **Dark/Light/System Theme** — 4 Farbthemen (Canopo, Blue Steel, Amber, Neon)
+- **3 primäre Rundinstrumente** – konfigurierbar (RPM, Geschwindigkeit, Ladedruck, etc.)
+- **6 sekundäre Kompaktinstrumente** – alle wichtigen Sensoren auf einen Blick
+- **Dynamische Farbcodierung** – Grün → Gelb → Orange → Rot basierend auf Schwellwerten
+- **Kritische Warnungen** – Hintergrund wechselt bei Überhitzung, Redline oder Überladung
+- **Verbindungsqualität** – Echtzeit-Anzeige (Excellent / Good / Fair / Poor)
+- **Dark/Light/System Theme** – 4 Farbthemen (Canopo, Blue Steel, Amber, Neon)
 
 ### Turbo-Monitoring
-- **Ladedruck** — Ist/Soll-Vergleich mit Boost-Delta-Analyse
-- **Wastegate-Position** — Duty Cycle mit Gesundheitsanzeige (0-100 Score)
-- **Turbo-Drehzahl** — RPM-Anzeige mit Warnzonen (bis 200.000 RPM)
-- **Ladelufttemperatur** — Intercooler-Effizienz-Berechnung
-- **Abgastemperatur (EGT)** — Peak-Tracking, Verlaufsgraph
-- **Boost-Leck-Erkennung** — Automatische Effizienz-Analyse
-- **Turbo-Cooldown-Timer** — Schutz des Turboladers nach Fahrten
-- **Uberladung-Warnung** — Sofortige Warnung bei >1.35 bar
+- **Ladedruck** – Ist/Soll-Vergleich mit Boost-Delta-Analyse
+- **Wastegate-Position** – Duty Cycle mit Gesundheitsanzeige (0–100 Score)
+- **Turbo-Drehzahl** – RPM-Anzeige mit Warnzonen (bis 200.000 RPM)
+- **Ladelufttemperatur** – Intercooler-Effizienz-Berechnung
+- **Abgastemperatur (EGT)** – Peak-Tracking, Verlaufsgraph
+- **Boost-Leck-Erkennung** – automatische Effizienz-Analyse
+- **Turbo-Cooldown-Timer** – Schutz des Turboladers nach Fahrten
+- **Überladung-Warnung** – sofortige Warnung bei >1,35 bar
 
 ### Getriebe (M32)
-- **Gang-Erkennung** — Automatische Erkennung basierend auf RPM/Geschwindigkeit
-- **Ubersetzungsverhaltnisse** — M32: 3.727 / 2.044 / 1.357 / 1.034 / 0.825 / 0.667
-- **Schaltpunkt-Empfehlung** — Basierend auf Drehmomentkurve (200 Nm @ 1850-4900)
-- **Getriebeol-Temperatur** — Mit Warnzonen (>80°C Warnung, >100°C Kritisch)
-- **RPM/Gang-Tabelle** — Fur alle Gange bei 100 km/h
+- **Gang-Erkennung** – automatisch basierend auf RPM/Geschwindigkeit
+- **Übersetzungsverhältnisse** – M32: 3.727 / 2.044 / 1.357 / 1.034 / 0.825 / 0.667
+- **Schaltpunkt-Empfehlung** – basierend auf Drehmomentkurve (200 Nm @ 1850–4900)
+- **Getriebeöl-Temperatur** – mit Warnzonen (>80 °C Warnung, >100 °C kritisch)
 
 ### Motor-Analyse
-- **Kraftstofftrim-Analyse** — STFT/LTFT mit Mager/Fett-Erkennung
-- **Steuerketten-Monitor** — Kaltstart-Rattern-Erkennung, Phasenanalyse
-- **Olzustands-Monitor** — Temperatur-basierte Ol-Lebensdauer-Schatzung
-- **PCV-System-Monitor** — Unterdruck- und Olverbrauchsanalyse
-- **Batterie-Health** — Spannungsverlauf mit Lichtmaschine-Analyse
-- **Lambda/O2-Sensoren** — Spannungsanalyse B1S1, B1S2
-- **Emissions-Readiness** — Alle 11 Monitor-Tests (KAT, O2, EVAP, EGR, etc.)
-- **Leerlauf-Analyse** — RPM-Stabilitat und Gemisch-Regelung
+- **Kraftstofftrim-Analyse** – STFT/LTFT mit Mager/Fett-Erkennung
+- **Steuerketten-Monitor** – Kaltstart-Rattern-Erkennung, Phasenanalyse
+- **Ölzustands-Monitor** – temperaturbasierte Öl-Lebensdauer-Schätzung
+- **PCV-System-Monitor** – Unterdruck- und Ölverbrauchsanalyse
+- **Batterie-Health** – Spannungsverlauf mit Lichtmaschine-Analyse
+- **Lambda/O2-Sensoren** – Spannungsanalyse B1S1, B1S2
+- **Emissions-Readiness** – alle 11 Monitor-Tests (KAT, O2, EVAP, EGR, etc.)
+- **Leerlauf-Analyse** – RPM-Stabilität und Gemisch-Regelung
 
 ### Kraftstoffverbrauch
-- **Verbrauch L/100km** — Echtzeit und Durchschnitt (MAF-basiert)
-- **Reichweite** — Berechnung mit 56L Tank und Reserve
-- **Kraftstoffkosten** — Editierbarer Preis, Tages/Wochen/Monats/Jahres-Kosten
-- **CO2-Emissionen** — Pro km, Tripp-basiert, Jahresprognose
-- **Werkstatt-Vergleich** — 5.9 L/100km (NEFZ) vs. Echtverbrauch
-- **ECO-Score** — Gewichtete Analyse (35% Effizienz, 25% Glätte, 20% Cruising, 20% Momentum)
-- **Optimierungstipps** — Kontextbezogene Empfehlungen
+- **Verbrauch L/100 km** – Echtzeit und Durchschnitt (MAF-basiert)
+- **Reichweite** – Berechnung mit 56 L Tank und Reserve
+- **Kraftstoffkosten** – editierbarer Preis, Tages-/Wochen-/Monats-/Jahres-Kosten
+- **CO₂-Emissionen** – pro km, tripbasiert, Jahresprognose
+- **ECO-Score** – gewichtete Analyse (35 % Effizienz, 25 % Glätte, 20 % Cruising, 20 % Momentum)
+- **Optimierungstipps** – kontextbezogene Empfehlungen
 
 ### Wartungsmanagement
-- **10 Service-Intervalle** spezifisch fur A14NET:
-  - Olwechsel (Dexos2 5W-30, 4.5L, 15.000 km)
+- **10 Service-Intervalle** spezifisch für A14NET:
+  - Ölwechsel (Dexos2 5W-30, 4,5 L, 15.000 km)
   - Zahnriemen (150.000 km / 10 Jahre)
-  - Getriebeol (75W-80 GL-4, 2.7L, 60.000 km)
-  - Zundkerzen (NGK LZKR6B-10E, 30.000 km)
-  - Bremsbelage V/H, Luftfilter, Kuhlmittel, Turbo-Inspektion
-- **Fortschrittsbalken** — Farbcodiert (Grun/Gelb/Rot)
-- **Kostenschatzung** — DIY vs. Werkstatt
-- **Erinnerungsfunktion** — Konfigurierbare Switches
+  - Getriebeöl (75W-80 GL-4, 2,7 L, 60.000 km)
+  - Zündkerzen (NGK LZKR6B-10E, 30.000 km)
+  - Bremsbeläge V/H, Luftfilter, Kühlmittel, Turbo-Inspektion
+- **Fortschrittsbalken** – farbcodiert (Grün / Gelb / Rot)
+- **Kostenschätzung** – DIY vs. Werkstatt
+- **Erinnerungsfunktion** – konfigurierbare Switches
 
 ### Komfort-Steuerung
-- **Zentralverriegelung** — Ver-/Entriegeln
-- **Fensterheber** — 4 einzeln + Alle Hoch/Runter
-- **Ausspiegel** — Einklappen/Ausklappen/Spiegelheizung
-- **Scheibenheizung** — Frontscheibe/Heckscheibe/Lenkrad
-- **Beleuchtung** — Ambiente (10 Stufen), Coming/Leaving Home, Eckenlicht, DRL (Auto/An/Aus)
-- **Scheibenwischer** — 4 Stufen + Auto
+- **Zentralverriegelung** – Ver-/Entriegeln
+- **Fensterheber** – 4 einzeln + alle hoch/runter
+- **Außenspiegel** – einklappen/ausklappen/Spiegelheizung
+- **Scheibenheizung** – Frontscheibe/Heckscheibe/Lenkrad
+- **Beleuchtung** – Ambiente (10 Stufen), Coming/Leaving Home, Eckenlicht, DRL
+- **Scheibenwischer** – 4 Stufen + Auto
 
 ### Sicherheitssysteme
-- **Radgeschwindigkeiten** — 4-Kanal mit Differenzerkennung
-- **ESP/ABS** — Statusanzeige (OK/Warnung/Fehler/Unbekannt)
-- **Bremsverschleiss** — Vorne/Hinten mit Fortschrittsbalken
-- **TPMS** — Reifendruck uberwachung (PSI)
-- **Airbag-Status** — 6 Airbags (Fahrer/Beifahrer/Seite/Vorhang)
-- **Sicherheits-DTCs** — Gefiltert nach ABS/ESP/TPMS/Airbag
+- **Radgeschwindigkeiten** – 4-Kanal mit Differenzerkennung
+- **ESP/ABS** – Statusanzeige (OK / Warnung / Fehler / Unbekannt)
+- **Bremsverschleiß** – vorne/hinten mit Fortschrittsbalken
+- **TPMS** – Reifendrucküberwachung (PSI)
+- **Airbag-Status** – 6 Airbags (Fahrer/Beifahrer/Seite/Vorhang)
 
 ### Diagnose
-- **71+ DTCs** — Astra J spezifische Fehlercodes mit:
-  - Beschreibung (Deutsch)
-  - Schweregrad (Kritisch/Warnung/Info)
-  - System (Motor/Turbo/Getriebe/Sensor/Abgas)
-  - Haufigkeit bei Astra J
-  - Typische Ursache + Losung
-  - Kostenschatzung (Werkstatt/DIY)
-- **Freeze Frames** — Sensordaten zum Fehlerzeitpunkt
-- **Protokoll-Erkennung** — ISO 15765-4 CAN (11bit/29bit, 250k/500k)
+- **71+ DTCs** – Astra-J-spezifische Fehlercodes mit Beschreibung, Schweregrad, Ursache, Lösung und Kostenschätzung
+- **Freeze Frames** – Sensordaten zum Fehlerzeitpunkt
+- **Protokoll-Erkennung** – ISO 15765-4 CAN (11bit/29bit, 250k/500k)
 
 ### Daten & Export
-- **Datenlogging** — CSV-Aufzeichnung aller Sensordaten
-- **GPS-Tracking** — GPX/KML Export
-- **Trip-Computer** — Strecke, Dauer, Verbrauch, Max-Speed
-- **Trip-Historie** — Alle Fahrten mit Statistiken
-- **Live-Trend-Graph** — Echtzeit-Verlauf (RPM, Speed, Boost, EGT, etc.)
-- **Fernzugriff** — TCP-Server fur Live-Daten uber WLAN
-- **CSV-Import** — Externe Datenanalyse
+- **Datenlogging** – CSV-Aufzeichnung aller Sensordaten
+- **GPS-Tracking** – GPX/KML Export
+- **Trip-Computer** – Strecke, Dauer, Verbrauch, Max-Speed
+- **Trip-Historie** – alle Fahrten mit Statistiken
+- **Live-Trend-Graph** – Echtzeit-Verlauf (RPM, Speed, Boost, EGT, etc.)
+- **Fernzugriff** – TCP-Server für Live-Daten über WLAN
 
 ### Performance
-- **0-100 / 0-200 / 100-200 km/h** — Beschleunigungstests mit Historie
-- **Leistungsrechner** — PS und Nm aus MAF und RPM
-- **Drive-Score** — Fahrstilbewertung (A+ bis F)
-- **Shift-Light** — Konfigurierbare Schaltanzeige
-- **Bekannte Probleme** — Astra J spezifische Schwachstellen
+- **0–100 / 0–200 / 100–200 km/h** – Beschleunigungstests mit Historie
+- **Leistungsrechner** – PS und Nm aus MAF und RPM
+- **Drive-Score** – Fahrstilbewertung (A+ bis F)
+- **Shift-Light** – konfigurierbare Schaltanzeige
 
 ### Astra J Codierung
-- **BCM-Codierungen** — Zentralverriegelung, Fensterkomfort, Spiegel
-- **UEC-Codierungen** — Tagfahrlicht (5 Varianten), Coming/Leaving Home
-- **Versteckte Features** — Needle Sweep, Baron Mode, ESP Sport, DRL
+- **BCM-Codierungen** – Zentralverriegelung, Fensterkomfort, Spiegel
+- **UEC-Codierungen** – Tagfahrlicht (5 Varianten), Coming/Leaving Home
+- **Versteckte Features** – Needle Sweep, Baron Mode, ESP Sport, DRL
 
 ---
 
 ## GM Mode 22 PIDs
 
-Zusatzlich zu Standard OBD-II (Mode $01) werden **16 GM-spezifische DIDs** (Mode $22) unterstutzt:
+Zusätzlich zu Standard OBD-II (Mode $01) werden **16 GM-spezifische DIDs** (Mode $22) unterstützt:
 
 | DID | Name | Einheit |
 |-----|------|---------|
@@ -145,8 +132,8 @@ Zusatzlich zu Standard OBD-II (Mode $01) werden **16 GM-spezifische DIDs** (Mode
 | 221009 | Boost-Druck Soll | kPa |
 | 22100A | Wastegate-Position | % |
 | 22100B | Turbo-Drehzahl | rpm |
-| 22100C | Motorol-Temperatur | °C |
-| 22100D | Kuhlmittel-Temperatur | °C |
+| 22100C | Motoröl-Temperatur | °C |
+| 22100D | Kühlmittel-Temperatur | °C |
 | 22100E | Ansaugluft-Temperatur | °C |
 | 22100F | Einspritzdruck | kPa |
 | 221010 | Einspritzdauer | ms |
@@ -154,7 +141,7 @@ Zusatzlich zu Standard OBD-II (Mode $01) werden **16 GM-spezifische DIDs** (Mode
 | 221016 | VVT-Auslassseite | ° |
 | 221018 | Kraftstoffverbrauch aktuell | L/h |
 | 22101A | Kraftstoffverbrauch Durchschnitt | L/100km |
-| 22101F | Luft-Kraftstoff-Verhaltnis | — |
+| 22101F | Luft-Kraftstoff-Verhältnis | – |
 
 ---
 
@@ -164,18 +151,18 @@ Zusatzlich zu Standard OBD-II (Mode $01) werden **16 GM-spezifische DIDs** (Mode
 |-----|------|---------|--------|
 | 010C | Motordrehzahl | rpm | `(A*256+B)/4` |
 | 010D | Fahrzeuggeschwindigkeit | km/h | `A` |
-| 0105 | Kuhlmitteltemperatur | °C | `A-40` |
+| 0105 | Kühlmitteltemperatur | °C | `A-40` |
 | 0104 | Motorlast | % | `A*100/255` |
 | 010F | Ansauglufttemperatur | °C | `A-40` |
 | 0111 | Drosselklappenstellung | % | `A*100/255` |
-| 012F | Kraftstofffullstand | % | `A*100/255` |
-| 010E | Zundzeitpunkt | ° | `A/2-64` |
+| 012F | Kraftstofffüllstand | % | `A*100/255` |
+| 010E | Zündzeitpunkt | ° | `A/2-64` |
 | 0110 | MAF Luftmassenstrom | g/s | `(A*256+B)/100` |
-| 0142 | Steuergeratspannung | V | `(A*256+B)/1000` |
-| 015C | Motorol-Temperatur | °C | `A-40` |
+| 0142 | Steuergerätespannung | V | `(A*256+B)/1000` |
+| 015C | Motoröl-Temperatur | °C | `A-40` |
 | 0170 | Ladedruck | kPa | `(A*256+B)*0.03125` |
 | 0178 | Abgastemperatur B1 | °C | `(A*256+B)/10-40` |
-| ATRV | Batteriespannung | V | Direkt |
+| ATRV | Batteriespannung | V | direkt |
 
 ---
 
@@ -208,7 +195,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 1. Android → Einstellungen → Bluetooth
 2. ELM327 Adapter suchen und koppeln (PIN oft `1234` oder `0000`)
-3. App offnen → Bluetooth-Icon → Gerat auswahlen
+3. App öffnen → Bluetooth-Icon → Gerät auswählen
 
 ---
 
@@ -216,78 +203,67 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ```
 app/src/main/java/com/canopobd/
-├── MainActivity.kt              # Entry point + State bindings
+├── MainActivity.kt                  # Entry point + State bindings
 ├── bluetooth/
-│   ├── ELM327BTConnection.kt    # Bluetooth SPP + ELM327 AT commands
-│   ├── Mode22Connection.kt      # GM Mode 22 Extended PIDs
-│   └── RemoteBridge.kt          # TCP-Server fur Fernzugriff
+│   ├── ELM327BTConnection.kt        # Bluetooth SPP + ELM327 AT commands
+│   ├── Mode22Connection.kt          # GM Mode 22 Extended PIDs
+│   └── RemoteBridge.kt              # TCP-Server für Fernzugriff
 ├── data/
 │   ├── model/
-│   │   ├── OBDModels.kt          # 65+ OBD PIDs, OBDData, Kalibrierung
-│   │   ├── AstraJCodingModels.kt # BCM/UEC/REC Codierungen
-│   │   ├── AstraJDTCCodes.kt     # 71+ DTCs mit Kosten/Losungen
-│   │   ├── ExtendedGMMode22.kt   # 16 GM Mode 22 DIDs
-│   │   ├── SafetyModels.kt       # ESP/ABS/TPMS/Airbag Datenmodelle
-│   │   ├── EcoScoreModels.kt     # ECO-Score, CO2, Kraftstoffkosten
-│   │   ├── FuelModels.kt         # Kraftstoffanalyse
-│   │   └── CarProfile.kt         # Fahrzeugprofile
-│   ├── domain/
-│   │   ├── TurboSpoolAnalyzer.kt    # Turbo Spool-Analyse
-│   │   ├── BoostLeakDetector.kt     # Boost-Leck-Erkennung
+│   │   ├── OBDModels.kt             # 65+ OBD PIDs, OBDData, Kalibrierung
+│   │   ├── AstraJCodingModels.kt    # BCM/UEC/REC Codierungen
+│   │   ├── AstraJDTCCodes.kt        # 71+ DTCs mit Kosten/Lösungen
+│   │   ├── ExtendedGMMode22.kt      # 16 GM Mode 22 DIDs
+│   │   ├── SafetyModels.kt          # ESP/ABS/TPMS/Airbag Datenmodelle
+│   │   ├── EcoScoreModels.kt        # ECO-Score, CO₂, Kraftstoffkosten
+│   │   ├── FuelModels.kt            # Kraftstoffanalyse
+│   │   └── CarProfile.kt            # Fahrzeugprofile
+│   ├── domain/                      # 29 Analyzer
+│   │   ├── TurboSpoolAnalyzer.kt
+│   │   ├── BoostLeakDetector.kt
 │   │   ├── WastegateHealthAnalyzer.kt
-│   │   ├── FuelTrimAnalyzer.kt      # Kraftstofftrim-Analyse
+│   │   ├── FuelTrimAnalyzer.kt
 │   │   ├── BatteryHealthAnalyzer.kt
-│   │   ├── SensorValidator.kt       # Sensor-Plausibilitatsprufung
-│   │   └── ... (20+ Analyzer)
+│   │   ├── SensorValidator.kt
+│   │   ├── M32GearboxMonitor.kt
+│   │   ├── DriveScoreCalculator.kt
+│   │   └── ... (21 weitere)
 │   ├── maintenance/
 │   │   ├── AstraJ14TurboMaintenanceData.kt
 │   │   ├── MaintenanceScheduler.kt
 │   │   └── PartDatabase.kt
 │   ├── repository/
-│   │   ├── OBDRepository.kt     # Single source of truth
-│   │   ├── CANRepository.kt     # CAN-BUS Daten
-│   │   └── UDSRepository.kt     # UDS Diagnose
+│   │   ├── OBDRepository.kt         # Single source of truth
+│   │   ├── CANRepository.kt         # CAN-BUS Daten
+│   │   └── UDSRepository.kt         # UDS Diagnose
 │   └── protocol/
-│       ├── CANMonitor.kt        # CAN-BUS Monitor
-│       ├── UDSClient.kt         # UDS Diagnoseclient
-│       └── Mode22Client.kt      # Mode 22 Client
+│       ├── CANMonitor.kt            # CAN-BUS Monitor
+│       ├── UDSClient.kt             # UDS Diagnoseclient
+│       └── Mode22Client.kt          # Mode 22 Client
 ├── viewmodel/
-│   ├── DashboardViewModel.kt    # MVVM Haupt-ViewModel
-│   ├── TurboViewModel.kt        # Turbo-Monitoring
-│   ├── SafetyViewModel.kt       # ESP/ABS/TPMS
-│   ├── EcoScoreViewModel.kt     # ECO-Score + CO2
-│   └── AstraJCodingViewModel.kt # Codierung
-└── ui/
-    ├── theme/                   # Material 3 (4 Themes, Dark/Light)
-    ├── components/              # CircularGauge, CompactGauge, TrendGraph
-    ├── dashboard/               # Haupt-Dashboard
-    ├── turbo/                   # Turbo-Monitor + Extended Turbo
-    ├── gearbox/                 # M32 Getriebe-Monitor
-    ├── comfort/                 # Komfort-Steuerung
-    ├── safety/                  # Sicherheitssysteme
-    ├── ecoscore/                # ECO-Score Dialog
-    ├── fuel/                    # Kraftstoffverbrauch
-    ├── maintenance/             # Wartungsmanagement
-    ├── coding/                  # Astra J Codierung
-    ├── dtc/                     # Diagnosefehler
-    ├── tripcomputer/            # Trip-Computer
-    ├── datalog/                 # Datenlogging
-    ├── shiftlight/              # Schaltlicht
-    ├── drivescore/              # Fahrstilbewertung
-    ├── performance/             # Beschleunigungstests
-    ├── diagnostics/             # Diagnose-Tools
-    ├── alerts/                  # Warnungseinstellungen
-    ├── readiness/               # Emissions-Readiness
-    ├── analysis/                # Datenanalyse
-    ├── customization/           # Dashboard-Anpassung
-    ├── settings/                # Einstellungen
-    ├── carprofile/              # Fahrzeugprofil
-    ├── timingchain/             # Steuerkette
-    ├── pid/                     # PID-Browser
-    └── knownissues/             # Bekannte Astra J Probleme
+│   ├── DashboardViewModel.kt        # MVVM Haupt-ViewModel
+│   ├── TurboViewModel.kt            # Turbo-Monitoring
+│   ├── SafetyViewModel.kt           # ESP/ABS/TPMS
+│   ├── EcoScoreViewModel.kt         # ECO-Score + CO₂
+│   └── AstraJCodingViewModel.kt     # Codierung
+└── ui/                              # 38 Compose-Screens
+    ├── theme/                       # Material 3 (4 Themes, Dark/Light)
+    ├── components/                  # CircularGauge, CompactGauge, TrendGraph
+    ├── dashboard/                   # Haupt-Dashboard
+    ├── turbo/                       # Turbo-Monitor + Extended Turbo
+    ├── gearbox/                     # M32 Getriebe-Monitor
+    ├── comfort/                     # Komfort-Steuerung
+    ├── safety/                      # Sicherheitssysteme
+    ├── fuel/                        # Kraftstoffverbrauch
+    ├── maintenance/                 # Wartungsmanagement
+    ├── coding/                      # Astra J Codierung
+    ├── dtc/                         # Diagnosefehler
+    ├── tripcomputer/                # Trip-Computer
+    ├── performance/                 # Beschleunigungstests
+    └── ... (25 weitere)
 ```
 
-**Statistik:** 161 Kotlin-Dateien | 76.304 Zeilen Code | 16 Dokumentationen
+**Statistik:** 153 Kotlin-Dateien · 78.197 Zeilen Code · 18 Unit-Test-Dateien · 20 Dokumentationen
 
 ---
 
@@ -309,11 +285,11 @@ app/src/main/java/com/canopobd/
 
 | Adapter | Chip | Empfehlung |
 |---------|------|------------|
-| OBDLink MX+ | STN2120 | **Beste Wahl** — Schnell, stabil, Mode 22 |
-| Vgate iCar Pro | ELM327 v2.2 | Gut — Zuverlassig |
-| ELM327 Clone | ELM327 v1.5 | OK — Langsamer, eingeschrankt |
+| OBDLink MX+ | STN2120 | **Beste Wahl** – schnell, stabil, Mode 22 |
+| Vgate iCar Pro | ELM327 v2.2 | Gut – zuverlässig |
+| ELM327 Clone | ELM327 v1.5 | OK – langsamer, eingeschränkt |
 
-> Hinweis: GM Mode 22 DIDs funktionieren nur mit STN-basierten Adaptern (OBDLink) oder speziellen ELM327 v2.2+ Chips.
+> **Hinweis:** GM Mode 22 DIDs funktionieren nur mit STN-basierten Adaptern (OBDLink) oder speziellen ELM327 v2.2+ Chips.
 
 ---
 
@@ -323,41 +299,30 @@ app/src/main/java/com/canopobd/
 |-----------|------|
 | Motorcode | A14NET (GM: LUJ) |
 | Hubraum | 1.364 cm³ (1.4L) |
-| Leistung | 140 PS (103 kW) @ 4.900-6.000 rpm |
-| Drehmoment | 200 Nm @ 1.850-4.900 rpm |
+| Leistung | 140 PS (103 kW) @ 4.900–6.000 rpm |
+| Drehmoment | 200 Nm @ 1.850–4.900 rpm |
 | Turbo | BorgWarner KP39 (Single-Scroll, Wastegate) |
-| Verdichtung | 9.5:1 |
+| Verdichtung | 9,5:1 |
 | ECU | Bosch ME17.9.22 / Delco E78 |
 | Kraftstoff | Super 95 RON (98 empfohlen) |
 | Tank | 56 Liter |
 | Getriebe | M32 6-Gang manuell |
-| 0-100 km/h | 9.9 s |
+| 0–100 km/h | 9,9 s |
 | Vmax | 207 km/h |
-| Verbrauch | 5.9 L/100km (NEFZ kombiniert) |
+| Verbrauch | 5,9 L/100km (NEFZ kombiniert) |
 | CO₂ | 139 g/km |
-| Ol | Dexos2 5W-30, 4.5L |
+| Öl | Dexos2 5W-30, 4,5 L |
 | Emission | Euro 5 |
 
 ---
 
-## Dokumentation
+## Qualitätssicherung
 
-| Datei | Inhalt |
-|-------|--------|
-| `docs/RECHERCHE_OBD_PIDS_ASTRA_J.md` | OBD-II PIDs fur A14NET |
-| `docs/RECHERCHE_UDS_GM_PROTOKOLL.md` | UDS/GM MOPED Protokoll |
-| `docs/RECHERCHE_VERSTECKTE_FEATURES_ASTRA_J.md` | Versteckte Features |
-| `docs/RECHERCHE_A14NEL_MOTOR.md` | Motor-Technische Daten |
-| `docs/RECHERCHE_CAN_BUS_ASTRA_J.md` | CAN-BUS Architektur |
-| `docs/RECHERCHE_GETRIEBE_ASTRA_J.md` | M32 Getriebe |
-| `docs/RECHERCHE_ESP_ABS_ASTRA_J.md` | ESP/ABS Systeme |
-| `docs/RECHERCHE_WARTUNG_FehlercODES_ASTRA_J.md` | Wartung & Fehlercodes |
-| `docs/RECHERCHE_ECO_DRIVING_ASTRA_J.md` | Eco Driving |
-| `docs/RECHERCHE_ANDROID_OBD_APPS.md` | App-Vergleich |
-| `ASTRA_J_ENHANCED_FEATURES.md` | Feature-Dokumentation |
-| `ASTRA_J_CALIBRATION.md` | Kalibrierungs-Referenz |
-| `ASTRA_J_DTC_CODES.md` | DTC-Code-Referenz |
-| `KNOWN_ISSUES.md` | Bekannte Astra J Probleme |
+```bash
+./gradlew ktlintCheck    # Code-Formatierung (strict)
+./gradlew detekt         # Statische Analyse
+./gradlew test           # Unit Tests
+```
 
 ---
 
@@ -373,10 +338,4 @@ Debug APK von GitHub Actions: **Artifact `canop-obd-debug-apk`**
 2. Feature-Branch (`git checkout -b feature/amazing-feature`)
 3. Commit (`git commit -m 'Add amazing feature'`)
 4. Push (`git push origin feature/amazing-feature`)
-5. Pull Request offnen
-
----
-
-## Lizenz
-
-Apache 2.0 — siehe [LICENSE](LICENSE) fur Details.
+5. Pull Request öffnen
