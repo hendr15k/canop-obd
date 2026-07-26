@@ -21,13 +21,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.data.model.AstraJ14TurboCalibration
 import com.canopobd.data.model.TurboCoolDownState
-import com.canopobd.data.model.TurboData
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
 import kotlin.math.abs
@@ -241,7 +239,7 @@ private fun BoostAnalysisGauge(
     val normalBar = calibration.normalBoostTargetBar
     val overboostBar = calibration.overboostBar
     val deviation = actualBar - targetBar
-    val deviationPercent = if (targetBar > 0) (deviation / targetBar * 100.0) else 0.0
+    val deviationPercent = if (targetBar > 0) { (deviation / targetBar * 100.0) } else { 0.0 }
 
     @Suppress("UNUSED_VARIABLE")
     val _animatedBoost by animateFloatAsState(
@@ -419,7 +417,7 @@ private fun BoostAnalysisGauge(
                 BoostMetricColumn(
                     "Diff",
                     "%+.3f bar".format(deviation),
-                    if (abs(deviation) > 0.15) colors.gaugeOrange else colors.gaugeGreen,
+                    if (abs(deviation) > 0.15) { colors.gaugeOrange } else { colors.gaugeGreen },
                     colors
                 )
             }
@@ -492,11 +490,11 @@ private fun WastegateHealthCard(
 
     val healthPercent = remember(position, dutyCycle, isUnderboost, isOverboost) {
         var score = 100
-        if (isStuckOpen) score -= 40
-        if (isStuckClosed) score -= 40
-        if (!isHealthyDuty) score -= 20
-        if (isUnderboost) score -= 25
-        if (isOverboost) score -= 30
+        if (isStuckOpen) { score -= 40 }
+        if (isStuckClosed) { score -= 40 }
+        if (!isHealthyDuty) { score -= 20 }
+        if (isUnderboost) { score -= 25 }
+        if (isOverboost) { score -= 30 }
         score.coerceIn(0, 100)
     }
 
@@ -557,7 +555,7 @@ private fun WastegateHealthCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (healthPercent >= 80) "OK" else if (healthPercent >= 50) "WARNUNG" else "KRITISCH",
+                        text = if (healthPercent >= 80) { "OK" } else if (healthPercent >= 50) { "WARNUNG" } else { "KRITISCH" },
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = healthColor
@@ -585,7 +583,7 @@ private fun WastegateHealthCard(
                         text = "%.1f%%".format(dutyCycle),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isHealthyDuty) colors.gaugeGreen else colors.gaugeOrange
+                        color = if (isHealthyDuty) { colors.gaugeGreen } else { colors.gaugeOrange }
                     )
                     Text(text = "Duty Cycle", fontSize = 10.sp, color = colors.textSecondary)
                 }
@@ -763,7 +761,7 @@ private fun TurboRpmCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = if (isMaxWarning) colors.gaugeRed.copy(alpha = 0.08f * warningAlpha) else colors.surfaceCard
+        color = if (isMaxWarning) { colors.gaugeRed.copy(alpha = 0.08f * warningAlpha) } else { colors.surfaceCard }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -902,7 +900,7 @@ private fun TurboRpmCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val rpmPercent = if (maxRpm > 0) (rpm / maxRpm * 100.0) else 0.0
+            val rpmPercent = if (maxRpm > 0) { (rpm / maxRpm * 100.0) } else { 0.0 }
             val statusText = when {
                 rpm <= 0 -> "Motor aus"
                 rpm < calibration.turboSpeedIdleRpm -> "Unter Idle"
@@ -947,7 +945,7 @@ private fun ChargeAirTempCard(
         chargeAirTemp - intakeAirTemp
     } else if (intakeAirTemp > 0 && chargeAirTemp > 0) {
         chargeAirTemp - intakeAirTemp
-    } else 0.0
+    } else { 0.0 }
 
     val intercoolerEfficiency = when {
         intakeAirTemp <= 0 || chargeAirTemp <= 0 -> 0.0
@@ -1037,7 +1035,7 @@ private fun ChargeAirTempCard(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (chargeAirTemp > 0) "%.0f°C".format(chargeAirTemp) else "—",
+                        text = if (chargeAirTemp > 0) { "%.0f°C".format(chargeAirTemp) } else { "—" },
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = tempColor
@@ -1046,7 +1044,7 @@ private fun ChargeAirTempCard(
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (intakeAirTemp > 0) "%.0f°C".format(intakeAirTemp) else "—",
+                        text = if (intakeAirTemp > 0) { "%.0f°C".format(intakeAirTemp) } else { "—" },
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = colors.textSecondary
@@ -1055,10 +1053,10 @@ private fun ChargeAirTempCard(
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (tempDrop != 0.0) "%+.0f°C".format(tempDrop) else "—",
+                        text = if (tempDrop != 0.0) { "%+.0f°C".format(tempDrop) } else { "—" },
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (tempDrop > 0) colors.gaugeGreen else colors.gaugeOrange
+                        color = if (tempDrop > 0) { colors.gaugeGreen } else { colors.gaugeOrange }
                     )
                     Text(text = "Differenz", fontSize = 10.sp, color = colors.textSecondary)
                 }
@@ -1077,7 +1075,7 @@ private fun ChargeAirTempCard(
             ) {
                 val normalized = if (maxTemp > 0) {
                     (chargeAirTemp / (maxTemp * 1.2)).toFloat().coerceIn(0f, 1f)
-                } else 0f
+                } else { 0f }
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -1189,7 +1187,7 @@ private fun EGTMonitoringCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = if (isCritical) colors.gaugeRed.copy(alpha = 0.06f) else colors.surfaceCard
+        color = if (isCritical) { colors.gaugeRed.copy(alpha = 0.06f) } else { colors.surfaceCard }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -1449,7 +1447,7 @@ private fun BoostLeakIndicatorCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = if (leakDetected) colors.gaugeRed.copy(alpha = 0.06f) else colors.surfaceCard
+        color = if (leakDetected) { colors.gaugeRed.copy(alpha = 0.06f) } else { colors.surfaceCard }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

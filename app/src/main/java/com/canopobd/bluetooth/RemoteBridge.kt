@@ -88,7 +88,7 @@ class RemoteBridge(
                             handler.start()
                         }
                     } catch (e: Exception) {
-                    Log.e("RemoteBridge", "Client handler error: ${e.message}", e)
+                        Log.e("RemoteBridge", "Client handler error: ${e.message}", e)
                         if (serverSocket?.isClosed == false) {
                             delay(100)
                         }
@@ -169,8 +169,8 @@ class RemoteBridge(
                 cmd.equals("ATSP0", ignoreCase = true) -> "OK"
                 cmd.equals("ATAT1", ignoreCase = true) -> "OK"
                 cmd.startsWith("01") || cmd.startsWith("02") || cmd.startsWith("03") ||
-                cmd.startsWith("04") || cmd.startsWith("05") || cmd.startsWith("06") ||
-                cmd.startsWith("07") || cmd.startsWith("08") || cmd.startsWith("09") -> {
+                    cmd.startsWith("04") || cmd.startsWith("05") || cmd.startsWith("06") ||
+                    cmd.startsWith("07") || cmd.startsWith("08") || cmd.startsWith("09") -> {
                     scope.launch {
                         val response = sendPIDCommand(cmd)
                         writer?.println(response)

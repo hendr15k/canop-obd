@@ -639,8 +639,8 @@ data class ReadinessMonitor(
     val egrSystem: Boolean = false
 ) {
     val allComplete: Boolean get() = misfire && fuelSystem && comprehensiveComponent &&
-            catalyst && heatedCatalyst && evapSystem && secondaryAirSystem &&
-            acSystemRefrigerant && oxygenSensor && oxygenSensorHeater && egrSystem
+        catalyst && heatedCatalyst && evapSystem && secondaryAirSystem &&
+        acSystemRefrigerant && oxygenSensor && oxygenSensorHeater && egrSystem
 
     val completedCount: Int get() = listOf(
         misfire, fuelSystem, comprehensiveComponent, catalyst, heatedCatalyst,
@@ -1683,7 +1683,7 @@ data class Mode22Data(
         if (this === other) return true
         if (other !is Mode22Data) return false
         return pid == other.pid && value == other.value && unit == other.unit &&
-                rawBytes.contentEquals(other.rawBytes) && timestamp == other.timestamp
+            rawBytes.contentEquals(other.rawBytes) && timestamp == other.timestamp
     }
     override fun hashCode(): Int {
         var result = pid.hashCode()

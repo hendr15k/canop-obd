@@ -19,7 +19,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.R
-import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
 import kotlinx.coroutines.delay
 
@@ -209,5 +208,5 @@ enum class WarningSeverity(val label: String) {
     CRITICAL("KRITISCH"),
     HIGH("HOCH"),
     MEDIUM("MITTEL"),
-    LOW("NIEDRIG");
+    LOW("NIEDRIG")
 }

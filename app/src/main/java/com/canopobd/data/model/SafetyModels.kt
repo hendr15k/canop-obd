@@ -74,9 +74,9 @@ data class SafetySystemStatus(
 
     val hasCriticalFault: Boolean get() =
         absStatus == SystemStatus.FAULT ||
-        espStatus == SystemStatus.FAULT ||
-        airbagStatus == SystemStatus.FAULT ||
-        brakeFluidLevel == LevelStatus.CRITICAL
+            espStatus == SystemStatus.FAULT ||
+            airbagStatus == SystemStatus.FAULT ||
+            brakeFluidLevel == LevelStatus.CRITICAL
 }
 
 data class ChassisSensors(
@@ -213,8 +213,8 @@ data class AirbagStatus(
 ) {
     val allAirbagsReady: Boolean get() =
         driverFront && passengerFront && driverSide && passengerSide &&
-        curtainLeft && curtainRight && driverKnee &&
-        pretensionerDriver && pretensionerPassenger && systemReady
+            curtainLeft && curtainRight && driverKnee &&
+            pretensionerDriver && pretensionerPassenger && systemReady
 
     val hasFault: Boolean get() = !allAirbagsReady
 
@@ -269,15 +269,15 @@ data class SafetySummary(
 ) {
     val hasWarnings: Boolean
         get() = safetyStatus.absStatus == SystemStatus.WARNING ||
-                safetyStatus.espStatus == SystemStatus.WARNING ||
-                safetyStatus.tpmsStatus == SystemStatus.WARNING ||
-                brakeWear.frontLeft < AstraJSafetyThresholds.BRAKE_WEAR_WARNING
+            safetyStatus.espStatus == SystemStatus.WARNING ||
+            safetyStatus.tpmsStatus == SystemStatus.WARNING ||
+            brakeWear.frontLeft < AstraJSafetyThresholds.BRAKE_WEAR_WARNING
 
     val hasCritical: Boolean
         get() = safetyStatus.absStatus == SystemStatus.FAULT ||
-                safetyStatus.espStatus == SystemStatus.FAULT ||
-                safetyStatus.airbagStatus == SystemStatus.FAULT ||
-                brakeWear.frontLeft < AstraJSafetyThresholds.BRAKE_WEAR_CRITICAL
+            safetyStatus.espStatus == SystemStatus.FAULT ||
+            safetyStatus.airbagStatus == SystemStatus.FAULT ||
+            brakeWear.frontLeft < AstraJSafetyThresholds.BRAKE_WEAR_CRITICAL
 
     val dtcCount: Int get() = safetyDTCs.size
     val criticalDtcCount: Int get() = safetyDTCs.count { it.isCritical }
@@ -363,13 +363,13 @@ object SafetyDTCMappings {
 
     private fun isABSCode(desc: String): Boolean = desc.let {
         it.contains("GESCHWINDIGKEIT") || it.contains("ABS") ||
-        it.contains("PUMPE") || it.contains("BREMSE")
+            it.contains("PUMPE") || it.contains("BREMSE")
     }
 
     private fun isESPCode(desc: String): Boolean = desc.let {
         it.contains("ESP") || it.contains("GIERRATEN") ||
-        it.contains("BESCHLEUNIGUNG") || it.contains("LENKWINKEL") ||
-        it.contains("QUER")
+            it.contains("BESCHLEUNIGUNG") || it.contains("LENKWINKEL") ||
+            it.contains("QUER")
     }
 
     private fun isTPMSCode(desc: String): Boolean = desc.let {

@@ -18,20 +18,20 @@ import com.canopobd.data.model.PerformanceTestType
 class AccelerationTimer {
 
     enum class TimerState {
-        IDLE,           // Ready to start
-        WAITING_START,  // Waiting for vehicle to start moving (speed > threshold)
-        RUNNING,        // Accelerating, measuring time
-        FINISHED,       // Target speed reached
-        CANCELLED       // Test was cancelled
+        IDLE, // Ready to start
+        WAITING_START, // Waiting for vehicle to start moving (speed > threshold)
+        RUNNING, // Accelerating, measuring time
+        FINISHED, // Target speed reached
+        CANCELLED // Test was cancelled
     }
 
     companion object {
         // Speed thresholds in m/s (GPS speed is in m/s)
-        const val START_SPEED_MS = 0.5          // ~1.8 km/h — vehicle has started moving
-        const val MAX_IDLE_TIME_MS = 30_000L    // 30 seconds max waiting for start
-        const val MAX_TEST_TIME_MS = 60_000L    // 60 seconds max test duration
-        const val TARGET_SPEED_100_MS = 100.0 / 3.6  // 100 km/h in m/s
-        const val TARGET_SPEED_200_MS = 200.0 / 3.6  // 200 km/h in m/s
+        const val START_SPEED_MS = 0.5 // ~1.8 km/h — vehicle has started moving
+        const val MAX_IDLE_TIME_MS = 30_000L // 30 seconds max waiting for start
+        const val MAX_TEST_TIME_MS = 60_000L // 60 seconds max test duration
+        const val TARGET_SPEED_100_MS = 100.0 / 3.6 // 100 km/h in m/s
+        const val TARGET_SPEED_200_MS = 200.0 / 3.6 // 200 km/h in m/s
 
         // A14NET baseline values (stock)
         const val BASELINE_0_100_S = 9.0
@@ -152,7 +152,7 @@ class AccelerationTimer {
 
                 if (progress / 10 > lastPhasePercent / 10 && progress in listOf(10, 20, 30, 40, 50, 60, 70, 80, 90)) {
                     phaseMarkers.add(AccelerationPhase(
-                        name = "${progress}%",
+                        name = "$progress%",
                         timestamp = timestampMs,
                         speedKmh = speedMs * 3.6,
                         rpm = rpm

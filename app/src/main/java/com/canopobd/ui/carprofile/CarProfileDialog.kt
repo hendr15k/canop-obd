@@ -85,7 +85,11 @@ private fun ProfileCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
     @Suppress("UNUSED_VARIABLE")
-    val _rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+    val _rotation by animateFloatAsState(if (expanded) {
+        180f
+    } else {
+        0f
+    }, label = "chevron")
 
     Surface(
         modifier = Modifier
@@ -93,10 +97,14 @@ private fun ProfileCard(
             .animateContentSize()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        color = if (isSelected) colors.accent.copy(alpha = 0.1f) else colors.surface.copy(alpha = 0.3f),
+        color = if (isSelected) {
+            colors.accent.copy(alpha = 0.1f)
+        } else {
+            colors.surface.copy(alpha = 0.3f)
+        },
         border = if (isSelected) {
             androidx.compose.foundation.BorderStroke(1.dp, colors.accent)
-        } else null
+        } else { null }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -108,7 +116,11 @@ private fun ProfileCard(
                     text = profile.displayName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isSelected) colors.accent else colors.textPrimary
+                    color = if (isSelected) {
+                        colors.accent
+                    } else {
+                        colors.textPrimary
+                    }
                 )
                 if (isSelected) {
                     Icon(
@@ -178,7 +190,11 @@ private fun ProfileCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (expanded) "Less details" else "More details",
+                    text = if (expanded) {
+                        "Less details"
+                    } else {
+                        "More details"
+                    },
                     fontSize = 11.sp,
                     color = colors.accent
                 )
@@ -195,7 +211,7 @@ private fun ProfileCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 VehicleProfileSection(vehicleProfile = vehicleProfile, colors = colors)
             }
-    }
+        }
     }
 }
 

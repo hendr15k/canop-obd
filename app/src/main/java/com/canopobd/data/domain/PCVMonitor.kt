@@ -77,12 +77,12 @@ class PCVMonitor(
         private val PCV_DTC_SET = setOf("P1100", "P1101")
 
         // Schwellenwerte
-        private const val MAF_DEVIATION_WARNING = 15.0      // % Abweichung vom Soll
-        private const val MAF_DEVIATION_CRITICAL = 30.0     // % kritische Abweichung
-        private const val TOTAL_TRIM_WARNING = 8.0           // % Gesamttrimm-Schwelle
-        private const val TOTAL_TRIM_CRITICAL = 15.0        // % kritische Trimmabweichung
-        private const val OIL_CONSUMPTION_WARNING = 0.3     // L/1000km
-        private const val OIL_CONSUMPTION_CRITICAL = 0.7    // L/1000km
+        private const val MAF_DEVIATION_WARNING = 15.0 // % Abweichung vom Soll
+        private const val MAF_DEVIATION_CRITICAL = 30.0 // % kritische Abweichung
+        private const val TOTAL_TRIM_WARNING = 8.0 // % Gesamttrimm-Schwelle
+        private const val TOTAL_TRIM_CRITICAL = 15.0 // % kritische Trimmabweichung
+        private const val OIL_CONSUMPTION_WARNING = 0.3 // L/1000km
+        private const val OIL_CONSUMPTION_CRITICAL = 0.7 // L/1000km
         private const val TYPICAL_MILEAGE_FOR_PCV = 80000.0 // km
 
         // Gewichtung (Summe = 100)
@@ -113,9 +113,9 @@ class PCVMonitor(
 
         // Gesamtbewertung
         val rawScore = (dtcScore * WEIGHT_DTC +
-                mafScore * WEIGHT_MAF +
-                trimScore * WEIGHT_TRIM +
-                oilScore * WEIGHT_OIL) / 100
+            mafScore * WEIGHT_MAF +
+            trimScore * WEIGHT_TRIM +
+            oilScore * WEIGHT_OIL) / 100
 
         // Laufleistungs-Faktor
         val mileageFactor = when {
@@ -149,9 +149,9 @@ class PCVMonitor(
         }
 
         return when {
-            pcvDTCs.size >= 2 -> 10  // Kritisch
-            pcvDTCs.size == 1 -> 40  // Warnung
-            else -> 100              // Kein Fehler
+            pcvDTCs.size >= 2 -> 10 // Kritisch
+            pcvDTCs.size == 1 -> 40 // Warnung
+            else -> 100 // Kein Fehler
         }
     }
 
@@ -175,7 +175,7 @@ class PCVMonitor(
             absDeviation <= MAF_DEVIATION_WARNING -> 100
             absDeviation <= MAF_DEVIATION_CRITICAL -> {
                 100 - ((absDeviation - MAF_DEVIATION_WARNING) /
-                        (MAF_DEVIATION_CRITICAL - MAF_DEVIATION_WARNING) * 40).toInt()
+                    (MAF_DEVIATION_CRITICAL - MAF_DEVIATION_WARNING) * 40).toInt()
             }
             else -> 30
         }
@@ -193,7 +193,7 @@ class PCVMonitor(
             totalTrim <= TOTAL_TRIM_WARNING -> 100
             totalTrim <= TOTAL_TRIM_CRITICAL -> {
                 100 - ((totalTrim - TOTAL_TRIM_WARNING) /
-                        (TOTAL_TRIM_CRITICAL - TOTAL_TRIM_WARNING) * 40).toInt()
+                    (TOTAL_TRIM_CRITICAL - TOTAL_TRIM_WARNING) * 40).toInt()
             }
             else -> 20
         }
@@ -204,11 +204,11 @@ class PCVMonitor(
      */
     private fun evaluateOilConsumption(lPer1000Km: Double): Int {
         return when {
-            lPer1000Km <= 0 -> 80  // Kein Datenpunkt
+            lPer1000Km <= 0 -> 80 // Kein Datenpunkt
             lPer1000Km <= OIL_CONSUMPTION_WARNING -> 100
             lPer1000Km <= OIL_CONSUMPTION_CRITICAL -> {
                 100 - ((lPer1000Km - OIL_CONSUMPTION_WARNING) /
-                        (OIL_CONSUMPTION_CRITICAL - OIL_CONSUMPTION_WARNING) * 50).toInt()
+                    (OIL_CONSUMPTION_CRITICAL - OIL_CONSUMPTION_WARNING) * 50).toInt()
             }
             else -> 15
         }
@@ -256,7 +256,7 @@ class PCVMonitor(
         return when (health) {
             PCVHealth.HEALTHY -> {
                 "PCV-System funktioniert normal. " +
-                        "Kurbelgehaeuseentlueftung ist frei."
+                    "Kurbelgehaeuseentlueftung ist frei."
             }
             PCVHealth.PLUGGED -> {
                 val issues = mutableListOf<String>()
@@ -271,11 +271,11 @@ class PCVMonitor(
                 }
                 val detail = if (issues.isNotEmpty()) " - ${issues.joinToString("; ")}" else ""
                 "PCV-Ventil verstopft oder eingeschraenkt.$detail " +
-                        "Kurbelgehaeusedruck kann erhoeht sein."
+                    "Kurbelgehaeusedruck kann erhoeht sein."
             }
             PCVHealth.LEAKING -> {
                 "PCV-System hat eine Leckage. " +
-                        "Uebermaessige Luft im Ansaugsystem fuehrt zu Falschluft."
+                    "Uebermaessige Luft im Ansaugsystem fuehrt zu Falschluft."
             }
             PCVHealth.UNKNOWN -> {
                 "PCV-Status nicht bestimmbar. Weitere Daten erforderlich."
@@ -291,24 +291,24 @@ class PCVMonitor(
             PCVHealth.HEALTHY -> {
                 if (input.totalKm > 50000) {
                     "PCV-Ventil bei naechstem Oelwechsel pruefen. " +
-                            "Bei ${input.totalKm.toInt()} km routinemaessige Pruefung empfohlen."
+                        "Bei ${input.totalKm.toInt()} km routinemaessige Pruefung empfohlen."
                 } else {
                     "Keine Massnahmen erforderlich. " +
-                            "PCV-Ventil bei ${input.totalKm.toInt()} km noch in Ordnung."
+                        "PCV-Ventil bei ${input.totalKm.toInt()} km noch in Ordnung."
                 }
             }
             PCVHealth.PLUGGED -> {
                 "PCV-Ventil und Zylinderkopfdeckel-Ventil ersetzen lassen. " +
-                        "Nur Opel-OEM oder hochwertige Nachbauteile verwenden. " +
-                        "Kurbelgehaeusedichtungen auf Dichtheit pruefen."
+                    "Nur Opel-OEM oder hochwertige Nachbauteile verwenden. " +
+                    "Kurbelgehaeusedichtungen auf Dichtheit pruefen."
             }
             PCVHealth.LEAKING -> {
                 "PCV-Leitungen und Anschluesse auf Risse und Dichtheit pruefen. " +
-                        "Zylinderkopfdeckel-Dichtung kontrollieren."
+                    "Zylinderkopfdeckel-Dichtung kontrollieren."
             }
             PCVHealth.UNKNOWN -> {
                 "Oeldruck- und Kurbelgehaeusedruck-Messung bei Werkstatt durchfuehren. " +
-                        "PCV-Ventil visuell pruefen."
+                    "PCV-Ventil visuell pruefen."
             }
         }
     }

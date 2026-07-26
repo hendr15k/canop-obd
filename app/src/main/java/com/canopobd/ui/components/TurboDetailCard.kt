@@ -28,7 +28,6 @@ import com.canopobd.data.model.TurboData
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
 import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * TurboDetailCard - Erweiterte Turbo-Überwachungskarte (A14NET / BorgWarner KP39)
@@ -64,7 +63,7 @@ fun TurboDetailCard(
     val infiniteTransition = rememberInfiniteTransition(label = "turbo_detail_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isCritical) 0.8f else 0.3f,
+        targetValue = if (isCritical) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -94,7 +93,7 @@ fun TurboDetailCard(
                         color = colors.gaugeOrange.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,
@@ -258,7 +257,7 @@ private fun TurboBoostGaugeSection(
     underboostDetected: Boolean,
     colors: AppColors
 ) {
-    val deviation = if (boostTarget > 0) boostActual - boostTarget else 0.0
+    val deviation = if (boostTarget > 0) { boostActual - boostTarget } else { 0.0 }
 
     val boostColor = when {
         overboostActive -> colors.gaugeOrange
@@ -537,7 +536,7 @@ private fun TurboSpeedIndicator(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = if (turboRpm > 0) "%,d".format(turboRpm.toInt()) else "—",
+            text = if (turboRpm > 0) { "%,d".format(turboRpm.toInt()) } else { "—" },
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = turboColor
@@ -597,7 +596,7 @@ private fun egtTemperatureDisplay(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = if (egtCelsius > -40) "%.0f°C".format(egtCelsius) else "—",
+            text = if (egtCelsius > -40) { "%.0f°C".format(egtCelsius) } else { "—" },
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = egtColor
@@ -637,7 +636,7 @@ private fun TurboEfficiencyIndicator(
                 cooling > 10 -> 40
                 else -> 20
             }
-        } else 50
+        } else { 50 }
     }
 
     val effColor = when {
@@ -692,8 +691,8 @@ private fun calculateTurboDetailHealthScore(
 ): Int {
     var score = 100
 
-    if (turboData.overboostActive) score -= 25
-    if (turboData.underboostDetected) score -= 35
+    if (turboData.overboostActive) { score -= 25 }
+    if (turboData.underboostDetected) { score -= 35 }
 
     if (turboData.boostTarget > 0) {
         val deviation = abs(turboData.boostPressure - turboData.boostTarget)

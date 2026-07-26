@@ -528,9 +528,13 @@ private fun EGTStatusWarning(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        color = if (isCritical) colors.gaugeRed.copy(alpha = 0.15f)
-        else if (isWarning) colors.gaugeOrange.copy(alpha = 0.15f)
-        else colors.surfaceVariant
+        color = if (isCritical) {
+            colors.gaugeRed.copy(alpha = 0.15f)
+        } else if (isWarning) {
+            colors.gaugeOrange.copy(alpha = 0.15f)
+        } else {
+            colors.surfaceVariant
+        }
     ) {
         Row(
             modifier = Modifier.padding(12.dp),

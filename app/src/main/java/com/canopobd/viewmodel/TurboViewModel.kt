@@ -38,7 +38,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateFromOBDData(data: OBDData, carProfile: CarProfile) {
         val calibration = AstraJ14TurboCalibration.INSTANCE
-        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val absoluteBoostKpa = if (data.boostPressure > 0) { data.boostPressure } else { data.intakePressure }
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
         turboSpeedRpm.value = data.turboRpm
@@ -61,7 +61,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         val speedFactor = (calibration.maxTurboRpm.toDouble() / 200000.0)
         val efficiencyFactor = if (data.turboRpm > 0) {
             (boostAnalysis.actual / (data.turboRpm * speedFactor * 0.001)).coerceIn(0.0, 100.0)
-        } else 0.0
+        } else { 0.0 }
         turboEfficiency.value = efficiencyFactor
 
         updateTurboDataInternal(data, carProfile, boostAnalysis)
@@ -74,7 +74,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         driveSession: DriveSession
     ) {
         val calibration = AstraJ14TurboCalibration.INSTANCE
-        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val absoluteBoostKpa = if (data.boostPressure > 0) { data.boostPressure } else { data.intakePressure }
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
         turboSpeedRpm.value = data.turboRpm
@@ -97,7 +97,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         val speedFactor = (calibration.maxTurboRpm.toDouble() / 200000.0)
         val efficiencyFactor = if (data.turboRpm > 0) {
             (boostAnalysis.actual / (data.turboRpm * speedFactor * 0.001)).coerceIn(0.0, 100.0)
-        } else 0.0
+        } else { 0.0 }
         turboEfficiency.value = efficiencyFactor
 
         updateTurboDataInternal(data, carProfile, boostAnalysis)
@@ -109,8 +109,8 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         carProfile: CarProfile,
         boostAnalysis: BoostAnalysis
     ) {
-        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val baroKpa = if (data.barometricPressure > 0) { data.barometricPressure } else { 100.0 }
+        val absoluteBoostKpa = if (data.boostPressure > 0) { data.boostPressure } else { data.intakePressure }
         val relativeBoostKpa = (absoluteBoostKpa - baroKpa).coerceAtLeast(0.0)
         val relativeBoostBar = relativeBoostKpa / 100.0
         val targetRelativeBar = carProfile.normalBoostBar.toDouble()
@@ -126,7 +126,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         _turboData.value = _turboData.value.copy(
             boostPressure = relativeBoostBar,
             boostTarget = targetRelativeBar,
-            wastegateDutyCycle = if (relativeBoostBar > 0.01) (targetRelativeBar / relativeBoostBar * 50).coerceIn(25.0, 95.0) else 95.0,
+            wastegateDutyCycle = if (relativeBoostBar > 0.01) { (targetRelativeBar / relativeBoostBar * 50).coerceIn(25.0, 95.0) } else { 95.0 },
             turboHealthScore = healthScore,
             overboostActive = overboostActive,
             underboostDetected = underboostDetected,
@@ -157,7 +157,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
     ): BoostAnalysis {
         val actualBar = calibration.getBoostBar(actualKpa)
         val targetBar = calibration.getBoostBar(targetKpa)
-        val deviation = if (targetBar > 0) ((actualBar - targetBar) / targetBar * 100.0) else 0.0
+        val deviation = if (targetBar > 0) { ((actualBar - targetBar) / targetBar * 100.0) } else { 0.0 }
 
         val status = when {
             actualBar >= calibration.overboostBar -> BoostStatus.OVERBOOST
@@ -204,7 +204,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
     ): WastegateAnalysisResult {
         val avgWastegate = if (driveSession != null && driveSession.wastegateSampleCount > 0) {
             driveSession.wastegateDutySum / driveSession.wastegateSampleCount
-        } else dutyCycle
+        } else { dutyCycle }
 
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
@@ -290,23 +290,23 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _currentDriveSession = MutableStateFlow(DriveSession())
 
-fun startTurboAnalysisCollection(obdDataFlow: kotlinx.coroutines.flow.Flow<OBDData>, carProfileFlow: kotlinx.coroutines.flow.Flow<CarProfile>, driveSession: DriveSession = DriveSession()) {
-         turboAnalysisJob?.cancel()
-         _currentDriveSession.value = driveSession
-         turboAnalysisJob = viewModelScope.launch {
-             kotlinx.coroutines.flow.combine(obdDataFlow, carProfileFlow) { data, carProfile ->
-                 data to carProfile
-             }.collect { (data, carProfile) ->
-                 if (data.rpm > 0) {
-                     updateFromOBDDataWithDriveSession(data, carProfile, _currentDriveSession.value)
-                 }
-             }
-         }
-     }
+    fun startTurboAnalysisCollection(obdDataFlow: kotlinx.coroutines.flow.Flow<OBDData>, carProfileFlow: kotlinx.coroutines.flow.Flow<CarProfile>, driveSession: DriveSession = DriveSession()) {
+        turboAnalysisJob?.cancel()
+        _currentDriveSession.value = driveSession
+        turboAnalysisJob = viewModelScope.launch {
+            kotlinx.coroutines.flow.combine(obdDataFlow, carProfileFlow) { data, carProfile ->
+                data to carProfile
+            }.collect { (data, carProfile) ->
+                if (data.rpm > 0) {
+                    updateFromOBDDataWithDriveSession(data, carProfile, _currentDriveSession.value)
+                }
+            }
+        }
+    }
 
-     fun updateDriveSession(driveSession: DriveSession) {
-         _currentDriveSession.value = driveSession
-     }
+    fun updateDriveSession(driveSession: DriveSession) {
+        _currentDriveSession.value = driveSession
+    }
 
     override fun onCleared() {
         turboAnalysisJob?.cancel()

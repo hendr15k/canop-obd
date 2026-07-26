@@ -1,12 +1,10 @@
 package com.canopobd.ui.maintenance
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -31,14 +29,13 @@ import androidx.compose.ui.window.DialogProperties
 import com.canopobd.R
 import com.canopobd.data.maintenance.*
 import com.canopobd.data.model.MaintenanceItem
-import com.canopobd.data.model.MaintenanceStatus
 import com.canopobd.data.model.MaintenanceType
 import com.canopobd.ui.theme.*
 import kotlin.math.roundToInt
 
 /**
  * Erweitertes Wartungsmanagement-Dialog für den Opel Astra J 1.4 Turbo
- * 
+ *
  * Features:
  * - Km-basierte Erinnerungen
  * - Zeit-basierte Erinnerungen
@@ -59,14 +56,14 @@ fun MaintenanceDialog(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Wartungen", "Öl-Temperatur", "Verbrauch", "Kosten")
-    
+
     // Erweitertes Service-Objekt
     val maintenanceService = remember { MaintenanceService() }
     val reminders by remember { mutableStateOf(maintenanceService.getAllReminders()) }
     val oilTempStats by remember { mutableStateOf(maintenanceService.getOilTempStatistics()) }
     val fuelStats by remember { mutableStateOf(maintenanceService.getFuelConsumptionStatistics()) }
     val costEstimate by remember { mutableStateOf(maintenanceService.estimateMaintenanceCosts()) }
-    
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -95,7 +92,7 @@ fun MaintenanceDialog(
                         Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close), tint = textSecondary)
                     }
                 }
-                
+
                 // Km-Anzeige
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -115,9 +112,9 @@ fun MaintenanceDialog(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Tab-Navigation
                 ScrollableTabRow(
                     selectedTabIndex = selectedTab,
@@ -133,15 +130,15 @@ fun MaintenanceDialog(
                                 Text(
                                     text = title,
                                     fontSize = 12.sp,
-                                    color = if (selectedTab == index) canopoAccent else textSecondary
+                                    color = if (selectedTab == index) { canopoAccent } else { textSecondary }
                                 )
                             }
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Tab-Inhalt
                 when (selectedTab) {
                     0 -> MaintenanceTab(
@@ -174,17 +171,17 @@ private fun MaintenanceTab(
 ) {
     var showAddReminderDialog by remember { mutableStateOf(false) }
     var selectedReminder by remember { mutableStateOf<MaintenanceReminder?>(null) }
-    
+
     LazyColumn {
         // Übersicht
         item {
             MaintenanceOverviewCard(reminders)
             Spacer(modifier = Modifier.height(12.dp))
         }
-        
+
         // Erinnerungen nach Priorität sortiert
         val sortedReminders = reminders.sortedBy { it.priority.ordinal }
-        
+
         items(sortedReminders) { reminder ->
             ExtendedMaintenanceReminderCard(
                 reminder = reminder,
@@ -197,7 +194,7 @@ private fun MaintenanceTab(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-        
+
         // Hinzufügen Button
         item {
             Spacer(modifier = Modifier.height(8.dp))
@@ -212,7 +209,7 @@ private fun MaintenanceTab(
             }
         }
     }
-    
+
     // Detail-Dialog
     selectedReminder?.let { reminder ->
         ReminderDetailDialog(
@@ -220,7 +217,7 @@ private fun MaintenanceTab(
             onDismiss = { selectedReminder = null }
         )
     }
-    
+
     // Hinzufügen-Dialog
     if (showAddReminderDialog) {
         AddReminderDialog(
@@ -238,7 +235,7 @@ private fun MaintenanceOverviewCard(reminders: List<MaintenanceReminder>) {
     val overdueCount = reminders.count { it.status == MaintenanceReminderStatus.OVERDUE }
     val dueSoonCount = reminders.count { it.status == MaintenanceReminderStatus.DUE_SOON }
     val okCount = reminders.count { it.status == MaintenanceReminderStatus.OK }
-    
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -251,9 +248,9 @@ private fun MaintenanceOverviewCard(reminders: List<MaintenanceReminder>) {
                 fontWeight = FontWeight.Bold,
                 color = textPrimary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -277,14 +274,14 @@ private fun MaintenanceOverviewCard(reminders: List<MaintenanceReminder>) {
                     icon = Icons.Filled.CheckCircle
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Nächste Wartung
             val nextReminder = reminders
                 .filter { it.isActive && !it.isCompleted }
                 .minByOrNull { it.kmRemaining.coerceAtLeast(0) }
-            
+
             nextReminder?.let { reminder ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -353,7 +350,7 @@ private fun ExtendedMaintenanceReminderCard(
     onDetails: () -> Unit
 ) {
     var showIntervalDialog by remember { mutableStateOf(false) }
-    
+
     val statusColor = when (reminder.status) {
         MaintenanceReminderStatus.OVERDUE -> gaugeRed
         MaintenanceReminderStatus.DUE_SOON -> gaugeYellow
@@ -361,7 +358,7 @@ private fun ExtendedMaintenanceReminderCard(
         MaintenanceReminderStatus.OK -> gaugeGreen
         MaintenanceReminderStatus.COMPLETED -> textDim
     }
-    
+
     val statusText = when (reminder.status) {
         MaintenanceReminderStatus.OVERDUE -> "ÜBERFÄLLIG"
         MaintenanceReminderStatus.DUE_SOON -> "Bald fällig"
@@ -369,7 +366,7 @@ private fun ExtendedMaintenanceReminderCard(
         MaintenanceReminderStatus.OK -> "OK"
         MaintenanceReminderStatus.COMPLETED -> "Erledigt"
     }
-    
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -409,7 +406,7 @@ private fun ExtendedMaintenanceReminderCard(
                         )
                     }
                 }
-                
+
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = statusText,
@@ -428,9 +425,9 @@ private fun ExtendedMaintenanceReminderCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Fortschrittsbalken
             LinearProgressIndicator(
                 progress = { (reminder.progressPercent / 100f).coerceIn(0f, 1f) },
@@ -441,11 +438,11 @@ private fun ExtendedMaintenanceReminderCard(
                 color = statusColor,
                 trackColor = canopoSurface,
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             // Zeit-basierte Anzeige
-            if (reminder.triggerType == ReminderTriggerType.KM_OR_TIME || 
+            if (reminder.triggerType == ReminderTriggerType.KM_OR_TIME ||
                 reminder.triggerType == ReminderTriggerType.TIME_BASED) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -467,9 +464,9 @@ private fun ExtendedMaintenanceReminderCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Aktionen
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -487,7 +484,7 @@ private fun ExtendedMaintenanceReminderCard(
             }
         }
     }
-    
+
     if (showIntervalDialog) {
         IntervalEditDialog(
             currentKm = reminder.lastServiceKm,
@@ -529,7 +526,7 @@ private fun ReminderDetailDialog(
                 DetailRow("Intervall (km)", "${reminder.intervalKm} km")
                 DetailRow("Intervall (Monate)", "${reminder.intervalMonths} Monate")
                 DetailRow("Fahrbedingungen", reminder.drivingConditions.label)
-                
+
                 if (reminder.partNumber.isNotEmpty()) {
                     DetailRow("Teile", reminder.partNumber)
                 }
@@ -539,7 +536,7 @@ private fun ReminderDetailDialog(
                 if (reminder.notes.isNotEmpty()) {
                     DetailRow("Hinweise", reminder.notes)
                 }
-                
+
                 // Km-basiert vs. Zeit-basiert
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -548,15 +545,15 @@ private fun ReminderDetailDialog(
                 ) {
                     TriggerBadge(
                         text = "Km-basiert",
-                        isActive = reminder.triggerType == ReminderTriggerType.KM_BASED || 
-                                   reminder.triggerType == ReminderTriggerType.KM_OR_TIME ||
-                                   reminder.triggerType == ReminderTriggerType.KM_AND_TIME
+                        isActive = reminder.triggerType == ReminderTriggerType.KM_BASED ||
+                            reminder.triggerType == ReminderTriggerType.KM_OR_TIME ||
+                            reminder.triggerType == ReminderTriggerType.KM_AND_TIME
                     )
                     TriggerBadge(
                         text = "Zeit-basiert",
-                        isActive = reminder.triggerType == ReminderTriggerType.TIME_BASED || 
-                                   reminder.triggerType == ReminderTriggerType.KM_OR_TIME ||
-                                   reminder.triggerType == ReminderTriggerType.KM_AND_TIME
+                        isActive = reminder.triggerType == ReminderTriggerType.TIME_BASED ||
+                            reminder.triggerType == ReminderTriggerType.KM_OR_TIME ||
+                            reminder.triggerType == ReminderTriggerType.KM_AND_TIME
                     )
                 }
             }
@@ -596,12 +593,12 @@ private fun DetailRow(label: String, value: String) {
 private fun TriggerBadge(text: String, isActive: Boolean) {
     Surface(
         shape = RoundedCornerShape(4.dp),
-        color = if (isActive) canopoAccent.copy(alpha = 0.2f) else canopoDark
+        color = if (isActive) { canopoAccent.copy(alpha = 0.2f) } else { canopoDark }
     ) {
         Text(
             text = text,
             fontSize = 10.sp,
-            color = if (isActive) canopoAccent else textDim,
+            color = if (isActive) { canopoAccent } else { textDim },
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }
@@ -618,20 +615,20 @@ private fun OilTempTab(stats: OilTempStatistics) {
             OilTempOverviewCard(stats)
             Spacer(modifier = Modifier.height(12.dp))
         }
-        
+
         // Statistiken
         if (stats.entryCount > 0) {
             item {
                 OilTempStatisticsCard(stats)
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            
+
             // Temperatur-Zonen
             item {
                 OilTempZonesCard(stats)
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            
+
             // Trend
             item {
                 OilTempTrendCard(stats)
@@ -673,9 +670,9 @@ private fun OilTempOverviewCard(stats: OilTempStatistics) {
                     color = textPrimary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -719,27 +716,27 @@ private fun OilTempStatisticsCard(stats: OilTempStatistics) {
                 fontWeight = FontWeight.Bold,
                 color = textPrimary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Optimal-Zeit
             StatBar(
                 label = "Optimal (90-110°C)",
                 percent = stats.optimalPercent,
                 color = gaugeGreen
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Zu heiß
             StatBar(
                 label = "Zu heiß (>120°C)",
                 percent = stats.tooHotPercent,
                 color = gaugeRed
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -806,9 +803,9 @@ private fun OilTempZonesCard(stats: OilTempStatistics) {
                 fontWeight = FontWeight.Bold,
                 color = textPrimary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -907,14 +904,14 @@ private fun FuelConsumptionTab(stats: FuelConsumptionStatistics) {
             FuelOverviewCard(stats)
             Spacer(modifier = Modifier.height(12.dp))
         }
-        
+
         if (stats.entryCount > 0) {
             // Statistiken
             item {
                 FuelStatisticsCard(stats)
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            
+
             // Stadt vs. Autobahn
             if (stats.averageCityConsumption != null || stats.averageHighwayConsumption != null) {
                 item {
@@ -922,7 +919,7 @@ private fun FuelConsumptionTab(stats: FuelConsumptionStatistics) {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
-            
+
             // Trend
             item {
                 FuelTrendCard(stats)
@@ -964,9 +961,9 @@ private fun FuelOverviewCard(stats: FuelConsumptionStatistics) {
                     color = textPrimary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -987,9 +984,9 @@ private fun FuelOverviewCard(stats: FuelConsumptionStatistics) {
                     gaugeRed
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Sollwert-Vergleich
             val targetDiff = stats.averageConsumption - MaintenanceService.FUEL_CONSUMPTION_TARGET
             val targetColor = when {
@@ -998,7 +995,7 @@ private fun FuelOverviewCard(stats: FuelConsumptionStatistics) {
                 targetDiff <= 1.5 -> gaugeOrange
                 else -> gaugeRed
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1010,8 +1007,11 @@ private fun FuelOverviewCard(stats: FuelConsumptionStatistics) {
                     color = textSecondary
                 )
                 Text(
-                    text = if (targetDiff >= 0) "+${String.format("%.1f", targetDiff)} L" 
-                           else "${String.format("%.1f",targetDiff)} L",
+                    text = if (targetDiff >= 0) {
+                        "+${String.format("%.1f", targetDiff)} L"
+                    } else {
+                        "${String.format("%.1f", targetDiff)} L"
+                    },
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = targetColor
@@ -1043,7 +1043,7 @@ private fun FuelStatisticsCard(stats: FuelConsumptionStatistics) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-                color = canopoDark
+        color = canopoDark
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -1052,25 +1052,25 @@ private fun FuelStatisticsCard(stats: FuelConsumptionStatistics) {
                 fontWeight = FontWeight.Bold,
                 color = textPrimary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             StatBar(
                 label = "Im Sollbereich (≤6.0 L)",
                 percent = stats.targetPercent,
                 color = gaugeGreen
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             StatBar(
                 label = "Über Verbrauchsgrenze (>7.5 L)",
                 percent = stats.warningPercent,
                 color = gaugeRed
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1104,9 +1104,9 @@ private fun FuelComparisonCard(stats: FuelConsumptionStatistics) {
                 fontWeight = FontWeight.Bold,
                 color = textPrimary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -1120,8 +1120,8 @@ private fun FuelComparisonCard(stats: FuelConsumptionStatistics) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stats.averageCityConsumption?.let { "${String.format("%.1f", it)} L" } 
-                               ?: "N/A",
+                        text = stats.averageCityConsumption?.let { "${String.format("%.1f", it)} L" }
+                            ?: "N/A",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = gaugeOrange
@@ -1132,7 +1132,7 @@ private fun FuelComparisonCard(stats: FuelConsumptionStatistics) {
                         color = textSecondary
                     )
                 }
-                
+
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         Icons.Filled.Route,
@@ -1142,8 +1142,8 @@ private fun FuelComparisonCard(stats: FuelConsumptionStatistics) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stats.averageHighwayConsumption?.let { "${String.format("%.1f", it)} L" } 
-                               ?: "N/A",
+                        text = stats.averageHighwayConsumption?.let { "${String.format("%.1f", it)} L" }
+                            ?: "N/A",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = gaugeGreen
@@ -1220,7 +1220,7 @@ private fun CostsTab(costEstimate: MaintenanceCostEstimate) {
             CostsOverviewCard(costEstimate)
             Spacer(modifier = Modifier.height(12.dp))
         }
-        
+
         // Kosten-Details
         if (costEstimate.details.isNotEmpty()) {
             item {
@@ -1233,7 +1233,7 @@ private fun CostsTab(costEstimate: MaintenanceCostEstimate) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            
+
             items(costEstimate.details) { detail ->
                 CostDetailItem(detail)
                 Spacer(modifier = Modifier.height(4.dp))
@@ -1247,7 +1247,7 @@ private fun CostsTab(costEstimate: MaintenanceCostEstimate) {
                 )
             }
         }
-        
+
         // Tipp
         item {
             Spacer(modifier = Modifier.height(12.dp))
@@ -1281,9 +1281,9 @@ private fun CostsOverviewCard(costEstimate: MaintenanceCostEstimate) {
                     color = textPrimary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -1302,9 +1302,9 @@ private fun CostsOverviewCard(costEstimate: MaintenanceCostEstimate) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1321,7 +1321,7 @@ private fun CostsOverviewCard(costEstimate: MaintenanceCostEstimate) {
                     color = gaugeRed
                 )
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1358,7 +1358,7 @@ private fun CostDetailItem(detail: MaintenanceCostDetail) {
                 Icon(
                     getIconForMaintenanceType(detail.type),
                     contentDescription = null,
-                    tint = if (detail.isUrgent) gaugeRed else gaugeYellow,
+                    tint = if (detail.isUrgent) { gaugeRed } else { gaugeYellow },
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -1368,7 +1368,7 @@ private fun CostDetailItem(detail: MaintenanceCostDetail) {
                     color = textPrimary
                 )
             }
-            
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (detail.isUrgent) {
                     Text(
@@ -1415,9 +1415,9 @@ private fun TipsCard() {
                     color = textPrimary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             TipItem("Ölwechsel-Intervalle einhalten verhindert teure Motorschäden")
             TipItem("Luftfilter selbst wechseln spart ~20€ Arbeitszeit")
             TipItem("Zündkerzen-Tausch alle 60.000km hält Verbrauch niedrig")
@@ -1500,7 +1500,7 @@ private fun AddReminderDialog(
     var selectedType by remember { mutableStateOf(MaintenanceType.OIL_CHANGE) }
     var intervalKmText by remember { mutableStateOf("15000") }
     var intervalMonthsText by remember { mutableStateOf("12") }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = canopoSurface,
@@ -1514,7 +1514,7 @@ private fun AddReminderDialog(
                     color = textSecondary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 LazyRow {
                     items(MaintenanceType.entries) { type ->
                         FilterChip(
@@ -1529,9 +1529,9 @@ private fun AddReminderDialog(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 // Km-Intervall
                 OutlinedTextField(
                     value = intervalKmText,
@@ -1545,9 +1545,9 @@ private fun AddReminderDialog(
                         cursorColor = canopoAccent
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Monats-Intervall
                 OutlinedTextField(
                     value = intervalMonthsText,

@@ -13,11 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,7 +25,7 @@ import com.canopobd.ui.theme.*
 
 /**
  * DriveModeIndicator - Fahrmodus-Indikator fuer das Dashboard
- * 
+ *
  * Erkennt automatisch ECO/NORMAL/SPORT basierend auf:
  * - Throttle Position (PID 0x11)
  * - Engine Load (PID 0x04)
@@ -36,7 +33,7 @@ import com.canopobd.ui.theme.*
  * - Speed (PID 0x0D)
  * - Accelerator Pedal Position (PID 0x49)
  * - Throttle Actuator (PID 0x4C)
- * 
+ *
  * Visuelle Indikatoren mit Farben:
  * - ECO: Gruen (#22C55E)
  * - NORMAL: Blau (#60A5FA)
@@ -81,7 +78,7 @@ fun DriveModeIndicator(
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (detectedMode == DriveMode.SPORT) 0.8f else 0.3f,
+        targetValue = if (detectedMode == DriveMode.SPORT) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -305,13 +302,13 @@ private fun ModeBar(
     onClick: () -> Unit
 ) {
     val animatedColor by animateColorAsState(
-        targetValue = if (isActive) color else color.copy(alpha = 0.3f),
+        targetValue = if (isActive) { color } else { color.copy(alpha = 0.3f) },
         animationSpec = tween(200),
         label = "bar_color"
     )
 
     val animatedHeight by animateFloatAsState(
-        targetValue = if (isActive) 1f else 0.4f,
+        targetValue = if (isActive) { 1f } else { 0.4f },
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -331,8 +328,8 @@ private fun ModeBar(
         Text(
             text = label,
             fontSize = 9.sp,
-            color = if (isActive) animatedColor else textDim,
-            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+            color = if (isActive) { animatedColor } else { textDim },
+            fontWeight = if (isActive) { FontWeight.Bold } else { FontWeight.Normal }
         )
     }
 }
@@ -380,9 +377,9 @@ private fun DriveModeIndicators(
             value = rpm,
             mode = mode,
             color = when {
-                rpm < 0.4 -> gaugeGreen  // ECO: low RPM
-                rpm < 0.6 -> canopoAccent  // NORMAL
-                else -> gaugeOrange  // SPORT: high RPM
+                rpm < 0.4 -> gaugeGreen // ECO: low RPM
+                rpm < 0.6 -> canopoAccent // NORMAL
+                else -> gaugeOrange // SPORT: high RPM
             }
         )
 
@@ -483,7 +480,6 @@ object OpelDriveModeDetector {
     // Opel-spezifische Schwellenwerte fuer A14NET Motor
     private const val ECO_SPEED_MIN = 20.0
     private const val ECO_SPEED_MAX = 140.0
-    private const val ECO_RPM_MAX = 3000.0
     private const val ECO_LOAD_MAX = 40.0
     private const val ECO_THROTTLE_MAX = 30.0
     private const val ECO_THROTTLE_RESPONSE_MAX = 0.75
@@ -491,7 +487,6 @@ object OpelDriveModeDetector {
     private const val SPORT_RPM_MIN = 3500.0
     private const val SPORT_RPM_ABSOLUTE = 4500.0
     private const val SPORT_THROTTLE_MIN = 55.0
-    private const val SPORT_LOAD_MIN = 60.0
     private const val SPORT_THROTTLE_RESPONSE_MIN = 0.90
 
     // Throttle-Reaktions-Score (0.0 = sehr träge, 1.0 = sehr direkt)
@@ -499,7 +494,7 @@ object OpelDriveModeDetector {
         acceleratorPedal: Double,
         throttlePosition: Double
     ): Double {
-        if (acceleratorPedal < 1.0) return 0.5
+        if (acceleratorPedal < 1.0) { return 0.5 }
         val ratio = throttlePosition / acceleratorPedal
         return ratio.coerceIn(0.0, 1.0)
     }
@@ -540,11 +535,11 @@ object OpelDriveModeDetector {
         }
 
         // Gedrosseltes Ansprechverhalten = gut fuer ECO
-        if (throttleResponse < 0.8) score += 0.15
-        if (throttleResponse > 0.9) score -= 0.15
+        if (throttleResponse < 0.8) { score += 0.15 }
+        if (throttleResponse > 0.9) { score -= 0.15 }
 
         // Geschwindigkeitsfaktor
-        if (speed in ECO_SPEED_MIN..ECO_SPEED_MAX) score += 0.05
+        if (speed in ECO_SPEED_MIN..ECO_SPEED_MAX) { score += 0.05 }
 
         return score.coerceIn(0.0, 1.0)
     }
@@ -586,7 +581,7 @@ object OpelDriveModeDetector {
         }
 
         // Direktes Ansprechverhalten = SPORT
-        if (throttleResponse > 0.9) score += 0.15
+        if (throttleResponse > 0.9) { score += 0.15 }
 
         return score.coerceIn(0.0, 1.0)
     }
@@ -610,17 +605,17 @@ object OpelDriveModeDetector {
         return when {
             // Klare ECO-Indikatoren
             ecoScore > 0.5 && sportScore < 0.3 -> DriveMode.ECO
-            
-            // Klare SPORT-Indikatoren  
+
+            // Klare SPORT-Indikatoren
             sportScore > 0.5 && ecoScore < 0.3 -> DriveMode.SPORT
-            
+
             // Direkte Erkennung basierend auf OBD-Daten
             rpm > SPORT_RPM_ABSOLUTE -> DriveMode.SPORT
             rpm > SPORT_RPM_MIN && throttle > SPORT_THROTTLE_MIN -> DriveMode.SPORT
             throttleResponse > SPORT_THROTTLE_RESPONSE_MIN && throttle > SPORT_THROTTLE_MIN -> DriveMode.SPORT
-            
+
             speed > 30 && engineLoad < ECO_LOAD_MAX && throttle < ECO_THROTTLE_MAX && throttleResponse < ECO_THROTTLE_RESPONSE_MAX -> DriveMode.ECO
-            
+
             // Standard-Fallback
             sportScore > ecoScore + 0.2 -> DriveMode.SPORT
             ecoScore > sportScore + 0.2 -> DriveMode.ECO
@@ -630,7 +625,7 @@ object OpelDriveModeDetector {
 
     /**
      * Drehzahl-basiertes Fahren-Score berechnen
-     * 
+     *
      * Bewertet das Fahrverhalten basierend auf:
      * - Drehzahl-Ausnutzung
      * - Schaltverhalten
@@ -641,20 +636,20 @@ object OpelDriveModeDetector {
 
         // RPM-Analyse
         when {
-            rpm in 1500.0..2500.0 && throttle < 40 -> score += 10  // Optimaler ECO-Bereich
-            rpm in 2000.0..3500.0 && throttle in 40.0..60.0 -> score += 5  // Guter Normalbetrieb
-            rpm in 3000.0..5000.0 && throttle > 60 -> score += 5  // Angemessener Sportbetrieb
-            rpm > 5500 -> score -= 15  // Zu hohe Drehzahl
-            rpm < 1000 && throttle > 30 -> score -= 10  // Unnoetig hohe Last im niedrigen Bereich
+            rpm in 1500.0..2500.0 && throttle < 40 -> score += 10 // Optimaler ECO-Bereich
+            rpm in 2000.0..3500.0 && throttle in 40.0..60.0 -> score += 5 // Guter Normalbetrieb
+            rpm in 3000.0..5000.0 && throttle > 60 -> score += 5 // Angemessener Sportbetrieb
+            rpm > 5500 -> score -= 15 // Zu hohe Drehzahl
+            rpm < 1000 && throttle > 30 -> score -= 10 // Unnoetig hohe Last im niedrigen Bereich
         }
 
         // Geschwindigkeits-RPM-Korrelation
         if (speed > 0) {
-            val expectedRpmForSpeed = speed * 30  // Grob-Approximation
+            val expectedRpmForSpeed = speed * 30 // Grob-Approximation
             val rpmDeviation = kotlin.math.abs(rpm - expectedRpmForSpeed)
             when {
-                rpmDeviation < 500 -> score += 5  // Niedrigste Abweichung
-                rpmDeviation > 2000 -> score -= 10  // Starke Abweichung
+                rpmDeviation < 500 -> score += 5 // Niedrigste Abweichung
+                rpmDeviation > 2000 -> score -= 10 // Starke Abweichung
             }
         }
 
@@ -663,7 +658,7 @@ object OpelDriveModeDetector {
 
     /**
      * Throttle-Response-Qualitaet bewerten
-     * 
+     *
      * @return Qualitaets-Score von 0-100
      */
     fun evaluateThrottleResponseQuality(
@@ -671,25 +666,25 @@ object OpelDriveModeDetector {
         throttlePosition: Double,
         engineLoad: Double
     ): Int {
-        if (acceleratorPedal < 1.0) return 50  // Kein Gas gegeben
+        if (acceleratorPedal < 1.0) { return 50 } // Kein Gas gegeben
 
         val responseRatio = if (acceleratorPedal > 0) {
             throttlePosition / acceleratorPedal
-        } else 0.0
+        } else { 0.0 }
 
         var score = 50
 
         // Response-Verhaeltnis bewerten
         when {
-            responseRatio in 0.85..0.95 -> score += 30  // Optimal (direkt aber nicht aggressiv)
-            responseRatio > 0.95 -> score += 20  // Sehr direkt
-            responseRatio in 0.70..0.85 -> score += 10  // Etwas gedrosselt (ECO-Mode?)
-            responseRatio < 0.50 -> score -= 20  // Trage Ansprache
+            responseRatio in 0.85..0.95 -> score += 30 // Optimal (direkt aber nicht aggressiv)
+            responseRatio > 0.95 -> score += 20 // Sehr direkt
+            responseRatio in 0.70..0.85 -> score += 10 // Etwas gedrosselt (ECO-Mode?)
+            responseRatio < 0.50 -> score -= 20 // Trage Ansprache
         }
 
         // Last-Kompensation
         if (engineLoad > 80 && responseRatio < 0.8) {
-            score -= 15  // Hohe Last mit trager Response ist schlecht
+            score -= 15 // Hohe Last mit trager Response ist schlecht
         }
 
         return score.coerceIn(0, 100)

@@ -48,10 +48,10 @@ class MaintenanceNotificationManager(private val context: Context) {
         currentKm: Int
     ): List<MaintenanceReminder> {
         val reminders = mutableListOf<MaintenanceReminder>()
-        
+
         for (item in maintenanceItems) {
             val remaining = item.intervalKm - (currentKm - item.lastServiceKm)
-            
+
             when {
                 remaining <= 0 -> {
                     reminders.add(MaintenanceReminder(
@@ -91,7 +91,7 @@ class MaintenanceNotificationManager(private val context: Context) {
                 }
             }
         }
-        
+
         return reminders.sortedBy { it.remainingKm }
     }
 

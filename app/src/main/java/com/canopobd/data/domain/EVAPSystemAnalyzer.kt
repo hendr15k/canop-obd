@@ -45,7 +45,6 @@ class EVAPSystemAnalyzer {
         private const val VAPOR_PRESSURE_LEAK_THRESHOLD = -300.0
         private const val VAPOR_PRESSURE_BLOCKED_THRESHOLD = 1500.0
         private const val EVAP_TEMP_MIN = 5.0
-        private const val EVAP_TEMP_MAX = 60.0
         private const val FUEL_LEVEL_MIN_PURGE = 15.0
         private const val FUEL_LEVEL_MAX_PURGE = 85.0
         private const val LARGE_LEAK_THRESHOLD = 1000
@@ -66,9 +65,9 @@ class EVAPSystemAnalyzer {
         val conditionScore = evaluateConditions(input, issues)
 
         val rawScore = (dtcScore * WEIGHT_DTC +
-                purgeScore * WEIGHT_PURGE +
-                pressureScore * WEIGHT_PRESSURE +
-                conditionScore * WEIGHT_CONDITIONS) / 100
+            purgeScore * WEIGHT_PURGE +
+            pressureScore * WEIGHT_PRESSURE +
+            conditionScore * WEIGHT_CONDITIONS) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
         val (hasLeak, leakSize) = detectLeak(input.vaporPressure, input.activeDTCs, issues)
@@ -248,8 +247,8 @@ class EVAPSystemAnalyzer {
         return when {
             issues.isEmpty() -> {
                 "EVAP-System funktioniert normal. " +
-                        "Purge: ${"%.1f".format(status.purgeDuty)}%, " +
-                        "Tankdruck: ${"%.0f".format(status.tankPressure)} Pa."
+                    "Purge: ${"%.1f".format(status.purgeDuty)}%, " +
+                    "Tankdruck: ${"%.0f".format(status.tankPressure)} Pa."
             }
             status.hasLeak -> {
                 val leakDesc = when (status.leakSize) {
@@ -259,12 +258,12 @@ class EVAPSystemAnalyzer {
                     null -> "Leck erkannt"
                 }
                 "$leakDesc im EVAP-System. " +
-                        "Tankdruck: ${"%.0f".format(status.tankPressure)} Pa."
+                    "Tankdruck: ${"%.0f".format(status.tankPressure)} Pa."
             }
             else -> {
                 val issueNames = issues.map { it.label }
                 "EVAP-Problem: ${issueNames.joinToString(", ")}. " +
-                        "Purge: ${"%.1f".format(status.purgeDuty)}%."
+                    "Purge: ${"%.1f".format(status.purgeDuty)}%."
             }
         }
     }
@@ -275,28 +274,28 @@ class EVAPSystemAnalyzer {
             issues.isEmpty() -> "Keine Massnahmen erforderlich."
             issues.any { it == EVAPIssue.FUEL_CAP_LOSE } -> {
                 "Tankdeckel pruefen und festziehen. " +
-                        "Nach dem Tanken pruefen ob der Deckel richtig sitzt."
+                    "Nach dem Tanken pruefen ob der Deckel richtig sitzt."
             }
             issues.any { it == EVAPIssue.LARGE_LEAK } -> {
                 "SOFORT: Tankdeckel, Tankflasche und EVAP-Leitungen auf " +
-                        "Undichtigkeit pruefen. Grosses Leck erkannt."
+                    "Undichtigkeit pruefen. Grosses Leck erkannt."
             }
             issues.any { it == EVAPIssue.SMALL_LEAK } -> {
                 "Kleines Leck im EVAP-System. Tankdeckel, Schlaeuche " +
-                        "und Dichtungen pruefen."
+                    "und Dichtungen pruefen."
             }
             issues.any { it == EVAPIssue.PURGE_VALVE_FAULT } -> {
                 "Purge-Ventil pruefen. Ventil kann klemmen oder " +
-                        "Verkabelung defekt sein."
+                    "Verkabelung defekt sein."
             }
             issues.any { it == EVAPIssue.CANISTER_SATURATED } -> {
                 "Aktivkohlebehaelter moeglich gesaettigt. " +
-                        "Bei Ueberladung des Tanks kann Kraftstoff in " +
-                        "den Adsorber gelangen."
+                    "Bei Ueberladung des Tanks kann Kraftstoff in " +
+                    "den Adsorber gelangen."
             }
             else -> {
                 "EVAP-System bei Werkstatt pruefen lassen. " +
-                        "Drucktest und Undichtigkeitspruefung durchfuehren."
+                    "Drucktest und Undichtigkeitspruefung durchfuehren."
             }
         }
     }

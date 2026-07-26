@@ -18,17 +18,25 @@ data class CANMessage(
 
     val asciiRepresentation: String
         get() = data.take(dlc).map { b ->
-            if (b.toInt() in 0x20..0x7E) b.toInt().toChar() else '.'
+            if (b.toInt() in 0x20..0x7E) {
+                b.toInt().toChar()
+            } else {
+                '.'
+            }
         }.joinToString("")
 
     val isValid: Boolean
         get() = canId.isNotEmpty() && data.isNotEmpty()
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is CANMessage) return false
+        if (this === other) {
+            return true
+        }
+        if (other !is CANMessage) {
+            return false
+        }
         return timestamp == other.timestamp && canId == other.canId &&
-                data.contentEquals(other.data) && isExtended == other.isExtended && dlc == other.dlc
+            data.contentEquals(other.data) && isExtended == other.isExtended && dlc == other.dlc
     }
 
     override fun hashCode(): Int {
@@ -60,14 +68,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
     private val messagesLock = Any()
     companion object {
         private const val TAG = "CANMonitor"
-        private const val COMMAND_TIMEOUT_MS = 2000L
-        private const val MAX_RETRY = 2
-
-        private val ECM_ADDRESS = "7E0"
-        private val TCM_ADDRESS = "7E1"
-        private val BCM_ADDRESS = "7E2"
-        private val ABS_ADDRESS = "7E3"
-        private val RESPONSE_MASK = "7E8"
+        private const val ECM_ADDRESS = "7E0"
 
         val COMMON_IDS = mapOf(
             "7E0" to "ECM (Motorsteuergeraet)",
@@ -134,7 +135,9 @@ class CANMonitor(private val connection: ELM327BTConnection) {
     }
 
     fun startMonitoring(onMessage: ((CANMessage) -> Unit)? = null) {
-        if (_isMonitoring.value) return
+        if (_isMonitoring.value) {
+            return
+        }
         _isMonitoring.value = true
         synchronized(messagesLock) {
             messagesInternal.clear()
@@ -265,7 +268,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
         try {
             val hexId = canId.uppercase().replace(" ", "").replace("0X", "")
             val hexData = data.joinToString("") { "%02X".format(it) }
-            val command = "${hexId}${hexData}"
+            val command = "${hexId}$hexData"
             val response = sendCommandWithTimeout(command)
             emit(response)
         } catch (e: Exception) {
@@ -297,7 +300,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
         try {
             val hexId = canId.uppercase().replace(" ", "").replace("0X", "")
             val hexPid = pid.uppercase().replace(" ", "").replace("0X", "")
-            val command = "${hexId}${hexPid}"
+            val command = "${hexId}$hexPid"
             val response = sendCommandWithTimeout(command)
             val messages = parseCANResponse(response)
             if (messages.isNotEmpty()) {

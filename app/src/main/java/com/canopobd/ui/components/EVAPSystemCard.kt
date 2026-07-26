@@ -47,7 +47,7 @@ fun EVAPSystemCard(
     val infiniteTransition = rememberInfiniteTransition(label = "evap_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isLeak) 0.8f else 0.3f,
+        targetValue = if (isLeak) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -65,7 +65,7 @@ fun EVAPSystemCard(
                         color = colors.gaugeRed.copy(alpha = pulseAlpha),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,
@@ -258,7 +258,7 @@ private fun PurgeDutyCycleSection(
                             brush = Brush.horizontalGradient(
                                 colors = listOf(
                                     colors.gaugeGreen.copy(alpha = 0.6f),
-                                    if (isActive) colors.gaugeGreen else colors.textDim
+                                    if (isActive) { colors.gaugeGreen } else { colors.textDim }
                                 )
                             )
                         )
@@ -299,7 +299,7 @@ private fun TankPressureSection(
 
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = if (tankPressure != 0.0) "%.1f".format(tankPressure) else "—",
+                    text = if (tankPressure != 0.0) { "%.1f".format(tankPressure) } else { "—" },
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = pressureColor

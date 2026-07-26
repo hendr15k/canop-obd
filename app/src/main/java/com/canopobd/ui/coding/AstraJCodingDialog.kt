@@ -96,12 +96,12 @@ private fun getSubcategories(option: AstraJCodingModels.CodingOption): String {
 private fun getOptionTags(option: AstraJCodingModels.CodingOption): List<String> {
     val tags = mutableListOf<String>()
     tags.add(getSubcategories(option))
-    if (option.hardwareRequired != null) tags.add("Hardware")
-    if (option.requiresCarPass) tags.add("CarPass")
-    if (option.displayName.lowercase().contains("licht")) tags.add("Beleuchtung")
-    if (option.displayName.lowercase().contains("fenster") || option.displayName.lowercase().contains("spiegel")) tags.add("Komfort")
-    if (option.displayName.lowercase().contains("motor") || option.displayName.lowercase().contains("start")) tags.add("Antrieb")
-    if (option.displayName.lowercase().contains("sicherheit") || option.displayName.lowercase().contains("alarm")) tags.add("Sicherheit")
+    if (option.hardwareRequired != null) { tags.add("Hardware") }
+    if (option.requiresCarPass) { tags.add("CarPass") }
+    if (option.displayName.lowercase().contains("licht")) { tags.add("Beleuchtung") }
+    if (option.displayName.lowercase().contains("fenster") || option.displayName.lowercase().contains("spiegel")) { tags.add("Komfort") }
+    if (option.displayName.lowercase().contains("motor") || option.displayName.lowercase().contains("start")) { tags.add("Antrieb") }
+    if (option.displayName.lowercase().contains("sicherheit") || option.displayName.lowercase().contains("alarm")) { tags.add("Sicherheit") }
     return tags
 }
 
@@ -113,9 +113,9 @@ private fun formatRelativeTime(timestamp: Long): String {
     val days = hours / 24
     return when {
         seconds < 60 -> "Gerade eben"
-        minutes < 60 -> "Vor ${minutes} Min."
-        hours < 24 -> "Vor ${hours} Std."
-        days < 7 -> "Vor ${days} Tg."
+        minutes < 60 -> "Vor $minutes Min."
+        hours < 24 -> "Vor $hours Std."
+        days < 7 -> "Vor $days Tg."
         else -> "Vor >7 Tg."
     }
 }
@@ -368,8 +368,8 @@ private fun AstraJCodingTopBar(
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = if (hasNavigation) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
-                    contentDescription = if (hasNavigation) "Zurück" else "Schließen"
+                    imageVector = if (hasNavigation) { Icons.AutoMirrored.Filled.ArrowBack } else { Icons.Default.Close },
+                    contentDescription = if (hasNavigation) { "Zurück" } else { "Schließen" }
                 )
             }
         },
@@ -377,9 +377,9 @@ private fun AstraJCodingTopBar(
             if (option != null) {
                 IconButton(onClick = onToggleFavorite) {
                     Icon(
-                        imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
-                        contentDescription = if (isFavorite) "Favorit entfernen" else "Als Favorit hinzufügen",
-                        tint = if (isFavorite) Color(0xFFFBBF24) else MaterialTheme.colorScheme.onSurfaceVariant
+                        imageVector = if (isFavorite) { Icons.Default.Star } else { Icons.Default.StarBorder },
+                        contentDescription = if (isFavorite) { "Favorit entfernen" } else { "Als Favorit hinzufügen" },
+                        tint = if (isFavorite) { Color(0xFFFBBF24) } else { MaterialTheme.colorScheme.onSurfaceVariant }
                     )
                 }
             }
@@ -449,7 +449,7 @@ private fun FavoritesChipRow(
     onOptionClick: (AstraJCodingModels.CodingOption) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (favorites.isEmpty()) return
+    if (favorites.isEmpty()) { return }
 
     val allOptions = remember {
         AstraJCodingRepository.getAllCategories().flatMap { it.options }
@@ -458,7 +458,7 @@ private fun FavoritesChipRow(
         favorites.mapNotNull { id -> allOptions.find { it.id == id } }
     }
 
-    if (favoriteOptions.isEmpty()) return
+    if (favoriteOptions.isEmpty()) { return }
 
     Column(modifier = modifier) {
         Row(
@@ -514,7 +514,7 @@ private fun HistorySection(
     onToggle: () -> Unit,
     onClear: () -> Unit
 ) {
-    if (history.isEmpty()) return
+    if (history.isEmpty()) { return }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -544,7 +544,7 @@ private fun HistorySection(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Icon(
-                imageVector = if (showHistory) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                imageVector = if (showHistory) { Icons.Default.ExpandLess } else { Icons.Default.ExpandMore },
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
             )
@@ -681,7 +681,7 @@ private fun StatisticsBanner(
             StatItem(
                 value = "$highRiskCount",
                 label = "Risiko: hoch",
-                valueColor = if (highRiskCount > 0) gaugeRed else gaugeGreen
+                valueColor = if (highRiskCount > 0) { gaugeRed } else { gaugeGreen }
             )
         }
     }
@@ -727,14 +727,13 @@ private fun CategorySelector(
         categories.flatMap { cat -> cat.options.map { it to cat } }
     }
     val filteredOptions = remember(searchQuery) {
-        if (searchQuery.isBlank()) emptyList()
-        else {
+        if (searchQuery.isBlank()) { emptyList() } else {
             val query = searchQuery.lowercase().trim()
             allOptions.filter { (option, _) ->
                 option.displayName.lowercase().contains(query) ||
-                        option.description.lowercase().contains(query) ||
-                        getOptionTags(option).any { it.lowercase().contains(query) } ||
-                        option.module.displayName.lowercase().contains(query)
+                    option.description.lowercase().contains(query) ||
+                    getOptionTags(option).any { it.lowercase().contains(query) } ||
+                    option.module.displayName.lowercase().contains(query)
             }.map { it.first }
         }
     }
@@ -967,7 +966,7 @@ private fun CategoryCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (highRiskCount > 1) "$highRiskCount risikante Codierungen" else "$highRiskCount risikante Codierung",
+                            text = if (highRiskCount > 1) { "$highRiskCount risikante Codierungen" } else { "$highRiskCount risikante Codierung" },
                             fontSize = 11.sp,
                             color = gaugeRed.copy(alpha = 0.8f)
                         )
@@ -1009,7 +1008,7 @@ private fun SubcategoryChips(
                     Text(
                         text = sub,
                         fontSize = 13.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = if (isSelected) { FontWeight.Bold } else { FontWeight.Normal }
                     )
                 },
                 leadingIcon = if (isSelected) {
@@ -1020,7 +1019,7 @@ private fun SubcategoryChips(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                } else null,
+                } else { null },
                 shape = RoundedCornerShape(20.dp)
             )
         }
@@ -1042,8 +1041,11 @@ private fun CodingCategoryDetail(
     }
 
     val filteredOptions = remember(category, selectedSubcategory) {
-        if (selectedSubcategory == "Alle") category.options
-        else category.options.filter { getSubcategories(it) == selectedSubcategory }
+        if (selectedSubcategory == "Alle") {
+            category.options
+        } else {
+            category.options.filter { getSubcategories(it) == selectedSubcategory }
+        }
     }
 
     LazyColumn(
@@ -1145,9 +1147,9 @@ private fun CodingOptionCard(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
-                            contentDescription = if (isFavorite) "Favorit entfernen" else "Favorit hinzufügen",
-                            tint = if (isFavorite) Color(0xFFFBBF24) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            imageVector = if (isFavorite) { Icons.Default.Star } else { Icons.Default.StarBorder },
+                            contentDescription = if (isFavorite) { "Favorit entfernen" } else { "Favorit hinzufügen" },
+                            tint = if (isFavorite) { Color(0xFFFBBF24) } else { MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) },
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1251,7 +1253,7 @@ private fun CodingOptionDetail(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = if (codingResult.success) Icons.Default.CheckCircle else Icons.Default.Error,
+                            imageVector = if (codingResult.success) { Icons.Default.CheckCircle } else { Icons.Default.Error },
                             contentDescription = null,
                             tint = resultColor,
                             modifier = Modifier.size(24.dp)
@@ -1259,7 +1261,7 @@ private fun CodingOptionDetail(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = if (codingResult.success) "Erfolgreich gespeichert!" else "Fehler",
+                                text = if (codingResult.success) { "Erfolgreich gespeichert!" } else { "Fehler" },
                                 fontWeight = FontWeight.Bold,
                                 color = resultColor
                             )
@@ -1434,7 +1436,7 @@ private fun CodingOptionDetail(
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
-                    imageVector = if (showDescription) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    imageVector = if (showDescription) { Icons.Default.ExpandLess } else { Icons.Default.ExpandMore },
                     contentDescription = null,
                     modifier = Modifier.size(20.dp)
                 )
@@ -1477,14 +1479,15 @@ private fun CodingOptionDetail(
                         selectedValue = value
                     },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected)
+                    containerColor = if (isSelected) {
                         MaterialTheme.colorScheme.primaryContainer
-                    else
+                    } else {
                         MaterialTheme.colorScheme.surfaceVariant
+                    }
                 ),
                 border = if (isSelected) {
                     androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                } else null,
+                } else { null },
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
@@ -1501,7 +1504,7 @@ private fun CodingOptionDetail(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = value.displayName,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (isSelected) { FontWeight.Bold } else { FontWeight.Normal },
                             fontSize = 14.sp
                         )
                         if (value.description.isNotEmpty()) {
@@ -1545,7 +1548,7 @@ private fun CodingOptionDetail(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (codingInProgress) "Wird gespeichert..." else "Codierung speichern",
+                    text = if (codingInProgress) { "Wird gespeichert..." } else { "Codierung speichern" },
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -1684,7 +1687,8 @@ private fun ProfileCardItem(
 private fun ProfileApplyPreview(
     profile: AstraJCodingModels.CodingProfile,
     codingInProgress: Boolean,
-    onApplyAll: (AstraJCodingModels.CodingProfile, Map<AstraJCodingModels.CodingOption, AstraJCodingModels.CodingValue>) -> Unit,
+    onApplyAll:
+        (AstraJCodingModels.CodingProfile, Map<AstraJCodingModels.CodingOption, AstraJCodingModels.CodingValue>) -> Unit,
     onBack: () -> Unit
 ) {
     val allOptions = remember {
@@ -1775,10 +1779,11 @@ private fun ProfileApplyPreview(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isEnabled)
+                    containerColor = if (isEnabled) {
                         MaterialTheme.colorScheme.surfaceVariant
-                    else
+                    } else {
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    }
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -1800,10 +1805,11 @@ private fun ProfileApplyPreview(
                             text = option.displayName,
                             fontWeight = FontWeight.Medium,
                             fontSize = 14.sp,
-                            color = if (isEnabled)
+                            color = if (isEnabled) {
                                 MaterialTheme.colorScheme.onSurface
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1825,7 +1831,7 @@ private fun ProfileApplyPreview(
                                 text = target.displayName,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (isEnabled) gaugeGreen else gaugeGreen.copy(alpha = 0.4f)
+                                color = if (isEnabled) { gaugeGreen } else { gaugeGreen.copy(alpha = 0.4f) }
                             )
                         }
                     }

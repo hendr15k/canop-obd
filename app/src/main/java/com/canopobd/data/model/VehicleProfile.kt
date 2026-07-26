@@ -25,7 +25,7 @@ data class VehicleProfile(
 ) {
     val displayNameFull: String get() = "$manufacturer $model $year ($powerHp PS)"
     val powerLabel: String get() = "$powerKw kW ($powerHp PS)"
-    val torqueLabel: String get() = "${torqueNm} Nm"
+    val torqueLabel: String get() = "$torqueNm Nm"
 }
 
 object VehicleProfiles {

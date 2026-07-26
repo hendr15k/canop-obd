@@ -1,8 +1,6 @@
 package com.canopobd.data.repository
 
-import android.bluetooth.BluetoothAdapter
-import android.content.Context
-import org.junit.Assert.*
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**

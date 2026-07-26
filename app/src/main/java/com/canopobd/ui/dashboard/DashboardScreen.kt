@@ -1,8 +1,5 @@
 package com.canopobd.ui.dashboard
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,11 +74,6 @@ import com.canopobd.ui.turbo.TurboCoolDownDialog
 import com.canopobd.data.model.TurboCoolDownState
 import com.canopobd.ui.vehicleinfo.VehicleInfoDialog
 import com.canopobd.ui.knownissues.KnownIssuesDialog
-import com.canopobd.ui.dashboard.OilHealthCard
-import com.canopobd.ui.dashboard.SensorValidationCard
-import com.canopobd.ui.dashboard.DriveStyleCard
-import com.canopobd.ui.dashboard.EfficiencyCard
-import com.canopobd.ui.dashboard.FuelSystemCard
 import com.canopobd.ui.coding.AstraJCodingDialog
 import com.canopobd.data.model.AstraJCodingModels
 import com.canopobd.ui.profile.QuickActionsDialog
@@ -279,7 +271,8 @@ fun DashboardScreen(
     codingInProgress: Boolean,
     codingResult: com.canopobd.data.model.AstraJCodingModels.CodingResult?,
     onToggleCodingDialog: () -> Unit,
-    onApplyCodingOption: (com.canopobd.data.model.AstraJCodingModels.CodingOption, com.canopobd.data.model.AstraJCodingModels.CodingValue) -> Unit,
+    onApplyCodingOption:
+        (com.canopobd.data.model.AstraJCodingModels.CodingOption, com.canopobd.data.model.AstraJCodingModels.CodingValue) -> Unit,
     onClearCodingResult: () -> Unit,
     appThemeMode: com.canopobd.data.model.AppThemeMode,
     onSetAppThemeMode: (com.canopobd.data.model.AppThemeMode) -> Unit,
@@ -1188,7 +1181,7 @@ private fun DashboardHeader(
                     if (remoteServerRunning) {
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "· ${remoteConnectedClients} PC",
+                            text = "· $remoteConnectedClients PC",
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.success
                         )
@@ -1268,11 +1261,11 @@ private fun DashboardHeader(
                 onClick = onToggleTripHistory
             )
             QuickTile(
-                icon = if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
+                icon = if (isGPSTracking) { Icons.Filled.LocationOn } else { Icons.Filled.LocationSearching },
                 label = "GPS",
                 isActive = isGPSTracking,
-                accentColor = if (isGPSTracking) colors.success else null,
-                onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() }
+                accentColor = if (isGPSTracking) { colors.success } else { null },
+                onClick = { if (isGPSTracking) { onStopGPSTrack() } else { onStartGPSTrack() } }
             )
             QuickTile(
                 icon = Icons.Filled.Dashboard,
@@ -1313,7 +1306,7 @@ private fun DashboardHeader(
                 icon = Icons.Filled.Warning,
                 label = "DTC",
                 accentColor = colors.caution,
-                badgeColor = if (dtcResponse != null && dtcResponse.codes.isNotEmpty()) colors.critical else null,
+                badgeColor = if (dtcResponse != null && dtcResponse.codes.isNotEmpty()) { colors.critical } else { null },
                 onClick = onToggleDTCDialog
             )
             QuickTile(
@@ -1409,8 +1402,8 @@ private fun DashboardHeader(
                 label = "Fenster",
                 accentColor = colors.gaugeCyan,
                 isActive = windowIsMoving,
-                badgeColor = if (windowChildLock) colors.warning else if (windowOpenCount > 0) colors.gaugeCyan else null,
-                badgeText = if (windowChildLock) "🔒" else if (windowOpenCount > 0) "$windowOpenCount" else null,
+                badgeColor = if (windowChildLock) { colors.warning } else if (windowOpenCount > 0) { colors.gaugeCyan } else { null },
+                badgeText = if (windowChildLock) { "🔒" } else if (windowOpenCount > 0) { "$windowOpenCount" } else { null },
                 onClick = onToggleWindowControl
             )
             QuickTile(
@@ -1434,17 +1427,17 @@ private fun DashboardHeader(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             QuickTile(
-                icon = if (recordingActive) Icons.Filled.FiberManualRecord else Icons.Filled.Analytics,
+                icon = if (recordingActive) { Icons.Filled.FiberManualRecord } else { Icons.Filled.Analytics },
                 label = "Log",
                 isActive = recordingActive,
-                accentColor = if (recordingActive) colors.critical else colors.primary,
+                accentColor = if (recordingActive) { colors.critical } else { colors.primary },
                 onClick = onToggleDataLog
             )
             QuickTile(
-                icon = if (remoteServerRunning) Icons.Filled.Wifi else Icons.Filled.WifiOff,
+                icon = if (remoteServerRunning) { Icons.Filled.Wifi } else { Icons.Filled.WifiOff },
                 label = "Remote",
                 isActive = remoteServerRunning,
-                accentColor = if (remoteServerRunning) colors.success else colors.primary,
+                accentColor = if (remoteServerRunning) { colors.success } else { colors.primary },
                 onClick = onToggleRemoteDialog
             )
             QuickTile(
@@ -1454,10 +1447,10 @@ private fun DashboardHeader(
                 onClick = onToggleTurboCooldown
             )
             QuickTile(
-                icon = if (activeAlerts.isNotEmpty()) Icons.Filled.NotificationImportant else Icons.Filled.Notifications,
+                icon = if (activeAlerts.isNotEmpty()) { Icons.Filled.NotificationImportant } else { Icons.Filled.Notifications },
                 label = "Alarm",
                 isActive = activeAlerts.isNotEmpty(),
-                accentColor = if (activeAlerts.isNotEmpty()) colors.critical else colors.textTertiary,
+                accentColor = if (activeAlerts.isNotEmpty()) { colors.critical } else { colors.textTertiary },
                 onClick = onToggleAlertSettings
             )
             QuickTile(
@@ -1502,7 +1495,7 @@ private fun AlertBanner(alerts: List<ActiveAlert>, colors: AppColors) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (alerts.size > 1) "${alert.message} (+${alerts.size - 1})" else alert.message,
+                    text = if (alerts.size > 1) { "${alert.message} (+${alerts.size - 1})" } else { alert.message },
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.textPrimary
                 )
@@ -1595,8 +1588,8 @@ private fun SystemDiagnoseCard(
                 else -> colors.critical
             }
             val emPct = if (emissionsReadiness != null) {
-                if (emissionsReadiness.totalCount > 0) (emissionsReadiness.completedCount * 100) / emissionsReadiness.totalCount else 0
-            } else 0
+                if (emissionsReadiness.totalCount > 0) { (emissionsReadiness.completedCount * 100) / emissionsReadiness.totalCount } else { 0 }
+            } else { 0 }
             val emColor = when {
                 emissionsReadiness == null -> colors.textTertiary
                 emPct >= 80 -> colors.success
@@ -1611,7 +1604,7 @@ private fun SystemDiagnoseCard(
             MiniStatusCard(
                 label = "SAI",
                 icon = Icons.Filled.Air,
-                value = if (saiAnalysis?.status?.isActive == true) "An" else "Aus",
+                value = if (saiAnalysis?.status?.isActive == true) { "An" } else { "Aus" },
                 subValue = "${saiAnalysis?.healthScore?.toInt() ?: 0}%",
                 color = saiColor,
                 colors = colors,
@@ -1620,7 +1613,7 @@ private fun SystemDiagnoseCard(
             MiniStatusCard(
                 label = "Abgas",
                 icon = Icons.Filled.Verified,
-                value = "${emPct}%",
+                value = "$emPct%",
                 subValue = null,
                 color = emColor,
                 colors = colors,
@@ -1766,7 +1759,7 @@ private fun DashboardFooter(
             )
             FooterStat(
                 label = "CONN",
-                value = if (connectionStats.quality != ConnectionQuality.UNKNOWN) connectionStats.quality.label else "—",
+                value = if (connectionStats.quality != ConnectionQuality.UNKNOWN) { connectionStats.quality.label } else { "—" },
                 color = when (connectionStats.quality) {
                     ConnectionQuality.EXCELLENT, ConnectionQuality.GOOD -> colors.success
                     ConnectionQuality.FAIR -> colors.caution
@@ -1874,11 +1867,11 @@ private fun BluetoothConnectButton(
     onConnectLast: () -> Unit,
     onDisconnect: () -> Unit
 ) {
-    if (emulatorMode) return
+    if (emulatorMode) { return }
     val visual = rememberBtButtonVisual(connectionState, hasLastDevice)
     val isConnected = connectionState is OBDConnectionState.Connected
     Surface(
-        onClick = { if (!visual.isBusy) (if (isConnected) onDisconnect() else onConnectLast()) },
+        onClick = { if (!visual.isBusy) { (if (isConnected) { onDisconnect() } else { onConnectLast() }) } },
         enabled = !visual.isBusy,
         shape = RoundedCornerShape(AppRadius.sm),
         color = visual.accent.copy(alpha = 0.16f),

@@ -1,8 +1,6 @@
 package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
-import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * Turbo-Spule-Analyse fuer Opel Astra J 1.4 Turbo (A14NET)
@@ -125,7 +123,7 @@ class TurboSpoolAnalyzer(
         val expectedTime = calculateExpectedSpoolTime(input)
         val spoolDeviation = if (expectedTime > 0) {
             ((spoolTime - expectedTime) / expectedTime) * 100.0
-        } else 0.0
+        } else { 0.0 }
 
         // 1. Wastegate-Response-Zeit
         val wgResponse = evaluateWastegateResponse(input)
@@ -220,7 +218,7 @@ class TurboSpoolAnalyzer(
         input: SpoolInput
     ): SpoolStatus {
         // Kritisch: sehr hohe Spule-Zeit
-        if (spoolTime > SPOOL_CRITICAL_MAX) return SpoolStatus.CRITICAL
+        if (spoolTime > SPOOL_CRITICAL_MAX) { return SpoolStatus.CRITICAL }
 
         // Kritisch: schlechte Wastegate-Response
         if (wgResponse < 20 && input.wastegateDutyIdle > WG_DUTY_IDLE_MIN) {
@@ -233,13 +231,13 @@ class TurboSpoolAnalyzer(
         }
 
         // Schlecht: hohe Spule-Zeit
-        if (spoolTime > SPOOL_SLOW_MAX) return SpoolStatus.POOR
+        if (spoolTime > SPOOL_SLOW_MAX) { return SpoolStatus.POOR }
 
         // Schlecht: mangelhafte Wastegate-Response
-        if (wgResponse < 30) return SpoolStatus.POOR
+        if (wgResponse < 30) { return SpoolStatus.POOR }
 
         // Langsame Spule
-        if (spoolTime > SPOOL_GOOD_MAX) return SpoolStatus.SLOW_SPOOL
+        if (spoolTime > SPOOL_GOOD_MAX) { return SpoolStatus.SLOW_SPOOL }
 
         // Optimal: alle Kriterien erfuillt
         if (spoolTime <= SPOOL_OPTIMAL_MAX && wgResponse >= 40 && turboAccel >= TURBO_ACCEL_GOOD) {
@@ -286,8 +284,8 @@ class TurboSpoolAnalyzer(
         }
 
         val weightedScore = (spoolScore * WEIGHT_SPOOL_TIME +
-                wgScore * WEIGHT_WG_RESPONSE +
-                accelScore * WEIGHT_TURBO_ACCEL) / 100.0
+            wgScore * WEIGHT_WG_RESPONSE +
+            accelScore * WEIGHT_TURBO_ACCEL) / 100.0
 
         return (weightedScore * loadFactor).toInt().coerceIn(0, 100)
     }
@@ -315,24 +313,24 @@ class TurboSpoolAnalyzer(
         return when (status) {
             SpoolStatus.OPTIMAL -> {
                 "Turbo-Spule optimal: ${"%.2f".format(spoolTime)}s (Soll: ${"%.2f".format(expectedTime)}s). " +
-                        "Wastegate-Response: ${"%.0f".format(input.wastegateDutyIdle - input.wastegateDutyAtSpool)}%."
+                    "Wastegate-Response: ${"%.0f".format(input.wastegateDutyIdle - input.wastegateDutyAtSpool)}%."
             }
             SpoolStatus.GOOD -> {
                 "Turbo-Spule gut: ${"%.2f".format(spoolTime)}s. " +
-                        "Leichte Verbesserungsmoeglichkeiten."
+                    "Leichte Verbesserungsmoeglichkeiten."
             }
             SpoolStatus.SLOW_SPOOL -> {
                 "Langsame Turbo-Spule: ${"%.2f".format(spoolTime)}s (Soll: ${"%.2f".format(expectedTime)}s). " +
-                        "Wastegate-Response: ${"%.0f".format(input.wastegateDutyIdle - input.wastegateDutyAtSpool)}%."
+                    "Wastegate-Response: ${"%.0f".format(input.wastegateDutyIdle - input.wastegateDutyAtSpool)}%."
             }
             SpoolStatus.POOR -> {
                 "Turbo-Spule schlecht: ${"%.2f".format(spoolTime)}s. " +
-                        "Wastegate-Response mangelhaft. Pruefung empfohlen."
+                    "Wastegate-Response mangelhaft. Pruefung empfohlen."
             }
             SpoolStatus.CRITICAL -> {
                 "KRITISCH: Turbo-Spule versagt! ${"%.2f".format(spoolTime)}s (Soll: ${"%.2f".format(expectedTime)}s). " +
-                        "Wastegate-Response: ${"%.0f".format(input.wastegateDutyIdle - input.wastegateDutyAtSpool)}%. " +
-                        "Turbo-Acceleration: ${"%.0f".format(input.turboRpmAtSpool)} rpm/s."
+                    "Wastegate-Response: ${"%.0f".format(input.wastegateDutyIdle - input.wastegateDutyAtSpool)}%. " +
+                    "Turbo-Acceleration: ${"%.0f".format(input.turboRpmAtSpool)} rpm/s."
             }
             SpoolStatus.INSUFFICIENT_DATA -> {
                 "Unvollstaendige Daten fuer Spule-Analyse."
@@ -350,16 +348,16 @@ class TurboSpoolAnalyzer(
             }
             SpoolStatus.SLOW_SPOOL -> {
                 "Turbo-Inspektion empfohlen. Wastegate und Unterdruckleitungen pruefen. " +
-                        "Oelstand pruefen (${input.boostPressureKpa} kPa)."
+                    "Oelstand pruefen (${input.boostPressureKpa} kPa)."
             }
             SpoolStatus.POOR -> {
                 "Turbo-Health pruefen. Waagen-Response und Druckluft systematisch testen. " +
-                        "Oelwechsel mit Dexos2 5W-30 durchfuehren."
+                    "Oelwechsel mit Dexos2 5W-30 durchfuehren."
             }
             SpoolStatus.CRITICAL -> {
                 "SOFORT Werkstatt! Turbo-Spule kritisch. " +
-                        "Waagen-Duty-Cycle und -Druck messen. " +
-                        "Turbo-Defekt kann zu Motorschaden fuehren."
+                    "Waagen-Duty-Cycle und -Druck messen. " +
+                    "Turbo-Defekt kann zu Motorschaden fuehren."
             }
             SpoolStatus.INSUFFICIENT_DATA -> {
                 "Vollgas-Beschleunigung (3. Gang, 2000-5000 rpm) fuer Analyse durchfuehren."

@@ -26,7 +26,7 @@ import com.canopobd.data.model.AstraJ14TurboCalibration
  * - Hydraulischer Straffer Versagen: plötzlicher Totalausfall
  */
 class ChainTensionerAnalyzer(
-    private val calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
+    calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
 ) {
 
     /**
@@ -111,9 +111,9 @@ class ChainTensionerAnalyzer(
 
         // Gesamtbewertung berechnen
         val rawScore = (dtcScore * WEIGHT_DTC +
-                rattleScore * WEIGHT_RATTLE +
-                rpmScore * WEIGHT_RPM_STABILITY +
-                timingScore * WEIGHT_TIMING_VARIANCE) / 100
+            rattleScore * WEIGHT_RATTLE +
+            rpmScore * WEIGHT_RPM_STABILITY +
+            timingScore * WEIGHT_TIMING_VARIANCE) / 100
 
         // Laufleistungs-Faktor beruecksichtigen
         val mileageFactor = when {
@@ -159,7 +159,7 @@ class ChainTensionerAnalyzer(
                 val severity = when (chainDTCs.first().uppercase()) {
                     "P0016", "P0017" -> 30 // Korrelation - kritischer
                     "P0340", "P0341" -> 40 // Sensorfehler
-                    "P1345" -> 25          // Phasenabweichung
+                    "P1345" -> 25 // Phasenabweichung
                     else -> 35
                 }
                 severity to (WEIGHT_DTC - severity)
@@ -185,7 +185,7 @@ class ChainTensionerAnalyzer(
             }
             rattleDurationSec <= CRITICAL_RATTLE_SEC -> {
                 val penalty = 25 + ((rattleDurationSec - MAX_COLD_START_RATTLE_SEC) /
-                        (CRITICAL_RATTLE_SEC - MAX_COLD_START_RATTLE_SEC) * 25).toInt()
+                    (CRITICAL_RATTLE_SEC - MAX_COLD_START_RATTLE_SEC) * 25).toInt()
                 (100 - penalty).coerceAtLeast(0) to penalty.coerceAtMost(WEIGHT_RATTLE)
             }
             else -> 0 to WEIGHT_RATTLE
@@ -210,7 +210,7 @@ class ChainTensionerAnalyzer(
             idleVariance <= MAX_IDLE_RPM_VARIANCE -> 100 to 0
             idleVariance <= WARNING_IDLE_RPM_VARIANCE -> {
                 val penalty = ((idleVariance - MAX_IDLE_RPM_VARIANCE) /
-                        (WARNING_IDLE_RPM_VARIANCE - MAX_IDLE_RPM_VARIANCE) * 20).toInt()
+                    (WARNING_IDLE_RPM_VARIANCE - MAX_IDLE_RPM_VARIANCE) * 20).toInt()
                 (100 - penalty) to penalty
             }
             else -> {
@@ -231,7 +231,7 @@ class ChainTensionerAnalyzer(
             variance <= MAX_TIMING_VARIANCE -> 100 to 0
             variance <= WARNING_TIMING_VARIANCE -> {
                 val penalty = ((variance - MAX_TIMING_VARIANCE) /
-                        (WARNING_TIMING_VARIANCE - MAX_TIMING_VARIANCE) * 20).toInt()
+                    (WARNING_TIMING_VARIANCE - MAX_TIMING_VARIANCE) * 20).toInt()
                 (100 - penalty) to penalty
             }
             else -> {
@@ -271,7 +271,7 @@ class ChainTensionerAnalyzer(
         return when (health) {
             ChainTensionerHealth.HEALTHY -> {
                 "Steuerkette und hydraulischer Kettenspanner funktionieren normal. " +
-                        "Keine Anzeichen fuer Verschleiss."
+                    "Keine Anzeichen fuer Verschleiss."
             }
             ChainTensionerHealth.WEAR_DETECTED -> {
                 val issues = mutableListOf<String>()
@@ -286,16 +286,16 @@ class ChainTensionerAnalyzer(
                 }
                 val issueText = if (issues.isNotEmpty()) issues.joinToString(", ") else "Leichte Abweichungen"
                 "Kettenverschleiss erkannt: $issueText. " +
-                        "Regelmaessige Ueberpruefung empfohlen."
+                    "Regelmaessige Ueberpruefung empfohlen."
             }
             ChainTensionerHealth.CRITICAL -> {
                 "KRITISCH: Steuerkette oder Kettenspanner defekt! " +
-                        "Sofortige Werkstatt erforderlich. " +
-                        "Motor kann bei Weiterfahren schweren Schaden nehmen."
+                    "Sofortige Werkstatt erforderlich. " +
+                    "Motor kann bei Weiterfahren schweren Schaden nehmen."
             }
             ChainTensionerHealth.UNKNOWN -> {
                 "Nicht genuegend Daten fuer eine zuverlaessige Diagnose. " +
-                        "Weitere Messungen erforderlich."
+                    "Weitere Messungen erforderlich."
             }
         }
     }
@@ -308,25 +308,25 @@ class ChainTensionerAnalyzer(
             ChainTensionerHealth.HEALTHY -> {
                 if (input.totalKm > HIGH_MILEAGE_KM) {
                     "Bei ${input.totalKm.toInt()} km: Kettenspanner bei naechster " +
-                            "Grosswartung pruefen lassen. Oelwechselintervalle einhalten."
+                        "Grosswartung pruefen lassen. Oelwechselintervalle einhalten."
                 } else {
                     "Keine Massnahmen erforderlich. " +
-                            "Oelwechselintervalle (15.000 km mit Dexos2 5W-30) einhalten."
+                        "Oelwechselintervalle (15.000 km mit Dexos2 5W-30) einhalten."
                 }
             }
             ChainTensionerHealth.WEAR_DETECTED -> {
                 "Kettenspanner und Steuerkette bei Werkstatt pruefen lassen. " +
-                        "Oelqualitaet pruefen - mind. Dexos2 5W-30. " +
-                        "Bei ${input.totalKm.toInt()} km sollte eine Inspektion erfolgen."
+                    "Oelqualitaet pruefen - mind. Dexos2 5W-30. " +
+                    "Bei ${input.totalKm.toInt()} km sollte eine Inspektion erfolgen."
             }
             ChainTensionerHealth.CRITICAL -> {
                 "SOFORT Werkstatt aufsuchen! Steuerkette und Kettenspanner " +
-                        "muessen sofort ersetzt werden. " +
-                        "Nur kurze, vorsichtige Fahrten zum Servicestandort."
+                    "muessen sofort ersetzt werden. " +
+                    "Nur kurze, vorsichtige Fahrten zum Servicestandort."
             }
             ChainTensionerHealth.UNKNOWN -> {
                 "Weitere Daten sammeln. Motor warmfahren und Leerlauf-Stabilitaet " +
-                        "beobachten. Kaltstart-Rattern dokumentieren."
+                    "beobachten. Kaltstart-Rattern dokumentieren."
             }
         }
     }
@@ -356,6 +356,6 @@ class ChainTensionerAnalyzer(
         }
 
         val totalWear = (baseWearPercent + rattleAddition + varianceAddition).coerceAtMost(100)
-        return "Geschaetzter Verschleiss: ~${totalWear}% bei ${input.totalKm.toInt()} km"
+        return "Geschaetzter Verschleiss: ~$totalWear% bei ${input.totalKm.toInt()} km"
     }
 }

@@ -29,6 +29,7 @@ ktlint_standard_op-spacing = enabled
 ktlint_standard_string-template = enabled
 
 # Disable rules that would require large-scale refactoring
+ktlint_standard_max-line-length = disabled
 ktlint_standard_function-naming = disabled
 ktlint_standard_class-naming = disabled
 ktlint_standard_property-naming = disabled

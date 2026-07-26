@@ -13,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +46,7 @@ fun EGRHealthCard(
     val infiniteTransition = rememberInfiniteTransition(label = "egr_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isError) 0.8f else 0.3f,
+        targetValue = if (isError) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -65,7 +64,7 @@ fun EGRHealthCard(
                         color = colors.gaugeRed.copy(alpha = pulseAlpha),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,

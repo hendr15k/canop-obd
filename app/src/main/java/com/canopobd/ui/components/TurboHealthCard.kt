@@ -2,7 +2,6 @@ package com.canopobd.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -15,12 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,13 +27,12 @@ import com.canopobd.data.model.CarProfile
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.LocalAppColors
 import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * TurboHealthCard - Komponente für das Dashboard
  * Zeigt Ladedruck (Soll/Ist), Wastegate %, Turbotemperaturen, Health Score
  * mit Farbcodierung und Alarmen bei kritischen Werten
- * 
+ *
  * Speziell kalibriert für BorgWarner KP39 beim A14NET Motor:
  * - Normaler Ladedruck: 0.6 - 0.7 bar
  * - Overboost: bis 1.2 - 1.3 bar (max 10s)
@@ -59,10 +53,10 @@ fun TurboHealthCard(
     val healthColor = getHealthColor(healthScore)
     val healthLabel = getHealthLabel(healthScore)
     val healthDescription = getHealthDescription(healthScore, turboData)
-    
+
     val isCritical = healthScore < 50
     val isWarning = healthScore in 50..79
-    
+
     // Pulsing animation for critical state
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -74,13 +68,13 @@ fun TurboHealthCard(
         ),
         label = "pulse_alpha"
     )
-    
+
     val animatedHealthColor by animateColorAsState(
         targetValue = healthColor,
         animationSpec = tween(300),
         label = "health_color"
     )
-    
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -97,7 +91,7 @@ fun TurboHealthCard(
                         color = colors.gaugeOrange.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,
@@ -127,7 +121,7 @@ fun TurboHealthCard(
                         color = colors.textPrimary
                     )
                 }
-                
+
                 // Health Score Badge
                 HealthScoreBadge(
                     score = healthScore,
@@ -135,18 +129,18 @@ fun TurboHealthCard(
                     colors = colors
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Boost Section
             BoostSection(
                 turboData = turboData,
                 carProfile = carProfile,
                 colors = colors
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Wastegate and Temperatures Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -158,7 +152,7 @@ fun TurboHealthCard(
                     colors = colors,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 // Temperatures Section
                 TemperaturesSection(
                     turboData = turboData,
@@ -167,7 +161,7 @@ fun TurboHealthCard(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             // Health Status Bar
             Spacer(modifier = Modifier.height(12.dp))
             HealthStatusBar(
@@ -177,7 +171,7 @@ fun TurboHealthCard(
                 description = healthDescription,
                 colors = colors
             )
-            
+
             // Critical Warnings
             if (isCritical || isWarning) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -230,9 +224,9 @@ private fun BoostSection(
 ) {
     val boostActual = turboData.boostPressure
     val boostTarget = turboData.boostTarget
-    val deviation = if (boostTarget > 0) boostActual - boostTarget else 0.0
+    val deviation = if (boostTarget > 0) { boostActual - boostTarget } else { 0.0 }
     val maxGauge = carProfile.maxBoostGaugeBar
-    
+
     val boostColor = when {
         turboData.overboostActive -> colors.gaugeOrange
         turboData.underboostDetected -> colors.gaugeRed
@@ -241,7 +235,7 @@ private fun BoostSection(
         boostActual > 0.1 -> colors.gaugeYellow
         else -> colors.textSecondary
     }
-    
+
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -253,7 +247,7 @@ private fun BoostSection(
                 color = colors.textSecondary,
                 fontWeight = FontWeight.Medium
             )
-            
+
             // Status badges
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (turboData.overboostActive) {
@@ -270,9 +264,9 @@ private fun BoostSection(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Boost values
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -300,7 +294,7 @@ private fun BoostSection(
                     color = colors.textDim
                 )
             }
-            
+
             Column(horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -336,9 +330,9 @@ private fun BoostSection(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Boost gauge bar
         BoxWithConstraints(
             modifier = Modifier
@@ -352,13 +346,13 @@ private fun BoostSection(
             val normalEnd = (carProfile.normalBoostBar + 0.15f) / maxGauge
             val normalStartPx = normalStart * barWidthPx
             val normalWidthPx = (normalEnd - normalStart) * barWidthPx
-            
+
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(normalStart.coerceAtLeast(0f))
             )
-            
+
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -366,7 +360,7 @@ private fun BoostSection(
                     .width(normalWidthPx.toInt().dp)
                     .background(colors.gaugeGreen.copy(alpha = 0.3f))
             )
-            
+
             // Actual boost indicator
             val normalized = (boostActual / maxGauge).toFloat().coerceIn(0f, 1f)
             Box(
@@ -383,7 +377,7 @@ private fun BoostSection(
                     )
             )
         }
-        
+
         // Scale labels
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -428,10 +422,10 @@ private fun WastegateSection(
         wastegateDuty < 30 -> colors.gaugeOrange
         else -> colors.gaugeCyan
     }
-    
+
     // Convert duty cycle to position (inverted: 100% duty = WG closed = high position)
     val wgPosition = (100 - wastegateDuty).coerceIn(0.0, 100.0)
-    
+
     Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -450,24 +444,24 @@ private fun WastegateSection(
                 fontWeight = FontWeight.Medium
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         Text(
             text = "%.1f%%".format(wastegateDuty),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = wgdColor
         )
-        
+
         Text(
-            text = if (wastegateDuty > 70) "Offen" else if (wastegateDuty < 40) "Geschlossen" else "Teils",
+            text = if (wastegateDuty > 70) { "Offen" } else if (wastegateDuty < 40) { "Geschlossen" } else { "Teils" },
             fontSize = 9.sp,
             color = colors.textDim
         )
-        
+
         Spacer(modifier = Modifier.height(6.dp))
-        
+
         // Mini position bar
         Box(
             modifier = Modifier
@@ -484,7 +478,7 @@ private fun WastegateSection(
                     .background(wgdColor)
             )
         }
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -504,7 +498,7 @@ private fun TemperaturesSection(
 ) {
     val oilTemp = oilData.temperature
     val chargeAirTemp = turboData.chargeAirCoolerTemp
-    
+
     val oilTempColor = when {
         oilTemp > 120 -> colors.gaugeRed
         oilTemp > 110 -> colors.gaugeOrange
@@ -514,7 +508,7 @@ private fun TemperaturesSection(
         oilTemp > 0 -> colors.textSecondary
         else -> colors.textDim
     }
-    
+
     val chargeTempColor = when {
         chargeAirTemp > 65 -> colors.gaugeRed
         chargeAirTemp > 55 -> colors.gaugeOrange
@@ -523,7 +517,7 @@ private fun TemperaturesSection(
         chargeAirTemp > 0 -> colors.textSecondary
         else -> colors.textDim
     }
-    
+
     Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -542,9 +536,9 @@ private fun TemperaturesSection(
                 fontWeight = FontWeight.Medium
             )
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Oil Temperature
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -566,15 +560,15 @@ private fun TemperaturesSection(
                 )
             }
             Text(
-                text = if (oilTemp > -40) "%.0f°C".format(oilTemp) else "—",
+                text = if (oilTemp > -40) { "%.0f°C".format(oilTemp) } else { "—" },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = oilTempColor
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         // Charge Air Temperature
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -596,15 +590,15 @@ private fun TemperaturesSection(
                 )
             }
             Text(
-                text = if (chargeAirTemp > -40) "%.0f°C".format(chargeAirTemp) else "—",
+                text = if (chargeAirTemp > -40) { "%.0f°C".format(chargeAirTemp) } else { "—" },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = chargeTempColor
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         // Intercooler efficiency indicator
         if (turboData.turboInletTemp > 0 && chargeAirTemp > 0) {
             val cooling = turboData.turboInletTemp - chargeAirTemp
@@ -620,7 +614,7 @@ private fun TemperaturesSection(
                 efficiency > 60 -> colors.gaugeYellow
                 else -> colors.gaugeOrange
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -676,9 +670,9 @@ private fun HealthStatusBar(
                 color = colors.textSecondary
             )
         }
-        
+
         Spacer(modifier = Modifier.height(6.dp))
-        
+
         // Health bar
         Box(
             modifier = Modifier
@@ -711,7 +705,7 @@ private fun CriticalWarnings(
     colors: AppColors
 ) {
     val warnings = mutableListOf<Pair<String, Color>>()
-    
+
     // Check various conditions
     if (turboData.overboostActive) {
         warnings.add("⚠️ " + stringResource(R.string.overboost_warning) to colors.gaugeOrange)
@@ -731,7 +725,7 @@ private fun CriticalWarnings(
     if (oilData.consumptionWarning) {
         warnings.add("💧 " + stringResource(R.string.oil_consumption_warning) to colors.gaugeOrange)
     }
-    
+
     if (warnings.isNotEmpty()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -766,16 +760,16 @@ private fun calculateTurboHealthScore(
     carProfile: CarProfile
 ): Int {
     var score = 100
-    
+
     // Boost-related deductions
     if (turboData.overboostActive) {
         score -= 30 // Overboost is concerning but acceptable for short periods
     }
-    
+
     if (turboData.underboostDetected) {
         score -= 40 // Underboost indicates potential issues
     }
-    
+
     // Boost deviation
     if (turboData.boostTarget > 0) {
         val deviation = abs(turboData.boostPressure - turboData.boostTarget)
@@ -786,7 +780,7 @@ private fun calculateTurboHealthScore(
             deviation > 0.1 -> score -= 5
         }
     }
-    
+
     // Wastegate duty cycle analysis
     // KP39: 80-95% at idle (WG open), 25-60% at WOT (WG closed)
     val wgd = turboData.wastegateDutyCycle
@@ -797,7 +791,7 @@ private fun calculateTurboHealthScore(
             // Normal range, no deduction
         }
     }
-    
+
     // Oil temperature analysis
     // Optimal: 90-110°C, Max: 120°C
     val oilTemp = oilData.temperature
@@ -808,7 +802,7 @@ private fun calculateTurboHealthScore(
         oilTemp > 100 -> score -= 5 // Slightly high
         oilTemp < 40 && oilTemp > 0 -> score -= 10 // Too cold for proper lubrication
     }
-    
+
     // Charge air temperature
     // Max recommended: 65°C
     when {
@@ -816,12 +810,12 @@ private fun calculateTurboHealthScore(
         turboData.chargeAirCoolerTemp > 65 -> score -= 10
         turboData.chargeAirCoolerTemp > 55 -> score -= 5
     }
-    
+
     // Oil consumption warning
     if (oilData.consumptionWarning) {
         score -= 15
     }
-    
+
     return score.coerceIn(0, 100)
 }
 
@@ -878,9 +872,9 @@ fun TurboHealthCardCompact(
 ) {
     val healthScore = calculateTurboHealthScore(turboData, oilData, carProfile)
     val healthColor = getHealthColor(healthScore)
-    
+
     val isCritical = healthScore < 50
-    
+
     val infiniteTransition = rememberInfiniteTransition(label = "pulse_compact")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -891,7 +885,7 @@ fun TurboHealthCardCompact(
         ),
         label = "pulse_alpha_compact"
     )
-    
+
     Surface(
         modifier = modifier
             .then(
@@ -901,7 +895,7 @@ fun TurboHealthCardCompact(
                         color = colors.gaugeRed.copy(alpha = pulseAlpha),
                         shape = RoundedCornerShape(12.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(12.dp),
         color = colors.surfaceCard
@@ -922,7 +916,7 @@ fun TurboHealthCardCompact(
                     tint = healthColor,
                     modifier = Modifier.size(24.dp)
                 )
-                
+
                 Column {
                     Text(
                         text = "%.2f bar".format(turboData.boostPressure),
@@ -937,7 +931,7 @@ fun TurboHealthCardCompact(
                     )
                 }
             }
-            
+
             // Health score
             Box(
                 modifier = Modifier
@@ -952,11 +946,11 @@ fun TurboHealthCardCompact(
                     color = healthColor
                 )
             }
-            
+
             // Temperatures
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = if (oilData.temperature > 0) "%.0f°C".format(oilData.temperature) else "—",
+                    text = if (oilData.temperature > 0) { "%.0f°C".format(oilData.temperature) } else { "—" },
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = when {

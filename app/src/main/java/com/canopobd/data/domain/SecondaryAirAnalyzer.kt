@@ -53,8 +53,8 @@ class SecondaryAirAnalyzer {
         val o2Score = evaluateO2Response(input, issues)
 
         val rawScore = (dtcScore * WEIGHT_DTC +
-                timingScore * WEIGHT_TIMING +
-                o2Score * WEIGHT_O2_RESPONSE) / 100
+            timingScore * WEIGHT_TIMING +
+            o2Score * WEIGHT_O2_RESPONSE) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
         val operationTime = estimateOperationTime(input)
@@ -173,7 +173,7 @@ class SecondaryAirAnalyzer {
             issues.isEmpty() && status.healthScore >= 80 -> {
                 if (input.saActive) {
                     "Sekundaerluftsystem aktiv. Kaltstart-Einblasung laeuft " +
-                            "(${status.operationTimeSeconds}s)."
+                        "(${status.operationTimeSeconds}s)."
                 } else {
                     "Sekundaerluftsystem bereit. Keine Fehler erkannt."
                 }
@@ -181,7 +181,7 @@ class SecondaryAirAnalyzer {
             issues.isNotEmpty() -> {
                 val issueNames = issues.map { it.label }
                 "SAI-Problem: ${issueNames.joinToString(", ")}. " +
-                        "Score: ${status.healthScore}/100."
+                    "Score: ${status.healthScore}/100."
             }
             else -> {
                 "SAI-Status nicht eindeutig. Score: ${status.healthScore}/100."
@@ -195,11 +195,11 @@ class SecondaryAirAnalyzer {
             issues.isEmpty() -> "Keine Massnahmen erforderlich."
             issues.any { it == SAIIssue.VALVE_STUCK_OPEN || it == SAIIssue.VALVE_STUCK_CLOSED } -> {
                 "SAI-Einlassventil pruefen und reinigen. " +
-                        "Bei ${input.totalKm.toInt()} km kann Verkohlung vorliegen."
+                    "Bei ${input.totalKm.toInt()} km kann Verkohlung vorliegen."
             }
             issues.any { it == SAIIssue.PUMP_FAULT } -> {
                 "Luftpumpe und Sicherung pruefen. " +
-                        "Pumpenstrom bei Werkstatt messen."
+                    "Pumpenstrom bei Werkstatt messen."
             }
             issues.any { it == SAIIssue.RELAY_FAULT } -> {
                 "SAI-Relais und Verkabelung pruefen."
@@ -209,7 +209,7 @@ class SecondaryAirAnalyzer {
             }
             issues.any { it == SAIIssue.INCORRECT_TIMING } -> {
                 "SAI-Aktivierung zur falschen Zeit. ECU-Steuerung " +
-                        "und Kuehlmittelsensor pruefen."
+                    "und Kuehlmittelsensor pruefen."
             }
             else -> {
                 "SAI-System bei Werkstatt pruefen lassen."

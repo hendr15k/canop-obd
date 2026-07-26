@@ -13,7 +13,6 @@ import com.canopobd.data.domain.DriveModeDetector
 import com.canopobd.data.domain.EGRHealthAnalyzer
 import com.canopobd.data.domain.EmissionsReadinessAnalyzer
 import com.canopobd.data.domain.EVAPSystemAnalyzer
-import com.canopobd.data.domain.FuelTrimAnalyzer
 import com.canopobd.data.domain.LambdaO2SensorAnalyzer
 import com.canopobd.data.domain.SecondaryAirAnalyzer
 import com.canopobd.data.domain.OilConditionMonitor
@@ -49,7 +48,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
 
 class DashboardViewModel private constructor(
     application: Application
@@ -438,7 +436,9 @@ class DashboardViewModel private constructor(
                 _isInitialized.value = true
             }
         }
-        if (_permissionsGranted.value) refreshDevices()
+        if (_permissionsGranted.value) {
+            refreshDevices()
+        }
         checkForUpdate()
         startTurboAnalysisCollection()
         startWarningMonitoring()
@@ -540,12 +540,16 @@ class DashboardViewModel private constructor(
 
     fun toggleDevicePicker() {
         _showDevicePicker.value = !_showDevicePicker.value
-        if (_showDevicePicker.value) refreshDevices()
+        if (_showDevicePicker.value) {
+            refreshDevices()
+        }
     }
 
     fun toggleDTCDialog() {
         _showDTCDialog.value = !_showDTCDialog.value
-        if (_showDTCDialog.value) repository.readDTCs()
+        if (_showDTCDialog.value) {
+            repository.readDTCs()
+        }
     }
 
     fun clearDTCs() {
@@ -586,7 +590,9 @@ class DashboardViewModel private constructor(
 
     fun toggleReadiness() {
         _showReadiness.value = !_showReadiness.value
-        if (_showReadiness.value) repository.readReadinessMonitor()
+        if (_showReadiness.value) {
+            repository.readReadinessMonitor()
+        }
     }
 
     fun toggleDiagnostics() {
@@ -904,19 +910,27 @@ class DashboardViewModel private constructor(
 
         if (rpm > 0) {
             rpmSampleBuffer.add(rpm)
-            if (rpmSampleBuffer.size > 30) rpmSampleBuffer.removeAt(0)
+            if (rpmSampleBuffer.size > 30) {
+                rpmSampleBuffer.removeAt(0)
+            }
         }
 
         if (data.timingAdvance > 0) {
             timingAdvanceBuffer.add(data.timingAdvance)
-            if (timingAdvanceBuffer.size > 30) timingAdvanceBuffer.removeAt(0)
+            if (timingAdvanceBuffer.size > 30) {
+                timingAdvanceBuffer.removeAt(0)
+            }
         }
 
         val rpmVariation = if (rpmSampleBuffer.size >= 3) {
             val mean = rpmSampleBuffer.average()
             val variance = rpmSampleBuffer.map { (it - mean) * (it - mean) }.sum() / rpmSampleBuffer.size
             kotlin.math.sqrt(variance)
-        } else if (rpm > 0) rpm * 0.02 else 0.0
+        } else if (rpm > 0) {
+            rpm * 0.02
+        } else {
+            0.0
+        }
         val healthScore = when {
             rpmVariation < 2.0 && isWarmedUp -> 95
             rpmVariation < 5.0 && isWarmedUp -> 80
@@ -938,17 +952,37 @@ class DashboardViewModel private constructor(
             isWarmedUp = isWarmedUp,
             phase = phase,
             recordedSamples = _timingChainState.value.recordedSamples + 1,
-            coldSampleCount = if (!isWarmedUp) _timingChainState.value.coldSampleCount + 1 else _timingChainState.value.coldSampleCount,
+            coldSampleCount = if (!isWarmedUp) {
+                _timingChainState.value.coldSampleCount + 1
+            } else {
+                _timingChainState.value.coldSampleCount
+            },
             lastRpmReading = rpm,
             avgRpmCold = if (!isWarmedUp) {
                 val newCount = _timingChainState.value.coldSampleCount + 1
-                if (newCount > 0) (_timingChainState.value.avgRpmCold * _timingChainState.value.coldSampleCount + rpm) / newCount else rpm
-            } else _timingChainState.value.avgRpmCold,
-            warmSampleCount = if (isWarmedUp) _timingChainState.value.warmSampleCount + 1 else _timingChainState.value.warmSampleCount,
+                if (newCount > 0) {
+                    (_timingChainState.value.avgRpmCold * _timingChainState.value.coldSampleCount + rpm) / newCount
+                } else {
+                    rpm
+                }
+            } else {
+                _timingChainState.value.avgRpmCold
+            },
+            warmSampleCount = if (isWarmedUp) {
+                _timingChainState.value.warmSampleCount + 1
+            } else {
+                _timingChainState.value.warmSampleCount
+            },
             avgRpmWarm = if (isWarmedUp) {
                 val warmCount = _timingChainState.value.warmSampleCount + 1
-                if (warmCount > 0) (_timingChainState.value.avgRpmWarm * _timingChainState.value.warmSampleCount + rpm) / warmCount else rpm
-            } else _timingChainState.value.avgRpmWarm,
+                if (warmCount > 0) {
+                    (_timingChainState.value.avgRpmWarm * _timingChainState.value.warmSampleCount + rpm) / warmCount
+                } else {
+                    rpm
+                }
+            } else {
+                _timingChainState.value.avgRpmWarm
+            },
             rpmDeviationCold = rpmVariation
         )
     }
@@ -1008,7 +1042,11 @@ class DashboardViewModel private constructor(
                 sb.appendLine("Datum,Uhrzeit Start,Uhrzeit Ende,Dauer (min),Strecke (km),Ø Geschw. (km/h),Max Geschw. (km/h),Ø RPM,Max RPM,Kraftstoff (L),Ø L/100km,VIN")
                 for (trip in trips) {
                     val durationMin = ((trip.endTime - trip.startTime) / 60000).toInt()
-                    val fuelPer100 = if (trip.distanceKm > 0) (trip.fuelUsedLiters / trip.distanceKm * 100) else 0f
+                    val fuelPer100 = if (trip.distanceKm > 0) {
+                        (trip.fuelUsedLiters / trip.distanceKm * 100)
+                    } else {
+                        0f
+                    }
                     val startStr = java.time.Instant.ofEpochMilli(trip.startTime).let { df.format(it) }
                     val startTime = java.time.Instant.ofEpochMilli(trip.startTime).let { tf.format(it) }
                     val endTime = java.time.Instant.ofEpochMilli(trip.endTime).let { tf.format(it) }
@@ -1120,7 +1158,7 @@ class DashboardViewModel private constructor(
 
     // ========== Turbo Analysis ==========
 
-private fun startTurboAnalysisCollection() {
+    private fun startTurboAnalysisCollection() {
         _turboAnalysisJob.value?.cancel()
         _turboAnalysisJob.value = viewModelScope.launch(Dispatchers.Default) {
             obdData
@@ -1133,7 +1171,7 @@ private fun startTurboAnalysisCollection() {
                 }
         }
         turboViewModel.updateDriveSession(performanceViewModel.driveSession.value)
-     }
+    }
 
     // ========== Emissions Analyzers ==========
 
@@ -1187,11 +1225,13 @@ private fun startTurboAnalysisCollection() {
         }
         turboViewModel.updateFromOBDDataWithDriveSession(data, _carProfileState.value, updatedSession)
 
-         _fuelRailPressure.value = data.fuelRailPressure
-         _injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
-             data.mafRate / 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
-         } else 0.0
-     }
+        _fuelRailPressure.value = data.fuelRailPressure
+        _injectionQuantity.value = if (data.mafRate > 0 && data.rpm >= 100.0) {
+            data.mafRate / 14.7 * 0.0007 / (data.rpm / 2.0) * 1000.0
+        } else {
+            0.0
+        }
+    }
 
     fun analyzeBoost(
         actualKpa: Double,
@@ -1225,15 +1265,28 @@ private fun startTurboAnalysisCollection() {
         val hasDtcFault = hasDtcP0016 || hasDtcP0017 || hasDtcP0340 || hasDtcP1345
 
         var score = 100
-        if (hasDtcP0016) score -= 30
-        if (hasDtcP0017) score -= 25
-        if (hasDtcP0340) score -= 25
-        if (hasDtcP1345) score -= 20
+        if (hasDtcP0016) {
+            score -= 30
+        }
+        if (hasDtcP0017) {
+            score -= 25
+        }
+        if (hasDtcP0340) {
+            score -= 25
+        }
+        if (hasDtcP1345) {
+            score -= 20
+        }
 
-        if (timingVariance > 5.0) score -= 15
-        else if (timingVariance > 3.0) score -= 8
+        if (timingVariance > 5.0) {
+            score -= 15
+        } else if (timingVariance > 3.0) {
+            score -= 8
+        }
 
-        if (rpmStability < 90) score -= 10
+        if (rpmStability < 90) {
+            score -= 10
+        }
 
         score = score.coerceIn(0, 100)
 
@@ -1290,7 +1343,9 @@ private fun startTurboAnalysisCollection() {
 
         if (data.shortTermFuelTrimB1 > 10 || data.longTermFuelTrimB1 > 10) {
             score -= 15
-            if (score < 60) health = PCVHealth.WEAK
+            if (score < 60) {
+                health = PCVHealth.WEAK
+            }
         }
 
         if (data.oilTemp > calibration.maxOilTempC * 0.9) {
@@ -1298,7 +1353,9 @@ private fun startTurboAnalysisCollection() {
         }
 
         score = score.coerceIn(0, 100)
-        if (score < 40) health = PCVHealth.FAILED
+        if (score < 40) {
+            health = PCVHealth.FAILED
+        }
 
         _pcvHealthScore.value = score.toDouble()
         _pcvHealth.value = health
@@ -1374,8 +1431,16 @@ private fun startTurboAnalysisCollection() {
         val calibration = AstraJ14TurboCalibration.INSTANCE
         val warnings = mutableListOf<VehicleWarning>()
 
-        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val baroKpa = if (data.barometricPressure > 0) {
+            data.barometricPressure
+        } else {
+            100.0
+        }
+        val absoluteBoostKpa = if (data.boostPressure > 0) {
+            data.boostPressure
+        } else {
+            data.intakePressure
+        }
         val boostBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
 
         if (boostBar > 1.35) {

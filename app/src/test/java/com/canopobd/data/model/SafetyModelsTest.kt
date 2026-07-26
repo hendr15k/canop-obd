@@ -262,52 +262,93 @@ class SafetyModelsTest {
 
     @Test
     fun `TPMSData avgPressure calculates correctly`() {
-        val tpms = TPMSData(frontLeftPressure = 30.0, frontRightPressure = 32.0, rearLeftPressure = 31.0, rearRightPressure = 33.0)
+        val tpms = TPMSData(
+            frontLeftPressure = 30.0,
+            frontRightPressure = 32.0,
+            rearLeftPressure = 31.0,
+            rearRightPressure = 33.0,
+        )
         assertEquals(31.5, tpms.avgPressure, 0.001)
     }
 
     @Test
     fun `TPMSData maxPressure returns correct value`() {
-        val tpms = TPMSData(frontLeftPressure = 30.0, frontRightPressure = 35.0, rearLeftPressure = 32.0, rearRightPressure = 33.0)
+        val tpms = TPMSData(
+            frontLeftPressure = 30.0,
+            frontRightPressure = 35.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 33.0,
+        )
         assertEquals(35.0, tpms.maxPressure, 0.001)
     }
 
     @Test
     fun `TPMSData minPressure returns correct value`() {
-        val tpms = TPMSData(frontLeftPressure = 28.0, frontRightPressure = 35.0, rearLeftPressure = 32.0, rearRightPressure = 33.0)
+        val tpms = TPMSData(
+            frontLeftPressure = 28.0,
+            frontRightPressure = 35.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 33.0,
+        )
         assertEquals(28.0, tpms.minPressure, 0.001)
     }
 
     @Test
     fun `TPMSData pressureDifference returns correct value`() {
-        val tpms = TPMSData(frontLeftPressure = 28.0, frontRightPressure = 35.0, rearLeftPressure = 32.0, rearRightPressure = 33.0)
+        val tpms = TPMSData(
+            frontLeftPressure = 28.0,
+            frontRightPressure = 35.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 33.0,
+        )
         assertEquals(7.0, tpms.pressureDifference, 0.001)
     }
 
     @Test
     fun `TPMSData isLowPressure returns true when below threshold in PSI`() {
-        val tpms = TPMSData(frontLeftPressure = 25.0, frontRightPressure = 32.0, rearLeftPressure = 32.0, rearRightPressure = 32.0, unit = "PSI")
-        // TPMS_LOW_PRESSURE_PSI = 28.0
+        val tpms = TPMSData(
+            frontLeftPressure = 25.0,
+            frontRightPressure = 32.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 32.0,
+            unit = "PSI",
+        )
         assertTrue(tpms.isLowPressure)
     }
 
     @Test
     fun `TPMSData isLowPressure returns false when above threshold in PSI`() {
-        val tpms = TPMSData(frontLeftPressure = 30.0, frontRightPressure = 32.0, rearLeftPressure = 32.0, rearRightPressure = 32.0, unit = "PSI")
+        val tpms = TPMSData(
+            frontLeftPressure = 30.0,
+            frontRightPressure = 32.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 32.0,
+            unit = "PSI",
+        )
         assertFalse(tpms.isLowPressure)
     }
 
     @Test
     fun `TPMSData isCriticalPressure returns true when below critical threshold`() {
-        val tpms = TPMSData(frontLeftPressure = 20.0, frontRightPressure = 32.0, rearLeftPressure = 32.0, rearRightPressure = 32.0, unit = "PSI")
-        // TPMS_CRITICAL_PSI = 24.0
+        val tpms = TPMSData(
+            frontLeftPressure = 20.0,
+            frontRightPressure = 32.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 32.0,
+            unit = "PSI",
+        )
         assertTrue(tpms.isCriticalPressure)
     }
 
     @Test
     fun `TPMSData isHighPressure returns true when above high threshold`() {
-        val tpms = TPMSData(frontLeftPressure = 45.0, frontRightPressure = 32.0, rearLeftPressure = 32.0, rearRightPressure = 32.0, unit = "PSI")
-        // TPMS_HIGH_PRESSURE_PSI = 42.0
+        val tpms = TPMSData(
+            frontLeftPressure = 45.0,
+            frontRightPressure = 32.0,
+            rearLeftPressure = 32.0,
+            rearRightPressure = 32.0,
+            unit = "PSI",
+        )
         assertTrue(tpms.isHighPressure)
     }
 

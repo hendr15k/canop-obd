@@ -1,8 +1,5 @@
 package com.canopobd.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.Close
@@ -22,7 +18,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +42,9 @@ fun CANMonitorDialog(
     canMonitor: CANMonitor,
     modifier: Modifier = Modifier
 ) {
-    if (!isOpen) return
+    if (!isOpen) {
+        return
+    }
 
     val colors = LocalAppColors.current
     var isMonitoring by remember { mutableStateOf(false) }
@@ -64,8 +61,8 @@ fun CANMonitorDialog(
         messages.filter { msg ->
             val matchesFilter = if (filterText.isNotBlank()) {
                 msg.canId.contains(filterText, ignoreCase = true) ||
-                        msg.hexData.contains(filterText, ignoreCase = true)
-            } else true
+                    msg.hexData.contains(filterText, ignoreCase = true)
+            } else { true }
 
             val matchesMode = when (selectedFilterMode) {
                 CANFilterMode.STANDARD -> !msg.isExtended
@@ -161,8 +158,16 @@ fun CANMonitorDialog(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = if (isMonitoring) "Aktiv" else "Gestoppt",
-                                    color = if (isMonitoring) colors.gaugeGreen else colors.textSecondary,
+                                    text = if (isMonitoring) {
+                                        "Aktiv"
+                                    } else {
+                                        "Gestoppt"
+                                    },
+                                    color = if (isMonitoring) {
+                                        colors.gaugeGreen
+                                    } else {
+                                        colors.textSecondary
+                                    },
                                     fontWeight = FontWeight.Medium
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -175,13 +180,21 @@ fun CANMonitorDialog(
                             Button(
                                 onClick = { isMonitoring = !isMonitoring },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isMonitoring) colors.gaugeRed else colors.gaugeGreen
+                                    containerColor = if (isMonitoring) {
+                                        colors.gaugeRed
+                                    } else {
+                                        colors.gaugeGreen
+                                    }
                                 ),
                                 modifier = Modifier.height(32.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp)
                             ) {
                                 Text(
-                                    text = if (isMonitoring) "Stopp" else "Start",
+                                    text = if (isMonitoring) {
+                                        "Stopp"
+                                    } else {
+                                        "Start"
+                                    },
                                     fontSize = 12.sp
                                 )
                             }
@@ -237,7 +250,11 @@ fun CANMonitorDialog(
                                 modifier = Modifier.height(36.dp)
                             ) {
                                 Icon(
-                                    if (showStatistics) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    if (showStatistics) {
+                                        Icons.Filled.ExpandLess
+                                    } else {
+                                        Icons.Filled.ExpandMore
+                                    },
                                     contentDescription = "Toggle Stats",
                                     tint = colors.textSecondary,
                                     modifier = Modifier.size(18.dp)
@@ -426,7 +443,11 @@ fun CANMonitorDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (isMonitoring) "Warte auf CAN-Nachrichten..." else "Monitoring gestoppt",
+                                text = if (isMonitoring) {
+                                    "Warte auf CAN-Nachrichten..."
+                                } else {
+                                    "Monitoring gestoppt"
+                                },
                                 color = colors.textSecondary,
                                 fontSize = 12.sp
                             )

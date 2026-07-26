@@ -13,7 +13,6 @@ import com.canopobd.data.emulator.OBDEmulator
 import com.canopobd.data.local.AlertConfigDao
 import com.canopobd.data.local.AlertConfigEntity
 import com.canopobd.data.local.AppSettingsDao
-import com.canopobd.data.local.AppSettingsEntity
 import com.canopobd.data.local.CanopoDatabase
 import com.canopobd.data.local.MaintenanceDao
 import com.canopobd.data.local.MaintenanceEntity
@@ -298,7 +297,7 @@ class OBDRepository(
     }
 
     private suspend fun migrateFromPrefsIfNeeded() {
-        if (prefs.getBoolean("room_migrated", false)) return
+        if (prefs.getBoolean("room_migrated", false)) { return }
         val existingItems = loadMaintenanceItemsFromPrefs()
         if (existingItems.isNotEmpty()) {
             maintenanceDao.insertAll(existingItems.map { item ->
@@ -323,7 +322,7 @@ class OBDRepository(
                     intervalKm = prefs.getInt("maint_${type.name}_interval", type.defaultInterval),
                     lastServiceDate = prefs.getLong("maint_${type.name}_date", 0L)
                 )
-            } else null
+            } else { null }
         }
     }
 
@@ -382,11 +381,11 @@ class OBDRepository(
                 val msg = result.exceptionOrNull()?.message ?: "Connection failed"
                 _connectionState.value = OBDConnectionState.Error(msg)
                 _lastError.value = msg
-                if (_autoReconnect.value) scheduleReconnect(address)
+                if (_autoReconnect.value) { scheduleReconnect(address) }
                 return@launch
             }
 
-            if (connectAttempt.get() != attempt) return@launch
+            if (connectAttempt.get() != attempt) { return@launch }
             _connectionState.value = OBDConnectionState.Connected
             _lastError.value = null
             startPolling(conn)
@@ -554,7 +553,7 @@ class OBDRepository(
                     avgFuelRate = if (tripSamples > 0 && tripFuelUsedSum > 0) {
                         val elapsedHours = ((now - tripStartTime) / 3_600_000.0).coerceAtLeast(0.001)
                         tripFuelUsedSum / elapsedHours
-                    } else 0.0,
+                    } else { 0.0 },
                     fuelStartLevel = tripFuelStart,
                     fuelEndLevel = fuelEndLevel,
                     vin = storedVin
@@ -707,7 +706,7 @@ class OBDRepository(
                     _lastError.value = null
                     recordConnectionSuccess()
                     checkAlerts()
-                    if (_recordingActive.value) recordData()
+                    if (_recordingActive.value) { recordData() }
                 } catch (e: Exception) {
                     consecutivePollingFailures++
                     Log.e("OBDRepository", "Polling error ($consecutivePollingFailures): ${e.message}")
@@ -768,7 +767,7 @@ class OBDRepository(
     fun clearDTCs() {
         val conn = connection ?: return
         scope.launch {
-            if (conn.clearDTCs()) _dtcResponse.value = DTCResponse(emptyList())
+            if (conn.clearDTCs()) { _dtcResponse.value = DTCResponse(emptyList()) }
         }
     }
 
@@ -995,7 +994,7 @@ class OBDRepository(
         type: AlertType, enabled: Boolean, value: Float, threshold: Float,
         severity: AlertSeverity, messageFormat: String
     ): List<ActiveAlert> {
-        if (!enabled) return emptyList()
+        if (!enabled) { return emptyList() }
         if (value > threshold) {
             return listOf(ActiveAlert(
                 type = type,
@@ -1012,7 +1011,7 @@ class OBDRepository(
         type: AlertType, enabled: Boolean, value: Float, threshold: Float,
         severity: AlertSeverity, messageFormat: String
     ): List<ActiveAlert> {
-        if (!enabled) return emptyList()
+        if (!enabled) { return emptyList() }
         if (value in 0.1f..threshold) {
             return listOf(ActiveAlert(
                 type = type,
@@ -1026,9 +1025,9 @@ class OBDRepository(
     }
 
     private fun evaluateBatteryAlert(cfg: AlertConfig): List<ActiveAlert> {
-        if (!cfg.batteryLowWarningEnabled) return emptyList()
+        if (!cfg.batteryLowWarningEnabled) { return emptyList() }
         val d = _obdData.value
-        if (d.batteryVoltage <= 0 || d.batteryVoltage >= cfg.batteryLowWarning) return emptyList()
+        if (d.batteryVoltage <= 0 || d.batteryVoltage >= cfg.batteryLowWarning) { return emptyList() }
         return listOf(ActiveAlert(
             type = AlertType.BATTERY,
             severity = AlertSeverity.WARNING,
@@ -1039,9 +1038,9 @@ class OBDRepository(
     }
 
     private fun evaluateBoostAlerts(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
-        if (!cfg.boostWarningEnabled && !cfg.boostCriticalEnabled) return emptyList()
-        if (d.barometricPressure <= 0) return emptyList()
-        val absoluteBoost = if (d.boostPressure > 0) d.boostPressure else d.intakePressure
+        if (!cfg.boostWarningEnabled && !cfg.boostCriticalEnabled) { return emptyList() }
+        if (d.barometricPressure <= 0) { return emptyList() }
+        val absoluteBoost = if (d.boostPressure > 0) { d.boostPressure } else { d.intakePressure }
         val boostBar = ((absoluteBoost - d.barometricPressure).coerceAtLeast(0.0) / 100.0).toFloat()
         return when {
             cfg.boostCriticalEnabled && boostBar > cfg.boostCritical -> listOf(ActiveAlert(
@@ -1063,9 +1062,9 @@ class OBDRepository(
     }
 
     private fun evaluateEgtAlerts(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
-        if (!cfg.egtWarningEnabled && !cfg.egtCriticalEnabled) return emptyList()
+        if (!cfg.egtWarningEnabled && !cfg.egtCriticalEnabled) { return emptyList() }
         val egt = d.egtBank1.toFloat()
-        if (egt <= 0) return emptyList()
+        if (egt <= 0) { return emptyList() }
         return when {
             cfg.egtCriticalEnabled && egt > cfg.egtCritical -> listOf(ActiveAlert(
                 type = AlertType.EGT,
@@ -1086,9 +1085,9 @@ class OBDRepository(
     }
 
     private fun evaluateOilTempAlerts(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
-        if (!cfg.oilTempWarningEnabled && !cfg.oilTempCriticalEnabled) return emptyList()
-        val oilTemp = (if (d.oilTempMode22 > 0) d.oilTempMode22 else d.oilTemp).toFloat()
-        if (oilTemp <= 0) return emptyList()
+        if (!cfg.oilTempWarningEnabled && !cfg.oilTempCriticalEnabled) { return emptyList() }
+        val oilTemp = (if (d.oilTempMode22 > 0) { d.oilTempMode22 } else { d.oilTemp }).toFloat()
+        if (oilTemp <= 0) { return emptyList() }
         return when {
             cfg.oilTempCriticalEnabled && oilTemp > cfg.oilTempCritical -> listOf(ActiveAlert(
                 type = AlertType.OIL_TEMP,
@@ -1109,9 +1108,9 @@ class OBDRepository(
     }
 
     private fun evaluateTurboSpeedAlert(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
-        if (!cfg.turboSpeedWarningEnabled) return emptyList()
+        if (!cfg.turboSpeedWarningEnabled) { return emptyList() }
         val turboRpm = d.turboRpm.toFloat()
-        if (turboRpm <= 0 || turboRpm <= cfg.turboSpeedWarning) return emptyList()
+        if (turboRpm <= 0 || turboRpm <= cfg.turboSpeedWarning) { return emptyList() }
         return listOf(ActiveAlert(
             type = AlertType.TURBO_SPEED,
             severity = AlertSeverity.CRITICAL,
@@ -1122,9 +1121,9 @@ class OBDRepository(
     }
 
     private fun evaluateChargeAirTempAlert(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
-        if (!cfg.chargeAirTempWarningEnabled) return emptyList()
+        if (!cfg.chargeAirTempWarningEnabled) { return emptyList() }
         val cat = d.chargeAirCoolerTemp.toFloat()
-        if (cat <= 0 || cat <= cfg.chargeAirTempWarning) return emptyList()
+        if (cat <= 0 || cat <= cfg.chargeAirTempWarning) { return emptyList() }
         return listOf(ActiveAlert(
             type = AlertType.CHARGE_AIR_TEMP,
             severity = AlertSeverity.WARNING,
@@ -1135,9 +1134,9 @@ class OBDRepository(
     }
 
     private fun evaluateFuelTrimAlert(cfg: AlertConfig, d: OBDData): List<ActiveAlert> {
-        if (!cfg.fuelTrimWarningEnabled) return emptyList()
+        if (!cfg.fuelTrimWarningEnabled) { return emptyList() }
         val totalTrim = kotlin.math.abs(d.shortTermFuelTrimB1 + d.longTermFuelTrimB1).toFloat()
-        if (totalTrim <= cfg.fuelTrimWarning) return emptyList()
+        if (totalTrim <= cfg.fuelTrimWarning) { return emptyList() }
         return listOf(ActiveAlert(
             type = AlertType.FUEL_TRIM,
             severity = AlertSeverity.WARNING,
@@ -1350,7 +1349,7 @@ class OBDRepository(
                     lastServiceDate = prefs.getLong("maint_${type.name}_date", 0L),
                     notes = prefs.getString("maint_${type.name}_notes", "") ?: ""
                 )
-            } else null
+            } else { null }
         }
     }
 
@@ -1421,16 +1420,16 @@ class OBDRepository(
                 val mpgUk = 282.4809363 / l100km
                 val avgL100km = if (td.avgFuelRate > 0.0 && td.avgSpeedKmh > 0.5) {
                     (td.avgFuelRate / td.avgSpeedKmh) * 100.0
-                } else l100km
+                } else { l100km }
                 return FuelEconomyData(
                     currentL100km = l100km,
                     avgL100km = avgL100km,
                     currentKmL = kmL,
-                    avgKmL = if (avgL100km > 0.5) 100.0 / avgL100km else 0.0,
+                    avgKmL = if (avgL100km > 0.5) { 100.0 / avgL100km } else { 0.0 },
                     currentMpgUs = mpgUs,
-                    avgMpgUs = if (avgL100km > 0.5) 235.214583 / avgL100km else 0.0,
+                    avgMpgUs = if (avgL100km > 0.5) { 235.214583 / avgL100km } else { 0.0 },
                     currentMpgUk = mpgUk,
-                    avgMpgUk = if (avgL100km > 0.5) 282.4809363 / avgL100km else 0.0,
+                    avgMpgUk = if (avgL100km > 0.5) { 282.4809363 / avgL100km } else { 0.0 },
                     estimatedFromMaf = true
                 )
             }
@@ -1477,7 +1476,7 @@ class OBDRepository(
 
     fun loadCarProfile(): CarProfile {
         val id = prefs.getString("car_profile_id", null)
-        return if (id != null) CarProfile.fromId(id) ?: CarProfile.default() else CarProfile.default()
+        return if (id != null) { CarProfile.fromId(id) ?: CarProfile.default() } else { CarProfile.default() }
     }
 
     fun setEmulatorMode(enabled: Boolean) {
@@ -1491,7 +1490,7 @@ class OBDRepository(
     }
 
     fun connectEmulator() {
-        if (emulator != null) return
+        if (emulator != null) { return }
         emulator = OBDEmulator()
         _connectionState.value = OBDConnectionState.Connected
         _detectedProtocol.value = "OBD Emulator (Simulated)"
@@ -1520,7 +1519,7 @@ class OBDRepository(
                         val data = emu.generateData(_pollRate.value)
                         val mode22 = emu.generateMode22Data()
 
-                        if (!isActive) return@launch
+                        if (!isActive) { return@launch }
                         _obdData.value = data
                         _mode22Data.value = mode22
 
@@ -1531,7 +1530,7 @@ class OBDRepository(
 
                         recordConnectionSuccess()
                         checkAlerts()
-                        if (_recordingActive.value) recordData()
+                        if (_recordingActive.value) { recordData() }
                     }
                 } catch (e: Exception) {
                     Log.e("OBDRepository", "Emulator polling error: ${e.message}")
@@ -1547,7 +1546,7 @@ class OBDRepository(
         } catch (e: Exception) {
             null
         }
-        
+
         hvacParsed?.let { hvac ->
             _climateReading.value = ClimateReading(
                 driverTempCelsius = hvac.driverTemp.toInt(),
@@ -1565,13 +1564,13 @@ class OBDRepository(
             )
             Log.d("OBDRepository", "Updated climate from CAN: AC=${hvac.acCompressorActive}, Fan=${hvac.fanSpeed}")
         }
-        
+
         val tpmsParsed = try {
             com.canopobd.protocol.BCMProtocol.CANParser.parseTPMSMessage(canId, data)
         } catch (e: Exception) {
             null
         }
-        
+
         tpmsParsed?.let { tpms ->
             _tpmsReading.value = TPMSReading(
                 frontLeftPSI = tpms.frontLeftPSI,

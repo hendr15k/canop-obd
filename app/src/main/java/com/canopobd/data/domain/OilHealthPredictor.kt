@@ -1,7 +1,6 @@
 package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
-import kotlin.math.abs
 import kotlin.math.ln
 
 /**
@@ -153,9 +152,9 @@ class OilHealthPredictor(
 
         // Gesamtbewertung
         val rawScore = (thermalScore * WEIGHT_THERMAL +
-                drivingScore * WEIGHT_DRIVING +
-                consumptionScore * WEIGHT_CONSUMPTION +
-                (100 - degradation.toInt().coerceAtMost(100)) * WEIGHT_LIFE) / 100
+            drivingScore * WEIGHT_DRIVING +
+            consumptionScore * WEIGHT_CONSUMPTION +
+            (100 - degradation.toInt().coerceAtMost(100)) * WEIGHT_LIFE) / 100
 
         val healthScore = rawScore.coerceIn(0, 100)
 
@@ -277,7 +276,7 @@ class OilHealthPredictor(
      */
     private fun evaluateOilConsumption(input: OilHealthInput): Int {
         val consumption = input.oilConsumptionLPer1000Km
-        if (consumption <= 0) return 70 // Keine Daten
+        if (consumption <= 0) { return 70 } // Keine Daten
 
         return when {
             consumption <= OIL_CONSUMPTION_NORMAL -> 100
@@ -355,10 +354,10 @@ class OilHealthPredictor(
         input: OilHealthInput
     ): OilHealthPrediction {
         // Sofort kritisch bei ueberkritischer Temperatur
-        if (input.oilTemp > OIL_TEMP_CRITICAL + 5) return OilHealthPrediction.CRITICAL
+        if (input.oilTemp > OIL_TEMP_CRITICAL + 5) { return OilHealthPrediction.CRITICAL }
 
         // Kritisch bei hohem Oelverbrauch
-        if (input.oilConsumptionLPer1000Km > OIL_CONSUMPTION_CRITICAL) return OilHealthPrediction.CRITICAL
+        if (input.oilConsumptionLPer1000Km > OIL_CONSUMPTION_CRITICAL) { return OilHealthPrediction.CRITICAL }
 
         return when {
             thermalStress >= THERMAL_STRESS_CRITICAL && score < 30 -> OilHealthPrediction.CRITICAL
@@ -383,29 +382,29 @@ class OilHealthPredictor(
         return when (prediction) {
             OilHealthPrediction.HEALTHY -> {
                 "Oel gesund. Temperatur: ${input.oilTemp.toInt()}°C, " +
-                        "thermische Belastung: ${"%.0f".format(thermalStress * 100)}%. " +
-                        "${kmSinceChange.toInt()} km seit letztem Wechsel."
+                    "thermische Belastung: ${"%.0f".format(thermalStress * 100)}%. " +
+                    "${kmSinceChange.toInt()} km seit letztem Wechsel."
             }
             OilHealthPrediction.MODERATE_STRESS -> {
                 "Oel mittlere Belastung. Temperatur: ${input.oilTemp.toInt()}°C, " +
-                        "Degradation: ${"%.1f".format(degradation)}%. " +
-                        "Fahrprofil: ${input.drivingPattern.label}."
+                    "Degradation: ${"%.1f".format(degradation)}%. " +
+                    "Fahrprofil: ${input.drivingPattern.label}."
             }
             OilHealthPrediction.HIGH_STRESS -> {
                 "Oel hohe Belastung! Temperatur: ${input.oilTemp.toInt()}°C, " +
-                        "Degradation: ${"%.1f".format(degradation)}%. " +
-                        "Thermischer Stress-Index: ${"%.0f".format(thermalStress * 100)}%. " +
-                        "Oelwechsel vor ruecken."
+                    "Degradation: ${"%.1f".format(degradation)}%. " +
+                    "Thermischer Stress-Index: ${"%.0f".format(thermalStress * 100)}%. " +
+                    "Oelwechsel vor ruecken."
             }
             OilHealthPrediction.DEGRADED -> {
                 "Oel verschlechtert! Degradation: ${"%.1f".format(degradation)}%. " +
-                        "Oelverbrauch: ${"%.2f".format(input.oilConsumptionLPer1000Km)} L/1000 km. " +
-                        "Oelwechsel dringend empfohlen."
+                    "Oelverbrauch: ${"%.2f".format(input.oilConsumptionLPer1000Km)} L/1000 km. " +
+                    "Oelwechsel dringend empfohlen."
             }
             OilHealthPrediction.CRITICAL -> {
                 "KRITISCH: Oel maximal belastet! " +
-                        "Temperatur: ${input.oilTemp.toInt()}°C, Degradation: ${"%.1f".format(degradation)}%. " +
-                        "Sofort Oelwechsel erforderlich!"
+                    "Temperatur: ${input.oilTemp.toInt()}°C, Degradation: ${"%.1f".format(degradation)}%. " +
+                    "Sofort Oelwechsel erforderlich!"
             }
             OilHealthPrediction.UNKNOWN -> {
                 "Oelzustand nicht bestimmbar. Oelstand manuell pruefen."
@@ -427,33 +426,33 @@ class OilHealthPredictor(
 
         return when (prediction) {
             OilHealthPrediction.HEALTHY -> {
-                "Oelwechsel in ca. ${kmRemaining} km oder ${recommendedDays} Tagen. " +
-                        "Oel: ${calibration.recommendedOil}."
+                "Oelwechsel in ca. $kmRemaining km oder $recommendedDays Tagen. " +
+                    "Oel: ${calibration.recommendedOil}."
             }
             OilHealthPrediction.MODERATE_STRESS -> {
-                "Oelwechsel in ${kmRemaining} km empfohlen. " +
-                        "Thermische Belastung minimieren (Schongang fahren). " +
-                        "Oel: ${calibration.recommendedOil}."
+                "Oelwechsel in $kmRemaining km empfohlen. " +
+                    "Thermische Belastung minimieren (Schongang fahren). " +
+                    "Oel: ${calibration.recommendedOil}."
             }
             OilHealthPrediction.HIGH_STRESS -> {
-                "Oelwechsel bald durchfuehren (max. ${kmRemaining} km). " +
-                        "Hohe Temperaturen vermeiden. " +
-                        "Alternativ: ${calibration.alternativeOil} fuer besseren Schutz."
+                "Oelwechsel bald durchfuehren (max. $kmRemaining km). " +
+                    "Hohe Temperaturen vermeiden. " +
+                    "Alternativ: ${calibration.alternativeOil} fuer besseren Schutz."
             }
             OilHealthPrediction.DEGRADED -> {
                 "Oelwechsel SOFORT durchfuehren! " +
-                        "Nur ${calibration.recommendedOil} verwenden. " +
-                        "Oelfuellmenge: ${calibration.oilCapacityLiters} L. " +
-                        "Oelstand vor Weiterfahrt pruefen."
+                    "Nur ${calibration.recommendedOil} verwenden. " +
+                    "Oelfuellmenge: ${calibration.oilCapacityLiters} L. " +
+                    "Oelstand vor Weiterfahrt pruefen."
             }
             OilHealthPrediction.CRITICAL -> {
                 "KRITISCH: SOFORT Oelwechsel! Motor nicht weiter belasten! " +
-                        "Oel: ${calibration.recommendedOil}, Menge: ${calibration.oilCapacityLiters} L. " +
-                        "Oelfilter mitwechseln! Oelverbrauch: ${"%.2f".format(input.oilConsumptionLPer1000Km)} L/1000 km."
+                    "Oel: ${calibration.recommendedOil}, Menge: ${calibration.oilCapacityLiters} L. " +
+                    "Oelfilter mitwechseln! Oelverbrauch: ${"%.2f".format(input.oilConsumptionLPer1000Km)} L/1000 km."
             }
             OilHealthPrediction.UNKNOWN -> {
                 "Oelstand pruefen und Oelwechsel bei Bedarf durchfuehren. " +
-                        "Oel: ${calibration.recommendedOil}."
+                    "Oel: ${calibration.recommendedOil}."
             }
         }
     }
@@ -464,7 +463,7 @@ class OilHealthPredictor(
      */
     fun calculateArrheniusRisk(oilTempCelsius: Double): Double {
         val referenceTemp = 100.0
-        if (oilTempCelsius <= referenceTemp) return 0.0
+        if (oilTempCelsius <= referenceTemp) { return 0.0 }
         val tempRise = oilTempCelsius - referenceTemp
         return (ln(2.0) * tempRise / 10.0).coerceIn(0.0, 10.0)
     }
@@ -476,11 +475,11 @@ class OilHealthPredictor(
         val kmSinceChange = input.totalKm - input.lastOilChangeKm
         val daysSinceChange = if (input.lastOilChangeTimestamp > 0) {
             ((System.currentTimeMillis() - input.lastOilChangeTimestamp) / (1000 * 60 * 60 * 24)).toInt()
-        } else 0
+        } else { 0 }
 
         return kmSinceChange >= OIL_CHANGE_SEVERE_KM ||
-                daysSinceChange >= OIL_CHANGE_MAX_DAYS ||
-                input.oilTemp > OIL_TEMP_CRITICAL
+            daysSinceChange >= OIL_CHANGE_MAX_DAYS ||
+            input.oilTemp > OIL_TEMP_CRITICAL
     }
 
     /**

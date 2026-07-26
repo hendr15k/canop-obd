@@ -91,11 +91,9 @@ class BoostLeakDetector(
         private const val BOOST_DEVIATION_SEVERE = 35.0
 
         // Wastegate-Duty vs Boost-Korrelation
-        private const val WG_DUTY_HIGH_THRESHOLD = 80.0
         private const val WG_DUTY_LOW_THRESHOLD = 30.0
 
         // Turbo-RPM vs Boost-Korrelation
-        private const val TURBO_RPM_HIGH = 150000.0
         private const val TURBO_RPM_VERY_HIGH = 180000.0
 
         // Ladelufttemperatur-Delta (Ansaug vs Ladeluft)
@@ -131,8 +129,8 @@ class BoostLeakDetector(
         val indicators = mutableListOf<String>()
 
         val isSufficientLoad = input.engineLoad >= MIN_LOAD_FOR_ANALYSIS &&
-                input.throttle >= MIN_THROTTLE_FOR_ANALYSIS &&
-                input.rpm >= MIN_RPM_FOR_ANALYSIS
+            input.throttle >= MIN_THROTTLE_FOR_ANALYSIS &&
+            input.rpm >= MIN_RPM_FOR_ANALYSIS
 
         if (!isSufficientLoad) {
             return BoostLeakAnalysis(
@@ -145,9 +143,9 @@ class BoostLeakDetector(
                 mafDeviation = 0.0,
                 confidencePercent = 0,
                 diagnosis = "Nicht genuegend Last fuer Boost-Leck-Analyse. " +
-                        "Mindestens ${MIN_LOAD_FOR_ANALYSIS.toInt()}% Last, " +
-                        "${MIN_THROTTLE_FOR_ANALYSIS.toInt()}% Gas und " +
-                        "${MIN_RPM_FOR_ANALYSIS.toInt()} RPM erforderlich.",
+                    "Mindestens ${MIN_LOAD_FOR_ANALYSIS.toInt()}% Last, " +
+                    "${MIN_THROTTLE_FOR_ANALYSIS.toInt()}% Gas und " +
+                    "${MIN_RPM_FOR_ANALYSIS.toInt()} RPM erforderlich.",
                 recommendation = "Analyse bei hoeherer Last wiederholen (Vollgas-Messung empfohlen).",
                 detectedIndicators = emptyList()
             )
@@ -170,10 +168,10 @@ class BoostLeakDetector(
 
         // Gesamtbewertung
         val rawScore = (boostScore * WEIGHT_BOOST_DEVIATION +
-                turboBoostScore * WEIGHT_TURBO_BOOST_CORR +
-                tempScore * WEIGHT_TEMP_DELTA +
-                mafScore * WEIGHT_MAF +
-                trimScore * WEIGHT_FUEL_TRIM) / 100
+            turboBoostScore * WEIGHT_TURBO_BOOST_CORR +
+            tempScore * WEIGHT_TEMP_DELTA +
+            mafScore * WEIGHT_MAF +
+            trimScore * WEIGHT_FUEL_TRIM) / 100
 
         val healthScore = rawScore.coerceIn(0, 100)
 
@@ -209,13 +207,17 @@ class BoostLeakDetector(
         input: BoostLeakInput,
         indicators: MutableList<String>
     ): Pair<Int, Double> {
-        if (input.boostTargetBar <= 0.01) return 100 to 0.0
+        if (input.boostTargetBar <= 0.01) {
+            return 100 to 0.0
+        }
 
         val deviation = ((input.boostActualBar - input.boostTargetBar) / input.boostTargetBar) * 100.0
         val absDeviation = abs(deviation)
 
         // Nur Unterladung ist relevant fuer Leck-Erkennung
-        if (deviation > 0) return 100 to deviation
+        if (deviation > 0) {
+            return 100 to deviation
+        }
 
         val score = when {
             absDeviation < BOOST_DEVIATION_MINOR -> 100
@@ -252,14 +254,18 @@ class BoostLeakDetector(
         input: BoostLeakInput,
         indicators: MutableList<String>
     ): Pair<Int, Double> {
-        if (input.turboRpm <= 0 || input.boostActualBar <= 0) return 70 to 0.0
+        if (input.turboRpm <= 0 || input.boostActualBar <= 0) {
+            return 70 to 0.0
+        }
 
         // Erwarteter Boost bei gegebener Turbo-Drehzahl
         val expectedBoostPerRpm = calibration.normalBoostTargetBar / 100000.0
         val expectedBoost = input.turboRpm * expectedBoostPerRpm
         val correlation = if (expectedBoost > 0) {
             input.boostActualBar / expectedBoost
-        } else 1.0
+        } else {
+            1.0
+        }
 
         val score = when {
             correlation >= 0.85 -> 100
@@ -301,7 +307,9 @@ class BoostLeakDetector(
         input: BoostLeakInput,
         indicators: MutableList<String>
     ): Pair<Int, Double> {
-        if (input.chargeAirTemp <= 0 || input.intakeTemp <= 0) return 70 to 0.0
+        if (input.chargeAirTemp <= 0 || input.intakeTemp <= 0) {
+            return 70 to 0.0
+        }
 
         val tempDelta = input.chargeAirTemp - input.intakeTemp
 
@@ -339,7 +347,9 @@ class BoostLeakDetector(
         input: BoostLeakInput,
         indicators: MutableList<String>
     ): Pair<Int, Double> {
-        if (input.mafRate <= 0) return 70 to 0.0
+        if (input.mafRate <= 0) {
+            return 70 to 0.0
+        }
 
         val expectedMafRange = when {
             input.rpm < 1200 -> MAF_IDLE_EXPECTED_MIN..MAF_IDLE_EXPECTED_MAX
@@ -355,7 +365,9 @@ class BoostLeakDetector(
         val deviation = if (expectedMafRange.endInclusive > 0) {
             val expectedMid = (expectedMafRange.start + expectedMafRange.endInclusive) / 2.0
             ((input.mafRate - expectedMid) / expectedMid) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 
         val score = when {
             input.mafRate in expectedMafRange -> 100
@@ -374,7 +386,9 @@ class BoostLeakDetector(
                 if (input.boostActualBar < input.boostTargetBar * 0.8) {
                     indicators.add("MAF normal/hoch (${"%.1f".format(input.mafRate)} g/s) aber Boost niedrig")
                     45
-                } else 85
+                } else {
+                    85
+                }
             }
             else -> 80
         }
@@ -436,11 +450,17 @@ class BoostLeakDetector(
         }
 
         // Hoehere Last = zuverlaessigere Daten
-        if (input.engineLoad > 60) confidence += 5
-        if (input.throttle > 50) confidence += 5
+        if (input.engineLoad > 60) {
+            confidence += 5
+        }
+        if (input.throttle > 50) {
+            confidence += 5
+        }
 
         // Turbo-RPM vorhanden = zusaetzliche Datenquelle
-        if (input.turboRpm > 0) confidence += 5
+        if (input.turboRpm > 0) {
+            confidence += 5
+        }
 
         return confidence.coerceIn(0, 100)
     }
@@ -454,7 +474,9 @@ class BoostLeakDetector(
     private fun estimateLeakLocation(input: BoostLeakInput, indicators: List<String>): LeakLocation {
         val boostDeviation = if (input.boostTargetBar > 0.01) {
             ((input.boostActualBar - input.boostTargetBar) / input.boostTargetBar) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 
         val totalTrim = input.stftB1 + input.ltftB1
 
@@ -504,30 +526,33 @@ class BoostLeakDetector(
         return when (severity) {
             LeakSeverity.NONE -> {
                 "Ladeluft-System dicht. Boost: ${"%.2f".format(input.boostActualBar)} bar " +
-                        "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). Keine Leck-Indikatoren."
+                    "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). Keine Leck-Indikatoren."
             }
             LeakSeverity.MINOR -> {
-                val devPct = if (input.boostTargetBar > 0.01)
-                    abs(input.boostActualBar - input.boostTargetBar) / input.boostTargetBar * 100.0 else 0.0
+                val devPct = if (input.boostTargetBar > 0.01) {
+                    abs(input.boostActualBar - input.boostTargetBar) / input.boostTargetBar * 100.0
+                } else {
+                    0.0
+                }
                 "Moegliches kleines Ladeluft-Leck erkannt. " +
-                        "Bereich: ${location.label}. " +
-                        "Boost-Abweichung: ${"%.1f".format(devPct)}%."
+                    "Bereich: ${location.label}. " +
+                    "Boost-Abweichung: ${"%.1f".format(devPct)}%."
             }
             LeakSeverity.MODERATE -> {
                 "Ladeluft-Leck erkannt (${indicators.size} Indikatoren). " +
-                        "Wahrscheinliche Position: ${location.label} - ${location.description}. " +
-                        "Boost: ${"%.2f".format(input.boostActualBar)} bar " +
-                        "(Soll: ${"%.2f".format(input.boostTargetBar)} bar)."
+                    "Wahrscheinliche Position: ${location.label} - ${location.description}. " +
+                    "Boost: ${"%.2f".format(input.boostActualBar)} bar " +
+                    "(Soll: ${"%.2f".format(input.boostTargetBar)} bar)."
             }
             LeakSeverity.SEVERE -> {
                 "GROSSES Ladeluft-Leck! Boost nur ${"%.2f".format(input.boostActualBar)} bar " +
-                        "statt ${"%.2f".format(input.boostTargetBar)} bar. " +
-                        "Position: ${location.label}. " +
-                        "${indicators.size} Indikatoren sprechen fuer ein massives Leck."
+                    "statt ${"%.2f".format(input.boostTargetBar)} bar. " +
+                    "Position: ${location.label}. " +
+                    "${indicators.size} Indikatoren sprechen fuer ein massives Leck."
             }
             LeakSeverity.UNKNOWN -> {
                 "Ladeluft-System nicht ausreichend analysierbar. " +
-                        "Bitte bei hoeherer Last erneut messen."
+                    "Bitte bei hoeherer Last erneut messen."
             }
         }
     }
@@ -547,22 +572,22 @@ class BoostLeakDetector(
             }
             LeakSeverity.MINOR -> {
                 "Ladeluft-Schlaeuche und -Schellen bei naechster Gelegenheit pruefen. " +
-                        "Schwerpunkt: ${location.label}. " +
-                        "Sichtpruefung auf Risse und lose Verbindungen."
+                    "Schwerpunkt: ${location.label}. " +
+                    "Sichtpruefung auf Risse und lose Verbindungen."
             }
             LeakSeverity.MODERATE -> {
                 "Ladeluft-System pruefen! ${location.label} untersuchen. " +
-                        "Schlaeuche, Schellen und Dichtungen auf Beschädigung pruefen. " +
-                        "Drucktest des Ladeluft-Systems empfohlen."
+                    "Schlaeuche, Schellen und Dichtungen auf Beschädigung pruefen. " +
+                    "Drucktest des Ladeluft-Systems empfohlen."
             }
             LeakSeverity.SEVERE -> {
                 "SOFOERT Ladeluft-System pruefen! Grosses Leck bei ${location.label}. " +
-                        "Weiterfahrt mit Leistungsverlust und moeglicher Turboschaedigung " +
-                        "(Ueberdrehung). Werkstatt aufsuchen."
+                    "Weiterfahrt mit Leistungsverlust und moeglicher Turboschaedigung " +
+                    "(Ueberdrehung). Werkstatt aufsuchen."
             }
             LeakSeverity.UNKNOWN -> {
                 "Analyse bei hoeherer Motorlast wiederholen. " +
-                        "Vollgas-Beschleunigung (3. Gang, 2000-5000 rpm) messen."
+                    "Vollgas-Beschleunigung (3. Gang, 2000-5000 rpm) messen."
             }
         }
     }

@@ -64,7 +64,7 @@ object DataExporter {
                 val boostBar = calcBoostBar(r)
                 val time = isoFmt.format(Instant.ofEpochMilli(r.timestamp))
                 sb.append(
-                    "${r.timestamp},${time}," +
+                    "${r.timestamp},$time," +
                         "${r.rpm.toInt()},${r.speed.toInt()},${r.coolantTemp.toInt()},${r.throttle.toInt()}," +
                         "${r.fuelLevel.toInt()},${"%.2f".format(r.batteryVoltage)}," +
                         "${r.intakeTemp.toInt()},${r.oilTemp.toInt()}," +
@@ -217,6 +217,8 @@ object DataExporter {
     private fun calcBoostBar(r: DataRecord): Double {
         return if (r.barometricPressure > 0) {
             ((r.boostPressure - r.barometricPressure).coerceAtLeast(0.0) / 100.0)
-        } else 0.0
+        } else {
+            0.0
+        }
     }
 }

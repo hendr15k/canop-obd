@@ -105,8 +105,8 @@ class GPSTracker(private val context: Context) {
     }
 
     fun startTracking(): Boolean {
-        if (_isTracking.value) return false
-        if (!hasLocationPermission()) return false
+        if (_isTracking.value) { return false }
+        if (!hasLocationPermission()) { return false }
 
         tripId = UUID.randomUUID().toString().take(8).uppercase()
         tripStartTime = System.currentTimeMillis()
@@ -135,7 +135,7 @@ class GPSTracker(private val context: Context) {
     }
 
     fun stopTracking() {
-        if (!_isTracking.value) return
+        if (!_isTracking.value) { return }
 
         locationCallback?.let {
             fusedLocationClient.removeLocationUpdates(it)
@@ -153,7 +153,7 @@ class GPSTracker(private val context: Context) {
                 maxSpeedKmh = snapshot.maxOfOrNull { it.speed * 3.6f }?.toDouble() ?: 0.0,
                 avgSpeedKmh = if (snapshot.size > 1) {
                     snapshot.sumOf { (it.speed * 3.6).toDouble() } / snapshot.size
-                } else 0.0
+                } else { 0.0 }
             )
             _tripHistory.value = _tripHistory.value + trip
             _currentTrip.value = trip
@@ -278,7 +278,7 @@ class GPSTracker(private val context: Context) {
     }
 
     fun cleanup() {
-        if (_isTracking.value) stopTracking()
+        if (_isTracking.value) { stopTracking() }
         scope.cancel()
     }
 
@@ -296,7 +296,7 @@ class GPSTracker(private val context: Context) {
         }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { loc ->
-                callback(if (loc != null) locationToGPS(loc) else null)
+                callback(if (loc != null) { locationToGPS(loc) } else { null })
             }
             .addOnFailureListener {
                 callback(null)

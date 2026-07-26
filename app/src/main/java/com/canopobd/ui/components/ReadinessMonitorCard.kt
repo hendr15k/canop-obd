@@ -53,7 +53,7 @@ fun ReadinessMonitorCard(
     val infiniteTransition = rememberInfiniteTransition(label = "readiness_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (hasIncomplete && !isComplete) 0.8f else 0.3f,
+        targetValue = if (hasIncomplete && !isComplete) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -71,7 +71,7 @@ fun ReadinessMonitorCard(
                         color = colors.gaugeOrange.copy(alpha = pulseAlpha),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,

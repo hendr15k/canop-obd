@@ -5,8 +5,6 @@ import com.canopobd.data.domain.*
 import com.canopobd.data.model.*
 import com.canopobd.data.repository.TransmissionData
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 class AnalyzerManager {
 
@@ -207,8 +205,16 @@ class AnalyzerManager {
 
     private fun calcBoostBarValues(data: OBDData): BoostBarValues {
         val calibration = AstraJ14TurboCalibration.INSTANCE
-        val baroKpa = if (data.barometricPressure > 0) data.barometricPressure else 100.0
-        val absoluteBoostKpa = if (data.boostPressure > 0) data.boostPressure else data.intakePressure
+        val baroKpa = if (data.barometricPressure > 0) {
+            data.barometricPressure
+        } else {
+            100.0
+        }
+        val absoluteBoostKpa = if (data.boostPressure > 0) {
+            data.boostPressure
+        } else {
+            data.intakePressure
+        }
         val actualBar = calibration.getBoostBar((absoluteBoostKpa - baroKpa).coerceAtLeast(0.0))
         val targetBar = calibration.normalBoostTargetBar
         return BoostBarValues(actualBar, targetBar, absoluteBoostKpa)
@@ -223,14 +229,18 @@ class AnalyzerManager {
         val history = synchronized(voltageDeque) {
             if (data.batteryVoltage > 0) {
                 voltageDeque.addLast(data.batteryVoltage)
-                if (voltageDeque.size > 60) voltageDeque.removeFirst()
+                if (voltageDeque.size > 60) {
+                    voltageDeque.removeFirst()
+                }
             }
             voltageDeque.toList()
         }
         val o2History = synchronized(o2VoltageDeque) {
             if (data.o2VoltageB1S1 > 0) {
                 o2VoltageDeque.addLast(data.o2VoltageB1S1)
-                if (o2VoltageDeque.size > 60) o2VoltageDeque.removeFirst()
+                if (o2VoltageDeque.size > 60) {
+                    o2VoltageDeque.removeFirst()
+                }
             }
             o2VoltageDeque.toList()
         }
@@ -342,9 +352,15 @@ class AnalyzerManager {
         val now = System.currentTimeMillis()
         if (lastOilTempSampleTime > 0 && oilTemp > 0) {
             val dtHours = (now - lastOilTempSampleTime) / 3_600_000.0
-            if (oilTemp > 110) oilTimeAbove110C += dtHours
-            if (oilTemp > 115) oilTimeAbove115C += dtHours
-            if (oilTemp > 120) oilTimeAbove120C += dtHours
+            if (oilTemp > 110) {
+                oilTimeAbove110C += dtHours
+            }
+            if (oilTemp > 115) {
+                oilTimeAbove115C += dtHours
+            }
+            if (oilTemp > 120) {
+                oilTimeAbove120C += dtHours
+            }
             if (lastOilTempWasCold && data.coolantTemp > 70 && data.runTime < 600) {
                 oilShortTripCount++
             }
@@ -389,7 +405,11 @@ class AnalyzerManager {
             sensorValidator.addMaf(data.mafRate)
             sensorValidator.addRpm(data.rpm)
             sensorValidationResult.value = sensorValidator.validateMaf(data.mafRate)
-            val boostBar = if (data.boostPressure > 0) (data.boostPressure - data.barometricPressure).coerceAtLeast(0.0) / 100.0 else null
+            val boostBar = if (data.boostPressure > 0) {
+                (data.boostPressure - data.barometricPressure).coerceAtLeast(0.0) / 100.0
+            } else {
+                null
+            }
             val boostValidation = sensorValidator.validateBoost(boostBar, data.barometricPressure)
             val coolantValidation = sensorValidator.validateCoolant(data.coolantTemp)
             val rpmValidation = sensorValidator.validateRpm(data.rpm)
@@ -433,7 +453,11 @@ class AnalyzerManager {
                 val l100km = fuelConsumptionAnalyzer.calculateFromMAF(data.mafRate, data.speed)
                 fuelConsumptionData.value = fuelConsumptionData.value.copy(
                     instantL100km = l100km,
-                    avgL100km = if (l100km > 0) (fuelConsumptionData.value.avgL100km + l100km) / 2.0 else fuelConsumptionData.value.avgL100km
+                    avgL100km = if (l100km > 0) {
+                        (fuelConsumptionData.value.avgL100km + l100km) / 2.0
+                    } else {
+                        fuelConsumptionData.value.avgL100km
+                    }
                 )
             }
         } catch (e: Exception) { Log.w(TAG, "FuelConsumptionAnalyzer failed", e) }
@@ -444,7 +468,13 @@ class AnalyzerManager {
                 rpmHistory = listOf(data.rpm),
                 speedHistory = listOf(data.speed),
                 gearPosition = tcmData?.gear ?: 0,
-                clutchPosition = if (tcmData?.clutchStatus == "slipping") 1.0 else if (tcmData?.gear != null && tcmData.gear > 0) 0.0 else 0.5,
+                clutchPosition = if (tcmData?.clutchStatus == "slipping") {
+                    1.0
+                } else if (tcmData?.gear != null && tcmData.gear > 0) {
+                    0.0
+                } else {
+                    0.5
+                },
                 transmissionTemp = tcmData?.oilTemp ?: data.coolantTemp.toDouble(),
                 activeDTCs = dtcCodes
             )
@@ -454,12 +484,18 @@ class AnalyzerManager {
         try {
             val chainInput = ChainTensionerAnalyzer.ChainTensionerInput(
                 activeDTCs = dtcCodes,
-                coldStartRattleDurationSec = if (timingChainState.coldStartRattleDetected) timingChainState.coldSampleCount.toDouble() * 0.5 else 0.0,
+                coldStartRattleDurationSec = if (timingChainState.coldStartRattleDetected) {
+                    timingChainState.coldSampleCount.toDouble() * 0.5
+                } else {
+                    0.0
+                },
                 idleRpmVariance = timingChainState.idleRpmVariation,
                 timingAdvanceVariance = if (timingAdvanceBuffer.size >= 3) {
                     val mean = timingAdvanceBuffer.average()
                     timingAdvanceBuffer.map { (it - mean) * (it - mean) }.sum() / timingAdvanceBuffer.size
-                } else 0.0,
+                } else {
+                    0.0
+                },
                 currentRpm = data.rpm,
                 timingAdvance = data.timingAdvance,
                 coolantTemp = data.coolantTemp,
@@ -559,7 +595,11 @@ class AnalyzerManager {
                 if (turboSpoolTracking && boost.actualBar >= targetBoostAt80 * 0.8) {
                     val elapsed = (nowMs - turboSpoolStartTime) / 1000.0
                     turboSpoolTracking = false
-                    if (elapsed > 0.1 && elapsed < 10.0) elapsed else 0.0
+                    if (elapsed > 0.1 && elapsed < 10.0) {
+                        elapsed
+                    } else {
+                        0.0
+                    }
                 } else if (turboSpoolTracking && (nowMs - turboSpoolStartTime) > 10000) {
                     turboSpoolTracking = false
                     0.0
@@ -604,21 +644,41 @@ class AnalyzerManager {
         var score = 100
         if (oilConditionResult.value.condition != OilConditionMonitor.OilCondition.EXCELLENT &&
             oilConditionResult.value.condition != OilConditionMonitor.OilCondition.UNKNOWN
-        ) score -= 15
-        if (pcvResult.value.health != PCVMonitor.PCVHealth.HEALTHY) score -= 15
-        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) score -= 20
-        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) score -= 15
-        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) score -= 10
+        ) {
+            score -= 15
+        }
+        if (pcvResult.value.health != PCVMonitor.PCVHealth.HEALTHY) {
+            score -= 15
+        }
+        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) {
+            score -= 20
+        }
+        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) {
+            score -= 15
+        }
+        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) {
+            score -= 10
+        }
         return score.coerceIn(0, 100)
     }
 
     private fun buildExtendedWarnings(): List<String> {
         val warnings = mutableListOf<String>()
-        if (oilConditionResult.value.condition == OilConditionMonitor.OilCondition.CRITICAL) warnings.add("Ölwechsel dringend erforderlich!")
-        if (pcvResult.value.health == PCVMonitor.PCVHealth.PLUGGED) warnings.add("PCV-Ventil verstopft!")
-        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) warnings.add("Steuerkette kritisch!")
-        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) warnings.add("Getriebe M32 kritisch!")
-        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) warnings.add("Kühlsystem Überhitzung!")
+        if (oilConditionResult.value.condition == OilConditionMonitor.OilCondition.CRITICAL) {
+            warnings.add("Ölwechsel dringend erforderlich!")
+        }
+        if (pcvResult.value.health == PCVMonitor.PCVHealth.PLUGGED) {
+            warnings.add("PCV-Ventil verstopft!")
+        }
+        if (chainTensionerResult.value.health == ChainTensionerAnalyzer.ChainTensionerHealth.CRITICAL) {
+            warnings.add("Steuerkette kritisch!")
+        }
+        if (gearboxResult.value.health == M32GearboxMonitor.GearboxHealth.CRITICAL) {
+            warnings.add("Getriebe M32 kritisch!")
+        }
+        if (coolantResult.value.status == CoolantSystemHealth.CoolantSystemStatus.OVERHEATING) {
+            warnings.add("Kühlsystem Überhitzung!")
+        }
         return warnings
     }
 
@@ -639,8 +699,20 @@ class AnalyzerManager {
     private fun estimateOilConsumption(data: OBDData): Double {
         val baseConsumption = 0.08
         val loadFactor = data.engineLoad / 100.0
-        val rpmFactor = if (data.rpm > 4000) 2.0 else if (data.rpm > 3000) 1.5 else 1.0
-        val boostFactor = if (data.boostPressure > 150) 1.8 else if (data.boostPressure > 100) 1.3 else 1.0
+        val rpmFactor = if (data.rpm > 4000) {
+            2.0
+        } else if (data.rpm > 3000) {
+            1.5
+        } else {
+            1.0
+        }
+        val boostFactor = if (data.boostPressure > 150) {
+            1.8
+        } else if (data.boostPressure > 100) {
+            1.3
+        } else {
+            1.0
+        }
         return baseConsumption * rpmFactor * boostFactor * (1 + loadFactor)
     }
 }

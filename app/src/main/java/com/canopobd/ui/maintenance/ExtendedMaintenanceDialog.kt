@@ -30,8 +30,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -125,7 +123,7 @@ fun ExtendedMaintenanceDialog(
                                 Text(
                                     text = title,
                                     fontSize = 12.sp,
-                                    color = if (selectedTab == index) canopoAccent else textSecondary
+                                    color = if (selectedTab == index) { canopoAccent } else { textSecondary }
                                 )
                             }
                         )
@@ -358,8 +356,8 @@ private fun ServiceEntryCard(
             Spacer(modifier = Modifier.height(6.dp))
 
             val progressValue = if (service.intervalKm > 0) {
-                    ((currentKm - service.lastServiceKm).toFloat() / service.intervalKm.toFloat()).coerceIn(0f, 1f)
-                } else 0f
+                ((currentKm - service.lastServiceKm).toFloat() / service.intervalKm.toFloat()).coerceIn(0f, 1f)
+            } else { 0f }
             LinearProgressIndicator(
                 progress = { progressValue },
                 modifier = Modifier
@@ -462,7 +460,7 @@ private fun ServiceEntryCard(
                         Icon(
                             Icons.Filled.Notifications,
                             contentDescription = null,
-                            tint = if (reminderEnabled) gaugeGreen else textDim,
+                            tint = if (reminderEnabled) { gaugeGreen } else { textDim },
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -858,7 +856,7 @@ private fun ReminderConfigTab(services: List<ServiceEntry>) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Konfigurieren Sie Erinnerungen für jeden Service. " +
-                                "Sie werden vor Ablauf des Intervalls benachrichtigt.",
+                            "Sie werden vor Ablauf des Intervalls benachrichtigt.",
                         fontSize = 11.sp,
                         color = textSecondary
                     )
@@ -1432,7 +1430,7 @@ object AstraJServicePlan {
     }
 
     private fun calcProgress(currentKm: Int, lastKm: Int, intervalKm: Int): Float {
-        if (intervalKm == 0) return 0f
+        if (intervalKm == 0) { return 0f }
         return ((currentKm - lastKm).toFloat() / intervalKm.toFloat()).coerceIn(0f, 1f)
     }
 }

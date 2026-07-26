@@ -2,7 +2,6 @@ package com.canopobd.ui.trip
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -163,7 +161,7 @@ fun TripHistoryScreen(
             }
         }
     }
-    
+
     // Delete single trip dialog
     showDeleteDialog?.let { tripId ->
         AlertDialog(
@@ -185,7 +183,7 @@ fun TripHistoryScreen(
             }
         )
     }
-    
+
     // Clear all dialog
     if (showClearAllDialog) {
         AlertDialog(
@@ -232,7 +230,7 @@ private fun TripSummaryCard(trips: List<TripEntity>) {
     val maxSpeed = trips.maxOfOrNull { it.maxSpeedKmh } ?: 0f
     val totalDuration = trips.sumOf { it.endTime - it.startTime }
     val fuelPer100km = if (totalDistance > 0) (totalFuel / totalDistance * 100) else 0.0
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -334,7 +332,8 @@ private fun TripCard(
     onSelectChange: (Boolean) -> Unit = {},
     onDelete: () -> Unit
 ) {
-    val dateFormat = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
+    val dateFormat =
+        remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
     val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
 
     val borderColor = if (isSelected) {
@@ -389,9 +388,9 @@ private fun TripCard(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -409,9 +408,9 @@ private fun TripCard(
                     value = "%.1f L".format(trip.fuelUsedLiters)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -432,7 +431,7 @@ private fun TripCard(
                     label = "Max RPM"
                 )
             }
-            
+
             if (trip.vin.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -501,7 +500,8 @@ private fun TripComparisonDialog(
     trips: List<TripEntity>,
     onDismiss: () -> Unit
 ) {
-    val dateFormat = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
+    val dateFormat =
+        remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN).withZone(ZoneId.systemDefault()) }
 
     data class TripMetric(
         val label: String,

@@ -29,7 +29,7 @@ import kotlin.math.abs
  * - Startup: ~5-6 bar (Vorlauf)
  */
 class FuelSystemAnalyzer(
-    private val calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
+    calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
 ) {
 
     /**
@@ -95,22 +95,17 @@ class FuelSystemAnalyzer(
     companion object {
         // Kraftstoffdruck-Schwellenwerte (Bar)
         private const val RAIL_PRESSURE_MIN_IDLE = 40.0
-        private const val RAIL_PRESSURE_MAX_IDLE = 80.0
         private const val RAIL_PRESSURE_MIN_LOAD = 80.0
         private const val RAIL_PRESSURE_MAX_LOAD = 160.0
         private const val RAIL_PRESSURE_LOW_CRITICAL = 30.0
         private const val RAIL_PRESSURE_HIGH_CRITICAL = 170.0
-
-        // Niedrigdruck-Pumpe
-        private const val LOW_PRESSURE_MIN = 3.5
-        private const val LOW_PRESSURE_MAX = 6.5
 
         // Trimm-Schwellenwerte
         private const val TRIM_WARNING = 6.0
         private const val TRIM_CRITICAL = 12.0
 
         // Kraftstoffverbrauch vs MAF (fuer Injektor-Erkennung)
-        private const val FUEL_MAF_RATIO_IDLE = 0.015  // L/h pro g/s MAF
+        private const val FUEL_MAF_RATIO_IDLE = 0.015 // L/h pro g/s MAF
 
         // Kohlenstoffablagerungs-Risiko (basierend auf Laufleistung)
         private const val CARBON_BUILDUP_START_KM = 30000.0
@@ -153,9 +148,9 @@ class FuelSystemAnalyzer(
 
         // Gesamtbewertung
         val rawScore = (dtcResult.first * WEIGHT_DTC +
-                railPressureScore * WEIGHT_RAIL_PRESSURE +
-                trimScore * WEIGHT_TRIM +
-                injectorScore * WEIGHT_INJECTOR) / 100
+            railPressureScore * WEIGHT_RAIL_PRESSURE +
+            trimScore * WEIGHT_TRIM +
+            injectorScore * WEIGHT_INJECTOR) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
 
@@ -203,7 +198,7 @@ class FuelSystemAnalyzer(
                     issues.add(FuelSystemIssue.INJECTOR_LEAK)
                 }
                 upper.contains("P0201") || upper.contains("P0202") ||
-                        upper.contains("P0203") || upper.contains("P0204") -> {
+                    upper.contains("P0203") || upper.contains("P0204") -> {
                     penalty = penalty.coerceAtLeast(30)
                     issues.add(FuelSystemIssue.INJECTOR_LEAK)
                 }
@@ -226,15 +221,15 @@ class FuelSystemAnalyzer(
         // Soll-Druck basierend auf Last bestimmen
         val targetPressure = when {
             engineLoad > 70 -> RAIL_PRESSURE_MIN_LOAD + (RAIL_PRESSURE_MAX_LOAD - RAIL_PRESSURE_MIN_LOAD) *
-                    (engineLoad / 100.0)
+                (engineLoad / 100.0)
             engineLoad > 30 -> RAIL_PRESSURE_MIN_IDLE + (RAIL_PRESSURE_MIN_LOAD - RAIL_PRESSURE_MIN_IDLE) *
-                    (engineLoad / 70.0)
+                (engineLoad / 70.0)
             else -> RAIL_PRESSURE_MIN_IDLE + 10.0 // Leerlauf: ca. 50-60 bar
         }
 
         val deviation = if (targetPressure > 0) {
             ((pressureBar - targetPressure) / targetPressure) * 100.0
-        } else 0.0
+        } else { 0.0 }
 
         val absDeviation = abs(deviation)
 
@@ -271,7 +266,7 @@ class FuelSystemAnalyzer(
             worstTotal > TRIM_CRITICAL -> 25
             worstTotal > TRIM_WARNING -> {
                 val base = 60
-                val asymmetryPenalty = if (bankAsymmetry > 5) 10 else 0
+                val asymmetryPenalty = if (bankAsymmetry > 5) { 10 } else { 0 }
                 (base - asymmetryPenalty).coerceAtLeast(0)
             }
             worstTotal > TRIM_WARNING * 0.5 -> 85
@@ -326,12 +321,12 @@ class FuelSystemAnalyzer(
             totalKm < CARBON_BUILDUP_START_KM -> 10
             totalKm < CARBON_BUILDUP_HIGH_KM -> {
                 ((totalKm - CARBON_BUILDUP_START_KM) /
-                        (CARBON_BUILDUP_HIGH_KM - CARBON_BUILDUP_START_KM) * 50).toInt().coerceIn(10, 60)
+                    (CARBON_BUILDUP_HIGH_KM - CARBON_BUILDUP_START_KM) * 50).toInt().coerceIn(10, 60)
             }
             // Bei hohem Kilometerstand: MAF/MAP-Korrelation pruefen
             totalKm >= CARBON_BUILDUP_HIGH_KM && mafRate > 0 && mapPressure > 0 -> {
                 val correlation = mafRate / mapPressure
-                val risk = if (correlation < 0.08) 70 else 40 + ((totalKm - CARBON_BUILDUP_HIGH_KM) / 50000.0 * 30).toInt().coerceAtMost(30)
+                val risk = if (correlation < 0.08) { 70 } else { 40 + ((totalKm - CARBON_BUILDUP_HIGH_KM) / 50000.0 * 30).toInt().coerceAtMost(30) }
                 risk
             }
             else -> 40
@@ -371,17 +366,17 @@ class FuelSystemAnalyzer(
         return when (health) {
             FuelSystemHealth.HEALTHY -> {
                 "Kraftstoffsystem funktioniert normal. " +
-                        "Rail-Druck: ${"%.1f".format(input.fuelRailPressureBar)} bar."
+                    "Rail-Druck: ${"%.1f".format(input.fuelRailPressureBar)} bar."
             }
             FuelSystemHealth.DEGRADED -> {
                 val issueNames = issues.map { it.label }
                 "Kraftstoffsystem eingeschraenkt: ${issueNames.joinToString(", ")}. " +
-                        "Rail-Druck: ${"%.1f".format(input.fuelRailPressureBar)} bar."
+                    "Rail-Druck: ${"%.1f".format(input.fuelRailPressureBar)} bar."
             }
             FuelSystemHealth.CRITICAL -> {
                 val issueNames = issues.map { it.description }
                 "KRITISCH: Kraftstoffsystemfehler - ${issueNames.joinToString("; ")}. " +
-                        "Sofortige Pruefung erforderlich."
+                    "Sofortige Pruefung erforderlich."
             }
             FuelSystemHealth.UNKNOWN -> {
                 "Kraftstoffsystem-Status nicht bestimmbar. Weitere Daten erforderlich."
@@ -401,7 +396,7 @@ class FuelSystemAnalyzer(
             FuelSystemHealth.HEALTHY -> {
                 if (input.totalKm > CARBON_BUILDUP_START_KM) {
                     "Bei ${input.totalKm.toInt()} km: Reinigung der Einspritzduegen " +
-                            "und Ansaugwege bei naechster Wartung empfohlen."
+                        "und Ansaugwege bei naechster Wartung empfohlen."
                 } else {
                     "Keine Massnahmen erforderlich."
                 }
@@ -419,16 +414,16 @@ class FuelSystemAnalyzer(
                     actions.add("Druckregler ersetzen")
                 }
                 "Empfohlen: ${actions.joinToString("; ")}. " +
-                        "Kraftstofffilter pruefen."
+                    "Kraftstofffilter pruefen."
             }
             FuelSystemHealth.CRITICAL -> {
                 "SOFORT Werkstatt aufsuchen! " +
-                        "Kraftstoffsystem erfordert sofortige Reparatur. " +
-                        "Fahrten bis zur Werkstatt auf Minimum beschraenken."
+                    "Kraftstoffsystem erfordert sofortige Reparatur. " +
+                    "Fahrten bis zur Werkstatt auf Minimum beschraenken."
             }
             FuelSystemHealth.UNKNOWN -> {
                 "Kraftstoffdruck-Manometer-Messung bei Werkstatt durchfuehren. " +
-                        "Datenlogger fuer laengere Analyse aktivieren."
+                    "Datenlogger fuer laengere Analyse aktivieren."
             }
         }
     }

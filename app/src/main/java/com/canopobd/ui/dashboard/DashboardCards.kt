@@ -1,10 +1,5 @@
 package com.canopobd.ui.dashboard
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,19 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.data.domain.*
-import com.canopobd.data.model.MaintenanceType
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.GaugeTypography
@@ -353,7 +342,7 @@ fun FuelSystemCard(
                 size = 44.dp,
                 strokeWidth = 4.dp,
                 color = scoreColor,
-                centerText = "${score}",
+                centerText = "$score",
                 centerTextColor = scoreColor
             )
             Spacer(Modifier.width(10.dp))
@@ -1312,7 +1301,7 @@ fun TCMECMCANStatusCard(
         ) {
             CompactStat("Öl°C", "${tcmOilTempCelsius.toInt()}", colors, Modifier.weight(1f))
             CompactStat("Druck", "${tcmPressureKpa.toInt()}", colors, Modifier.weight(1f))
-            CompactStat("Kühl", "${ecmCoolantTemp}°", colors, Modifier.weight(1f))
+            CompactStat("Kühl", "$ecmCoolantTemp°", colors, Modifier.weight(1f))
             CompactStat("Gas", "${ecmThrottlePosition.toInt()}%", colors, Modifier.weight(1f))
         }
     }

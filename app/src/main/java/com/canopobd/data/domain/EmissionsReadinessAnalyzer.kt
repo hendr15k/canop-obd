@@ -31,27 +31,12 @@ class EmissionsReadinessAnalyzer {
     }
 
     companion object {
-        private val MONITOR_ORDER = listOf(
-            com.canopobd.data.model.MonitorType.MISFIRE,
-            com.canopobd.data.model.MonitorType.FUEL_SYSTEM,
-            com.canopobd.data.model.MonitorType.COMPONENTS,
-            com.canopobd.data.model.MonitorType.CATALYST,
-            com.canopobd.data.model.MonitorType.O2_SENSOR,
-            com.canopobd.data.model.MonitorType.O2_HEATER,
-            com.canopobd.data.model.MonitorType.EGR,
-            com.canopobd.data.model.MonitorType.EVAP,
-            com.canopobd.data.model.MonitorType.SAI,
-            com.canopobd.data.model.MonitorType.GPF
-        )
-
         private const val MISFIRE_BIT = 0
         private const val FUEL_SYSTEM_BIT = 1
         private const val COMPONENTS_BIT = 2
         private const val CATALYST_BIT = 3
-        private const val HEATED_CATALYST_BIT = 4
         private const val EVAP_BIT = 5
         private const val SAI_BIT = 6
-        private const val AC_REFRIGERANT_BIT = 7
         private const val O2_SENSOR_BIT = 8
         private const val O2_HEATER_BIT = 9
         private const val EGR_BIT = 10
@@ -59,7 +44,6 @@ class EmissionsReadinessAnalyzer {
         private const val MIN_WARMUPS_FOR_READINESS = 1
         private const val MIN_DISTANCE_FOR_READINESS = 5.0
         private const val MIN_RUNTIME_FOR_READINESS = 60.0
-        private const val MAX_NOT_COMPLETE_WITHOUT_DTC = 4
     }
 
     fun analyze(input: ReadinessInput): ReadinessAnalysis {
@@ -104,7 +88,9 @@ class EmissionsReadinessAnalyzer {
     private fun createMonitor(type: com.canopobd.data.model.MonitorType, bits: Int, bitPosition: Int, isSupported: Boolean): com.canopobd.data.model.EmissionsReadinessMonitor {
         val isComplete = if (bitPosition >= 0) {
             isSupported && ((bits shr bitPosition) and 1) == 1
-        } else false
+        } else {
+            false
+        }
         return com.canopobd.data.model.EmissionsReadinessMonitor(
             monitor = type,
             isComplete = isComplete,
@@ -114,23 +100,31 @@ class EmissionsReadinessAnalyzer {
 
     fun getReadinessPercentage(monitors: List<com.canopobd.data.model.EmissionsReadinessMonitor>): Double {
         val supported = monitors.filter { it.isSupported }
-        if (supported.isEmpty()) return 0.0
+        if (supported.isEmpty()) {
+            return 0.0
+        }
         val completed = supported.count { it.isComplete }
         return (completed.toDouble() / supported.size) * 100.0
     }
 
     fun isInspectionReady(monitors: List<com.canopobd.data.model.EmissionsReadinessMonitor>, hasDTC: Boolean): Boolean {
-        if (hasDTC) return false
+        if (hasDTC) {
+            return false
+        }
         val supported = monitors.filter { it.isSupported }
         val notComplete = supported.count { !it.isComplete }
         return notComplete <= 1
     }
 
     private fun calculateReadinessScore(monitors: List<com.canopobd.data.model.EmissionsReadinessMonitor>, hasDTC: Boolean, input: ReadinessInput): Int {
-        if (hasDTC) return 20
+        if (hasDTC) {
+            return 20
+        }
 
         val supported = monitors.filter { it.isSupported }
-        if (supported.isEmpty()) return 60
+        if (supported.isEmpty()) {
+            return 60
+        }
 
         val completed = supported.count { it.isComplete }
         val baseScore = (completed.toDouble() / supported.size * 80).toInt()
@@ -160,7 +154,9 @@ class EmissionsReadinessAnalyzer {
         hasDTC: Boolean,
         input: ReadinessInput
     ): EmissionsStatus {
-        if (hasDTC) return EmissionsStatus.DTC_ACTIVE
+        if (hasDTC) {
+            return EmissionsStatus.DTC_ACTIVE
+        }
 
         val supported = monitors.filter { it.isSupported }
         val notComplete = supported.count { !it.isComplete }
@@ -190,15 +186,15 @@ class EmissionsReadinessAnalyzer {
             }
             EmissionsStatus.NOT_READY -> {
                 "Nur $completed/$total Monitore abgeschlossen. " +
-                        "Noch nicht abgeschlossen: ${incompleteNames.joinToString(", ")}."
+                    "Noch nicht abgeschlossen: ${incompleteNames.joinToString(", ")}."
             }
             EmissionsStatus.INCOMPLETE -> {
                 "${incompleteNames.joinToString(", ")} noch nicht abgeschlossen. " +
-                        "Weitere Fahrdaten noetig."
+                    "Weitere Fahrdaten noetig."
             }
             EmissionsStatus.DTC_ACTIVE -> {
                 "Fehlercodes vorhanden. Emissionspruefung wird fehlschlagen. " +
-                        "DTCs zuerst loesen."
+                    "DTCs zuerst loesen."
             }
         }
     }
@@ -213,24 +209,24 @@ class EmissionsReadinessAnalyzer {
         return when {
             hasDTC -> {
                 "Fehlercodes loesen und Fahrtzyklus abschliessen. " +
-                        "Danach erneut pruefen."
+                    "Danach erneut pruefen."
             }
             status == EmissionsStatus.READY -> {
                 "Fahrzeug bereit fuer TUEV/AU. Alle Monitore bestanden."
             }
             input.warmupsSinceClear < MIN_WARMUPS_FOR_READINESS -> {
                 "Noch ${MIN_WARMUPS_FOR_READINESS - input.warmupsSinceClear} " +
-                        "Warmlaeufe noetig fuer Readiness-Reset. " +
-                        "Normalen Fahrtzyklus durchfuehren."
+                    "Warmlaeufe noetig fuer Readiness-Reset. " +
+                    "Normalen Fahrtzyklus durchfuehren."
             }
             input.distanceSinceClear < MIN_DISTANCE_FOR_READINESS -> {
                 "Mindestens ${MIN_DISTANCE_FOR_READINESS.toInt()}km " +
-                        "Fahrstrecke fuer Monitore noetig."
+                    "Fahrstrecke fuer Monitore noetig."
             }
             else -> {
                 "Fahrzeug normal bis zur Betriebstemperatur fahren. " +
-                        "Monitore schliessen sich automatisch. " +
-                        "Idle-, Teillast- und Vollastphasen durchfahren."
+                    "Monitore schliessen sich automatisch. " +
+                    "Idle-, Teillast- und Vollastphasen durchfahren."
             }
         }
     }

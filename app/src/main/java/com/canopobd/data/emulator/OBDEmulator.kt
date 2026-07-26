@@ -3,7 +3,6 @@ package com.canopobd.data.emulator
 import com.canopobd.bluetooth.Mode22TurboData
 import com.canopobd.data.model.OBDData
 import kotlin.math.sin
-import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.max
 
@@ -201,9 +200,9 @@ class OBDEmulator(
             intakePressure = calculateIntakePressure(),
             runTime = timeSeconds,
             fuelRailPressure = 3800.0 + throttlePosition * 1500 + sin(timeSeconds * 2) * 100,
-            commandedEGR = if (currentCoolantTemp > 80) (5.0 + sin(timeSeconds * 0.5) * 2) else 0.0,
-            egrTemp = if (currentCoolantTemp > 80) currentCoolantTemp + 15 + sin(timeSeconds) * 5 else 30.0,
-            commandedEvapPurge = if (currentCoolantTemp > 60) 15.0 + throttlePosition * 0.10 else 5.0,
+            commandedEGR = if (currentCoolantTemp > 80) { (5.0 + sin(timeSeconds * 0.5) * 2) } else { 0.0 },
+            egrTemp = if (currentCoolantTemp > 80) { currentCoolantTemp + 15 + sin(timeSeconds) * 5 } else { 30.0 },
+            commandedEvapPurge = if (currentCoolantTemp > 60) { 15.0 + throttlePosition * 0.10 } else { 5.0 },
             barometricPressure = 101.0 + sin(timeSeconds * 0.01) * 2,
             o2VoltageB1S1 = 0.45 + sin(timeSeconds * 4) * 0.35,
             o2VoltageB1S2 = 0.45 + sin(timeSeconds * 4 + 1) * 0.35,
@@ -236,9 +235,9 @@ class OBDEmulator(
             referenceTorque = 200.0,
             ethanolPercent = 10.0,
             oilTemp = currentCoolantTemp - 5 + sin(timeSeconds * 0.2) * 3,
-            turboBoostVacuum = if (currentBoost < 0) currentBoost * 100 else 0.0,
+            turboBoostVacuum = if (currentBoost < 0) { currentBoost * 100 } else { 0.0 },
             acceleratorPosE = throttlePosition * 0.95,
-            engineRuntimeMil = if (currentCoolantTemp > 80) 120.0 else 0.0,
+            engineRuntimeMil = if (currentCoolantTemp > 80) { 120.0 } else { 0.0 },
             alternatorDuty = 55.0 + throttlePosition * 30 + sin(timeSeconds * 0.5) * 5,
             o2VoltageB1S3 = 0.45 + sin(timeSeconds * 4 + 2) * 0.3,
             o2VoltageB2S1 = 0.45 + sin(timeSeconds * 4 + 0.5) * 0.35,
@@ -325,7 +324,7 @@ class OBDEmulator(
 
         val warmupDelta = if (currentCoolantTemp < 90) {
             0.4 + (throttlePosition / 100.0) * 0.3
-        } else -0.05
+        } else { -0.05 }
         currentCoolantTemp += warmupDelta + (Math.random() - 0.5) * 0.1
         currentCoolantTemp = currentCoolantTemp.coerceIn(20.0, 105.0)
 
@@ -381,8 +380,8 @@ class OBDEmulator(
     private fun calculateShortTermFuelTrim(timeSec: Double): Double {
         val coldStartEnrichment = if (currentCoolantTemp < 60) {
             (60.0 - currentCoolantTemp) * 0.3
-        } else 0.0
-        val decelCutoff = if (throttlePosition < 1 && currentRpm > 1500) -8.0 else 0.0
+        } else { 0.0 }
+        val decelCutoff = if (throttlePosition < 1 && currentRpm > 1500) { -8.0 } else { 0.0 }
         return -1.5 + sin(timeSec * 0.3) * 2 + coldStartEnrichment + decelCutoff
     }
 

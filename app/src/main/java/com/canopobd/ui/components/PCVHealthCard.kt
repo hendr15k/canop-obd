@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -60,7 +59,7 @@ fun PCVHealthCard(
     val infiniteTransition = rememberInfiniteTransition(label = "pcv_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isCritical) 0.8f else 0.3f,
+        targetValue = if (isCritical) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -94,7 +93,7 @@ fun PCVHealthCard(
                         color = colors.gaugeOrange.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard
@@ -312,7 +311,7 @@ private fun OilConsumptionTrend(
                     .background(colors.surfaceVariant)
                     .padding(4.dp)
             ) {
-                if (lastReadings.size < 2) return@Canvas
+                if (lastReadings.size < 2) { return@Canvas }
 
                 val maxVal = lastReadings.max().coerceAtLeast(0.1)
                 val minVal = lastReadings.min().coerceAtMost(maxVal - 0.01)
@@ -324,7 +323,7 @@ private fun OilConsumptionTrend(
                 lastReadings.forEachIndexed { index, value ->
                     val x = w * index / (lastReadings.size - 1).coerceAtLeast(1)
                     val y = h - ((value - minVal) / range * h).toFloat().coerceIn(0f, h)
-                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                    if (index == 0) { path.moveTo(x, y) } else { path.lineTo(x, y) }
                 }
 
                 drawPath(
@@ -345,7 +344,7 @@ private fun OilConsumptionTrend(
                     fontSize = 9.sp,
                     color = colors.textDim
                 )
-                val avg = if (lastReadings.isNotEmpty()) lastReadings.average() else 0.0
+                val avg = if (lastReadings.isNotEmpty()) { lastReadings.average() } else { 0.0 }
                 Text(
                     text = "Ø %.2f".format(avg),
                     fontSize = 10.sp,
@@ -369,7 +368,7 @@ private fun PCVStatusRow(
     warningText: String,
     colors: AppColors
 ) {
-    val statusColor = if (isOk) colors.gaugeGreen else colors.gaugeOrange
+    val statusColor = if (isOk) { colors.gaugeGreen } else { colors.gaugeOrange }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -386,7 +385,7 @@ private fun PCVStatusRow(
             color = statusColor.copy(alpha = 0.2f)
         ) {
             Text(
-                text = if (isOk) okText else warningText,
+                text = if (isOk) { okText } else { warningText },
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = statusColor,

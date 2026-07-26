@@ -6,13 +6,11 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,20 +27,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.canopobd.ui.theme.AppColors
 import com.canopobd.ui.theme.GaugeTypography
 import com.canopobd.ui.theme.LocalAppColors
 
@@ -99,16 +94,18 @@ fun GlassCard(
 ) {
     val colors = LocalAppColors.current
     val resolvedBg = background ?: colors.gradientCard
-    val resolvedBorder = border
-        ?: if (accentEdge != null) BorderStroke(1.dp, accentEdge.copy(alpha = 0.35f))
-        else BorderStroke(1.dp, colors.borderSubtle)
+    val resolvedBorder = border ?: if (accentEdge != null) {
+        BorderStroke(1.dp, accentEdge.copy(alpha = 0.35f))
+    } else {
+        BorderStroke(1.dp, colors.borderSubtle)
+    }
 
     val containerMod = modifier
         .clip(shape)
         .background(colors.surfaceBase)
         .background(resolvedBg)
         .border(resolvedBorder, shape)
-        .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+        .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } }
 
     Surface(
         modifier = containerMod,
@@ -140,7 +137,7 @@ fun FlatCard(
         .clip(shape)
         .background(backgroundColor ?: colors.surfaceBase)
         .border(border ?: BorderStroke(1.dp, colors.borderSubtle), shape)
-        .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+        .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } }
 
     Surface(
         modifier = containerMod,
@@ -172,7 +169,7 @@ fun AccentCard(
             .background(colors.surfaceBase)
             .background(colors.gradientCard)
             .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.lg))
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } }
     ) {
         Box(
             modifier = Modifier
@@ -294,7 +291,7 @@ fun InlineSectionHeader(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
-        if (trailing != null) trailing()
+        if (trailing != null) { trailing() }
     }
 }
 
@@ -322,7 +319,7 @@ fun StatusDot(
         ),
         label = "pulse_alpha"
     )
-    val resolvedColor = if (pulse) color.copy(alpha = alpha) else color
+    val resolvedColor = if (pulse) { color.copy(alpha = alpha) } else { color }
     Box(
         modifier = modifier
             .size(size)
@@ -342,8 +339,8 @@ fun StatusPill(
     filled: Boolean = true,
     icon: ImageVector? = null
 ) {
-    val bg = if (filled) color.copy(alpha = 0.18f) else Color.Transparent
-    val border = if (filled) BorderStroke(1.dp, color.copy(alpha = 0.4f)) else BorderStroke(1.dp, color.copy(alpha = 0.6f))
+    val bg = if (filled) { color.copy(alpha = 0.18f) } else { Color.Transparent }
+    val border = if (filled) { BorderStroke(1.dp, color.copy(alpha = 0.4f)) } else { BorderStroke(1.dp, color.copy(alpha = 0.6f)) }
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(AppRadius.pill),
@@ -382,13 +379,13 @@ fun Chip(
 ) {
     val colors = LocalAppColors.current
     val resolvedAccent = accentColor ?: colors.primary
-    val bg = if (selected) resolvedAccent.copy(alpha = 0.18f) else colors.surfaceRaised
-    val border = if (selected) BorderStroke(1.dp, resolvedAccent.copy(alpha = 0.5f)) else BorderStroke(1.dp, colors.borderSubtle)
-    val textColor = if (selected) resolvedAccent else colors.textSecondary
+    val bg = if (selected) { resolvedAccent.copy(alpha = 0.18f) } else { colors.surfaceRaised }
+    val border = if (selected) { BorderStroke(1.dp, resolvedAccent.copy(alpha = 0.5f)) } else { BorderStroke(1.dp, colors.borderSubtle) }
+    val textColor = if (selected) { resolvedAccent } else { colors.textSecondary }
 
     Surface(
         modifier = modifier
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it },
+            .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } },
         shape = RoundedCornerShape(AppRadius.pill),
         color = bg,
         border = border
@@ -510,7 +507,7 @@ fun HeroStat(
             .clip(RoundedCornerShape(AppRadius.lg))
             .background(colors.surfaceRaised.copy(alpha = 0.5f))
             .border(1.dp, resolvedAccent.copy(alpha = 0.35f), RoundedCornerShape(AppRadius.lg))
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } }
             .padding(16.dp)
     ) {
         Column {
@@ -664,7 +661,7 @@ fun KeyValueBlock(
             .clip(RoundedCornerShape(AppRadius.md))
             .background(colors.surfaceRaised.copy(alpha = 0.5f))
             .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.md))
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } }
             .padding(12.dp)
     ) {
         Text(
@@ -804,7 +801,7 @@ fun LinearGauge(
 }
 
 private fun formatValue(v: Float): String =
-    if (v == v.toInt().toFloat()) v.toInt().toString() else "%.1f".format(v)
+    if (v == v.toInt().toFloat()) { v.toInt().toString() } else { "%.1f".format(v) }
 
 // ---------------------------------------------------------------------------
 // PROGRESS RING — circular progress indicator with center text
@@ -950,10 +947,12 @@ fun GradientButton(
 ) {
     val colors = LocalAppColors.current
     val resolvedGradient = gradient ?: colors.gradientAccent
-    val finalGradient = if (enabled) resolvedGradient else Brush.horizontalGradient(
-        colors = listOf(colors.surfaceRaised, colors.surfaceElevated)
-    )
-    val textColor = if (enabled) colors.surfaceBlack else colors.textMuted
+    val finalGradient = if (enabled) { resolvedGradient } else {
+        Brush.horizontalGradient(
+            colors = listOf(colors.surfaceRaised, colors.surfaceElevated)
+        )
+    }
+    val textColor = if (enabled) { colors.surfaceBlack } else { colors.textMuted }
 
     Box(
         modifier = modifier
@@ -998,7 +997,7 @@ fun OutlineButton(
             .clip(RoundedCornerShape(AppRadius.md))
             .border(
                 width = 1.dp,
-                color = if (enabled) resolvedAccent.copy(alpha = 0.6f) else colors.borderSubtle,
+                color = if (enabled) { resolvedAccent.copy(alpha = 0.6f) } else { colors.borderSubtle },
                 shape = RoundedCornerShape(AppRadius.md)
             )
             .clickable(enabled = enabled, onClick = onClick)
@@ -1010,7 +1009,7 @@ fun OutlineButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (enabled) resolvedAccent else colors.textMuted,
+                    tint = if (enabled) { resolvedAccent } else { colors.textMuted },
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(6.dp))
@@ -1018,7 +1017,7 @@ fun OutlineButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
-                color = if (enabled) resolvedAccent else colors.textMuted
+                color = if (enabled) { resolvedAccent } else { colors.textMuted }
             )
         }
     }
@@ -1072,8 +1071,8 @@ fun QuickTile(
 ) {
     val colors = LocalAppColors.current
     val resolvedAccent = accentColor ?: colors.primary
-    val activeBg = if (isActive) resolvedAccent.copy(alpha = 0.14f) else Color.Transparent
-    val activeBorder = if (isActive) resolvedAccent.copy(alpha = 0.5f) else colors.borderSubtle
+    val activeBg = if (isActive) { resolvedAccent.copy(alpha = 0.14f) } else { Color.Transparent }
+    val activeBorder = if (isActive) { resolvedAccent.copy(alpha = 0.5f) } else { colors.borderSubtle }
 
     Box(
         modifier = modifier
@@ -1116,7 +1115,7 @@ fun QuickTile(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (isActive) resolvedAccent else colors.textSecondary,
+                color = if (isActive) { resolvedAccent } else { colors.textSecondary },
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 textAlign = TextAlign.Center
@@ -1206,14 +1205,14 @@ private fun StepperButton(
         modifier = Modifier
             .size(30.dp)
             .clip(CircleShape)
-            .background(if (enabled) accentColor.copy(alpha = 0.16f) else colors.surfaceElevated)
+            .background(if (enabled) { accentColor.copy(alpha = 0.16f) } else { colors.surfaceElevated })
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (enabled) accentColor else colors.textMuted,
+            tint = if (enabled) { accentColor } else { colors.textMuted },
             modifier = Modifier.size(16.dp)
         )
     }
@@ -1248,7 +1247,7 @@ fun SliderRow(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = (valueFormatter?.invoke(value) ?: "%.0f".format(value)) + (if (unit.isNotEmpty()) " $unit" else ""),
+                text = (valueFormatter?.invoke(value) ?: "%.0f".format(value)) + (if (unit.isNotEmpty()) { " $unit" } else { "" }),
                 style = GaugeTypography.valueSmall,
                 color = resolved,
                 fontWeight = FontWeight.Bold
@@ -1293,8 +1292,11 @@ fun SegmentedControl(
     ) {
         options.forEachIndexed { index, label ->
             val isSelected = index == selectedIndex
-            val activeBrush: Brush = if (isSelected) colors.gradientAccent
-            else Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+            val activeBrush: Brush = if (isSelected) {
+                colors.gradientAccent
+            } else {
+                Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+            }
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -1307,8 +1309,8 @@ fun SegmentedControl(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) colors.surfaceBlack else colors.textSecondary,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    color = if (isSelected) { colors.surfaceBlack } else { colors.textSecondary },
+                    fontWeight = if (isSelected) { FontWeight.Bold } else { FontWeight.Medium }
                 )
             }
         }
@@ -1347,8 +1349,8 @@ fun TabBar(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) resolved else colors.textTertiary,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    color = if (isSelected) { resolved } else { colors.textTertiary },
+                    fontWeight = if (isSelected) { FontWeight.Bold } else { FontWeight.Medium }
                 )
                 Spacer(Modifier.height(6.dp))
                 Box(
@@ -1356,7 +1358,7 @@ fun TabBar(
                         .fillMaxWidth(0.6f)
                         .height(2.dp)
                         .background(
-                            if (isSelected) resolved else Color.Transparent,
+                            if (isSelected) { resolved } else { Color.Transparent },
                             RoundedCornerShape(1.dp)
                         )
                 )
@@ -1391,7 +1393,7 @@ fun ListItemBox(
             .clip(RoundedCornerShape(AppRadius.md))
             .background(colors.surfaceRaised)
             .border(1.dp, colors.borderSubtle, RoundedCornerShape(AppRadius.md))
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .let { if (onClick != null) { it.clickable(onClick = onClick) } else { it } }
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1590,13 +1592,13 @@ fun TrendIndicator(
     inverted: Boolean = false // true = lower is better (e.g. fuel consumption)
 ) {
     val colors = LocalAppColors.current
-    val isPositive = if (inverted) delta < 0 else delta > 0
+    val isPositive = if (inverted) { delta < 0 } else { delta > 0 }
     val color = when {
         delta == 0f -> colors.textTertiary
         isPositive -> colors.success
         else -> colors.critical
     }
-    val arrow = if (delta > 0) "▲" else if (delta < 0) "▼" else "■"
+    val arrow = if (delta > 0) { "▲" } else if (delta < 0) { "▼" } else { "■" }
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(AppRadius.sm))

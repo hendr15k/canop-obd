@@ -1,6 +1,5 @@
 package com.canopobd.ui.maintenance
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,22 +8,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -32,27 +26,18 @@ import androidx.compose.material.icons.filled.Euro
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.OilBarrel
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ScrollableTabRow
@@ -78,16 +63,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.canopobd.data.maintenance.MaintenanceScheduler
-import com.canopobd.data.maintenance.MaintenanceScheduler.CostEstimate
-import com.canopobd.data.maintenance.MaintenanceScheduler.MaintenanceAlert
 import com.canopobd.data.maintenance.MaintenanceScheduler.ScheduledMaintenance
 import com.canopobd.data.maintenance.MaintenanceScheduler.TimelineEntry
 import com.canopobd.data.maintenance.MaintenanceReminderStatus
 import com.canopobd.data.maintenance.PartDatabase
 import com.canopobd.data.maintenance.PartDatabase.AlternativePart
 import com.canopobd.data.maintenance.PartDatabase.PartInfo
-import com.canopobd.data.maintenance.ReminderPriority
-import com.canopobd.data.model.MaintenanceType
 import com.canopobd.ui.theme.canopoAccent
 import com.canopobd.ui.theme.canopoDark
 import com.canopobd.ui.theme.canopoHighlight
@@ -144,7 +125,7 @@ fun MaintenanceDashboard(
                                 Text(
                                     text = title,
                                     fontSize = 12.sp,
-                                    color = if (selectedTab == index) canopoAccent else textSecondary
+                                    color = if (selectedTab == index) { canopoAccent } else { textSecondary }
                                 )
                             }
                         )
@@ -365,7 +346,7 @@ private fun TimelineEntryCard(
                 Box(
                     modifier = Modifier
                         .width(2.dp)
-                        .fillMaxHeight(if (expanded) 0.95f else 0.7f)
+                        .fillMaxHeight(if (expanded) { 0.95f } else { 0.7f })
                         .background(canopoDark)
                 )
             }
@@ -404,7 +385,7 @@ private fun TimelineEntryCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
-                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            if (expanded) { Icons.Filled.ExpandLess } else { Icons.Filled.ExpandMore },
                             contentDescription = null,
                             tint = textDim,
                             modifier = Modifier.size(16.dp)
@@ -672,8 +653,8 @@ private fun CostTrackerTab(scheduler: MaintenanceScheduler) {
 
         val costItems = allItems.filter {
             it.status == MaintenanceReminderStatus.OVERDUE ||
-            it.status == MaintenanceReminderStatus.DUE_SOON ||
-            it.status == MaintenanceReminderStatus.UPCOMING
+                it.status == MaintenanceReminderStatus.DUE_SOON ||
+                it.status == MaintenanceReminderStatus.UPCOMING
         }.sortedBy { it.status.ordinal }
 
         items(costItems) { item ->
@@ -884,8 +865,7 @@ private fun PartsDatabaseTab() {
     var searchQuery by remember { mutableStateOf("") }
     val allParts = remember { PartDatabase.allParts }
     val filteredParts = remember(searchQuery) {
-        if (searchQuery.isBlank()) allParts
-        else PartDatabase.searchPart(searchQuery)
+        if (searchQuery.isBlank()) { allParts } else { PartDatabase.searchPart(searchQuery) }
     }
 
     Column {
@@ -1042,14 +1022,17 @@ private fun PartCard(part: PartInfo) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = if (part.notes.contains("PROBLEM") || part.notes.contains("Pflicht") || part.notes.contains("PFlicht"))
-                            gaugeRed.copy(alpha = 0.15f) else canopoSurface.copy(alpha = 0.5f)
+                        color = if (part.notes.contains("PROBLEM") || part.notes.contains("Pflicht") || part.notes.contains("PFlicht")) {
+                            gaugeRed.copy(alpha = 0.15f)
+                        } else {
+                            canopoSurface.copy(alpha = 0.5f)
+                        }
                     ) {
                         Row(modifier = Modifier.padding(8.dp)) {
                             Icon(
-                                if (part.notes.contains("PROBLEM")) Icons.Filled.Warning else Icons.Filled.Info,
+                                if (part.notes.contains("PROBLEM")) { Icons.Filled.Warning } else { Icons.Filled.Info },
                                 contentDescription = null,
-                                tint = if (part.notes.contains("PROBLEM")) gaugeRed else canopoAccent,
+                                tint = if (part.notes.contains("PROBLEM")) { gaugeRed } else { canopoAccent },
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))

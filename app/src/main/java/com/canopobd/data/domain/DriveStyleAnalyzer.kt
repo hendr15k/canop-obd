@@ -24,7 +24,7 @@ import kotlin.math.sqrt
  * - Ueberholreserve bei 3000-4000 rpm
  */
 class DriveStyleAnalyzer(
-    private val calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
+    calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
 ) {
 
     /**
@@ -74,17 +74,16 @@ class DriveStyleAnalyzer(
      * RPM-Verteilungsanalyse
      */
     data class RPMDistribution(
-        val percentBelowOptimal: Double,   // % Zeit unter optimal-RPM
-        val percentOptimal: Double,        // % Zeit im optimalen Bereich
-        val percentPowerBand: Double,      // % Zeit im Power-Band
-        val percentRedline: Double,        // % Zeit im roten Bereich
+        val percentBelowOptimal: Double, // % Zeit unter optimal-RPM
+        val percentOptimal: Double, // % Zeit im optimalen Bereich
+        val percentPowerBand: Double, // % Zeit im Power-Band
+        val percentRedline: Double, // % Zeit im roten Bereich
         val avgRPM: Double,
         val maxRPM: Double
     )
 
     companion object {
         // RPM-Bereiche fuer A14NET
-        private const val RPM_IDLE_MAX = 900.0
         private const val RPM_OPTIMAL_MIN = 1500.0
         private const val RPM_OPTIMAL_MAX = 3000.0
         private const val RPM_POWER_MIN = 4500.0
@@ -96,11 +95,6 @@ class DriveStyleAnalyzer(
         private const val THROTTLE_ECO_MAX = 30.0
         private const val THROTTLE_NORMAL_MAX = 60.0
         private const val THROTTLE_AGGRESSIVE = 80.0
-
-        // Speed-Kategorisierung
-        private const val SPEED_CITY_MAX = 50.0
-        private const val SPEED_SUBURBAN_MAX = 80.0
-        private const val SPEED_HIGHWAY_MIN = 80.0
 
         // Overboost-Schwellen
         private const val OVERBOOST_THRESHOLD_BAR = 1.0
@@ -279,11 +273,11 @@ class DriveStyleAnalyzer(
         val stdDev = sqrt(variance)
 
         return when {
-            stdDev < 3.0 -> 95   // Sehr glatt
-            stdDev < 8.0 -> 80   // Glatte Fahrweise
-            stdDev < 15.0 -> 60  // Normal
-            stdDev < 25.0 -> 40  // Rau
-            else -> 20           // Sehr aggressiv
+            stdDev < 3.0 -> 95 // Sehr glatt
+            stdDev < 8.0 -> 80 // Glatte Fahrweise
+            stdDev < 15.0 -> 60 // Normal
+            stdDev < 25.0 -> 40 // Rau
+            else -> 20 // Sehr aggressiv
         }
     }
 
@@ -299,10 +293,10 @@ class DriveStyleAnalyzer(
         val harshRatio = if (totalBrakes > 0) harshBrakes.toDouble() / totalBrakes else 0.0
 
         return when {
-            harshRatio < 0.05 -> 95  // Sanftes Bremsen
-            harshRatio < 0.15 -> 80  // Normal
-            harshRatio < 0.30 -> 55  // Haertere Bremsen
-            else -> 30               // Sehr aggressiv
+            harshRatio < 0.05 -> 95 // Sanftes Bremsen
+            harshRatio < 0.15 -> 80 // Normal
+            harshRatio < 0.30 -> 55 // Haertere Bremsen
+            else -> 30 // Sehr aggressiv
         }
     }
 
@@ -344,10 +338,10 @@ class DriveStyleAnalyzer(
 
         val harshShiftRatio = harshShifts.toDouble() / shiftCount
         return when {
-            harshShiftRatio < 0.1 -> 95  // Sanfte Schaltungen
+            harshShiftRatio < 0.1 -> 95 // Sanfte Schaltungen
             harshShiftRatio < 0.25 -> 75 // Normal
-            harshShiftRatio < 0.5 -> 50  // Haerte Schaltungen
-            else -> 30                    // Sehr aggressiv
+            harshShiftRatio < 0.5 -> 50 // Haerte Schaltungen
+            else -> 30 // Sehr aggressiv
         }
     }
 
@@ -378,19 +372,19 @@ class DriveStyleAnalyzer(
         val mainFeedback = when (style) {
             DriveStyle.ECO -> {
                 "Ihre Fahrweise ist umweltfreundlich und sparsam. " +
-                        "Der Motor wird wenig beansprucht."
+                    "Der Motor wird wenig beansprucht."
             }
             DriveStyle.BALANCED -> {
                 "Ausgewogene Fahrweise mit gutem Gleichgewicht " +
-                        "zwischen Leistung und Verbrauch."
+                    "zwischen Leistung und Verbrauch."
             }
             DriveStyle.SPORTLICH -> {
                 "Sportliche Fahrweise mit hoeherer Motorbelastung. " +
-                        "Regelmassige Wartung ist wichtig."
+                    "Regelmassige Wartung ist wichtig."
             }
             DriveStyle.AGGRESSIV -> {
                 "Aggressives Fahrverhalten fuehrt zu erhoehtem Verschleiss. " +
-                        "Wartungsintervalle sollten eingehalten werden."
+                    "Wartungsintervalle sollten eingehalten werden."
             }
         }
 

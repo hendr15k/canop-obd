@@ -2,7 +2,6 @@ package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * EGT-Monitoring (Abgastemperatur) fuer Opel Astra J 1.4 Turbo (A14NET)
@@ -136,9 +135,9 @@ class EGTMonitor(
 
         // 5. Gesamtbewertung
         val rawScore = (tempScore * WEIGHT_CURRENT_TEMP +
-                trendScore * WEIGHT_TREND +
-                stressScore * WEIGHT_THERMAL_STRESS +
-                balanceScore * WEIGHT_CYLINDER_BALANCE) / 100
+            trendScore * WEIGHT_TREND +
+            stressScore * WEIGHT_THERMAL_STRESS +
+            balanceScore * WEIGHT_CYLINDER_BALANCE) / 100
 
         val healthScore = rawScore.coerceIn(0, 100)
 
@@ -352,20 +351,20 @@ class EGTMonitor(
             }
             EGTStatus.ELEVATED -> {
                 "EGT beobachten. Bei ${input.boostPressureKpa.toInt()} kPa Boost: " +
-                        "eventuell höhere Kühlmitteltemperatur erlaubt.$trendHint"
+                    "eventuell höhere Kühlmitteltemperatur erlaubt.$trendHint"
             }
             EGTStatus.HIGH -> {
                 "EGT reduzieren. Nicht mit Volllast fahren. " +
-                        "Kühlmittelstand und -temperatur prüfen.$stressHint$trendHint"
+                    "Kühlmittelstand und -temperatur prüfen.$stressHint$trendHint"
             }
             EGTStatus.CRITICAL -> {
                 "EGT kritisch! Nicht mit Last fahren. " +
-                        "Turbo und Kühlung sofort prüfen. " +
-                        "Nur notwendige Fahrten mit reduzierter Last.$stressHint"
+                    "Turbo und Kühlung sofort prüfen. " +
+                    "Nur notwendige Fahrten mit reduzierter Last.$stressHint"
             }
             EGTStatus.OVERHEAT -> {
                 "SOFORT anhalten! Motor abkühlen lassen. " +
-                        "Nicht erneut starten bis < 700°C.$stressHint"
+                    "Nicht erneut starten bis < 700°C.$stressHint"
             }
             EGTStatus.NO_DATA -> {
                 "EGT-Sensor oder -Daten nicht verfügbar."

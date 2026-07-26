@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -141,7 +140,7 @@ fun TripComputerDialog(
             }
             item {
                 GlassCard(
-                    accentEdge = if (isGPSTracking) colors.success else colors.textTertiary,
+                    accentEdge = if (isGPSTracking) { colors.success } else { colors.textTertiary },
                     padding = 12.dp
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -150,24 +149,27 @@ fun TripComputerDialog(
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(AppRadius.sm))
                                 .background(
-                                    if (isGPSTracking) colors.success.copy(alpha = 0.18f)
-                                    else colors.surfaceElevated
+                                    if (isGPSTracking) {
+                                        colors.success.copy(alpha = 0.18f)
+                                    } else {
+                                        colors.surfaceElevated
+                                    }
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                if (isGPSTracking) Icons.Filled.LocationOn else Icons.Filled.LocationSearching,
+                                if (isGPSTracking) { Icons.Filled.LocationOn } else { Icons.Filled.LocationSearching },
                                 contentDescription = null,
-                                tint = if (isGPSTracking) colors.success else colors.textTertiary,
+                                tint = if (isGPSTracking) { colors.success } else { colors.textTertiary },
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                         Spacer(Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (isGPSTracking) "GPS aktiv" else "GPS inaktiv",
+                                text = if (isGPSTracking) { "GPS aktiv" } else { "GPS inaktiv" },
                                 style = MaterialTheme.typography.titleSmall,
-                                color = if (isGPSTracking) colors.success else colors.textPrimary
+                                color = if (isGPSTracking) { colors.success } else { colors.textPrimary }
                             )
                             if (currentTrip != null) {
                                 Text(
@@ -178,9 +180,9 @@ fun TripComputerDialog(
                             }
                         }
                         GradientButton(
-                            text = if (isGPSTracking) stringResource(R.string.trip_stop) else "Start",
-                            onClick = { if (isGPSTracking) onStopGPSTrack() else onStartGPSTrack() },
-                            gradient = if (isGPSTracking) colors.gradientSuccess else colors.gradientAccent
+                            text = if (isGPSTracking) { stringResource(R.string.trip_stop) } else { "Start" },
+                            onClick = { if (isGPSTracking) { onStopGPSTrack() } else { onStartGPSTrack() } },
+                            gradient = if (isGPSTracking) { colors.gradientSuccess } else { colors.gradientAccent }
                         )
                     }
                 }
@@ -285,7 +287,7 @@ private fun formatDuration(seconds: Long): String {
     val h = TimeUnit.SECONDS.toHours(seconds)
     val m = TimeUnit.SECONDS.toMinutes(seconds) % 60
     val s = seconds % 60
-    return if (h > 0) "%dh %02dm".format(h, m) else "%dm %02ds".format(m, s)
+    return if (h > 0) { "%dh %02dm".format(h, m) } else { "%dm %02ds".format(m, s) }
 }
 
 private fun formatDistance(km: Double, unit: MeasurementUnit): String =

@@ -110,7 +110,7 @@ private fun OverboostTimer(
     maxDuration: Int,
     colors: AppColors
 ) {
-    val progress = if (maxDuration > 0) secondsRemaining.toFloat() / maxDuration else 0f
+    val progress = if (maxDuration > 0) { secondsRemaining.toFloat() / maxDuration } else { 0f }
     val progressInverse = 1f - progress
 
     val timerColor = when {
@@ -128,8 +128,8 @@ private fun OverboostTimer(
     val infiniteTransition = rememberInfiniteTransition()
     @Suppress("UNUSED_VARIABLE")
     val _pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = if (isActive) 0.7f else 0f,
-        targetValue = if (isActive) 1f else 0f,
+        initialValue = if (isActive) { 0.7f } else { 0f },
+        targetValue = if (isActive) { 1f } else { 0f },
         animationSpec = infiniteRepeatable(
             animation = tween(500),
             repeatMode = RepeatMode.Reverse
@@ -191,10 +191,10 @@ private fun OverboostTimer(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (isActive) "%d".format(secondsRemaining) else "—",
+                        text = if (isActive) { "%d".format(secondsRemaining) } else { "—" },
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isActive) timerColor else colors.textSecondary
+                        color = if (isActive) { timerColor } else { colors.textSecondary }
                     )
                     Text(
                         text = "Sekunden",
@@ -331,7 +331,7 @@ private fun BoostVsTarget(
                 )
                 Text(
                     text = "Effizienz: %.0f%%".format(
-                        if (targetBoost > 0.01) (currentBoost / targetBoost) * 100 else 0.0
+                        if (targetBoost > 0.01) { (currentBoost / targetBoost) * 100 } else { 0.0 }
                     ),
                     fontSize = 11.sp,
                     color = colors.textSecondary
@@ -458,7 +458,7 @@ private fun OverboostHistoryChart(
                         val p1 = points[i]
                         val p2 = points[i + 1]
                         val avgBoost = (sampleData[i].boostPressure + sampleData[i + 1].boostPressure) / 2
-                        val lineColor = if (avgBoost > 1.2) colors.gaugeOrange else colors.gaugeGreen
+                        val lineColor = if (avgBoost > 1.2) { colors.gaugeOrange } else { colors.gaugeGreen }
                         drawLine(
                             color = lineColor,
                             start = p1,
@@ -470,9 +470,13 @@ private fun OverboostHistoryChart(
 
                 points.forEachIndexed { index, point ->
                     val entry = sampleData[index]
-                    val dotColor = if (entry.boostPressure > 1.2) colors.gaugeOrange
-                    else if (entry.boostPressure > 1.0) colors.gaugeYellow
-                    else colors.gaugeGreen
+                    val dotColor = if (entry.boostPressure > 1.2) {
+                        colors.gaugeOrange
+                    } else if (entry.boostPressure > 1.0) {
+                        colors.gaugeYellow
+                    } else {
+                        colors.gaugeGreen
+                    }
                     drawCircle(
                         color = dotColor,
                         radius = 4.dp.toPx(),
@@ -512,8 +516,8 @@ private fun OverboostStatus(
     val infiniteTransition = rememberInfiniteTransition()
     @Suppress("UNUSED_VARIABLE")
     val _pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = if (turboData.overboostActive) 0.6f else 0f,
-        targetValue = if (turboData.overboostActive) 1f else 0f,
+        initialValue = if (turboData.overboostActive) { 0.6f } else { 0f },
+        targetValue = if (turboData.overboostActive) { 1f } else { 0f },
         animationSpec = infiniteRepeatable(
             animation = tween(800),
             repeatMode = RepeatMode.Reverse
@@ -530,7 +534,7 @@ private fun OverboostStatus(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        color = animatedColor.copy(alpha = if (turboData.overboostActive) 0.15f else 0.1f)
+        color = animatedColor.copy(alpha = if (turboData.overboostActive) { 0.15f } else { 0.1f })
     ) {
         Row(
             modifier = Modifier.padding(12.dp),

@@ -27,18 +27,18 @@ import com.canopobd.ui.theme.LocalAppColors
 
 /**
  * Shift Recommendation Component for Turbo Petrol Engines
- * 
+ *
  * Provides optimal shift point recommendations based on:
  * - Current gear (estimated from RPM/Speed ratio)
  * - Engine RPM
  * - Engine Load / Throttle position
  * - Detected drive mode (ECO / NORMAL / SPORT)
- * 
+ *
  * A14NET (Opel Astra J 1.4 Turbo) specific calibration:
  * - Max torque: 200 Nm @ 1850-4900 RPM (peak ~3000)
  * - Max power: 140 PS @ 4900-6000 RPM (peak 5500)
  * - Redline: 6500 RPM
- * 
+ *
  * Recommended shift points:
  * - ECO mode: 2000-2500 RPM for max efficiency
  * - NORMAL mode: 2500-3500 RPM (torque plateau)
@@ -61,12 +61,12 @@ object ShiftRecommendationEngine {
         val powerBandMaxRpm: Int = 6000,
         // Gear estimation: approximate RPM at 100 km/h in each gear (6-speed manual)
         val speedPerGearRpm100: Map<Int, Int> = mapOf(
-            1 to 3500,  // 1st gear ~45 km/h max
-            2 to 2500,  // 2nd gear ~75 km/h max
-            3 to 2000,  // 3rd gear ~110 km/h max
-            4 to 1600,  // 4th gear ~145 km/h max
-            5 to 1300,  // 5th gear ~180 km/h max
-            6 to 1100   // 6th gear ~220 km/h max
+            1 to 3500, // 1st gear ~45 km/h max
+            2 to 2500, // 2nd gear ~75 km/h max
+            3 to 2000, // 3rd gear ~110 km/h max
+            4 to 1600, // 4th gear ~145 km/h max
+            5 to 1300, // 5th gear ~180 km/h max
+            6 to 1100 // 6th gear ~220 km/h max
         )
     )
 
@@ -79,21 +79,21 @@ object ShiftRecommendationEngine {
      */
     @Suppress("UNUSED_PARAMETER")
     fun estimateGear(rpm: Double, speedKmh: Double, calibration: EngineCalibration = A14NET_CALIBRATION): Int {
-        if (speedKmh < 5 || rpm < 800) return 0  // Invalid / stationary
-        if (rpm > 7000) return 6  // High RPM must be low gear
+        if (speedKmh < 5 || rpm < 800) { return 0 } // Invalid / stationary
+        if (rpm > 7000) { return 6 } // High RPM must be low gear
 
         // Calculate ratio: rpm per km/h (indicates gear)
         val rpmPerKmh = rpm / speedKmh
-        
+
         // Determine gear based on RPM per km/h ratio
         // Lower ratio = higher gear (more speed per RPM)
         return when {
-            rpmPerKmh > 80  -> 1  // Very high RPM for speed = 1st
-            rpmPerKmh > 50  -> 2  // High RPM = 2nd
-            rpmPerKmh > 35  -> 3  // Medium-high = 3rd
-            rpmPerKmh > 25  -> 4  // Medium = 4th
-            rpmPerKmh > 18  -> 5  // Medium-low = 5th
-            rpmPerKmh > 10  -> 6  // Low = 6th (overdrive)
+            rpmPerKmh > 80 -> 1 // Very high RPM for speed = 1st
+            rpmPerKmh > 50 -> 2 // High RPM = 2nd
+            rpmPerKmh > 35 -> 3 // Medium-high = 3rd
+            rpmPerKmh > 25 -> 4 // Medium = 4th
+            rpmPerKmh > 18 -> 5 // Medium-low = 5th
+            rpmPerKmh > 10 -> 6 // Low = 6th (overdrive)
             else -> 6
         }
     }
@@ -106,7 +106,7 @@ object ShiftRecommendationEngine {
         EFFICIENCY("EFFIZIENZ", "Optimaler Wirkungsgrad"),
         TORQUE("DREHMOMENT", "Drehmoment optimiert"),
         POWER("LEISTUNG", "Leistungsoptimiert"),
-        REDLINE("REDLINE", "Nahe Drehzahlgrenze!");
+        REDLINE("REDLINE", "Nahe Drehzahlgrenze!")
     }
 
     /**
@@ -152,7 +152,7 @@ object ShiftRecommendationEngine {
 
     /**
      * Main calculation: determine shift recommendation
-     * 
+     *
      * @param rpm Current engine RPM
      * @param speed Vehicle speed in km/h
      * @param engineLoad Engine load in percent
@@ -173,11 +173,11 @@ object ShiftRecommendationEngine {
         maxGear: Int = 6
     ): ShiftRecommendation {
         if (rpm < 500 || speed < 2) {
-            return ShiftRecommendation()  // Invalid state
+            return ShiftRecommendation() // Invalid state
         }
 
         val currentGear = estimateGear(rpm, speed, calibration)
-        
+
         // Skip recommendations for 1st gear or beyond max
         if (currentGear < minGearToConsider || currentGear >= maxGear) {
             return ShiftRecommendation(
@@ -202,47 +202,86 @@ object ShiftRecommendationEngine {
             ShiftMode.REDLINE -> Triple(
                 calibration.rpmWarning - 200,
                 rpm >= calibration.rpmWarning - 200,
-                if (rpm >= calibration.rpmWarning) ShiftUrgency.CRITICAL 
-                else if (rpm >= calibration.rpmWarning - 300) ShiftUrgency.NOW 
-                else ShiftUrgency.SOON
+                if (rpm >= calibration.rpmWarning) {
+                    ShiftUrgency.CRITICAL
+                } else if (rpm >= calibration.rpmWarning - 300) {
+                    ShiftUrgency.NOW
+                } else {
+                    ShiftUrgency.SOON
+                },
             )
             ShiftMode.POWER -> Triple(
                 calibration.peakPowerRpm,
                 rpm >= calibration.peakPowerRpm - 200,
-                if (rpm >= calibration.peakPowerRpm) ShiftUrgency.NOW 
-                else if (rpm >= calibration.peakPowerRpm - 300) ShiftUrgency.SOON 
-                else ShiftUrgency.NONE
+                if (rpm >= calibration.peakPowerRpm) {
+                    ShiftUrgency.NOW
+                } else if (rpm >= calibration.peakPowerRpm - 300) {
+                    ShiftUrgency.SOON
+                } else {
+                    ShiftUrgency.NONE
+                },
             )
             ShiftMode.TORQUE -> Triple(
                 3000,
                 rpm >= 2500,
-                if (rpm >= 3000) ShiftUrgency.NOW 
-                else if (rpm >= 2500) ShiftUrgency.SOON 
-                else ShiftUrgency.NONE
+                if (rpm >= 3000) {
+                    ShiftUrgency.NOW
+                } else if (rpm >= 2500) {
+                    ShiftUrgency.SOON
+                } else {
+                    ShiftUrgency.NONE
+                },
             )
             ShiftMode.EFFICIENCY -> Triple(
                 2250,
                 rpm >= 2000,
-                if (rpm >= 2250) ShiftUrgency.NOW 
-                else if (rpm >= 2000) ShiftUrgency.SOON 
-                else ShiftUrgency.NONE
+                if (rpm >= 2250) {
+                    ShiftUrgency.NOW
+                } else if (rpm >= 2000) {
+                    ShiftUrgency.SOON
+                } else {
+                    ShiftUrgency.NONE
+                },
             )
             ShiftMode.ECO -> Triple(
                 2000,
                 rpm >= 1800,
-                if (rpm >= 2000) ShiftUrgency.NOW 
-                else if (rpm >= 1800) ShiftUrgency.SOON 
-                else ShiftUrgency.NONE
+                if (rpm >= 2000) {
+                    ShiftUrgency.NOW
+                } else if (rpm >= 1800) {
+                    ShiftUrgency.SOON
+                } else {
+                    ShiftUrgency.NONE
+                },
             )
         }
 
-        // Generate recommendation text
         val recommendation = when (mode) {
-            ShiftMode.REDLINE -> if (shouldShift) "HOCHSCHALTEN! Drehzahlgrenze!" else "Drehzahlgrenze erreicht"
-            ShiftMode.POWER -> if (shouldShift) "Leistungsgrenze - Schalten!" else "Naehe Leistungsmaximum"
-            ShiftMode.TORQUE -> if (shouldShift) "Optimaler Drehmoment-Bereich" else "Drehmoment-Bereich"
-            ShiftMode.EFFICIENCY -> if (shouldShift) "Effizienter Schaltpunkt" else "Im Wirkungsgrad-Optimum"
-            ShiftMode.ECO -> if (shouldShift) "Sparsam schalten" else "ECO-Bereich"
+            ShiftMode.REDLINE -> if (shouldShift) {
+                "HOCHSCHALTEN! Drehzahlgrenze!"
+            } else {
+                "Drehzahlgrenze erreicht"
+            }
+            ShiftMode.POWER -> if (shouldShift) {
+                "Leistungsgrenze - Schalten!"
+            } else {
+                "Naehe Leistungsmaximum"
+            }
+            ShiftMode.TORQUE -> if (shouldShift) {
+                "Optimaler Drehmoment-Bereich"
+            } else {
+                "Drehmoment-Bereich"
+            }
+            ShiftMode.EFFICIENCY -> if (shouldShift) {
+                "Effizienter Schaltpunkt"
+            } else {
+                "Im Wirkungsgrad-Optimum"
+            }
+            ShiftMode.ECO -> if (shouldShift) {
+                "Sparsam schalten"
+            } else {
+                "ECO-Bereich"
+            }
         }
 
         val rpmPercent = (rpm / calibration.redlineRpm).toFloat()
@@ -291,15 +330,15 @@ object ShiftRecommendationEngine {
         throttle: Double,
         calibration: EngineCalibration = A14NET_CALIBRATION
     ): Double {
-        if (rpm < 800) return 0.0
-        
+        if (rpm < 800) { return 0.0 }
+
         // Turbo petrol efficiency zones (relative to max)
         // Optimal efficiency is typically 1500-3000 RPM with moderate throttle
         val rpmEfficiency = when {
             rpm < 1000 -> 0.3
             rpm < 1500 -> 0.6
             rpm < 2000 -> 0.85
-            rpm < 2500 -> 0.95  // Sweet spot for ECO
+            rpm < 2500 -> 0.95 // Sweet spot for ECO
             rpm < 3000 -> 0.9
             rpm < 3500 -> 0.85
             rpm < 4000 -> 0.75
@@ -309,29 +348,29 @@ object ShiftRecommendationEngine {
             rpm < 6000 -> 0.5
             else -> 0.35
         }
-        
+
         val throttleEfficiency = when {
-            throttle < 20 -> 1.0   // Light load - lean burn
+            throttle < 20 -> 1.0 // Light load - lean burn
             throttle < 40 -> 0.9
             throttle < 60 -> 0.8
             throttle < 80 -> 0.7
-            else -> 0.6            // Full throttle - rich mixture
+            else -> 0.6 // Full throttle - rich mixture
         }
-        
+
         return rpmEfficiency * throttleEfficiency
     }
 }
 
 /**
  * Main Composable: Shift Recommendation Display
- * 
+ *
  * Features:
  * - Large up-arrow with pulsing animation when shift recommended
  * - Current gear display
  * - RPM percentage bar
  * - Mode indicator (ECO/ TORQUE / POWER)
  * - Recommendation text
- * 
+ *
  * @param rpm Current engine RPM
  * @param speed Current vehicle speed (km/h)
  * @param engineLoad Engine load (%)
@@ -389,12 +428,12 @@ private fun CompactShiftIndicator(
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
-    
+
     // Pulsing animation when shift recommended
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (recommendation.shouldShift) 1.15f else 1f,
+        targetValue = if (recommendation.shouldShift) { 1.15f } else { 1f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -403,7 +442,7 @@ private fun CompactShiftIndicator(
     )
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.7f,
-        targetValue = if (recommendation.shouldShift) 1f else 0.5f,
+        targetValue = if (recommendation.shouldShift) { 1f } else { 0.5f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -427,7 +466,7 @@ private fun CompactShiftIndicator(
 
     Surface(
         modifier = modifier
-            .scale(if (recommendation.shouldShift) pulseScale else 1f),
+            .scale(if (recommendation.shouldShift) { pulseScale } else { 1f }),
         shape = RoundedCornerShape(12.dp),
         color = backgroundColor.copy(alpha = pulseAlpha)
     ) {
@@ -455,7 +494,7 @@ private fun CompactShiftIndicator(
                 },
                 color = textColor,
                 fontSize = 13.sp,
-                fontWeight = if (recommendation.shouldShift) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (recommendation.shouldShift) { FontWeight.Bold } else { FontWeight.Normal }
             )
 
             // Efficiency indicator
@@ -484,7 +523,7 @@ private fun FullShiftRecommendation(
     val infiniteTransition = rememberInfiniteTransition(label = "shiftAnim")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (recommendation.shiftNow) 1.08f else 1f,
+        targetValue = if (recommendation.shiftNow) { 1.08f } else { 1f },
         animationSpec = infiniteRepeatable(
             animation = tween(500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -494,7 +533,7 @@ private fun FullShiftRecommendation(
 
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
-        targetValue = if (recommendation.shouldShift) 0.8f else 0.2f,
+        targetValue = if (recommendation.shouldShift) { 0.8f } else { 0.2f },
         animationSpec = infiniteRepeatable(
             animation = tween(700, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -524,7 +563,7 @@ private fun FullShiftRecommendation(
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,
         border = androidx.compose.foundation.BorderStroke(
-            width = if (recommendation.shouldShift) 2.dp else 1.dp,
+            width = if (recommendation.shouldShift) { 2.dp } else { 1.dp },
             color = accentColor.copy(alpha = glowAlpha)
         )
     ) {
@@ -547,12 +586,18 @@ private fun FullShiftRecommendation(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (recommendation.currentGear > 0) 
-                            recommendation.currentGear.toString() else "--",
+                        text = if (recommendation.currentGear > 0) {
+                            recommendation.currentGear.toString()
+                        } else {
+                            "--"
+                        },
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (recommendation.currentGear > 0) 
-                            colors.textPrimary else colors.textDim
+                        color = if (recommendation.currentGear > 0) {
+                            colors.textPrimary
+                        } else {
+                            colors.textDim
+                        }
                     )
                     if (recommendation.nextGear > recommendation.currentGear) {
                         Icon(
@@ -717,7 +762,7 @@ private fun ModeSelector(
                     Text(
                         text = mode.label,
                         fontSize = 9.sp,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = if (isActive) { FontWeight.Bold } else { FontWeight.Normal }
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
@@ -913,10 +958,11 @@ private fun ShiftZoneChip(
 ) {
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = if (isActive) 
-            colors.accent.copy(alpha = 0.2f) 
-        else 
+        color = if (isActive) {
+            colors.accent.copy(alpha = 0.2f)
+        } else {
             colors.surface
+        }
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -925,8 +971,8 @@ private fun ShiftZoneChip(
             Text(
                 text = label,
                 fontSize = 10.sp,
-                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                color = if (isActive) colors.accent else colors.textSecondary
+                fontWeight = if (isActive) { FontWeight.Bold } else { FontWeight.Normal },
+                color = if (isActive) { colors.accent } else { colors.textSecondary }
             )
             Text(
                 text = "$rpmRange RPM",

@@ -41,13 +41,10 @@ class EGRHealthAnalyzer {
     companion object {
         private const val EGR_MIN_TEMP = 0.0
         private const val EGR_MAX_TEMP = 200.0
-        private const val EGR_OPEN_THRESHOLD = 5.0
-        private const val EGR_CLOSED_THRESHOLD = 2.0
         private const val EGR_ERROR_THRESHOLD_WARNING = 20.0
         private const val EGR_ERROR_THRESHOLD_CRITICAL = 40.0
         private const val EGR_DUTY_MAX_IDLE = 10.0
         private const val EGR_DUTY_MIN_LOAD = 30.0
-        private const val EGR_MAF_DEVIATION_WARNING = 15.0
 
         private const val WEIGHT_DTC = 30
         private const val WEIGHT_FLOW = 30
@@ -64,9 +61,9 @@ class EGRHealthAnalyzer {
         val trimScore = evaluateTrims(input.stftB1, input.ltftB1, issues)
 
         val rawScore = (dtcScore * WEIGHT_DTC +
-                flowScore * WEIGHT_FLOW +
-                tempScore * WEIGHT_TEMPERATURE +
-                trimScore * WEIGHT_TRIM) / 100
+            flowScore * WEIGHT_FLOW +
+            tempScore * WEIGHT_TEMPERATURE +
+            trimScore * WEIGHT_TRIM) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
         val tempPlausibility = checkTemperaturePlausibility(input.egrTemp, input.coolantTemp, input.rpm)
@@ -129,7 +126,9 @@ class EGRHealthAnalyzer {
         val expectedDuty = calculateExpectedEGR(input.engineLoad, input.rpm)
         val deviation = if (expectedDuty > 0) {
             ((input.commandedEGR - expectedDuty) / expectedDuty) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 
         val absDeviation = abs(deviation)
 
@@ -138,7 +137,9 @@ class EGRHealthAnalyzer {
                 if (input.commandedEGR > EGR_DUTY_MAX_IDLE) {
                     issues.add(EGRIssue.STUCK_OPEN)
                     40
-                } else 95
+                } else {
+                    95
+                }
             }
             input.engineLoad > 40 -> {
                 if (input.commandedEGR < EGR_DUTY_MIN_LOAD && input.coolantTemp > 70) {
@@ -166,7 +167,9 @@ class EGRHealthAnalyzer {
     }
 
     private fun calculateExpectedEGR(engineLoad: Double, rpm: Double): Double {
-        if (rpm < 800 || engineLoad < 10) return 0.0
+        if (rpm < 800 || engineLoad < 10) {
+            return 0.0
+        }
         val loadFactor = (engineLoad / 100.0).coerceIn(0.0, 1.0)
         val rpmFactor = when {
             rpm < 1500 -> 0.5
@@ -199,11 +202,17 @@ class EGRHealthAnalyzer {
 
     @Suppress("UNUSED_PARAMETER")
     private fun checkTemperaturePlausibility(egrTemp: Double, coolantTemp: Double, rpm: Double): Boolean {
-        if (egrTemp <= 0 && coolantTemp > 70) return false
-        if (egrTemp > EGR_MAX_TEMP) return false
+        if (egrTemp <= 0 && coolantTemp > 70) {
+            return false
+        }
+        if (egrTemp > EGR_MAX_TEMP) {
+            return false
+        }
         if (egrTemp > 0 && coolantTemp > 70) {
             val diff = abs(egrTemp - coolantTemp)
-            if (diff > 100) return false
+            if (diff > 100) {
+                return false
+            }
         }
         return true
     }
@@ -222,9 +231,15 @@ class EGRHealthAnalyzer {
     }
 
     private fun determineStatus(commandedEGR: Double, score: Int, engineLoad: Double): com.canopobd.data.model.EGRStatus {
-        if (score < 40) return com.canopobd.data.model.EGRStatus.FAULT
-        if (engineLoad > 40 && commandedEGR > 5) return com.canopobd.data.model.EGRStatus.OPEN
-        if (commandedEGR < 2) return com.canopobd.data.model.EGRStatus.CLOSED
+        if (score < 40) {
+            return com.canopobd.data.model.EGRStatus.FAULT
+        }
+        if (engineLoad > 40 && commandedEGR > 5) {
+            return com.canopobd.data.model.EGRStatus.OPEN
+        }
+        if (commandedEGR < 2) {
+            return com.canopobd.data.model.EGRStatus.CLOSED
+        }
         return when {
             score >= 70 -> com.canopobd.data.model.EGRStatus.CLOSED
             else -> com.canopobd.data.model.EGRStatus.FAULT
@@ -235,16 +250,16 @@ class EGRHealthAnalyzer {
         return when (health.status) {
             com.canopobd.data.model.EGRStatus.CLOSED -> {
                 "EGR-Ventil geschlossen, Durchfluss: ${"%.1f".format(health.flowRate)}%. " +
-                        "Fehler: ${"%.1f".format(health.errorPercent)}%."
+                    "Fehler: ${"%.1f".format(health.errorPercent)}%."
             }
             com.canopobd.data.model.EGRStatus.OPEN -> {
                 "EGR-Ventil offen, Durchfluss: ${"%.1f".format(health.flowRate)}%. " +
-                        "Temperatur: ${input.egrTemp.toInt()}C."
+                    "Temperatur: ${input.egrTemp.toInt()}C."
             }
             com.canopobd.data.model.EGRStatus.FAULT -> {
                 val issueNames = issues.map { it.label }
                 "EGR-Systemfehler: ${issueNames.joinToString(", ")}. " +
-                        "Score: ${health.healthScore}/100."
+                    "Score: ${health.healthScore}/100."
             }
         }
     }
@@ -256,18 +271,18 @@ class EGRHealthAnalyzer {
             }
             issues.any { it == EGRIssue.CLOGGED } -> {
                 "EGR-Ventil und -Kanal reinigen lassen. " +
-                        "Kohlenstoffablagerungen bei ${input.totalKm.toInt()} km typisch."
+                    "Kohlenstoffablagerungen bei ${input.totalKm.toInt()} km typisch."
             }
             issues.any { it == EGRIssue.STUCK_CLOSED || it == EGRIssue.STUCK_OPEN } -> {
                 "EGR-Ventil pruefen. Mechanischer Defekt oder Verkohlung moeglich. " +
-                        "Ventil ersetzen lassen."
+                    "Ventil ersetzen lassen."
             }
             issues.any { it == EGRIssue.SENSOR_FAULT } -> {
                 "EGR-Positionssensor und Verkabelung pruefen."
             }
             health.healthScore < 50 -> {
                 "EGR-System dringend pruefen lassen. " +
-                        "Emissionswerte koennen erhoeht sein."
+                    "Emissionswerte koennen erhoeht sein."
             }
             else -> {
                 "EGR-System bei naechster Wartung pruefen."

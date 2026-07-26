@@ -61,7 +61,7 @@ fun M32GearboxStatusCard(
     val infiniteTransition = rememberInfiniteTransition(label = "gearbox_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isCritical) 0.8f else 0.3f,
+        targetValue = if (isCritical) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -76,7 +76,7 @@ fun M32GearboxStatusCard(
     )
 
     val gearRatio = remember(inputSpeedRpm, outputSpeedRpm) {
-        if (outputSpeedRpm > 0) inputSpeedRpm / outputSpeedRpm else 0.0
+        if (outputSpeedRpm > 0) { inputSpeedRpm / outputSpeedRpm } else { 0.0 }
     }
 
     val maintenanceInfo = remember(lastFluidChangeKm, currentKm) {
@@ -105,7 +105,7 @@ fun M32GearboxStatusCard(
                         color = colors.gaugeOrange.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard
@@ -228,7 +228,7 @@ fun M32GearboxStatusCard(
                         else -> colors.textDim
                     }
                     Text(
-                        text = if (gearboxTempCelsius > 0) "%.0f°C".format(gearboxTempCelsius) else "—",
+                        text = if (gearboxTempCelsius > 0) { "%.0f°C".format(gearboxTempCelsius) } else { "—" },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = tempColor
@@ -243,7 +243,7 @@ fun M32GearboxStatusCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = if (gearRatio > 0) "%.2f:1".format(gearRatio) else "—",
+                        text = if (gearRatio > 0) { "%.2f:1".format(gearRatio) } else { "—" },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = colors.textPrimary
@@ -356,7 +356,7 @@ private fun SpeedIndicator(
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = if (rpm > 0) "%,d rpm".format(rpm.toInt()) else "—",
+            text = if (rpm > 0) { "%,d rpm".format(rpm.toInt()) } else { "—" },
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = colors.textPrimary
@@ -397,15 +397,15 @@ private data class MaintenanceInfo(
 private object M32GearRatios {
     const val FINAL_DRIVE = 4.056
     val RATIOS = floatArrayOf(
-        3.192f,  // 1. Gang
-        1.938f,  // 2. Gang
-        1.357f,  // 3. Gang
-        1.034f,  // 4. Gang
-        0.825f,  // 5. Gang
-        0.693f   // 6. Gang
+        3.192f, // 1. Gang
+        1.938f, // 2. Gang
+        1.357f, // 3. Gang
+        1.034f, // 4. Gang
+        0.825f, // 5. Gang
+        0.693f // 6. Gang
     )
-    const val TIRE_CIRCUMFERENCE_M = 1.995f  // 205/55 R16
-    const val TOLERANCE = 0.15f  // 15% Toleranz
+    const val TIRE_CIRCUMFERENCE_M = 1.995f // 205/55 R16
+    const val TOLERANCE = 0.15f // 15% Toleranz
 }
 
 /**
@@ -413,7 +413,7 @@ private object M32GearRatios {
  * Gibt 0 für Neutral, -1 für Rückwärtsgang, 1-6 für die Gänge zurück.
  */
 private fun detectM32Gear(rpm: Double, speedKmh: Double): Int {
-    if (speedKmh < 3.0 || rpm < 600) return 0  // Steht oder im Leerlauf
+    if (speedKmh < 3.0 || rpm < 600) { return 0 } // Steht oder im Leerlauf
 
     val speedMs = speedKmh / 3.6f
 
@@ -428,11 +428,11 @@ private fun detectM32Gear(rpm: Double, speedKmh: Double): Int {
     }
 
     // Rückwärtsgang-Schätzung
-    val reverseRatio = 3.250f  // Ungefähr
+    val reverseRatio = 3.250f // Ungefähr
     val reverseRpm = speedMs * reverseRatio * M32GearRatios.FINAL_DRIVE * 60f / M32GearRatios.TIRE_CIRCUMFERENCE_M
     if (kotlin.math.abs(rpm.toFloat() - reverseRpm) / reverseRpm < M32GearRatios.TOLERANCE) {
         return -1
     }
 
-    return 0  // Unbekannter Gang (Kupplung gedrückt)
+    return 0 // Unbekannter Gang (Kupplung gedrückt)
 }

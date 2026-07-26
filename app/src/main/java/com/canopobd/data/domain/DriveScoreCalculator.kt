@@ -2,19 +2,13 @@ package com.canopobd.data.domain
 
 import com.canopobd.data.model.DriveScore
 import com.canopobd.data.model.DriveSession
-import kotlin.math.abs
 import kotlin.math.sqrt
 
 object DriveScoreCalculator {
 
-    private const val NORMAL_ACCEL_MIN_THROTTLE = 50.0
-    private const val AGGRESSIVE_THROTTLE = 70.0
     private const val HARSH_THROTTLE = 85.0
     private const val HARSH_RPM_THRESHOLD = 4000.0
 
-    private const val OPTIMAL_BOOST_LOW = 0.4
-    private const val OPTIMAL_BOOST_HIGH = 0.7
-    private const val HIGH_BOOST_NO_LOAD = 0.9
     private const val LOW_BOOST = 0.15
 
     private const val A14NET_ECO_RPM_LOW = 1500.0
@@ -24,16 +18,27 @@ object DriveScoreCalculator {
     fun calculateCruisingScore(session: DriveSession): Int {
         return if (session.avgSpeed > 0) {
             val totalEvents = session.speedSampleCount + session.harshAccels + session.harshBrakes
-            if (totalEvents > 0) (session.speedSampleCount.toDouble() / totalEvents * 100).toInt().coerceIn(0, 100)
-            else 50
-        } else 50
+            if (totalEvents > 0) {
+                (session.speedSampleCount.toDouble() / totalEvents * 100).toInt().coerceIn(0, 100)
+            } else {
+                50
+            }
+        } else {
+            50
+        }
     }
 
     fun calculateIdleScore(session: DriveSession): Int {
-        val totalSeconds = if (session.endTime > 0) (session.endTime - session.startTime) / 1000 else 0L
+        val totalSeconds = if (session.endTime > 0) {
+            (session.endTime - session.startTime) / 1000
+        } else {
+            0L
+        }
         return if (totalSeconds > 0) {
             ((1.0 - (session.idleTimeSeconds.toDouble() / totalSeconds)) * 100).toInt().coerceIn(0, 100)
-        } else 50
+        } else {
+            50
+        }
     }
 
     fun calculateRpmScore(session: DriveSession): Int {
@@ -56,7 +61,9 @@ object DriveScoreCalculator {
     }
 
     fun calculateAccelerationScore(session: DriveSession): Int {
-        if (session.harshAccels == 0 && session.harshBrakes == 0) return 100
+        if (session.harshAccels == 0 && session.harshBrakes == 0) {
+            return 100
+        }
 
         var score = 100
 
@@ -64,15 +71,20 @@ object DriveScoreCalculator {
 
         score -= session.harshBrakes * 10
 
-        val harshAccelCount = if (session.avgThrottle > HARSH_THROTTLE && session.avgRpm > HARSH_RPM_THRESHOLD)
-            session.harshAccels else 0
+        val harshAccelCount = if (session.avgThrottle > HARSH_THROTTLE && session.avgRpm > HARSH_RPM_THRESHOLD) {
+            session.harshAccels
+        } else {
+            0
+        }
         score -= harshAccelCount * 15
 
         return score.coerceIn(0, 100)
     }
 
     fun calculateBoostScore(session: DriveSession): Int {
-        if (session.boostSampleCount == 0) return 50
+        if (session.boostSampleCount == 0) {
+            return 50
+        }
 
         var score = 70
 
@@ -86,16 +98,24 @@ object DriveScoreCalculator {
             val variance = session.boostSumOfSquares / session.boostSampleCount -
                 (session.avgBoostBar * session.avgBoostBar)
             val stddev = sqrt(variance.coerceAtLeast(0.0))
-            if (stddev > 0.15) score -= 10
-            if (stddev > 0.3) score -= 10
-            if (stddev < 0.05) score += 5
+            if (stddev > 0.15) {
+                score -= 10
+            }
+            if (stddev > 0.3) {
+                score -= 10
+            }
+            if (stddev < 0.05) {
+                score += 5
+            }
         }
 
         return score.coerceIn(0, 100)
     }
 
     fun calculateEcoScore(session: DriveSession): Int {
-        if (session.rpmSamples == 0.0) return 50
+        if (session.rpmSamples == 0.0) {
+            return 50
+        }
 
         var score = 80
 
@@ -173,8 +193,8 @@ object DriveScoreCalculator {
             score = 0
         )
         val avgScore = (score.accelerationScore + score.brakingScore + score.cruisingScore +
-                score.idleScore + score.rpmScore + score.throttleScore +
-                boostScore + ecoScore + turboHealthScore) / 9
+            score.idleScore + score.rpmScore + score.throttleScore +
+            boostScore + ecoScore + turboHealthScore) / 9
         return score.copy(score = avgScore)
     }
 }

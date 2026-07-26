@@ -1,7 +1,6 @@
 package com.canopobd.data.domain
 
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 class LambdaBalanceAnalyzer {
 
@@ -57,7 +56,7 @@ class LambdaBalanceAnalyzer {
     private var lambdaSwitchCount = 0
 
     fun analyzeLambdaSequence(samples: List<Double>): LambdaBalance {
-        if (samples.size < MIN_SAMPLES_FOR_ANALYSIS) return LambdaBalance()
+        if (samples.size < MIN_SAMPLES_FOR_ANALYSIS) { return LambdaBalance() }
 
         val avgLambda = samples.average()
         val variance = calculateVariance(samples)
@@ -76,11 +75,11 @@ class LambdaBalanceAnalyzer {
     }
 
     fun addLambdaSample(lambda: Double) {
-        if (lambda <= 0 || lambda > 10) return
+        if (lambda <= 0 || lambda > 10) { return }
 
         if (lastLambdaValue > 0) {
             val crossedThreshold = (lastLambdaValue - STOICHIOMETRIC_LAMBDA) * (lambda - STOICHIOMETRIC_LAMBDA) < 0
-            if (crossedThreshold) lambdaSwitchCount++
+            if (crossedThreshold) { lambdaSwitchCount++ }
         }
 
         lastLambdaValue = lambda
@@ -96,13 +95,13 @@ class LambdaBalanceAnalyzer {
     }
 
     fun detectOscillation(): Boolean {
-        if (lambdaHistory.size < MIN_SAMPLES_FOR_ANALYSIS) return true
+        if (lambdaHistory.size < MIN_SAMPLES_FOR_ANALYSIS) { return true }
         val oscillationInfo = detectOscillation(lambdaHistory)
         return oscillationInfo.second in 0.5..2.0
     }
 
     fun getCatEfficiency(): Double {
-        if (lambdaHistory.size < MIN_SAMPLES_FOR_ANALYSIS) return 0.0
+        if (lambdaHistory.size < MIN_SAMPLES_FOR_ANALYSIS) { return 0.0 }
 
         val balance = analyzeCurrentSequence()
         val leanPeaks = lambdaHistory.count { it > 1.02 }
@@ -144,7 +143,7 @@ class LambdaBalanceAnalyzer {
     }
 
     private fun detectOscillation(samples: List<Double>): Pair<Double, Double> {
-        if (samples.size < 10) return Pair(0.0, 0.0)
+        if (samples.size < 10) { return Pair(0.0, 0.0) }
 
         val maxVal = samples.maxOrNull() ?: 1.0
         val minVal = samples.minOrNull() ?: 1.0
@@ -163,19 +162,19 @@ class LambdaBalanceAnalyzer {
 
         val freqEstimate = if (zeroCrossings > 0) {
             zeroCrossings.toDouble() / (2.0 * samples.size) * 10.0
-        } else 0.0
+        } else { 0.0 }
 
         return Pair(amplitude, freqEstimate)
     }
 
     private fun calculateVariance(samples: List<Double>): Double {
-        if (samples.size < 2) return 0.0
+        if (samples.size < 2) { return 0.0 }
         val avg = samples.average()
         return samples.sumOf { (it - avg) * (it - avg) } / samples.size
     }
 
     private fun determineStatus(avgLambda: Double, variance: Double): LambdaStatus {
-        if (variance > 0.1) return LambdaStatus.FAULTED
+        if (variance > 0.1) { return LambdaStatus.FAULTED }
         return when {
             avgLambda > 1.10 -> LambdaStatus.MODERATELY_LEAN
             avgLambda > 1.02 -> LambdaStatus.SLIGHTLY_LEAN

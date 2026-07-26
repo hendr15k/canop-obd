@@ -48,11 +48,11 @@ class CoolantSystemHealth(
      * Thermostat-Status
      */
     enum class ThermostatState(val label: String) {
-        CLOSED("Geschlossen"),       // Kaltstart-Phase
-        OPENING("Oeffnet"),          // Uebergangsphase
-        OPEN("Geoeffnet"),           // Normalbetrieb
-        STUCK_CLOSED("Klemmt zu"),   // Defekt - geschlossen
-        STUCK_OPEN("Klemmt offen"),  // Defekt - offen
+        CLOSED("Geschlossen"), // Kaltstart-Phase
+        OPENING("Oeffnet"), // Uebergangsphase
+        OPEN("Geoeffnet"), // Normalbetrieb
+        STUCK_CLOSED("Klemmt zu"), // Defekt - geschlossen
+        STUCK_OPEN("Klemmt offen"), // Defekt - offen
         UNKNOWN("Unbekannt")
     }
 
@@ -106,8 +106,6 @@ class CoolantSystemHealth(
         private const val COOLANT_TEMP_OVERHEAT = 115.0
 
         // Aufwaerm-Raten (°C pro Minute)
-        private const val WARMUP_RATE_NORMAL_MIN = 5.0
-        private const val WARMUP_RATE_NORMAL_MAX = 20.0
         private const val WARMUP_RATE_TOO_FAST = 25.0
         private const val WARMUP_RATE_TOO_SLOW = 2.0
 
@@ -147,9 +145,9 @@ class CoolantSystemHealth(
 
         // Gesamtbewertung
         val rawScore = (thermostatScore * WEIGHT_THERMOSTAT +
-                pumpScore * WEIGHT_WATER_PUMP +
-                leakScore * WEIGHT_LEAK +
-                tempScore * WEIGHT_TEMPERATURE) / 100
+            pumpScore * WEIGHT_WATER_PUMP +
+            leakScore * WEIGHT_LEAK +
+            tempScore * WEIGHT_TEMPERATURE) / 100
 
         val healthScore = rawScore.coerceIn(0, 100)
 
@@ -380,7 +378,8 @@ class CoolantSystemHealth(
 
         // Plötzliche Temperaturspitze
         if (input.recentCoolantTemps.size >= 2) {
-            val tempChange = abs(input.recentCoolantTemps.last() - input.recentCoolantTemps.elementAt(input.recentCoolantTemps.size - 2))
+            val tempChange =
+                abs(input.recentCoolantTemps.last() - input.recentCoolantTemps.elementAt(input.recentCoolantTemps.size - 2))
             if (tempChange > TEMP_SPIKE_THRESHOLD && input.engineLoad < 50) {
                 leakProbability += 40
                 issues.add("Kuehlmittel-Temperatur plötzliche Aenderung: ${"%.1f".format(tempChange)}°C")
@@ -452,33 +451,33 @@ class CoolantSystemHealth(
         return when (status) {
             CoolantSystemStatus.HEALTHY -> {
                 "Kuehlsystem gesund. Kuehlmittel: ${input.coolantTemp.toInt()}°C, " +
-                        "Thermostat: ${thermostatState.label}."
+                    "Thermostat: ${thermostatState.label}."
             }
             CoolantSystemStatus.THERMOSTAT_SLIGHT -> {
                 "Thermostat leicht verzögert. Kuehlmittel: ${input.coolantTemp.toInt()}°C. " +
-                        "Sollbereich: ${THERMOSTAT_NORMAL_RANGE_MIN.toInt()}-${THERMOSTAT_NORMAL_RANGE_MAX.toInt()}°C."
+                    "Sollbereich: ${THERMOSTAT_NORMAL_RANGE_MIN.toInt()}-${THERMOSTAT_NORMAL_RANGE_MAX.toInt()}°C."
             }
             CoolantSystemStatus.THERMOSTAT_STUCK -> {
                 "Thermostat defekt (${thermostatState.label})! " +
-                        "Temperatur: ${input.coolantTemp.toInt()}°C. " +
-                        "Kuehlleistung eingeschraenkt."
+                    "Temperatur: ${input.coolantTemp.toInt()}°C. " +
+                    "Kuehlleistung eingeschraenkt."
             }
             CoolantSystemStatus.WATER_PUMP_WEAR -> {
-                "Wasserpumpe Verschleiss erkannt. Effizienz: ${pumpEfficiency}%. " +
-                        "Temperatur: ${input.coolantTemp.toInt()}°C."
+                "Wasserpumpe Verschleiss erkannt. Effizienz: $pumpEfficiency%. " +
+                    "Temperatur: ${input.coolantTemp.toInt()}°C."
             }
             CoolantSystemStatus.WATER_PUMP_FAIL -> {
-                "Wasserpumpe defekt! Effizienz: ${pumpEfficiency}%. " +
-                        "Kuehlleistung massiv eingeschraenkt. " +
-                        "Temperatur: ${input.coolantTemp.toInt()}°C."
+                "Wasserpumpe defekt! Effizienz: $pumpEfficiency%. " +
+                    "Kuehlleistung massiv eingeschraenkt. " +
+                    "Temperatur: ${input.coolantTemp.toInt()}°C."
             }
             CoolantSystemStatus.LEAK_SUSPECTED -> {
-                "Kuehlmittelverlust vermutet! Leck-Wahrscheinlichkeit: ${leakProbability}%. " +
-                        "Temperatur: ${input.coolantTemp.toInt()}°C."
+                "Kuehlmittelverlust vermutet! Leck-Wahrscheinlichkeit: $leakProbability%. " +
+                    "Temperatur: ${input.coolantTemp.toInt()}°C."
             }
             CoolantSystemStatus.OVERHEATING -> {
                 "UEBERHITZUNG! Kuehlmitteltemperatur: ${input.coolantTemp.toInt()}°C! " +
-                        "SOFOERT anhalten und Motor abkuehlen lassen!"
+                    "SOFOERT anhalten und Motor abkuehlen lassen!"
             }
             CoolantSystemStatus.UNKNOWN -> {
                 "Kuehlsystem nicht analysierbar."
@@ -493,35 +492,35 @@ class CoolantSystemHealth(
         return when (status) {
             CoolantSystemStatus.HEALTHY -> {
                 "Keine Massnahmen erforderlich. " +
-                        "Kuehlmittelstand regelmaessig pruefen. " +
-                        "Naechster Wechsel: ${calibration.coolantIntervalKm} km."
+                    "Kuehlmittelstand regelmaessig pruefen. " +
+                    "Naechster Wechsel: ${calibration.coolantIntervalKm} km."
             }
             CoolantSystemStatus.THERMOSTAT_SLIGHT -> {
                 "Thermostat beobachten. Bei naechster Wartung pruefen lassen. " +
-                        "Kuehlmittelstand kontrollieren."
+                    "Kuehlmittelstand kontrollieren."
             }
             CoolantSystemStatus.THERMOSTAT_STUCK -> {
                 "Thermostat ersetzen lassen! " +
-                        "Weiterfahrt nur mit eingeschraenkter Belastung moeglich."
+                    "Weiterfahrt nur mit eingeschraenkter Belastung moeglich."
             }
             CoolantSystemStatus.WATER_PUMP_WEAR -> {
                 "Wasserpumpe bei naechster Wartung pruefen. " +
-                        "Bei ${input.totalKm.toInt()} km ist Verschleiss typisch. " +
-                        "Kuehlmittelstand haeufig kontrollieren."
+                    "Bei ${input.totalKm.toInt()} km ist Verschleiss typisch. " +
+                    "Kuehlmittelstand haeufig kontrollieren."
             }
             CoolantSystemStatus.WATER_PUMP_FAIL -> {
                 "SOFORT Werkstatt! Wasserpumpe ersetzen. " +
-                        "Nicht weiterfahren - Motorueberhitzung droht!"
+                    "Nicht weiterfahren - Motorueberhitzung droht!"
             }
             CoolantSystemStatus.LEAK_SUSPECTED -> {
                 "Kuehlsystem dringend pruefen! Kuehlmittelstand kontrollieren. " +
-                        "Auf Pfuetzen unter dem Fahrzeug achten. " +
-                        "Drucktest des Kuehlsystems empfohlen."
+                    "Auf Pfuetzen unter dem Fahrzeug achten. " +
+                    "Drucktest des Kuehlsystems empfohlen."
             }
             CoolantSystemStatus.OVERHEATING -> {
                 "SOFOERT anhalten! Motor abkuehlen lassen (min. 30 Min). " +
-                        "Nicht Kuehlmitteldeckel oeffnen bei heissem Motor! " +
-                        "Abschleppen lassen - nicht weiterfahren!"
+                    "Nicht Kuehlmitteldeckel oeffnen bei heissem Motor! " +
+                    "Abschleppen lassen - nicht weiterfahren!"
             }
             CoolantSystemStatus.UNKNOWN -> {
                 "Kuehlmittelstand manuell pruefen. Weitere Daten sammeln."

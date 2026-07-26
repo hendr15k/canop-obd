@@ -346,7 +346,7 @@ class Mode22ConnectionTest {
         val response1 = Mode22Response("220001", "response1", bytes1, 1.0, true)
         val response2 = Mode22Response("220001", "response1", bytes2, 2.0, true)
         val response3 = Mode22Response("220001", "response2", bytes1, 1.0, true)
-        
+
         assertEquals(response1, response2)
         assertNotEquals(response1, response3)
     }

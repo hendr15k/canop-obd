@@ -54,7 +54,7 @@ fun EmissionsStatusCard(
     val infiniteTransition = rememberInfiniteTransition(label = "emissions_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (readiness.milOn) 0.8f else 0.3f,
+        targetValue = if (readiness.milOn) { 0.8f } else { 0.3f },
         animationSpec = infiniteRepeatable(
             animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -72,7 +72,7 @@ fun EmissionsStatusCard(
                         color = cardColor.copy(alpha = pulseAlpha),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,

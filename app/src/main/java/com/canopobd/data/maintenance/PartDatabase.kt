@@ -407,11 +407,11 @@ object PartDatabase {
         val term = searchTerm.lowercase()
         return allParts.filter { part ->
             part.name.lowercase().contains(term) ||
-            part.oemPartNumber.lowercase().contains(term) ||
-            part.alternatives.any {
-                it.partNumber.lowercase().contains(term) ||
-                it.brand.lowercase().contains(term)
-            }
+                part.oemPartNumber.lowercase().contains(term) ||
+                part.alternatives.any {
+                    it.partNumber.lowercase().contains(term) ||
+                        it.brand.lowercase().contains(term)
+                }
         }
     }
 

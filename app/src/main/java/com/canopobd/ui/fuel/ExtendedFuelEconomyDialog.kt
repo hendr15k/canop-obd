@@ -4,7 +4,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -65,18 +64,37 @@ fun ExtendedFuelEconomyDialog(
         )
     }
 
-    val currentL100km = if (fuelEconomyData.currentL100km > 0) fuelEconomyData.currentL100km
-        else if (maf > 0 && speed > 0) {
-            val fuelRateLph = (maf * 3.6) / 0.75
-            (fuelRateLph * 36.0) / speed
-        } else 0.0
+    val currentL100km = if (fuelEconomyData.currentL100km > 0) {
+        fuelEconomyData.currentL100km
+    } else if (maf > 0 && speed > 0) {
+        val fuelRateLph = (maf * 3.6) / 0.75
+        (fuelRateLph * 36.0) / speed
+    } else {
+        0.0
+    }
 
-    val avgL100km = if (fuelEconomyData.avgL100km > 0) fuelEconomyData.avgL100km else currentL100km
+    val avgL100km = if (fuelEconomyData.avgL100km > 0) {
+        fuelEconomyData.avgL100km
+    } else {
+        currentL100km
+    }
 
     val currentFuelLiters = TANK_CAPACITY_LITERS * fuelLevelPercent / 100.0
-    val rangeKm = if (avgL100km > 0) currentFuelLiters / avgL100km * 100.0 else 0.0
-    val tripCost = if (avgL100km > 0) avgL100km / 100.0 * fuelPriceDouble else 0.0
-    val co2PerKm = if (currentL100km > 0) (currentL100km / 100.0) * CO2_FACTOR_GRAM_PER_LITER else 0.0
+    val rangeKm = if (avgL100km > 0) {
+        currentFuelLiters / avgL100km * 100.0
+    } else {
+        0.0
+    }
+    val tripCost = if (avgL100km > 0) {
+        avgL100km / 100.0 * fuelPriceDouble
+    } else {
+        0.0
+    }
+    val co2PerKm = if (currentL100km > 0) {
+        (currentL100km / 100.0) * CO2_FACTOR_GRAM_PER_LITER
+    } else {
+        0.0
+    }
     val consumptionDelta = currentL100km - WORKSHOP_COMBINED_L100KM
 
     Dialog(
@@ -160,7 +178,7 @@ fun ExtendedFuelEconomyDialog(
                                 history = fuelHistory,
                                 expanded = expandedSection == "history",
                                 onToggle = {
-                                    expandedSection = if (expandedSection == "history") null else "history"
+                                    expandedSection = if (expandedSection == "history") { null } else { "history" }
                                 }
                             )
                         }
@@ -298,7 +316,7 @@ private fun ConsumptionGaugeSection(currentL100km: Double) {
 private fun TripAverageSection(avgL100km: Double, currentL100km: Double) {
     val trend = if (currentL100km > 0 && avgL100km > 0) {
         currentL100km - avgL100km
-    } else 0.0
+    } else { 0.0 }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -444,7 +462,7 @@ private fun FuelCostCard(
     onFuelPriceChange: (String) -> Unit,
     tripCostPer100km: Double
 ) {
-    val costPerKm = if (avgL100km > 0) avgL100km / 100.0 * (fuelPrice.toDoubleOrNull() ?: 1.85) else 0.0
+    val costPerKm = if (avgL100km > 0) { avgL100km / 100.0 * (fuelPrice.toDoubleOrNull() ?: 1.85) } else { 0.0 }
     val monthlyEstimate = costPerKm * 1200.0
 
     Surface(
@@ -626,7 +644,7 @@ private fun CO2Section(co2PerKm: Double, avgL100km: Double) {
                         text = "%+.0f g/km".format(deviation),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (deviation > 0) gaugeRed else gaugeGreen
+                        color = if (deviation > 0) { gaugeRed } else { gaugeGreen }
                     )
                 }
             }
@@ -685,7 +703,7 @@ private fun WorkshopComparisonCard(
                         text = "%.1f L/100km".format(currentL100km),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (delta > 0) gaugeOrange else gaugeGreen
+                        color = if (delta > 0) { gaugeOrange } else { gaugeGreen }
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -721,7 +739,7 @@ private fun WorkshopComparisonCard(
                     )
 
                     drawRoundRect(
-                        color = if (delta > 0) gaugeOrange else gaugeGreen,
+                        color = if (delta > 0) { gaugeOrange } else { gaugeGreen },
                         topLeft = Offset(0f, y),
                         size = Size(size.width * barProgress.value, barHeight / 1.5f),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
@@ -731,7 +749,7 @@ private fun WorkshopComparisonCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val percentDiff = if (workshopL100km > 0) delta / workshopL100km * 100.0 else 0.0
+            val percentDiff = if (workshopL100km > 0) { delta / workshopL100km * 100.0 } else { 0.0 }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -746,8 +764,11 @@ private fun WorkshopComparisonCard(
                     color = diffColor.copy(alpha = 0.12f)
                 ) {
                     Text(
-                        text = if (delta > 0) "+%.1f%% ueber Werkswert".format(percentDiff)
-                               else "%.1f%% unter Werkswert".format(-percentDiff),
+                        text = if (delta > 0) {
+                            "+%.1f%% ueber Werkswert".format(percentDiff)
+                        } else {
+                            "%.1f%% unter Werkswert".format(-percentDiff)
+                        },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -799,7 +820,7 @@ private fun FuelHistorySection(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
-                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        if (expanded) { Icons.Filled.ExpandLess } else { Icons.Filled.ExpandMore },
                         contentDescription = null,
                         tint = textSecondary,
                         modifier = Modifier.size(20.dp)

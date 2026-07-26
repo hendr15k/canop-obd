@@ -9,7 +9,7 @@ class WastegateHealthAnalyzer {
     // History for trend analysis
     private val dutyHistory = mutableListOf<Double>()
     private val boostDeviationHistory = mutableListOf<Double>()
-    
+
     private class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D) {
         operator fun component1() = first
         operator fun component2() = second
@@ -18,20 +18,20 @@ class WastegateHealthAnalyzer {
     }
 
     enum class WastegateCondition {
-        HEALTHY,              // Normal
-        STUCK_OPEN,           // Mechanisch offen (Undicht)
-        STUCK_CLOSED,         // Mechanisch geschlossen (Klemmt)
-        WASTEGATE_LEAK,       // Unterdruck-Leck
-        SOLENOID_ISSUE,       // Magnetventil Problem
-        SENSOR_FAULT,         // Positionssensor defekt
-        UNKNOWN               // Nicht diagnostizierbar
+        HEALTHY, // Normal
+        STUCK_OPEN, // Mechanisch offen (Undicht)
+        STUCK_CLOSED, // Mechanisch geschlossen (Klemmt)
+        WASTEGATE_LEAK, // Unterdruck-Leck
+        SOLENOID_ISSUE, // Magnetventil Problem
+        SENSOR_FAULT, // Positionssensor defekt
+        UNKNOWN // Nicht diagnostizierbar
     }
 
     data class WastegateAnalysis(
         val condition: WastegateCondition,
         val currentDutyPercent: Double,
         val avgDutyPercent: Double,
-        val boostDeviation: Double,  // Soll-Ist Differenz in %
+        val boostDeviation: Double, // Soll-Ist Differenz in %
         val healthScore: Int,
         val diagnosis: String,
         val recommendation: String,
@@ -46,9 +46,9 @@ class WastegateHealthAnalyzer {
     }
 
     companion object {
-        private const val DUTY_IDLE_MIN = 80.0    // WG offen im Leerlauf
-        private const val DUTY_WOT_MAX = 60.0    // WG geschlossen bei Vollast
-        private const val DUTY_STUCK_OPEN = 95.0  // WG fast immer offen
+        private const val DUTY_IDLE_MIN = 80.0 // WG offen im Leerlauf
+        private const val DUTY_WOT_MAX = 60.0 // WG geschlossen bei Vollast
+        private const val DUTY_STUCK_OPEN = 95.0 // WG fast immer offen
         private const val DUTY_STUCK_CLOSED = 5.0 // WG fast immer geschlossen
         private const val NORMAL_BOOST_DEV = 15.0 // 15% Abweichung tolerierbar
         private const val HISTORY_SIZE = 20
@@ -68,23 +68,23 @@ class WastegateHealthAnalyzer {
         val avgDuty = avgWastegateDuty.coerceIn(0.0, 100.0)
         val target = targetBoost.coerceAtLeast(0.0)
         val actual = actualBoost.coerceIn(-0.5, 2.0)
-        
+
         // Update history for trend analysis
         updateHistory(duty, target, actual)
 
         val boostDeviation = if (target > 0.01) {
             ((actual - target) / target) * 100.0
-        } else 0.0
+        } else { 0.0 }
 
         val (condition, healthScore, diagnosis, recommendation) = when {
             // Stuck Open - duty too high for extended period
             duty > DUTY_STUCK_OPEN -> {
-                Quadruple(WastegateCondition.STUCK_OPEN, 20, 
-                    "Wastegate blockiert offen - Ladedruckverlust", 
+                Quadruple(WastegateCondition.STUCK_OPEN, 20,
+                    "Wastegate blockiert offen - Ladedruckverlust",
                     "Wastegate-Mechanismus und Unterdruckleitung prüfen")
             }
 
-            // Stuck Closed  
+            // Stuck Closed
             duty < DUTY_STUCK_CLOSED -> {
                 Quadruple(WastegateCondition.STUCK_CLOSED, 30,
                     "Wastegate blockiert geschlossen - Überladung möglich",
@@ -152,7 +152,7 @@ class WastegateHealthAnalyzer {
      * Check if duty cycle is stuck at a specific value (sensor issue)
      */
     private fun isDutyStuck(): Boolean {
-        if (dutyHistory.size < 10) return false
+        if (dutyHistory.size < 10) { return false }
         val recent = dutyHistory.takeLast(10)
         val variance = recent.map { it - recent.average() }.map { it * it }.average()
         val stdDev = kotlin.math.sqrt(variance)
@@ -164,21 +164,27 @@ class WastegateHealthAnalyzer {
      */
     private fun updateHistory(duty: Double, targetBoost: Double, actualBoost: Double) {
         dutyHistory.add(duty)
-        if (dutyHistory.size > HISTORY_SIZE) dutyHistory.removeAt(0)
-        
+        if (dutyHistory.size > HISTORY_SIZE) {
+            dutyHistory.removeAt(0)
+        }
+
         val deviation = if (targetBoost > 0.01) {
             ((actualBoost - targetBoost) / targetBoost) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
         boostDeviationHistory.add(deviation)
-        if (boostDeviationHistory.size > HISTORY_SIZE) boostDeviationHistory.removeAt(0)
+        if (boostDeviationHistory.size > HISTORY_SIZE) {
+            boostDeviationHistory.removeAt(0)
+        }
     }
 
     /**
      * Determine wastegate trend based on history
      */
     private fun determineTrend(): WastegateTrend {
-        if (boostDeviationHistory.size < 5) return WastegateTrend.UNKNOWN
-        
+        if (boostDeviationHistory.size < 5) { return WastegateTrend.UNKNOWN }
+
         val firstHalf = boostDeviationHistory.take(boostDeviationHistory.size / 2).average()
         val secondHalf = boostDeviationHistory.drop(boostDeviationHistory.size / 2).average()
         val change = secondHalf - firstHalf
@@ -192,19 +198,25 @@ class WastegateHealthAnalyzer {
 
     fun addWastegateDutyReading(duty: Double) {
         dutyHistory.add(duty.coerceIn(0.0, 100.0))
-        if (dutyHistory.size > HISTORY_SIZE) dutyHistory.removeAt(0)
+        if (dutyHistory.size > HISTORY_SIZE) {
+            dutyHistory.removeAt(0)
+        }
     }
 
     fun addBoostReading(actualBoost: Double, targetBoost: Double) {
         val deviation = if (targetBoost > 0.01) {
             ((actualBoost - targetBoost) / targetBoost) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
         boostDeviationHistory.add(deviation)
-        if (boostDeviationHistory.size > HISTORY_SIZE) boostDeviationHistory.removeAt(0)
+        if (boostDeviationHistory.size > HISTORY_SIZE) {
+            boostDeviationHistory.removeAt(0)
+        }
     }
 
     fun getAverageDuty(): Double {
-        return if (dutyHistory.isNotEmpty()) dutyHistory.average() else 0.0
+        return if (dutyHistory.isNotEmpty()) { dutyHistory.average() } else { 0.0 }
     }
 
     /**

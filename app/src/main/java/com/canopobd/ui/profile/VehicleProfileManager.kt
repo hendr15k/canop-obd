@@ -1,8 +1,6 @@
 package com.canopobd.ui.profile
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,11 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.canopobd.data.model.VehicleProfile
-import com.canopobd.data.model.VehicleProfiles
 import com.canopobd.ui.theme.*
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 
 data class SavedProfile(
     val id: String,
@@ -46,11 +42,11 @@ fun VehicleProfileManagerDialog(
     var savedProfiles by remember { mutableStateOf<List<SavedProfile>>(emptyList()) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var selectedProfile by remember { mutableStateOf<SavedProfile?>(null) }
-    
+
     LaunchedEffect(Unit) {
         savedProfiles = loadProfilesFromPrefs(context)
     }
-    
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
@@ -74,9 +70,9 @@ fun VehicleProfileManagerDialog(
                         Icon(Icons.Filled.Close, "Schliessen", tint = colors.textSecondary)
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Button(
                     onClick = { showCreateDialog = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -86,9 +82,9 @@ fun VehicleProfileManagerDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Neues Profil erstellen")
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 if (savedProfiles.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -123,7 +119,7 @@ fun VehicleProfileManagerDialog(
             }
         }
     }
-    
+
     if (showCreateDialog) {
         CreateProfileDialog(
             currentProfile = currentProfile,
@@ -197,7 +193,7 @@ private fun CreateProfileDialog(
     val colors = LocalAppColors.current
     var profileName by remember { mutableStateOf(currentProfile?.displayName ?: "") }
     var selectedVehicle by remember { mutableStateOf(currentProfile?.id ?: "astra_j_2012_14t") }
-    
+
     val availableVehicles = listOf(
         "astra_j_2012_14t" to "Opel Astra J 1.4 Turbo (2012)",
         "astra_j_2010_16" to "Opel Astra J 1.6 (2010-2014)",
@@ -205,7 +201,7 @@ private fun CreateProfileDialog(
         "insignia_a_2009" to "Opel Insignia A (2009-2017)",
         "custom" to "Benutzerdefiniert"
     )
-    
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -213,9 +209,9 @@ private fun CreateProfileDialog(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text("Profil erstellen", color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 OutlinedTextField(
                     value = profileName,
                     onValueChange = { profileName = it },
@@ -223,12 +219,12 @@ private fun CreateProfileDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text("Fahrzeug:", color = colors.textSecondary, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 availableVehicles.forEach { (id, name) ->
                     Row(
                         modifier = Modifier
@@ -244,9 +240,9 @@ private fun CreateProfileDialog(
                         Text(name, color = colors.textPrimary, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -302,7 +298,7 @@ private fun saveProfileToPrefs(context: Context, profile: SavedProfile) {
     val current = loadProfilesFromPrefs(context).toMutableList()
     current.removeAll { it.id == profile.id }
     current.add(profile)
-    
+
     val array = JSONArray()
     current.forEach { p ->
         val obj = JSONObject().apply {
@@ -313,7 +309,7 @@ private fun saveProfileToPrefs(context: Context, profile: SavedProfile) {
         }
         array.put(obj)
     }
-    
+
     prefs.edit().putString("profiles", array.toString()).apply()
 }
 
@@ -321,7 +317,7 @@ private fun deleteProfile(context: Context, profileId: String) {
     val prefs = context.getSharedPreferences("vehicle_profiles", Context.MODE_PRIVATE)
     val current = loadProfilesFromPrefs(context).toMutableList()
     current.removeAll { it.id == profileId }
-    
+
     val array = JSONArray()
     current.forEach { p ->
         val obj = JSONObject().apply {
@@ -332,7 +328,7 @@ private fun deleteProfile(context: Context, profileId: String) {
         }
         array.put(obj)
     }
-    
+
     prefs.edit().putString("profiles", array.toString()).apply()
 }
 

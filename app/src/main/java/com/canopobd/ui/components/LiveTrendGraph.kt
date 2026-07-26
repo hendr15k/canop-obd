@@ -349,7 +349,7 @@ fun MultiLineTrendChart(
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
-    
+
     Column(modifier = modifier) {
         Text(
             text = title,
@@ -357,7 +357,7 @@ fun MultiLineTrendChart(
             fontWeight = FontWeight.Medium,
             color = colors.textPrimary
         )
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -378,9 +378,9 @@ fun MultiLineTrendChart(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -392,18 +392,18 @@ fun MultiLineTrendChart(
             val padding = 8.dp.toPx()
             val chartWidth = width - padding * 2
             val chartHeight = height - padding * 2
-            
+
             dataSeries.forEach { data ->
                 if (data.series.size < 2) return@forEach
-                
+
                 val maxVal = data.maxValue.coerceAtLeast(1f)
                 val path = Path()
                 var isFirst = true
-                
+
                 data.series.forEachIndexed { index, point ->
                     val x = padding + (index.toFloat() / (data.series.size - 1).coerceAtLeast(1)) * chartWidth
                     val y = padding + chartHeight - (point.value.coerceIn(0f, maxVal) / maxVal) * chartHeight
-                    
+
                     if (isFirst) {
                         path.moveTo(x, y)
                         isFirst = false
@@ -411,7 +411,7 @@ fun MultiLineTrendChart(
                         path.lineTo(x, y)
                     }
                 }
-                
+
                 drawPath(
                     path = path,
                     color = data.color,
@@ -419,7 +419,7 @@ fun MultiLineTrendChart(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
     }
 }

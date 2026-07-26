@@ -5,8 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -23,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.canopobd.R
 import com.canopobd.data.model.ColorTheme
 import com.canopobd.ui.components.*
@@ -122,7 +119,7 @@ private fun ThemeSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onThemeChange(theme) },
-                accentEdge = if (isSelected) themeColor else null,
+                accentEdge = if (isSelected) { themeColor } else { null },
                 padding = 12.dp
             ) {
                 Row(
@@ -150,7 +147,7 @@ private fun ThemeSelector(
                             Text(
                                 text = theme.displayName,
                                 style = MaterialTheme.typography.titleSmall,
-                                color = if (isSelected) themeColor else colors.textPrimary,
+                                color = if (isSelected) { themeColor } else { colors.textPrimary },
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(Modifier.height(4.dp))
@@ -213,7 +210,7 @@ private fun GaugeSelector(
         items(availableGauges) { gauge ->
             val isPrimary = gauge.id in primaryGaugeIds
             val isDisabled = !isPrimary && primaryGaugeIds.size >= 3
-            val c = if (isDisabled) colors.textMuted else if (isPrimary) colors.primary else colors.textSecondary
+            val c = if (isDisabled) { colors.textMuted } else if (isPrimary) { colors.primary } else { colors.textSecondary }
 
             Row(
                 modifier = Modifier
@@ -221,14 +218,18 @@ private fun GaugeSelector(
                     .clip(RoundedCornerShape(AppRadius.md))
                     .background(colors.surfaceRaised)
                     .border(
-                        width = if (isPrimary) 1.5.dp else 1.dp,
-                        color = if (isPrimary) colors.primary.copy(alpha = 0.5f) else colors.borderSubtle,
+                        width = if (isPrimary) { 1.5.dp } else { 1.dp },
+                        color = if (isPrimary) { colors.primary.copy(alpha = 0.5f) } else { colors.borderSubtle },
                         shape = RoundedCornerShape(AppRadius.md)
                     )
                     .clickable(enabled = !isDisabled) {
-                        val newSet = if (isPrimary) primaryGaugeIds - gauge.id
-                        else if (primaryGaugeIds.size < 3) primaryGaugeIds + gauge.id
-                        else primaryGaugeIds
+                        val newSet = if (isPrimary) {
+                            primaryGaugeIds - gauge.id
+                        } else if (primaryGaugeIds.size < 3) {
+                            primaryGaugeIds + gauge.id
+                        } else {
+                            primaryGaugeIds
+                        }
                         if (isPrimary || primaryGaugeIds.size < 3) {
                             onPrimaryGaugesChange(newSet)
                         }
@@ -240,7 +241,7 @@ private fun GaugeSelector(
                     modifier = Modifier
                         .size(20.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(if (isPrimary) colors.primary else Color.Transparent)
+                        .background(if (isPrimary) { colors.primary } else { Color.Transparent })
                         .border(2.dp, c, RoundedCornerShape(4.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -258,7 +259,7 @@ private fun GaugeSelector(
                     Text(
                         text = gauge.label,
                         style = MaterialTheme.typography.titleSmall,
-                        color = if (isDisabled) colors.textMuted else colors.textPrimary
+                        color = if (isDisabled) { colors.textMuted } else { colors.textPrimary }
                     )
                     Text(
                         text = gauge.description,

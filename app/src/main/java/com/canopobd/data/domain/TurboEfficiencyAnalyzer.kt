@@ -141,9 +141,9 @@ class TurboEfficiencyAnalyzer(
 
         // Gesamtbewertung
         val rawScore = (boostEfficiency.toInt() * WEIGHT_BOOST_EFFICIENCY +
-                wgScore * WEIGHT_WASTEGATE +
-                egtScore * WEIGHT_EGT +
-                turboRpmScore * WEIGHT_TURBO_RPM) / 100
+            wgScore * WEIGHT_WASTEGATE +
+            egtScore * WEIGHT_EGT +
+            turboRpmScore * WEIGHT_TURBO_RPM) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
 
@@ -174,8 +174,7 @@ class TurboEfficiencyAnalyzer(
     ): Pair<Double, Double> {
         if (targetBar <= 0.01) {
             // Leerlauf oder kein Boost-Ziel
-            return if (actualBar < 0.05) 100.0 to 0.0
-            else 70.0 to 0.0
+            return if (actualBar < 0.05) { 100.0 to 0.0 } else { 70.0 to 0.0 }
         }
 
         val deviation = ((actualBar - targetBar) / targetBar) * 100.0
@@ -198,19 +197,19 @@ class TurboEfficiencyAnalyzer(
      */
     private fun evaluateBoostResponse(input: TurboInput): Int {
         if (input.throttle < 30 || input.engineLoad < 30) {
-            return 80  // Nicht genuegend Last fuer Bewertung
+            return 80 // Nicht genuegend Last fuer Bewertung
         }
 
         val loadBoostRatio = if (input.engineLoad > 0) {
             input.boostActualBar / (input.engineLoad / 100.0)
-        } else 0.0
+        } else { 0.0 }
 
         // Bei Last sollte das Verhaeltis stabil sein
         return when {
             input.boostActualBar < 0.05 && input.throttle > 60 -> 30 // Kein Boost bei Last
-            loadBoostRatio in 0.5..1.5 -> 95  // Gutes Verhaeltnis
+            loadBoostRatio in 0.5..1.5 -> 95 // Gutes Verhaeltnis
             loadBoostRatio in 0.3..2.0 -> 75
-            loadBoostRatio < 0.3 -> 40  // Zu wenig Boost
+            loadBoostRatio < 0.3 -> 40 // Zu wenig Boost
             else -> 50
         }
     }
@@ -221,7 +220,7 @@ class TurboEfficiencyAnalyzer(
     private fun evaluateWastegate(duty: Double, actualBoost: Double, targetBoost: Double): Int {
         val boostDeviation = if (targetBoost > 0.01) {
             abs((actualBoost - targetBoost) / targetBoost) * 100.0
-        } else 0.0
+        } else { 0.0 }
 
         return when {
             // Wastegate fast immer offen
@@ -246,7 +245,7 @@ class TurboEfficiencyAnalyzer(
         val maxEGT = maxOf(egtB1, egtB2)
 
         return when {
-            maxEGT <= 0 -> 70  // Keine Daten
+            maxEGT <= 0 -> 70 // Keine Daten
             maxEGT > EGT_CRITICAL -> 15
             maxEGT > EGT_WARNING -> 40
             maxEGT > EGT_NORMAL_MAX -> 70
@@ -261,7 +260,7 @@ class TurboEfficiencyAnalyzer(
      */
     private fun evaluateTurboRPM(turboRpm: Double): Int {
         return when {
-            turboRpm <= 0 -> 70  // Keine Daten verfuegbar
+            turboRpm <= 0 -> 70 // Keine Daten verfuegbar
             turboRpm in TURBO_RPM_OPTIMAL_MIN..TURBO_RPM_OPTIMAL_MAX -> 100
             turboRpm < TURBO_RPM_OPTIMAL_MIN -> 80
             turboRpm > TURBO_RPM_WARNING -> 20
@@ -274,12 +273,12 @@ class TurboEfficiencyAnalyzer(
      * Berechnet Ladeluftkuehler-Effizienz (%)
      */
     private fun calculateIntercoolerEfficiency(chargeAirTemp: Double, intakeTemp: Double): Double {
-        if (intakeTemp <= 0 || chargeAirTemp <= 0) return 80.0 // Keine Daten
+        if (intakeTemp <= 0 || chargeAirTemp <= 0) { return 80.0 } // Keine Daten
 
         val tempRise = chargeAirTemp - intakeTemp
         return when {
-            tempRise <= 0 -> 100.0  // Ladung kaelter als Ansaugluft (optimal)
-            tempRise > 30 -> 0.0    // Intercooler komplett ineffektiv
+            tempRise <= 0 -> 100.0 // Ladung kaelter als Ansaugluft (optimal)
+            tempRise > 30 -> 0.0 // Intercooler komplett ineffektiv
             else -> ((1.0 - tempRise / 30.0) * 100.0).coerceIn(0.0, 100.0)
         }
     }
@@ -314,13 +313,13 @@ class TurboEfficiencyAnalyzer(
         return when (efficiency) {
             TurboEfficiency.OPTIMAL -> {
                 "BorgWarner KP39 Turbo arbeitet optimal. " +
-                        "Boost: ${"%.2f".format(input.boostActualBar)} bar " +
-                        "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). " +
-                        "Ladeluftkuehler: ${intercoolerEfficiency.toInt()}%."
+                    "Boost: ${"%.2f".format(input.boostActualBar)} bar " +
+                    "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). " +
+                    "Ladeluftkuehler: ${intercoolerEfficiency.toInt()}%."
             }
             TurboEfficiency.GOOD -> {
                 "Turbo funktioniert gut mit leichtem Alterungsverhalten. " +
-                        "Boost-Abweichung: ${"%.1f".format(boostDeviation)}%."
+                    "Boost-Abweichung: ${"%.1f".format(boostDeviation)}%."
             }
             TurboEfficiency.DEGRADED -> {
                 val issues = mutableListOf<String>()
@@ -333,14 +332,14 @@ class TurboEfficiencyAnalyzer(
                 if (input.egtBank1 > EGT_WARNING) {
                     issues.add("EGT erhoeht: ${input.egtBank1.toInt()}°C")
                 }
-                val detail = if (issues.isNotEmpty()) issues.joinToString(", ") else "Leichter Leistungsverlust"
+                val detail = if (issues.isNotEmpty()) { issues.joinToString(", ") } else { "Leichter Leistungsverlust" }
                 "Turbo-Leistung vermindert: $detail."
             }
             TurboEfficiency.FAILING -> {
                 "KRITISCH: Turbo-Versagen droht! " +
-                        "Boost: ${"%.2f".format(input.boostActualBar)} bar " +
-                        "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). " +
-                        "Sofortige Pruefung erforderlich."
+                    "Boost: ${"%.2f".format(input.boostActualBar)} bar " +
+                    "(Soll: ${"%.2f".format(input.boostTargetBar)} bar). " +
+                    "Sofortige Pruefung erforderlich."
             }
         }
     }
@@ -352,23 +351,23 @@ class TurboEfficiencyAnalyzer(
         return when (efficiency) {
             TurboEfficiency.OPTIMAL -> {
                 "Turbo-System in Ordnung. Regelmaessige Wartung: " +
-                        "Oelversorgung des Turbos pruefen (Dexos2 5W-30). " +
-                        "Luftfilter bei Intervall wechseln."
+                    "Oelversorgung des Turbos pruefen (Dexos2 5W-30). " +
+                    "Luftfilter bei Intervall wechseln."
             }
             TurboEfficiency.GOOD -> {
                 "Turbo zeigt altersbedingte Abnutzung. " +
-                        "Bei ${input.totalKm.toInt()} km: Turbolader-Inspektion " +
-                        "bei naechster Grosswartung empfohlen."
+                    "Bei ${input.totalKm.toInt()} km: Turbolader-Inspektion " +
+                    "bei naechster Grosswartung empfohlen."
             }
             TurboEfficiency.DEGRADED -> {
                 "Turbo-Inspektion dringend empfohlen. " +
-                        "Ladedrucksensor, Wastegate und Unterdruckleitungen pruefen. " +
-                        "Oelqualitaet und -stand pruefen - Turbo benoetigt schmierende Oelung."
+                    "Ladedrucksensor, Wastegate und Unterdruckleitungen pruefen. " +
+                    "Oelqualitaet und -stand pruefen - Turbo benoetigt schmierende Oelung."
             }
             TurboEfficiency.FAILING -> {
                 "SOFORT Werkstatt aufsuchen! " +
-                        "Turbo-Versagen kann zu Motorschaden fuehren. " +
-                        "Nur bis zur naechsten Werkstatt weiterfahren."
+                    "Turbo-Versagen kann zu Motorschaden fuehren. " +
+                    "Nur bis zur naechsten Werkstatt weiterfahren."
             }
         }
     }

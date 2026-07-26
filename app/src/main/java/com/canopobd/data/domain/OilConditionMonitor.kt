@@ -1,8 +1,6 @@
 package com.canopobd.data.domain
 
 import com.canopobd.data.model.AstraJ14TurboCalibration
-import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * Oelzustands-Monitor fuer Opel Astra J 1.4 Turbo (A14NET)
@@ -69,10 +67,10 @@ class OilConditionMonitor(
      * Fahrten-Typ (fuer Oelverschmutzungs-Schaetzung)
      */
     enum class TripType(val label: String) {
-        SHORT_DISTANCE("Kurzstrecke"),    // <10km
-        CITY("Stadtverkehr"),              // 10-50km
-        SUBURBAN("Vorstadt"),              // 50-100km
-        HIGHWAY("Autobahn"),               // >100km
+        SHORT_DISTANCE("Kurzstrecke"), // <10km
+        CITY("Stadtverkehr"), // 10-50km
+        SUBURBAN("Vorstadt"), // 50-100km
+        HIGHWAY("Autobahn"), // >100km
         UNKNOWN("Unbekannt")
     }
 
@@ -146,9 +144,9 @@ class OilConditionMonitor(
 
         // Gesamtbewertung
         val rawScore = (tempHealth * WEIGHT_TEMPERATURE +
-                pressureHealth * WEIGHT_PRESSURE +
-                lifeRemaining.toInt() * WEIGHT_LIFE +
-                (100 - contaminationRisk) * WEIGHT_CONTAMINATION) / 100
+            pressureHealth * WEIGHT_PRESSURE +
+            lifeRemaining.toInt() * WEIGHT_LIFE +
+            (100 - contaminationRisk) * WEIGHT_CONTAMINATION) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
 
@@ -176,7 +174,7 @@ class OilConditionMonitor(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun evaluateTemperature(oilTemp: Double, coolantTemp: Double): Int {
-        if (oilTemp <= 0) return 50  // Keine Daten
+        if (oilTemp <= 0) { return 50 } // Keine Daten
 
         return when {
             oilTemp > OIL_TEMP_CRITICAL -> 5
@@ -184,8 +182,8 @@ class OilConditionMonitor(
             oilTemp > OIL_TEMP_OPTIMAL_MAX -> 60
             oilTemp in OIL_TEMP_OPTIMAL_MIN..OIL_TEMP_OPTIMAL_MAX -> 100
             oilTemp > OIL_TEMP_COLD -> 75
-            oilTemp > 40 -> 60  // Aufwaermphase
-            else -> 40          // Sehr kalt
+            oilTemp > 40 -> 60 // Aufwaermphase
+            else -> 40 // Sehr kalt
         }
     }
 
@@ -193,7 +191,7 @@ class OilConditionMonitor(
      * Bewertet Oeldruck
      */
     private fun evaluatePressure(pressure: Double, rpm: Double): Int {
-        if (pressure <= 0) return 50  // Keine Daten (kein Drucksensor)
+        if (pressure <= 0) { return 50 } // Keine Daten (kein Drucksensor)
 
         return when {
             // Kritisch niedrig
@@ -229,7 +227,7 @@ class OilConditionMonitor(
         val kmSinceChange = totalKm - lastChangeKm
         val daysSinceChange = if (lastChangeTimestamp > 0) {
             ((System.currentTimeMillis() - lastChangeTimestamp) / (1000 * 60 * 60 * 24)).toInt()
-        } else 0
+        } else { 0 }
 
         // Lebensdauer basierend auf Kilometern
         val kmLifePercent = ((OIL_LIFE_BASE_KM - kmSinceChange) / OIL_LIFE_BASE_KM * 100.0)
@@ -247,10 +245,10 @@ class OilConditionMonitor(
 
         // Fahrprofil-Faktor
         val tripFactor = when (tripType) {
-            TripType.SHORT_DISTANCE -> 0.85  // Kurzstrecke belastet Oel mehr
+            TripType.SHORT_DISTANCE -> 0.85 // Kurzstrecke belastet Oel mehr
             TripType.CITY -> 0.9
             TripType.SUBURBAN -> 1.0
-            TripType.HIGHWAY -> 1.1          // Autobahn ist besser fuer Oel
+            TripType.HIGHWAY -> 1.1 // Autobahn ist besser fuer Oel
             TripType.UNKNOWN -> 1.0
         }
 
@@ -299,7 +297,7 @@ class OilConditionMonitor(
 
         // Laufzeit-Belastung
         val hoursRunning = runtimeSec / 3600.0
-        if (hoursRunning > 200) risk += 5
+        if (hoursRunning > 200) { risk += 5 }
 
         return risk.coerceIn(0, 100)
     }
@@ -336,18 +334,18 @@ class OilConditionMonitor(
             }
             OilCondition.FAIR -> {
                 val issues = mutableListOf<String>()
-                if (tempHealth < 60) issues.add("Oeltemperatur ${input.oilTemp.toInt()}°C")
-                if (pressureHealth < 60) issues.add("Oeldruck pruefen")
-                val detail = if (issues.isNotEmpty()) " - ${issues.joinToString(", ")}" else ""
+                if (tempHealth < 60) { issues.add("Oeltemperatur ${input.oilTemp.toInt()}°C") }
+                if (pressureHealth < 60) { issues.add("Oeldruck pruefen") }
+                val detail = if (issues.isNotEmpty()) { " - ${issues.joinToString(", ")}" } else { "" }
                 "Oelzustand befriedigend.$detail Wechsel bald empfohlen."
             }
             OilCondition.POOR -> {
                 "Oelzustand schlecht! Oelwechsel dringend empfohlen. " +
-                        "Bei ${input.totalKm.toInt()} km: Kraftstoffverdunnung moeglich."
+                    "Bei ${input.totalKm.toInt()} km: Kraftstoffverdunnung moeglich."
             }
             OilCondition.CRITICAL -> {
                 "KRITISCH: Oelwechsel sofort erforderlich! " +
-                        "Motorlauf ohne frisches Oel fuehrt zu Schaden."
+                    "Motorlauf ohne frisches Oel fuehrt zu Schaden."
             }
             OilCondition.UNKNOWN -> {
                 "Oelzustand nicht bestimmbar. Oelstand und -qualitaet pruefen."
@@ -368,32 +366,32 @@ class OilConditionMonitor(
         return when (condition) {
             OilCondition.EXCELLENT, OilCondition.GOOD -> {
                 val nextChange = when {
-                    remainingKm < 3000 -> "in ca. ${remainingKm} km oder ${remainingDays} Tagen"
-                    remainingKm < 5000 -> "bald (ca. ${remainingKm} km)"
-                    else -> "bei ca. ${remainingKm} km Restlaufstrecke"
+                    remainingKm < 3000 -> "in ca. $remainingKm km oder $remainingDays Tagen"
+                    remainingKm < 5000 -> "bald (ca. $remainingKm km)"
+                    else -> "bei ca. $remainingKm km Restlaufstrecke"
                 }
                 "Nächster Oelwechsel $nextChange. " +
-                        "Verwenden Sie ausschliesslich ${calibration.recommendedOil}."
+                    "Verwenden Sie ausschliesslich ${calibration.recommendedOil}."
             }
             OilCondition.FAIR -> {
-                "Oelwechsel empfohlen bei ${remainingKm} km Restlaufstrecke. " +
-                        "Bitte ${calibration.recommendedOil} verwenden. " +
-                        "Alternativ: ${calibration.alternativeOil}."
+                "Oelwechsel empfohlen bei $remainingKm km Restlaufstrecke. " +
+                    "Bitte ${calibration.recommendedOil} verwenden. " +
+                    "Alternativ: ${calibration.alternativeOil}."
             }
             OilCondition.POOR -> {
                 "SOFORT Oelwechsel durchfuehren! " +
-                        "Nur ${calibration.recommendedOil} verwenden. " +
-                        "Oelstand vor Fahrtantritt pruefen."
+                    "Nur ${calibration.recommendedOil} verwenden. " +
+                    "Oelstand vor Fahrtantritt pruefen."
             }
             OilCondition.CRITICAL -> {
                 "KRITISCH: SOFORT Oelwechsel! " +
-                        "Motor nicht weiter betreiben ohne frisches Oel. " +
-                        "${calibration.recommendedOil} ist vorgeschrieben. " +
-                        "Oelstand bei jedem Start pruefen."
+                    "Motor nicht weiter betreiben ohne frisches Oel. " +
+                    "${calibration.recommendedOil} ist vorgeschrieben. " +
+                    "Oelstand bei jedem Start pruefen."
             }
             OilCondition.UNKNOWN -> {
                 "Oelstand manuell pruefen. " +
-                        "Bei naechstem Halt: ${calibration.recommendedOil} nachfuellen oder wechseln."
+                    "Bei naechstem Halt: ${calibration.recommendedOil} nachfuellen oder wechseln."
             }
         }
     }

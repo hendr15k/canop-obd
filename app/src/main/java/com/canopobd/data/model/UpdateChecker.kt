@@ -2,7 +2,6 @@ package com.canopobd.data.model
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import android.util.Log
 import kotlinx.coroutines.Dispatchers

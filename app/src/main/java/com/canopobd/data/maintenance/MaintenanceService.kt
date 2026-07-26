@@ -8,7 +8,7 @@ import kotlin.math.roundToInt
 
 /**
  * Service für die Verwaltung von Wartungserinnerungen
- * 
+ *
  * Historische Intervalle Opel Astra J 1.4 Turbo (A14NET):
  * - Ölwechsel: 15.000 km / 1 Jahr (Dexos2 5W-30 Pflicht)
  * - Zündkerzen: 60.000 km (NGK LZKR6AP-11G oder Bosch FR7HPP332)
@@ -19,47 +19,47 @@ import kotlin.math.roundToInt
  * - Timing-Kette: Prüfung ab 80.000 km
  */
 class MaintenanceService {
-    
+
     private val reminders = ConcurrentHashMap<String, MaintenanceReminder>()
     private val oilTempHistory = CopyOnWriteArrayList<OilTempHistoryEntry>()
     private val fuelConsumptionHistory = CopyOnWriteArrayList<FuelConsumptionEntry>()
     private val notifications = CopyOnWriteArrayList<MaintenanceReminderNotification>()
-    
+
     companion object {
         const val MAX_OIL_TEMP_ENTRIES = 1000
         const val MAX_FUEL_ENTRIES = 500
         const val MAX_NOTIFICATIONS = 50
-        
+
         // Astra J 1.4 Turbo spezifische Intervalle
         const val OIL_CHANGE_KM = 15000
         const val OIL_CHANGE_MONTHS = 12
         const val OIL_CHANGE_SEVERE_KM = 10000
-        
+
         const val SPARK_PLUG_KM = 60000
         const val SPARK_PLUG_SEVERE_KM = 30000
-        
+
         const val AIR_FILTER_KM = 30000
         const val AIR_FILTER_SEVERE_KM = 15000
-        
+
         const val TIMING_CHAIN_CHECK_KM = 80000
         const val TIMING_CHAIN_CRITICAL_KM = 150000
-        
+
         const val TURBO_INSPECTION_KM = 60000
         const val COOLANT_KM = 80000
         const val BRAKE_PADS_KM = 30000
         const val TRANSMISSION_FLUID_KM = 80000
-        
+
         // Öltemperatur-Schwellenwerte (Optimum: 90-110°C)
         const val OIL_TEMP_OPTIMAL_MIN = 90.0
         const val OIL_TEMP_OPTIMAL_MAX = 110.0
         const val OIL_TEMP_WARNING = 120.0
         const val OIL_TEMP_CRITICAL = 130.0
-        
+
         // Kraftstoffverbrauch-Sollwerte (A14NET: 5.9L/100km kombiniert)
         const val FUEL_CONSUMPTION_TARGET = 6.0
         const val FUEL_CONSUMPTION_WARNING = 7.5
         const val FUEL_CONSUMPTION_CRITICAL = 9.0
-        
+
         // Kostenschätzungen (Workshop)
         const val OIL_CHANGE_COST = 100.0
         const val SPARK_PLUGS_COST = 130.0
@@ -76,7 +76,7 @@ class MaintenanceService {
         const val MAF_SENSOR_COST = 200.0
         const val LAMBDA_SENSOR_COST = 250.0
     }
-    
+
     /**
      * Initialisiert den Service mit Standard-Erinnerungen
      */
@@ -86,67 +86,67 @@ class MaintenanceService {
             vehicleName = "Opel Astra J 1.4 Turbo",
             engineCode = "A14NET/LUJ"
         )
-        
+
         val defaultReminders = config.createDefaultReminders().map { reminder ->
             reminder.copy(currentKm = currentKm, currentDate = currentDate)
         }
-        
+
         defaultReminders.forEach { reminder ->
             reminders[reminder.id] = reminder
         }
-        
+
         return defaultReminders
     }
-    
+
     /**
      * Fügt eine neue Erinnerung hinzu
      */
     fun addReminder(reminder: MaintenanceReminder) {
         reminders[reminder.id] = reminder
     }
-    
+
     /**
      * Aktualisiert eine bestehende Erinnerung
      */
     fun updateReminder(reminder: MaintenanceReminder) {
         reminders[reminder.id] = reminder
     }
-    
+
     /**
      * Entfernt eine Erinnerung
      */
     fun removeReminder(reminderId: String) {
         reminders.remove(reminderId)
     }
-    
+
     /**
      * Gibt alle aktiven Erinnerungen zurück
      */
     fun getActiveReminders(): List<MaintenanceReminder> {
         return reminders.values.filter { it.isActive && !it.isCompleted }
     }
-    
+
     /**
      * Gibt alle Erinnerungen zurück
      */
     fun getAllReminders(): List<MaintenanceReminder> {
         return reminders.values.toList()
     }
-    
+
     /**
      * Gibt überfällige Erinnerungen zurück
      */
     fun getOverdueReminders(): List<MaintenanceReminder> {
         return reminders.values.filter { it.status == MaintenanceReminderStatus.OVERDUE }
     }
-    
+
     /**
      * Gibt bald fällige Erinnerungen zurück
      */
     fun getDueSoonReminders(): List<MaintenanceReminder> {
         return reminders.values.filter { it.status == MaintenanceReminderStatus.DUE_SOON }
     }
-    
+
     /**
      * Aktualisiert den Kilometerstand für alle Erinnerungen
      */
@@ -156,7 +156,7 @@ class MaintenanceService {
         }
         checkReminders()
     }
-    
+
     /**
      * Setzt eine Wartung als erledigt
      */
@@ -174,7 +174,7 @@ class MaintenanceService {
         }
         checkReminders()
     }
-    
+
     /**
      * Setzt eine Erinnerung auf aktiv (nach Erledigung)
      */
@@ -191,7 +191,7 @@ class MaintenanceService {
             )
         }
     }
-    
+
     /**
      * Setzt die Fahrbedingungen für eine Erinnerung
      */
@@ -200,7 +200,7 @@ class MaintenanceService {
             reminders[reminder.id] = reminder.copy(drivingConditions = conditions)
         }
     }
-    
+
     /**
      * Prüft alle Erinnerungen und erstellt ggf. Benachrichtigungen
      */
@@ -217,7 +217,7 @@ class MaintenanceService {
             }
         }
     }
-    
+
     /**
      * Erstellt eine Benachrichtigung
      */
@@ -234,14 +234,14 @@ class MaintenanceService {
             notifications.removeAt(notifications.lastIndex)
         }
     }
-    
+
     /**
      * Gibt ungelesene Benachrichtigungen zurück
      */
     fun getUnreadNotifications(): List<MaintenanceReminderNotification> {
         return notifications.filter { !it.isRead && !it.isDismissed }
     }
-    
+
     /**
      * Markiert eine Benachrichtigung als gelesen
      */
@@ -251,7 +251,7 @@ class MaintenanceService {
             notifications[index] = notifications[index].copy(isRead = true)
         }
     }
-    
+
     /**
      * Verwirft eine Benachrichtigung
      */
@@ -261,9 +261,9 @@ class MaintenanceService {
             notifications[index] = notifications[index].copy(isDismissed = true)
         }
     }
-    
+
     // ===== Öltemperatur-Historie =====
-    
+
     /**
      * Fügt einen Öltemperatur-Eintrag hinzu
      */
@@ -287,12 +287,12 @@ class MaintenanceService {
             oilTempHistory.removeAt(0)
         }
     }
-    
+
     /**
      * Gibt die Öltemperatur-Historie zurück
      */
     fun getOilTempHistory(): List<OilTempHistoryEntry> = oilTempHistory.toList()
-    
+
     /**
      * Berechnet die Öltemperatur-Statistik
      */
@@ -300,20 +300,20 @@ class MaintenanceService {
         if (oilTempHistory.isEmpty()) {
             return OilTempStatistics()
         }
-        
+
         val temps = oilTempHistory.map { it.oilTempC }
         val avg = temps.average()
         val min = temps.minOrNull() ?: 0.0
         val max = temps.maxOrNull() ?: 0.0
-        
+
         val optimalCount = temps.count { it in OIL_TEMP_OPTIMAL_MIN..OIL_TEMP_OPTIMAL_MAX }
         val optimalPercent = (optimalCount.toDouble() / temps.size * 100).roundToInt()
-        
+
         val tooHotCount = temps.count { it > OIL_TEMP_WARNING }
         val tooHotPercent = (tooHotCount.toDouble() / temps.size * 100).roundToInt()
-        
+
         val trend = calculateTrend(temps)
-        
+
         return OilTempStatistics(
             averageTempC = avg,
             minTempC = min,
@@ -325,7 +325,7 @@ class MaintenanceService {
             lastEntry = oilTempHistory.lastOrNull()
         )
     }
-    
+
     /**
      * Gibt die durchschnittliche Betriebstemperatur zurück
      */
@@ -337,9 +337,9 @@ class MaintenanceService {
             0.0
         }
     }
-    
+
     // ===== Kraftstoffverbrauch-Trend =====
-    
+
     /**
      * Fügt einen Kraftstoffverbrauch-Eintrag hinzu
      */
@@ -354,7 +354,7 @@ class MaintenanceService {
         isCity: Boolean = false
     ) {
         if (consumptionL100km <= 0 || consumptionL100km > 20) return // Ungültige Werte ignorieren
-        
+
         val entry = FuelConsumptionEntry(
             timestamp = System.currentTimeMillis(),
             consumptionL100km = consumptionL100km,
@@ -371,12 +371,12 @@ class MaintenanceService {
             fuelConsumptionHistory.removeAt(0)
         }
     }
-    
+
     /**
      * Gibt die Kraftstoffverbrauch-Historie zurück
      */
     fun getFuelConsumptionHistory(): List<FuelConsumptionEntry> = fuelConsumptionHistory.toList()
-    
+
     /**
      * Berechnet die Kraftstoffverbrauch-Statistik
      */
@@ -384,26 +384,26 @@ class MaintenanceService {
         if (fuelConsumptionHistory.isEmpty()) {
             return FuelConsumptionStatistics()
         }
-        
+
         val consumptions = fuelConsumptionHistory.map { it.consumptionL100km }
         val avg = consumptions.average()
         val min = consumptions.minOrNull() ?: 0.0
         val max = consumptions.maxOrNull() ?: 0.0
-        
+
         val targetCount = consumptions.count { it <= FUEL_CONSUMPTION_TARGET }
         val targetPercent = (targetCount.toDouble() / consumptions.size * 100).roundToInt()
-        
+
         val warningCount = consumptions.count { it > FUEL_CONSUMPTION_WARNING }
         val warningPercent = (warningCount.toDouble() / consumptions.size * 100).roundToInt()
-        
+
         val trend = calculateTrend(consumptions)
-        
+
         // Stadt vs. Autobahn Verbrauch
         val cityEntries = fuelConsumptionHistory.filter { it.isCity }
         val highwayEntries = fuelConsumptionHistory.filter { it.isHighway }
         val avgCity = if (cityEntries.isNotEmpty()) cityEntries.map { it.consumptionL100km }.average() else null
         val avgHighway = if (highwayEntries.isNotEmpty()) highwayEntries.map { it.consumptionL100km }.average() else null
-        
+
         return FuelConsumptionStatistics(
             averageConsumption = avg,
             minConsumption = min,
@@ -417,53 +417,53 @@ class MaintenanceService {
             averageHighwayConsumption = avgHighway
         )
     }
-    
+
     /**
      * Berechnet den Trend basierend auf den letzten Einträgen
      */
     private fun calculateTrend(values: List<Double>): TrendDirection {
         if (values.size < 5) return TrendDirection.UNKNOWN
-        
+
         val recentValues = values.takeLast(10)
         val olderValues = values.take(maxOf(0, values.size - 20)).takeLast(10)
-        
+
         if (olderValues.isEmpty()) return TrendDirection.UNKNOWN
-        
+
         val recentAvg = recentValues.average()
         val olderAvg = olderValues.average()
         val diff = recentAvg - olderAvg
         val percentDiff = if (olderAvg != 0.0) abs(diff / olderAvg * 100) else 0.0
-        
+
         return when {
             percentDiff < 5 -> TrendDirection.STABLE
             diff > 0 -> TrendDirection.WORSENING
             else -> TrendDirection.IMPROVING
         }
     }
-    
+
     /**
      * Gibt eine Zusammenfassung aller Wartungen zurück
      */
     fun getMaintenanceSummary(): MaintenanceSummary {
         val allReminders = reminders.values.toList()
-        
+
         val overdueCount = allReminders.count { it.status == MaintenanceReminderStatus.OVERDUE }
         val dueSoonCount = allReminders.count { it.status == MaintenanceReminderStatus.DUE_SOON }
         val upcomingCount = allReminders.count { it.status == MaintenanceReminderStatus.UPCOMING }
         val okCount = allReminders.count { it.status == MaintenanceReminderStatus.OK }
         val completedCount = allReminders.count { it.status == MaintenanceReminderStatus.COMPLETED }
-        
+
         val overallStatus = when {
             overdueCount > 0 -> MaintenanceReminderStatus.OVERDUE
             dueSoonCount > 0 -> MaintenanceReminderStatus.DUE_SOON
             upcomingCount > 0 -> MaintenanceReminderStatus.UPCOMING
             else -> MaintenanceReminderStatus.OK
         }
-        
+
         val nextService = allReminders
             .filter { it.isActive && !it.isCompleted }
             .minByOrNull { it.kmRemaining.coerceAtLeast(0) }
-        
+
         return MaintenanceSummary(
             totalItems = allReminders.size,
             overdueCount = overdueCount,
@@ -477,30 +477,30 @@ class MaintenanceService {
             nextServiceMonths = nextService?.monthsRemaining ?: 0
         )
     }
-    
+
     /**
      * Berechnet die geschätzten Wartungskosten
      */
     fun estimateMaintenanceCosts(): MaintenanceCostEstimate {
         val overdueReminders = getOverdueReminders()
         val dueSoonReminders = getDueSoonReminders()
-        
+
         // Geschätzte Kosten (in Euro)
         var totalCost = 0.0
         val details = mutableListOf<MaintenanceCostDetail>()
-        
+
         overdueReminders.forEach { reminder ->
             val cost = estimateItemCost(reminder.type)
             totalCost += cost
             details.add(MaintenanceCostDetail(reminder.type, cost, true))
         }
-        
+
         dueSoonReminders.forEach { reminder ->
             val cost = estimateItemCost(reminder.type)
             totalCost += cost
             details.add(MaintenanceCostDetail(reminder.type, cost, false))
         }
-        
+
         return MaintenanceCostEstimate(
             totalEstimated = totalCost,
             urgentItems = overdueReminders.size,
@@ -508,7 +508,7 @@ class MaintenanceService {
             details = details
         )
     }
-    
+
     /**
      * Schätzt die Kosten für eine bestimmte Wartung
      */
@@ -526,11 +526,11 @@ class MaintenanceService {
             MaintenanceType.TURBO_BOOST_CHECK -> TURBO_INSPECTION_COST
         }
     }
-    
+
     fun getMaintenanceSpec(type: MaintenanceType): AstraJ14TurboMaintenanceData.MaintenanceSpec? {
         return AstraJ14TurboMaintenanceData.getSpecForType(type)
     }
-    
+
     /**
      * Exportiert die Erinnerungen als Liste für die Persistenz
      */
@@ -550,7 +550,7 @@ class MaintenanceService {
             )
         }
     }
-    
+
     /**
      * Importiert Erinnerungen aus einer Liste
      */

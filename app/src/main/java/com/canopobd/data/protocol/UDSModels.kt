@@ -12,10 +12,10 @@ data class UDSResponse(
         if (javaClass != other?.javaClass) return false
         other as UDSResponse
         return isPositive == other.isPositive &&
-                serviceId == other.serviceId &&
-                data.contentEquals(other.data) &&
-                errorCode == other.errorCode &&
-                rawResponse == other.rawResponse
+            serviceId == other.serviceId &&
+            data.contentEquals(other.data) &&
+            errorCode == other.errorCode &&
+            rawResponse == other.rawResponse
     }
 
     override fun hashCode(): Int {

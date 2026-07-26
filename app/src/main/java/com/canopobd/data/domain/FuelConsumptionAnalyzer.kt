@@ -38,7 +38,6 @@ class FuelConsumptionAnalyzer {
 
         private const val CITY_CONSUMPTION_MIN = 8.0
         private const val CITY_CONSUMPTION_MAX = 10.0
-        private const val HIGHWAY_CONSUMPTION_MIN = 6.0
         private const val HIGHWAY_CONSUMPTION_MAX = 7.0
         private const val SPORT_CONSUMPTION_MIN = 12.0
     }
@@ -51,23 +50,23 @@ class FuelConsumptionAnalyzer {
     private var lastTimestamp = 0L
 
     fun calculateInstantConsumption(fuelRate: Double?, speed: Double?): Double {
-        if (fuelRate == null || fuelRate <= 0) return 0.0
-        if (speed == null || speed < MIN_SPEED_FOR_CALC) return 0.0
+        if (fuelRate == null || fuelRate <= 0) { return 0.0 }
+        if (speed == null || speed < MIN_SPEED_FOR_CALC) { return 0.0 }
 
         val lph = fuelRate
         val l100km = (lph * LPH_TO_L100_CONVERSION) / speed
 
-        return if (l100km.isFinite() && l100km > 0 && l100km < 100) l100km else 0.0
+        return if (l100km.isFinite() && l100km > 0 && l100km < 100) { l100km } else { 0.0 }
     }
 
     fun calculateFromMAF(maf: Double, speed: Double): Double {
-        if (maf <= 0 || speed < MIN_SPEED_FOR_CALC) return 0.0
+        if (maf <= 0 || speed < MIN_SPEED_FOR_CALC) { return 0.0 }
 
         val fuelRateGh = maf * 3.6
         val fuelRateLph = fuelRateGh / FUEL_DENSITY
         val l100km = (fuelRateLph * LPH_TO_L100_CONVERSION) / speed
 
-        return if (l100km.isFinite() && l100km > 0 && l100km < 100) l100km else 0.0
+        return if (l100km.isFinite() && l100km > 0 && l100km < 100) { l100km } else { 0.0 }
     }
 
     fun addSample(sample: FuelSample) {
@@ -79,14 +78,14 @@ class FuelConsumptionAnalyzer {
         val distanceDelta = if (sample.speedKmh > 0 && lastTimestamp > 0) {
             val timeDeltaHours = (sample.timestamp - lastTimestamp) / 3600000.0
             sample.speedKmh * timeDeltaHours
-        } else 0.0
+        } else { 0.0 }
 
         tripDistance += distanceDelta
 
         val fuelDelta = if (sample.fuelRateLph > 0 && lastTimestamp > 0) {
             val timeDeltaHours = (sample.timestamp - lastTimestamp) / 3600000.0
             sample.fuelRateLph * timeDeltaHours
-        } else 0.0
+        } else { 0.0 }
 
         totalFuelUsed += fuelDelta
 
@@ -120,7 +119,7 @@ class FuelConsumptionAnalyzer {
 
         val changePercent = if (firstAvg > 0) {
             ((secondAvg - firstAvg) / firstAvg) * 100.0
-        } else 0.0
+        } else { 0.0 }
 
         val direction = when {
             changePercent < -5.0 -> TrendDirection.IMPROVING
@@ -134,17 +133,17 @@ class FuelConsumptionAnalyzer {
     fun getConsumptionData(): FuelConsumptionData {
         val instantConsumption = if (consumptionHistory.isNotEmpty()) {
             consumptionHistory.last()
-        } else 0.0
+        } else { 0.0 }
 
         val avgConsumption = if (consumptionHistory.isNotEmpty()) {
             consumptionHistory.average()
-        } else 0.0
+        } else { 0.0 }
 
         val efficiency = getEfficiencyRating(avgConsumption)
 
         val currentFuelRate = if (fuelSamples.isNotEmpty()) {
             fuelSamples.last().fuelRateLph
-        } else 0.0
+        } else { 0.0 }
 
         return FuelConsumptionData(
             instantLph = currentFuelRate,
@@ -168,9 +167,9 @@ class FuelConsumptionAnalyzer {
     }
 
     fun estimateRange(fuelLevelPercent: Double, tankCapacityLiters: Double, avgConsumption: Double): Double {
-        if (avgConsumption <= 0 || fuelLevelPercent <= 0) return 0.0
+        if (avgConsumption <= 0 || fuelLevelPercent <= 0) { return 0.0 }
         val currentFuel = tankCapacityLiters * fuelLevelPercent / 100.0
-        return if (avgConsumption > 0) currentFuel / avgConsumption * 100.0 else 0.0
+        return if (avgConsumption > 0) { currentFuel / avgConsumption * 100.0 } else { 0.0 }
     }
 
     fun reset() {

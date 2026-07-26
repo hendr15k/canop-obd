@@ -1,7 +1,6 @@
 package com.canopobd.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -160,8 +159,11 @@ fun ExtendedPIDViewerCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
-                    color = if (data.isOverboost) colors.gaugeRed.copy(alpha = 0.2f)
-                    else colors.gaugeOrange.copy(alpha = 0.2f)
+                    color = if (data.isOverboost) {
+                        colors.gaugeRed.copy(alpha = 0.2f)
+                    } else {
+                        colors.gaugeOrange.copy(alpha = 0.2f)
+                    }
                 ) {
                     Row(
                         modifier = Modifier.padding(8.dp),
@@ -170,13 +172,13 @@ fun ExtendedPIDViewerCard(
                         Icon(
                             Icons.Filled.Warning,
                             contentDescription = null,
-                            tint = if (data.isOverboost) colors.gaugeRed else colors.gaugeOrange,
+                            tint = if (data.isOverboost) { colors.gaugeRed } else { colors.gaugeOrange },
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (data.isOverboost) "Uberladung erkannt!" else "Unterladung erkannt!",
-                            color = if (data.isOverboost) colors.gaugeRed else colors.gaugeOrange,
+                            text = if (data.isOverboost) { "Uberladung erkannt!" } else { "Unterladung erkannt!" },
+                            color = if (data.isOverboost) { colors.gaugeRed } else { colors.gaugeOrange },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -306,7 +308,7 @@ private fun TemperatureRow(
             fontSize = 9.sp
         )
         Text(
-            text = if (value > -40) "%.0f°C".format(value) else "--",
+            text = if (value > -40) { "%.0f°C".format(value) } else { "--" },
             color = when {
                 value > 65 -> colors.gaugeRed
                 value > 50 -> colors.gaugeOrange

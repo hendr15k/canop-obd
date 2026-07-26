@@ -29,7 +29,7 @@ import kotlin.math.sqrt
  * - Input/Output-Speed-Sensoren
  */
 class M32GearboxMonitor(
-    private val calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
+    calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE
 ) {
 
     /**
@@ -96,12 +96,12 @@ class M32GearboxMonitor(
             4 to 1.062,
             5 to 0.858,
             6 to 0.698,
-            0 to 3.182  // Rueckwaerts
+            0 to 3.182 // Rueckwaerts
         )
         private const val FINAL_DRIVE = 3.940
 
         // Schwellenwerte
-        private const val RATIO_TOLERANCE = 0.08   // 8% Toleranz fuer RPM/Geschwindigkeit
+        private const val RATIO_TOLERANCE = 0.08 // 8% Toleranz fuer RPM/Geschwindigkeit
         private const val MAX_RPM_DROP_SHIFT = 2000.0
         private const val MIN_RPM_DROP_SHIFT = 300.0
         private const val WHINE_RPM_MIN = 2000.0
@@ -151,9 +151,9 @@ class M32GearboxMonitor(
 
         // Gesamtbewertung
         val rawScore = (shiftScore * WEIGHT_SHIFT_QUALITY +
-                ratioScore * WEIGHT_RPM_RATIO +
-                (100 - bearingWear) * WEIGHT_BEARING +
-                oilScore * WEIGHT_OIL) / 100
+            ratioScore * WEIGHT_RPM_RATIO +
+            (100 - bearingWear) * WEIGHT_BEARING +
+            oilScore * WEIGHT_OIL) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
 
@@ -208,11 +208,11 @@ class M32GearboxMonitor(
         val harshRatio = harshShifts.toDouble() / shiftCount
 
         return when {
-            goodRatio > 0.8 -> 95   // Ausgezeichnete Schaltungen
-            goodRatio > 0.6 -> 80   // Gute Schaltungen
-            harshRatio > 0.3 -> 40  // Viele harte Schaltungen
+            goodRatio > 0.8 -> 95 // Ausgezeichnete Schaltungen
+            goodRatio > 0.6 -> 80 // Gute Schaltungen
+            harshRatio > 0.3 -> 40 // Viele harte Schaltungen
             harshRatio > 0.15 -> 55 // Einige harte Schaltungen
-            else -> 65              // Durchschnittlich
+            else -> 65 // Durchschnittlich
         }
     }
 
@@ -364,20 +364,20 @@ class M32GearboxMonitor(
         return when (health) {
             GearboxHealth.HEALTHY -> {
                 "M32-Getriebe funktioniert normal. " +
-                        "Schaltqualitaet und Lager sind in Ordnung."
+                    "Schaltqualitaet und Lager sind in Ordnung."
             }
             GearboxHealth.EARLY_WEAR -> {
                 "Erste Anzeichen von Getriebeverschleiss bei ${input.totalKm.toInt()} km. " +
-                        "Laegergeraeusche oder Schaltprobleme koennen auftreten."
+                    "Laegergeraeusche oder Schaltprobleme koennen auftreten."
             }
             GearboxHealth.WEAR_DETECTED -> {
                 val issueNames = issues.map { it.label }
                 "Getriebeverschleiss erkannt: ${issueNames.joinToString(", ")}. " +
-                        "Wartung dringend empfohlen."
+                    "Wartung dringend empfohlen."
             }
             GearboxHealth.CRITICAL -> {
                 "KRITISCH: Getriebe erfordert sofortige Reparatur! " +
-                        "Weiterfahren kann zu Totalschaden fuehren."
+                    "Weiterfahren kann zu Totalschaden fuehren."
             }
             GearboxHealth.UNKNOWN -> {
                 "Getriebe-Status nicht bestimmbar. Weitere Daten erforderlich."
@@ -400,30 +400,30 @@ class M32GearboxMonitor(
             GearboxHealth.HEALTHY -> {
                 if (kmSinceLastChange > 45000) {
                     "Getriebeöl-Wechsel empfohlen (Dexron VI ATF). " +
-                            "Nächstes Intervall: ${(60000 - kmSinceLastChange).toInt()} km."
+                        "Nächstes Intervall: ${(60000 - kmSinceLastChange).toInt()} km."
                 } else {
                     "Keine Massnahmen erforderlich. " +
-                            "Getriebeöl-Wechsel bei 60.000 km Intervall."
+                        "Getriebeöl-Wechsel bei 60.000 km Intervall."
                 }
             }
             GearboxHealth.EARLY_WEAR -> {
                 "Bei ${input.totalKm.toInt()} km: Getriebeöl-Wechsel durchfuehren. " +
-                        "Laegergeraeusche beobachten. " +
-                        "Empfohlenes Öl: Dexron VI ATF.$issueDetail"
+                    "Laegergeraeusche beobachten. " +
+                    "Empfohlenes Öl: Dexron VI ATF.$issueDetail"
             }
             GearboxHealth.WEAR_DETECTED -> {
                 "Getriebe-Inspizierung bei Fachwerkstatt empfohlen. " +
-                        "Laeger und Synchronringe pruefen. " +
-                        "Getriebeöl-Wechsel mit Qualitaetsöl.$issueDetail"
+                    "Laeger und Synchronringe pruefen. " +
+                    "Getriebeöl-Wechsel mit Qualitaetsöl.$issueDetail"
             }
             GearboxHealth.CRITICAL -> {
                 "SOFORT Werkstatt aufsuchen! " +
-                        "Getriebe braucht sofortige Reparatur oder Austausch. " +
-                        "Nur noetigste Fahrten.$issueDetail"
+                    "Getriebe braucht sofortige Reparatur oder Austausch. " +
+                    "Nur noetigste Fahrten.$issueDetail"
             }
             GearboxHealth.UNKNOWN -> {
                 "Getriebeölstand und -zustand pruefen. " +
-                        "Gerausche bei verschiedenen Geschwindigkeiten dokumentieren."
+                    "Gerausche bei verschiedenen Geschwindigkeiten dokumentieren."
             }
         }
     }

@@ -61,7 +61,6 @@ class BatteryHealthAnalyzer {
 
         private const val CCA_NEW = 700
         private const val CCA_MIN_HEALTHY = 500
-        private const val CCA_MIN_WEAK = 350
         private const val CCA_MIN_CRITICAL = 250
 
         private const val BATTERY_AGE_HIGH_KM = 80000.0
@@ -83,9 +82,9 @@ class BatteryHealthAnalyzer {
         val (stabilityScore, ripple, trend) = evaluateStability(input.voltageHistory)
 
         val rawScore = (dtcScore * WEIGHT_DTC +
-                voltageScore * WEIGHT_VOLTAGE +
-                chargingScore * WEIGHT_CHARGING +
-                stabilityScore * WEIGHT_STABILITY) / 100
+            voltageScore * WEIGHT_VOLTAGE +
+            chargingScore * WEIGHT_CHARGING +
+            stabilityScore * WEIGHT_STABILITY) / 100
 
         val adjustedScore = rawScore.coerceIn(0, 100)
 
@@ -115,7 +114,9 @@ class BatteryHealthAnalyzer {
     }
 
     fun estimateStateOfCharge(voltage: Double, isCharging: Boolean): Int {
-        if (isCharging) return -1
+        if (isCharging) {
+            return -1
+        }
         return when {
             voltage >= SOC_100_VOLTAGE -> 100
             voltage >= SOC_75_VOLTAGE -> {
@@ -142,8 +143,8 @@ class BatteryHealthAnalyzer {
         return dtcCodes.filter { code ->
             val upper = code.uppercase()
             upper.contains("P0562") || upper.contains("P0563") ||
-                    upper.contains("P0620") || upper.contains("P0621") ||
-                    upper.contains("P0622")
+                upper.contains("P0620") || upper.contains("P0621") ||
+                upper.contains("P0622")
         }
     }
 
@@ -222,7 +223,11 @@ class BatteryHealthAnalyzer {
         val stdDev = sqrt(variance)
 
         val trend = detectTrend(recent)
-        val peakToPeak = if (recent.isNotEmpty()) recent.max() - recent.min() else 0.0
+        val peakToPeak = if (recent.isNotEmpty()) {
+            recent.max() - recent.min()
+        } else {
+            0.0
+        }
 
         val stabilityScore = when {
             stdDev > RIPPLE_MAX_WARNING -> 30
@@ -235,14 +240,18 @@ class BatteryHealthAnalyzer {
     }
 
     private fun detectTrend(values: List<Double>): VoltageTrend {
-        if (values.size < 5) return VoltageTrend.STABLE
+        if (values.size < 5) {
+            return VoltageTrend.STABLE
+        }
 
         val firstHalf = values.take(values.size / 2).average()
         val secondHalf = values.drop(values.size / 2).average()
         val diff = secondHalf - firstHalf
 
         val range = values.max() - values.min()
-        if (range > 1.0 && diff < 0.3) return VoltageTrend.OSCILLATING
+        if (range > 1.0 && diff < 0.3) {
+            return VoltageTrend.OSCILLATING
+        }
 
         return when {
             diff > 0.3 -> VoltageTrend.RISING
@@ -266,7 +275,9 @@ class BatteryHealthAnalyzer {
     }
 
     private fun determineChargingHealth(score: Int, input: BatteryInput): ChargingSystemHealth {
-        if (input.engineRpm < 500) return ChargingSystemHealth.UNKNOWN
+        if (input.engineRpm < 500) {
+            return ChargingSystemHealth.UNKNOWN
+        }
         return when {
             score >= 80 -> ChargingSystemHealth.HEALTHY
             score >= 50 -> ChargingSystemHealth.WEAK
@@ -305,26 +316,38 @@ class BatteryHealthAnalyzer {
             com.canopobd.data.model.BatteryHealth.GOOD -> {
                 val chargingInfo = if (chargingHealth != ChargingSystemHealth.UNKNOWN) {
                     " Ladesystem: ${chargingHealth.label}."
-                } else ""
+                } else {
+                    ""
+                }
                 "Batterie in Ordnung. Spannung: ${"%.2f".format(input.currentVoltage)}V, " +
-                        "Ladestand: $soc%.$chargingInfo"
+                    "Ladestand: $soc%.$chargingInfo"
             }
             com.canopobd.data.model.BatteryHealth.FAIR -> {
                 val issues = mutableListOf<String>()
-                if (soc in 25..50) issues.add("Ladestand nur $soc%")
-                if (trend == VoltageTrend.FALLING) issues.add("Spannung faellt")
-                if (chargingHealth == ChargingSystemHealth.WEAK) issues.add("Ladesystem schwach")
-                val detail = if (issues.isNotEmpty()) issues.joinToString(", ") else "Leichte Alterung"
+                if (soc in 25..50) {
+                    issues.add("Ladestand nur $soc%")
+                }
+                if (trend == VoltageTrend.FALLING) {
+                    issues.add("Spannung faellt")
+                }
+                if (chargingHealth == ChargingSystemHealth.WEAK) {
+                    issues.add("Ladesystem schwach")
+                }
+                val detail = if (issues.isNotEmpty()) {
+                    issues.joinToString(", ")
+                } else {
+                    "Leichte Alterung"
+                }
                 "Batterie zeigt Alterungserscheinungen: $detail."
             }
             com.canopobd.data.model.BatteryHealth.POOR -> {
                 "Batterie schwach. Spannung: ${"%.2f".format(input.currentVoltage)}V, " +
-                        "Ladestand: $soc%. Erneuerung empfohlen."
+                    "Ladestand: $soc%. Erneuerung empfohlen."
             }
             com.canopobd.data.model.BatteryHealth.CRITICAL -> {
                 "KRITISCH: Batterie oder Ladesystem defekt! " +
-                        "Spannung: ${"%.2f".format(input.currentVoltage)}V. " +
-                        "Sofortige Pruefung erforderlich."
+                    "Spannung: ${"%.2f".format(input.currentVoltage)}V. " +
+                    "Sofortige Pruefung erforderlich."
             }
         }
     }
@@ -339,7 +362,7 @@ class BatteryHealthAnalyzer {
             com.canopobd.data.model.BatteryHealth.GOOD -> {
                 if (input.totalKm > BATTERY_AGE_HIGH_KM) {
                     "Batterie bei ${input.totalKm.toInt()} km: Regelmassige Pruefung empfohlen. " +
-                            "Geschaetzte Kapazitaet: $estimatedCca CCA."
+                        "Geschaetzte Kapazitaet: $estimatedCca CCA."
                 } else {
                     "Keine Massnahmen erforderlich. Geschaetzte Kapazitaet: $estimatedCca CCA."
                 }
@@ -357,12 +380,12 @@ class BatteryHealthAnalyzer {
             }
             com.canopobd.data.model.BatteryHealth.POOR -> {
                 "Batterie bald austauschen lassen. " +
-                        "Kapazitaet: $estimatedCca CCA (Mindestens: $CCA_MIN_HEALTHY CCA). " +
-                        "Lichtmaschine und Verkabelung pruefen."
+                    "Kapazitaet: $estimatedCca CCA (Mindestens: $CCA_MIN_HEALTHY CCA). " +
+                    "Lichtmaschine und Verkabelung pruefen."
             }
             com.canopobd.data.model.BatteryHealth.CRITICAL -> {
                 "SOFORT Werkstatt aufsuchen! Batterie oder Ladesystem defekt. " +
-                        "Fahrzeug kann jederzeit nicht mehr starten."
+                    "Fahrzeug kann jederzeit nicht mehr starten."
             }
         }
     }

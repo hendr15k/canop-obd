@@ -8,7 +8,6 @@ import com.canopobd.protocol.BCMProtocol
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.math.abs
 
 class SafetyViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -119,22 +118,22 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         val harshFactor = if (totalBrakeEvents > 0) 1.0 + (harshBrakeEvents.toDouble() / totalBrakeEvents.toDouble()) else 1.0
         val frontWearPerKm = 0.002 * harshFactor // 0.2% per 100km baseline
         val rearWearPerKm = 0.00143 * harshFactor
-        
+
         val frontRemaining = (100.0 - estimatedDistanceKm * frontWearPerKm).coerceIn(0.0, 100.0).toInt()
         val rearRemaining = (100.0 - estimatedDistanceKm * rearWearPerKm).coerceIn(0.0, 100.0).toInt()
-        
+
         brakeWearFrontLeft.value = frontRemaining
         brakeWearFrontRight.value = frontRemaining
         brakeWearRearLeft.value = rearRemaining
         brakeWearRearRight.value = rearRemaining
     }
 
-fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
-         lastTPMS = tpms
-         if (tpms.frontLeftPSI > 0) tpmsFrontLeftPSI.value = tpms.frontLeftPSI
-         if (tpms.frontRightPSI > 0) tpmsFrontRightPSI.value = tpms.frontRightPSI
-         if (tpms.rearLeftPSI > 0) tpmsRearLeftPSI.value = tpms.rearLeftPSI
-         if (tpms.rearRightPSI > 0) tpmsRearRightPSI.value = tpms.rearRightPSI
+    fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
+        lastTPMS = tpms
+        if (tpms.frontLeftPSI > 0) tpmsFrontLeftPSI.value = tpms.frontLeftPSI
+        if (tpms.frontRightPSI > 0) tpmsFrontRightPSI.value = tpms.frontRightPSI
+        if (tpms.rearLeftPSI > 0) tpmsRearLeftPSI.value = tpms.rearLeftPSI
+        if (tpms.rearRightPSI > 0) tpmsRearRightPSI.value = tpms.rearRightPSI
         updateSummary()
         _lastUpdateTime.value = System.currentTimeMillis()
     }
@@ -159,7 +158,7 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
 
         if (isMoving) {
             val anyDoorOpen = bcm.driverDoorOpen || bcm.passengerDoorOpen ||
-                    bcm.rearLeftDoorOpen || bcm.rearRightDoorOpen
+                bcm.rearLeftDoorOpen || bcm.rearRightDoorOpen
             if (anyDoorOpen) {
                 tractionControlActive.value = true
             }
@@ -269,16 +268,16 @@ fun updateFromTPMS(tpms: BCMProtocol.TPMSStatus) {
                 brakePressure = brakePressure.value
             ),
             brakeWear = BrakeWear(brakeWearFrontLeft.value, brakeWearFrontRight.value, brakeWearRearLeft.value, brakeWearRearRight.value),
-tpmsData = TPMSData(
-                 frontLeftPressure = tpmsFrontLeftPSI.value,
-                 frontRightPressure = tpmsFrontRightPSI.value,
-                 rearLeftPressure = tpmsRearLeftPSI.value,
-                 rearRightPressure = tpmsRearRightPSI.value,
-                 frontLeftTemp = lastTPMS?.frontLeftTemp ?: 0,
-                 frontRightTemp = lastTPMS?.frontRightTemp ?: 0,
-                 rearLeftTemp = lastTPMS?.rearLeftTemp ?: 0,
-                 rearRightTemp = lastTPMS?.rearRightTemp ?: 0
-             ),
+            tpmsData = TPMSData(
+                frontLeftPressure = tpmsFrontLeftPSI.value,
+                frontRightPressure = tpmsFrontRightPSI.value,
+                rearLeftPressure = tpmsRearLeftPSI.value,
+                rearRightPressure = tpmsRearRightPSI.value,
+                frontLeftTemp = lastTPMS?.frontLeftTemp ?: 0,
+                frontRightTemp = lastTPMS?.frontRightTemp ?: 0,
+                rearLeftTemp = lastTPMS?.rearLeftTemp ?: 0,
+                rearRightTemp = lastTPMS?.rearRightTemp ?: 0
+            ),
             airbagStatus = AirbagStatus(
                 driverFront = airbagDriverFront.value,
                 passengerFront = airbagPassengerFront.value,

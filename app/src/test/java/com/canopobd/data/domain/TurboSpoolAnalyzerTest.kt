@@ -74,7 +74,10 @@ class TurboSpoolAnalyzerTest {
     fun `analyze poor spool returns POOR status`() {
         val input = createOptimalInput().copy(spoolTimeSeconds = 3.8, rpmAt80PercentBoost = 20000.0)
         val result = analyzer.analyze(input)
-        assertTrue(result.status == TurboSpoolAnalyzer.SpoolStatus.POOR || result.status == TurboSpoolAnalyzer.SpoolStatus.CRITICAL)
+        assertTrue(
+            result.status == TurboSpoolAnalyzer.SpoolStatus.POOR ||
+                result.status == TurboSpoolAnalyzer.SpoolStatus.CRITICAL,
+        )
     }
 
     @Test
@@ -159,7 +162,10 @@ class TurboSpoolAnalyzerTest {
     @Test
     fun `analyze optimal status recommends regular maintenance`() {
         val result = analyzer.analyze(createOptimalInput())
-        assertTrue(result.recommendation.contains("Regulaerer Wartungsplan") || result.recommendation.contains("optimal"))
+        assertTrue(
+            result.recommendation.contains("Regulaerer Wartungsplan") ||
+                result.recommendation.contains("optimal"),
+        )
     }
 
     @Test

@@ -38,7 +38,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
 
     private fun extractDataFromResponse(response: String, serviceId: Int): ByteArray {
         val cleaned = parseISOTPDelimiter(response)
-        if (cleaned.isEmpty()) return ByteArray(0)
+        if (cleaned.isEmpty()) { return ByteArray(0) }
 
         try {
             val positiveResponseId = (serviceId + 0x40).toString(16).uppercase().padStart(2, '0')
@@ -48,7 +48,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 return cleaned.substring(6).chunked(2).mapNotNull { hex ->
                     if (hex.length == 2) {
                         try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-                    } else null
+                    } else { null }
                 }.toByteArray()
             }
 
@@ -56,7 +56,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 return cleaned.substring(2).chunked(2).mapNotNull { hex ->
                     if (hex.length == 2) {
                         try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-                    } else null
+                    } else { null }
                 }.toByteArray()
             }
         } catch (e: Exception) {
@@ -66,7 +66,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
         return cleaned.chunked(2).mapNotNull { hex ->
             if (hex.length == 2) {
                 try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-            } else null
+            } else { null }
         }.toByteArray()
     }
 
@@ -108,7 +108,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x10, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -139,7 +139,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x22, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -171,7 +171,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x19, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -202,7 +202,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x14, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -245,7 +245,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x27, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -276,7 +276,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x31, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -330,7 +330,7 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 emit(UDSResponse(false, 0x2E, ByteArray(0), null, e.message ?: ""))
             }
             retryCount++
-            if (retryCount < MAX_RETRIES) delay(RETRY_DELAY_MS)
+            if (retryCount < MAX_RETRIES) { delay(RETRY_DELAY_MS) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -431,13 +431,13 @@ class UDSClient(private val connection: ELM327BTConnection) {
             1 -> data[0].toInt() and 0xFF
             2 -> {
                 val value = (data[0].toInt() and 0xFF) * 256 + (data[1].toInt() and 0xFF)
-                if (data[0].toInt() and 0x80 != 0) value - 65536 else value
+                if (data[0].toInt() and 0x80 != 0) { value - 65536 } else { value }
             }
             4 -> {
                 val value = ((data[0].toInt() and 0xFF) shl 24) or
-                        ((data[1].toInt() and 0xFF) shl 16) or
-                        ((data[2].toInt() and 0xFF) shl 8) or
-                        (data[3].toInt() and 0xFF)
+                    ((data[1].toInt() and 0xFF) shl 16) or
+                    ((data[2].toInt() and 0xFF) shl 8) or
+                    (data[3].toInt() and 0xFF)
                 value.toDouble()
             }
             else -> data.joinToString("") { "%02X".format(it) }

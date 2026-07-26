@@ -13,31 +13,39 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration?) {
 
     companion object {
         private const val HISTORY_SIZE = 10
-        private const val MAX_MAF_CHANGE = 20.0  // g/s per sample
-        private const val MAX_RPM_CHANGE = 800.0  // RPM per sample
-        private const val MAX_IAT_CHANGE = 15.0    // °C per sample
+        private const val MAX_MAF_CHANGE = 20.0 // g/s per sample
+        private const val MAX_RPM_CHANGE = 800.0 // RPM per sample
+        private const val MAX_IAT_CHANGE = 15.0 // °C per sample
         private const val MAX_COOLANT_CHANGE = 10.0 // °C per sample
         private const val SENSOR_HISTORY_SIZE = 50
     }
 
     fun addMaf(maf: Double) {
         mafHistory.add(maf)
-        if (mafHistory.size > SENSOR_HISTORY_SIZE) mafHistory.removeAt(0)
+        if (mafHistory.size > SENSOR_HISTORY_SIZE) {
+            mafHistory.removeAt(0)
+        }
     }
 
     fun addRpm(rpm: Double) {
         rpmHistory.add(rpm)
-        if (rpmHistory.size > SENSOR_HISTORY_SIZE) rpmHistory.removeAt(0)
+        if (rpmHistory.size > SENSOR_HISTORY_SIZE) {
+            rpmHistory.removeAt(0)
+        }
     }
 
     fun addIat(temp: Double) {
         iatHistory.add(temp)
-        if (iatHistory.size > SENSOR_HISTORY_SIZE) iatHistory.removeAt(0)
+        if (iatHistory.size > SENSOR_HISTORY_SIZE) {
+            iatHistory.removeAt(0)
+        }
     }
 
     fun addCoolant(temp: Double) {
         coolantHistory.add(temp)
-        if (coolantHistory.size > SENSOR_HISTORY_SIZE) coolantHistory.removeAt(0)
+        if (coolantHistory.size > SENSOR_HISTORY_SIZE) {
+            coolantHistory.removeAt(0)
+        }
     }
 
     fun validateMaf(maf: Double?, previousMaf: Double? = null): ValidationResult {
@@ -125,7 +133,7 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration?) {
         return ValidationResult.Valid
     }
 
-    fun validateIat(temp: Double?,maf: Double? = null): ValidationResult {
+    fun validateIat(temp: Double?, maf: Double? = null): ValidationResult {
         if (temp == null) return ValidationResult.Unavailable
 
         if (temp < -50 || temp > 80) return ValidationResult.Invalid("IAT Sensorfehler")
@@ -154,7 +162,9 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration?) {
         if (position < 0 || position > 100) return ValidationResult.Invalid("Drosselklappe außerhalb Bereich")
 
         throttleHistory.add(position)
-        if (throttleHistory.size > SENSOR_HISTORY_SIZE) throttleHistory.removeAt(0)
+        if (throttleHistory.size > SENSOR_HISTORY_SIZE) {
+            throttleHistory.removeAt(0)
+        }
 
         // Stuck throttle detection
         if (throttleHistory.size >= 10) {

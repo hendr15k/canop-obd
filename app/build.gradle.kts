@@ -18,7 +18,7 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
 
 ktlint {
     android.set(true)
-    ignoreFailures.set(true)
+    ignoreFailures.set(false)
     filter {
         exclude("**/build/**/*.kts")
         exclude("**/generated/**/*.kts")

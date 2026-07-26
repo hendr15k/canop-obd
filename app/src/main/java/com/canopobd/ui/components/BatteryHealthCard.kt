@@ -54,7 +54,11 @@ fun BatteryHealthCard(
     val infiniteTransition = rememberInfiniteTransition(label = "battery_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isCritical) 0.8f else 0.3f,
+        targetValue = if (isCritical) {
+            0.8f
+        } else {
+            0.3f
+        },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -72,7 +76,7 @@ fun BatteryHealthCard(
                         color = colors.gaugeRed.copy(alpha = pulseAlpha),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,
@@ -116,7 +120,11 @@ fun BatteryHealthCard(
                 Column {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = if (batteryData.voltage > 0) "%.1f".format(batteryData.voltage) else "—",
+                            text = if (batteryData.voltage > 0) {
+                                "%.1f".format(batteryData.voltage)
+                            } else {
+                                "—"
+                            },
                             fontSize = 42.sp,
                             fontWeight = FontWeight.Bold,
                             color = voltageColor
@@ -247,7 +255,11 @@ private fun SOCIndicator(
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = if (soc > 0) "$soc%" else "—",
+                text = if (soc > 0) {
+                    "$soc%"
+                } else {
+                    "—"
+                },
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.textPrimary
@@ -281,18 +293,17 @@ private fun ChargingStatusRow(
         ) {
             ChargingInfoItem(
                 label = stringResource(R.string.charging),
-                value = if (batteryData.isCharging) stringResource(R.string.yes) else stringResource(R.string.no),
-                valueColor = if (batteryData.isCharging) colors.gaugeGreen else colors.textDim,
+                value = if (batteryData.isCharging) {
+                    stringResource(R.string.yes)
+                } else {
+                    stringResource(R.string.no)
+                },
+                valueColor = if (batteryData.isCharging) { colors.gaugeGreen } else { colors.textDim },
                 colors = colors
             )
 
             Spacer(modifier = Modifier.width(12.dp))
-            Spacer(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(32.dp)
-                    .background(colors.borderSubtle)
-            )
+            ChargingStatusDivider(colors)
 
             ChargingInfoItem(
                 label = stringResource(R.string.alternator_duty),
@@ -306,21 +317,30 @@ private fun ChargingStatusRow(
             )
 
             Spacer(modifier = Modifier.width(12.dp))
-            Spacer(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(32.dp)
-                    .background(colors.borderSubtle)
-            )
+            ChargingStatusDivider(colors)
 
             ChargingInfoItem(
                 label = stringResource(R.string.module_voltage),
-                value = if (batteryData.controlModuleVoltage > 0) "%.1fV".format(batteryData.controlModuleVoltage) else "—",
+                value = if (batteryData.controlModuleVoltage > 0) {
+                    "%.1fV".format(batteryData.controlModuleVoltage)
+                } else {
+                    "—"
+                },
                 valueColor = colors.textSecondary,
                 colors = colors
             )
         }
     }
+}
+
+@Composable
+private fun ChargingStatusDivider(colors: AppColors) {
+    Spacer(
+        modifier = Modifier
+            .width(1.dp)
+            .height(32.dp)
+            .background(colors.borderSubtle)
+    )
 }
 
 @Composable
@@ -368,7 +388,9 @@ private fun VoltageTrendChart(
                 .background(colors.surfaceVariant)
                 .padding(4.dp)
         ) {
-            if (lastReadings.size < 2) return@Canvas
+            if (lastReadings.size < 2) {
+                return@Canvas
+            }
 
             val minV = (lastReadings.min() - 0.5f).coerceAtLeast(10f)
             val maxV = (lastReadings.max() + 0.5f).coerceAtMost(16f)
@@ -439,14 +461,22 @@ fun BatteryHealthCardCompact(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    imageVector = if (batteryData.isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryFull,
+                    imageVector = if (batteryData.isCharging) {
+                        Icons.Filled.BatteryChargingFull
+                    } else {
+                        Icons.Filled.BatteryFull
+                    },
                     contentDescription = null,
                     tint = voltageColor,
                     modifier = Modifier.size(24.dp)
                 )
                 Column {
                     Text(
-                        text = if (batteryData.voltage > 0) "%.1fV".format(batteryData.voltage) else "—",
+                        text = if (batteryData.voltage > 0) {
+                            "%.1fV".format(batteryData.voltage)
+                        } else {
+                            "—"
+                        },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = colors.textPrimary

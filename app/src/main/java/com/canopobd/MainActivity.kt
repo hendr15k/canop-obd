@@ -34,8 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -45,11 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import com.canopobd.R
 import com.canopobd.ui.components.AppRadius
 import com.canopobd.ui.components.GradientButton
-import com.canopobd.ui.components.OutlineButton
-import com.canopobd.ui.components.Spacing
 import com.canopobd.ui.components.StatusDot
 import com.canopobd.ui.components.StatusPill
 import com.canopobd.ui.dashboard.DashboardScreen

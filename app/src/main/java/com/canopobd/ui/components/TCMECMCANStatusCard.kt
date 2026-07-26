@@ -1,6 +1,5 @@
 package com.canopobd.ui.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -223,7 +221,7 @@ private fun TCMStatusSection(
                     else -> colors.textDim
                 }
                 Text(
-                    text = if (oilTempCelsius > 0) "${oilTempCelsius}°C" else "—",
+                    text = if (oilTempCelsius > 0) "$oilTempCelsius°C" else "—",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = tempColor
@@ -373,7 +371,7 @@ private fun ECMStatusSection(
                     else -> colors.textDim
                 }
                 Text(
-                    text = if (coolantTemp > 0) "${coolantTemp}°C" else "—",
+                    text = if (coolantTemp > 0) "$coolantTemp°C" else "—",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = coolColor
@@ -447,7 +445,7 @@ fun TCMECMCANCompactCard(
                     color = colors.textDim
                 )
                 Text(
-                    text = if (tcmOilTempCelsius > 0) "${tcmOilTempCelsius}°C" else "—",
+                    text = if (tcmOilTempCelsius > 0) "$tcmOilTempCelsius°C" else "—",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = when {

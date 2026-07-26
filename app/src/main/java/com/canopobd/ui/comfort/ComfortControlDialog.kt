@@ -2,7 +2,6 @@ package com.canopobd.ui.comfort
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -36,7 +35,7 @@ data class ComfortState(
     val rearWindowHeating: Boolean = false,
     val frontHeating: Boolean = false,
     val steeringWheelHeating: Boolean = false,
-    val seatDriverHeating: Int = 0,  // 0=off, 1-3=level
+    val seatDriverHeating: Int = 0, // 0=off, 1-3=level
     val seatPassengerHeating: Int = 0,
     val ambientLight: Int = 0,
     val daylightSensor: Boolean = false,
@@ -49,7 +48,7 @@ data class ComfortState(
     val parkingLights: Boolean = false,
     val fogLights: Boolean = false,
     val drlMode: Int = 0,
-    val sunroofPosition: Int = 0,  // 0=closed, 1-100=open
+    val sunroofPosition: Int = 0, // 0=closed, 1-100=open
     val hornActive: Boolean = false
 )
 
@@ -61,29 +60,29 @@ data class ComfortCommand(
 enum class ComfortAction {
     // Zentralverriegelung
     LOCK, UNLOCK, UNLOCK_DRIVER, UNLOCK_TAILGATE, UNLOCK_FUEL,
-    
+
     // Fenster
     WINDOW_DRIVER_UP, WINDOW_DRIVER_DOWN, WINDOW_DRIVER_STOP,
     WINDOW_PASSENGER_UP, WINDOW_PASSENGER_DOWN, WINDOW_PASSENGER_STOP,
     WINDOW_REAR_LEFT_UP, WINDOW_REAR_LEFT_DOWN, WINDOW_REAR_LEFT_STOP,
     WINDOW_REAR_RIGHT_UP, WINDOW_REAR_RIGHT_DOWN, WINDOW_REAR_RIGHT_STOP,
     WINDOW_ALL_UP, WINDOW_ALL_DOWN,
-    
+
     // Spiegel
     MIRROR_FOLD, MIRROR_UNFOLD,
     MIRROR_HEATING_ON, MIRROR_HEATING_OFF,
     MIRROR_MOVE_UP, MIRROR_MOVE_DOWN, MIRROR_MOVE_LEFT, MIRROR_MOVE_RIGHT,
-    
+
     // Heizung
     REAR_HEATING_ON, REAR_HEATING_OFF,
     FRONT_HEATING_ON, FRONT_HEATING_OFF,
     STEERING_HEATING_ON, STEERING_HEATING_OFF,
     STEERING_HEATING_1, STEERING_HEATING_2, STEERING_HEATING_3,
-    
+
     // Sitzheizung
     SEAT_DRIVER_HEAT_1, SEAT_DRIVER_HEAT_2, SEAT_DRIVER_HEAT_3, SEAT_DRIVER_OFF,
     SEAT_PASSENGER_HEAT_1, SEAT_PASSENGER_HEAT_2, SEAT_PASSENGER_HEAT_3, SEAT_PASSENGER_OFF,
-    
+
     // Beleuchtung
     AMBIENT_LIGHT_INCREASE, AMBIENT_LIGHT_DECREASE, AMBIENT_LIGHT_MAX,
     COMING_HOME_ON, COMING_HOME_OFF,
@@ -92,17 +91,17 @@ enum class ComfortAction {
     DRL_MODE_AUTO, DRL_MODE_ON, DRL_MODE_OFF,
     PARKING_LIGHTS_ON, PARKING_LIGHTS_OFF,
     FOG_LIGHTS_ON, FOG_LIGHTS_OFF,
-    
+
     // Scheibenwischer
     WIPER_OFF, WIPER_LOW, WIPER_MEDIUM, WIPER_HIGH, WIPER_AUTO,
     WIPER_REAR_ON, WIPER_REAR_OFF,
-    
+
     // Horn
     HORN, HORN_STOP,
-    
+
     // Sunroof
     SUNROOF_OPEN, SUNROOF_CLOSE, SUNROOF_STOP, SUNROOF_VENT,
-    
+
     // Custom
     CUSTOM_CAN_FRAME,
     CUSTOM_CAN_ID,
@@ -112,50 +111,50 @@ enum class ComfortAction {
 object WindowCommands {
     // Opel Astra J Window Control CAN IDs (PSA/Stellantis Architecture)
     // Based on research from arduino-psa-diag project
-    
+
     // CAN IDs:
     // 74B (PORTEC) - Door Control Unit (handles windows)
     // 752 (BMF/BSI) - Body Module (central locking, comfort)
     // 76B (BCM) - Body Control Module
-    
-    const val CAN_ID_PORTEC = "74B"  // Door Control Unit
-    const val CAN_ID_BMF = "752"     // Body Module
-    const val CAN_ID_BCM = "76B"    // Body Control Module
-    
+
+    const val CAN_ID_PORTEC = "74B" // Door Control Unit
+    const val CAN_ID_BMF = "752" // Body Module
+    const val CAN_ID_BCM = "76B" // Body Control Module
+
     // Window Commands Format: 2E FF 02 [Window] [Direction]
     // 2E = UDS Write Data
     // FF 02 = Window Status DID
     // [Window] = 01-04 for individual windows, 00 for all
     // [Direction] = 00 up, 64 (100%) down, FF stop
-    
+
     const val WINDOW_DRIVER_DOWN = "2E FF 02 01 64"
     const val WINDOW_DRIVER_UP = "2E FF 02 01 00"
     const val WINDOW_DRIVER_STOP = "2E FF 02 01 FF"
-    
+
     const val WINDOW_PASSENGER_DOWN = "2E FF 02 02 64"
     const val WINDOW_PASSENGER_UP = "2E FF 02 02 00"
     const val WINDOW_PASSENGER_STOP = "2E FF 02 02 FF"
-    
+
     const val WINDOW_REAR_LEFT_DOWN = "2E FF 02 03 64"
     const val WINDOW_REAR_LEFT_UP = "2E FF 02 03 00"
     const val WINDOW_REAR_LEFT_STOP = "2E FF 02 03 FF"
-    
+
     const val WINDOW_REAR_RIGHT_DOWN = "2E FF 02 04 64"
     const val WINDOW_REAR_RIGHT_UP = "2E FF 02 04 00"
     const val WINDOW_REAR_RIGHT_STOP = "2E FF 02 04 FF"
-    
+
     const val WINDOW_ALL_DOWN = "2E FF 02 00 64"
     const val WINDOW_ALL_UP = "2E FF 02 00 00"
-    
+
     // Central Lock Commands (BMF - 752)
     const val LOCK_ALL = "2E FF 01 1F"
     const val UNLOCK_ALL = "2E FF 01 0F"
     const val UNLOCK_DRIVER = "2E FF 01 01"
-    
+
     // Mirror Commands (BMF - 752)
     const val MIRROR_FOLD = "2E FF 03 04"
     const val MIRROR_UNFOLD = "2E FF 03 05"
-    
+
     fun parseHexData(hexString: String): ByteArray {
         return hexString.split(" ")
             .filter { it.isNotEmpty() }
@@ -248,15 +247,39 @@ fun ComfortControlDialog(
                         frontHeating = comfortState.frontHeating,
                         steeringHeating = comfortState.steeringWheelHeating,
                         onRearToggle = {
-                            onCommand(ComfortCommand(if (comfortState.rearWindowHeating) ComfortAction.REAR_HEATING_OFF else ComfortAction.REAR_HEATING_ON))
+                            onCommand(
+                                ComfortCommand(
+                                    if (comfortState.rearWindowHeating) {
+                                        ComfortAction.REAR_HEATING_OFF
+                                    } else {
+                                        ComfortAction.REAR_HEATING_ON
+                                    }
+                                )
+                            )
                             comfortState = comfortState.copy(rearWindowHeating = !comfortState.rearWindowHeating)
                         },
                         onFrontToggle = {
-                            onCommand(ComfortCommand(if (comfortState.frontHeating) ComfortAction.FRONT_HEATING_OFF else ComfortAction.FRONT_HEATING_ON))
+                            onCommand(
+                                ComfortCommand(
+                                    if (comfortState.frontHeating) {
+                                        ComfortAction.FRONT_HEATING_OFF
+                                    } else {
+                                        ComfortAction.FRONT_HEATING_ON
+                                    }
+                                )
+                            )
                             comfortState = comfortState.copy(frontHeating = !comfortState.frontHeating)
                         },
                         onSteeringToggle = {
-                            onCommand(ComfortCommand(if (comfortState.steeringWheelHeating) ComfortAction.STEERING_HEATING_OFF else ComfortAction.STEERING_HEATING_ON))
+                            onCommand(
+                                ComfortCommand(
+                                    if (comfortState.steeringWheelHeating) {
+                                        ComfortAction.STEERING_HEATING_OFF
+                                    } else {
+                                        ComfortAction.STEERING_HEATING_ON
+                                    }
+                                )
+                            )
                             comfortState = comfortState.copy(steeringWheelHeating = !comfortState.steeringWheelHeating)
                         },
                         colors = colors
@@ -286,15 +309,39 @@ fun ComfortControlDialog(
                             }
                         },
                         onComingHomeToggle = {
-                            onCommand(ComfortCommand(if (comfortState.comingHome) ComfortAction.COMING_HOME_OFF else ComfortAction.COMING_HOME_ON))
+                            onCommand(
+                                ComfortCommand(
+                                    if (comfortState.comingHome) {
+                                        ComfortAction.COMING_HOME_OFF
+                                    } else {
+                                        ComfortAction.COMING_HOME_ON
+                                    }
+                                )
+                            )
                             comfortState = comfortState.copy(comingHome = !comfortState.comingHome)
                         },
                         onLeavingHomeToggle = {
-                            onCommand(ComfortCommand(if (comfortState.leavingHome) ComfortAction.LEAVING_HOME_OFF else ComfortAction.LEAVING_HOME_ON))
+                            onCommand(
+                                ComfortCommand(
+                                    if (comfortState.leavingHome) {
+                                        ComfortAction.LEAVING_HOME_OFF
+                                    } else {
+                                        ComfortAction.LEAVING_HOME_ON
+                                    }
+                                )
+                            )
                             comfortState = comfortState.copy(leavingHome = !comfortState.leavingHome)
                         },
                         onCorneringToggle = {
-                            onCommand(ComfortCommand(if (comfortState.corneringLight) ComfortAction.CORNERING_LIGHT_OFF else ComfortAction.CORNERING_LIGHT_ON))
+                            onCommand(
+                                ComfortCommand(
+                                    if (comfortState.corneringLight) {
+                                        ComfortAction.CORNERING_LIGHT_OFF
+                                    } else {
+                                        ComfortAction.CORNERING_LIGHT_ON
+                                    }
+                                )
+                            )
                             comfortState = comfortState.copy(corneringLight = !comfortState.corneringLight)
                         },
                         onDrlChange = { mode ->
@@ -398,9 +445,17 @@ private fun CentralLockCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                if (isLocked) Icons.Filled.Lock else Icons.Filled.LockOpen,
+                if (isLocked) {
+                    Icons.Filled.Lock
+                } else {
+                    Icons.Filled.LockOpen
+                },
                 contentDescription = null,
-                tint = if (isLocked) colors.gaugeGreen else colors.gaugeOrange,
+                tint = if (isLocked) {
+                    colors.gaugeGreen
+                } else {
+                    colors.gaugeOrange
+                },
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -559,7 +614,11 @@ private fun MirrorControlCard(
                     Icon(
                         Icons.Filled.WbSunny,
                         "Spiegelheizung",
-                        tint = if (isHeatingOn) colors.gaugeOrange else colors.textDim
+                        tint = if (isHeatingOn) {
+                            colors.gaugeOrange
+                        } else {
+                            colors.textDim
+                        }
                     )
                 }
                 Text("Spiegelheizung", color = colors.textDim, fontSize = 10.sp)
@@ -603,13 +662,21 @@ private fun HeatingToggle(
     onToggle: () -> Unit,
     colors: AppColors
 ) {
-    val activeColor by animateColorAsState(if (isActive) colors.gaugeOrange else colors.textDim, label = "heating")
+    val activeColor by animateColorAsState(if (isActive) {
+        colors.gaugeOrange
+    } else {
+        colors.textDim
+    }, label = "heating")
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             onClick = onToggle,
             shape = CircleShape,
-            color = if (isActive) colors.gaugeOrange.copy(alpha = 0.2f) else colors.surface,
+            color = if (isActive) {
+                colors.gaugeOrange.copy(alpha = 0.2f)
+            } else {
+                colors.surface
+            },
             modifier = Modifier.size(48.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -673,7 +740,11 @@ private fun LightingCard(
                     TextButton(
                         onClick = { onDrlChange(mode) },
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = if (drlMode == mode) colors.accent else colors.textDim
+                            contentColor = if (drlMode == mode) {
+                                colors.accent
+                            } else {
+                                colors.textDim
+                            }
                         ),
                         modifier = Modifier.size(56.dp, 32.dp)
                     ) {
@@ -693,13 +764,21 @@ private fun LightingToggle(
     onToggle: () -> Unit,
     colors: AppColors
 ) {
-    val activeColor by animateColorAsState(if (isActive) colors.gaugeYellow else colors.textDim, label = "light")
+    val activeColor by animateColorAsState(if (isActive) {
+        colors.gaugeYellow
+    } else {
+        colors.textDim
+    }, label = "light")
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             onClick = onToggle,
             shape = CircleShape,
-            color = if (isActive) colors.gaugeYellow.copy(alpha = 0.2f) else colors.surface,
+            color = if (isActive) {
+                colors.gaugeYellow.copy(alpha = 0.2f)
+            } else {
+                colors.surface
+            },
             modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -733,36 +812,72 @@ private fun WiperControlCard(
                 3 to Icons.Filled.Thunderstorm,
                 -1 to Icons.Filled.AutoAwesome
             ).forEach { (mode, icon) ->
-                val isSelected = if (mode == -1) false else speed == mode
-                val selectedColor = when (mode) {
-                    0 -> colors.textDim
-                    1 -> colors.gaugeGreen
-                    2 -> colors.gaugeYellow
-                    3 -> colors.gaugeOrange
-                    else -> colors.gaugeCyan
-                }
-                Surface(
-                    onClick = { onSpeedChange(if (mode == -1) 0 else mode) },
-                    shape = CircleShape,
-                    color = if (isSelected) selectedColor.copy(alpha = 0.2f) else colors.surface,
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            icon,
-                            when (mode) {
-                                -1 -> "Auto"
-                                0 -> "Aus"
-                                1 -> "Stufe 1"
-                                2 -> "Stufe 2"
-                                else -> "Stufe 3"
-                            },
-                            tint = if (isSelected) selectedColor else colors.textDim,
-                            modifier = Modifier.size(24.dp)
+                WiperSpeedButton(
+                    mode = mode,
+                    icon = icon,
+                    isSelected = if (mode == -1) {
+                        false
+                    } else {
+                        speed == mode
+                    },
+                    onClick = {
+                        onSpeedChange(
+                            if (mode == -1) {
+                                0
+                            } else {
+                                mode
+                            }
                         )
-                    }
-                }
+                    },
+                    colors = colors
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun WiperSpeedButton(
+    mode: Int,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    colors: AppColors
+) {
+    val selectedColor = when (mode) {
+        0 -> colors.textDim
+        1 -> colors.gaugeGreen
+        2 -> colors.gaugeYellow
+        3 -> colors.gaugeOrange
+        else -> colors.gaugeCyan
+    }
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (isSelected) {
+            selectedColor.copy(alpha = 0.2f)
+        } else {
+            colors.surface
+        },
+        modifier = Modifier.size(44.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                icon,
+                when (mode) {
+                    -1 -> "Auto"
+                    0 -> "Aus"
+                    1 -> "Stufe 1"
+                    2 -> "Stufe 2"
+                    else -> "Stufe 3"
+                },
+                tint = if (isSelected) {
+                    selectedColor
+                } else {
+                    colors.textDim
+                },
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
@@ -908,12 +1023,26 @@ private fun WindowControlSimulatorCard(
                     Box(
                         modifier = Modifier.size(8.dp)
                             .clip(CircleShape)
-                            .background(if (isConnected) colors.gaugeGreen else colors.gaugeOrange)
+                            .background(
+                                if (isConnected) {
+                                    colors.gaugeGreen
+                                } else {
+                                    colors.gaugeOrange
+                                }
+                            )
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        if (isConnected) "Verbunden" else "Nicht verbunden",
-                        color = if (isConnected) colors.gaugeGreen else colors.gaugeOrange,
+                        if (isConnected) {
+                            "Verbunden"
+                        } else {
+                            "Nicht verbunden"
+                        },
+                        color = if (isConnected) {
+                            colors.gaugeGreen
+                        } else {
+                            colors.gaugeOrange
+                        },
                         fontSize = 10.sp
                     )
                 }
@@ -1098,12 +1227,26 @@ private fun WindowControlSimulatorCard(
                             Box(
                                 modifier = Modifier.size(8.dp)
                                     .clip(CircleShape)
-                                    .background(if (isSending && blinkState) colors.gaugeGreen else colors.textDim)
+                                    .background(
+                                        if (isSending && blinkState) {
+                                            colors.gaugeGreen
+                                        } else {
+                                            colors.textDim
+                                        }
+                                    )
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                if (isSending && blinkState) "Senden..." else "Bereit",
-                                color = if (isSending && blinkState) colors.gaugeGreen else colors.textDim,
+                                if (isSending && blinkState) {
+                                    "Senden..."
+                                } else {
+                                    "Bereit"
+                                },
+                                color = if (isSending && blinkState) {
+                                    colors.gaugeGreen
+                                } else {
+                                    colors.textDim
+                                },
                                 fontSize = 10.sp
                             )
                         }
@@ -1138,9 +1281,7 @@ private fun SimulatorWindowButton(
     colors: AppColors
 ) {
     val ledColor by animateColorAsState(
-        if (isSending) colors.gaugeGreen 
-        else if (isActive) colors.gaugeGreen 
-        else colors.textDim,
+        if (isSending) colors.gaugeGreen else if (isActive) colors.gaugeGreen else colors.textDim,
         label = "led"
     )
 
@@ -1148,10 +1289,18 @@ private fun SimulatorWindowButton(
         Surface(
             onClick = onClick,
             shape = RoundedCornerShape(8.dp),
-            color = if (isSending || isActive) colors.gaugeGreen.copy(alpha = 0.2f) else colors.surfaceElevated,
+            color = if (isSending || isActive) {
+                colors.gaugeGreen.copy(alpha = 0.2f)
+            } else {
+                colors.surfaceElevated
+            },
             border = androidx.compose.foundation.BorderStroke(
                 1.dp,
-                if (isSending || isActive) colors.gaugeGreen else colors.borderSubtle
+                if (isSending || isActive) {
+                    colors.gaugeGreen
+                } else {
+                    colors.borderSubtle
+                }
             ),
             modifier = Modifier.size(60.dp)
         ) {
@@ -1159,7 +1308,11 @@ private fun SimulatorWindowButton(
                 Icon(
                     Icons.Filled.CarRental,
                     contentDescription = label,
-                    tint = if (isSending || isActive) colors.gaugeGreen else colors.textDim,
+                    tint = if (isSending || isActive) {
+                        colors.gaugeGreen
+                    } else {
+                        colors.textDim
+                    },
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -1213,12 +1366,26 @@ private fun CANFrameSenderCard(
                     Box(
                         modifier = Modifier.size(8.dp)
                             .clip(CircleShape)
-                            .background(if (isSending && blinkState) colors.gaugeGreen else colors.textDim)
+                            .background(
+                                if (isSending && blinkState) {
+                                    colors.gaugeGreen
+                                } else {
+                                    colors.textDim
+                                }
+                            )
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        if (isSending) "Senden..." else "Bereit",
-                        color = if (isSending && blinkState) colors.gaugeGreen else colors.textDim,
+                        if (isSending) {
+                            "Senden..."
+                        } else {
+                            "Bereit"
+                        },
+                        color = if (isSending && blinkState) {
+                            colors.gaugeGreen
+                        } else {
+                            colors.textDim
+                        },
                         fontSize = 10.sp
                     )
                 }
@@ -1289,21 +1456,33 @@ private fun CANFrameSenderCard(
                     onSendRealFrame(canId, byteData)
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isSending) colors.gaugeGreen else colors.accent
+                    containerColor = if (isSending) {
+                        colors.gaugeGreen
+                    } else {
+                        colors.accent
+                    }
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
                     null,
-                    tint = if (isSending) colors.dark else Color.White,
+                    tint = if (isSending) {
+                        colors.dark
+                    } else {
+                        Color.White
+                    },
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "SENDEN",
                     fontWeight = FontWeight.Bold,
-                    color = if (isSending) colors.dark else Color.White
+                    color = if (isSending) {
+                        colors.dark
+                    } else {
+                        Color.White
+                    }
                 )
             }
             if (responseText != null) {

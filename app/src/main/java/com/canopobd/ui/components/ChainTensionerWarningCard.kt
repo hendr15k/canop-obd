@@ -60,7 +60,11 @@ fun ChainTensionerWarningCard(
     val infiniteTransition = rememberInfiniteTransition(label = "chain_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
-        targetValue = if (isCritical) 0.8f else 0.3f,
+        targetValue = if (isCritical) {
+            0.8f
+        } else {
+            0.3f
+        },
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -99,7 +103,7 @@ fun ChainTensionerWarningCard(
                         color = colors.gaugeOrange.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard
@@ -217,7 +221,7 @@ fun ChainTensionerWarningCard(
                     Text(
                         text = if (estimatedRemainingLifeKm > 0) {
                             String.format(Locale.GERMAN, "%d km", estimatedRemainingLifeKm)
-                        } else "—",
+                        } else { "—" },
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = when {

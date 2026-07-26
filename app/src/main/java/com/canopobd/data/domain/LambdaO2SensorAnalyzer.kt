@@ -1,7 +1,6 @@
 package com.canopobd.data.domain
 
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 class LambdaO2SensorAnalyzer {
 
@@ -87,9 +86,9 @@ class LambdaO2SensorAnalyzer {
         val (catalystEff, catalystScore) = evaluateCatalystEfficiency(input, issues)
 
         val rawScore = (dtcScore * WEIGHT_DTC +
-                preCatScore * WEIGHT_VOLTAGE +
-                crossCountScore * WEIGHT_CROSS_COUNT +
-                catalystScore * WEIGHT_CATALYST) / 100
+            preCatScore * WEIGHT_VOLTAGE +
+            crossCountScore * WEIGHT_CROSS_COUNT +
+            catalystScore * WEIGHT_CATALYST) / 100
         rawScore.coerceIn(0, 100)
 
         val preCatLambda = calculateLambdaValue(input.o2VoltageB1S1)
@@ -114,7 +113,7 @@ class LambdaO2SensorAnalyzer {
                 healthScore = postCatScore,
                 crossCountRate = calculateCrossCountRate(input.voltageHistoryB1S2)
             )
-        } else null
+        } else { null }
 
         val fuelTrimStatus = evaluateFuelTrim(input.stftB1, input.ltftB1, input.stftB2, input.ltftB2, issues)
         val diagnosis = generateDiagnosis(preCatSensor, postCatSensor, catalystEff, issues, input)
@@ -157,7 +156,7 @@ class LambdaO2SensorAnalyzer {
             val upper = code.uppercase()
             when {
                 upper.contains("P0130") || upper.contains("P0131") ||
-                        upper.contains("P0132") || upper.contains("P0133") -> {
+                    upper.contains("P0132") || upper.contains("P0133") -> {
                     penalty = penalty.coerceAtLeast(25)
                     issues.add(LambdaIssue.CIRCUIT_FAULT)
                 }
@@ -166,7 +165,7 @@ class LambdaO2SensorAnalyzer {
                     issues.add(LambdaIssue.PRE_CAT_STUCK)
                 }
                 upper.contains("P0135") || upper.contains("P0141") ||
-                        upper.contains("P0155") || upper.contains("P0161") -> {
+                    upper.contains("P0155") || upper.contains("P0161") -> {
                     penalty = penalty.coerceAtLeast(20)
                     issues.add(LambdaIssue.HEATER_FAULT)
                 }
@@ -197,7 +196,7 @@ class LambdaO2SensorAnalyzer {
         val isWarmedUp = input.coolantTemp > MIN_COOLANT_FOR_ANALYSIS
         val isOperating = input.rpm > MIN_RPM_FOR_ANALYSIS && isWarmedUp
 
-        if (!isOperating) return 80 to voltage
+        if (!isOperating) { return 80 to voltage }
 
         if (voltage < NARROWBAND_MIN || voltage > NARROWBAND_MAX) {
             issues.add(LambdaIssue.CIRCUIT_FAULT)
@@ -234,7 +233,7 @@ class LambdaO2SensorAnalyzer {
 
         val swing = if (input.voltageHistoryB1S2.size >= 5) {
             calculateSwingAmplitude(input.voltageHistoryB1S2)
-        } else 0.0
+        } else { 0.0 }
 
         return when {
             swing > 0.4 -> {
@@ -248,7 +247,7 @@ class LambdaO2SensorAnalyzer {
     }
 
     private fun calculateCrossCountRate(history: List<Double>): Double {
-        if (history.size < 3) return 0.0
+        if (history.size < 3) { return 0.0 }
         val threshold = NARROWBAND_STOICHIOMETRIC
         var crossings = 0
         for (i in 1 until history.size) {
@@ -259,11 +258,11 @@ class LambdaO2SensorAnalyzer {
             }
         }
         val duration = history.size.toDouble() / 10.0
-        return if (duration > 0) crossings / duration else 0.0
+        return if (duration > 0) { crossings / duration } else { 0.0 }
     }
 
     private fun calculateSwingAmplitude(history: List<Double>): Double {
-        if (history.isEmpty()) return 0.0
+        if (history.isEmpty()) { return 0.0 }
         return history.max() - history.min()
     }
 
@@ -288,15 +287,15 @@ class LambdaO2SensorAnalyzer {
 
         val preCatSwing = if (input.voltageHistoryB1S1.size >= 5) {
             calculateSwingAmplitude(input.voltageHistoryB1S1)
-        } else abs(input.o2VoltageB1S1 - NARROWBAND_STOICHIOMETRIC) * 2
+        } else { abs(input.o2VoltageB1S1 - NARROWBAND_STOICHIOMETRIC) * 2 }
 
         val postCatSwing = if (input.voltageHistoryB1S2.size >= 5) {
             calculateSwingAmplitude(input.voltageHistoryB1S2)
-        } else abs(input.o2VoltageB1S2 - NARROWBAND_STOICHIOMETRIC) * 2
+        } else { abs(input.o2VoltageB1S2 - NARROWBAND_STOICHIOMETRIC) * 2 }
 
         val efficiency = if (preCatSwing > 0.1) {
             (1.0 - (postCatSwing / preCatSwing)).coerceIn(0.0, 1.0)
-        } else 0.8
+        } else { 0.8 }
 
         val score = when {
             efficiency >= CATALYST_EFFICIENCY_THRESHOLD -> 95
@@ -337,13 +336,13 @@ class LambdaO2SensorAnalyzer {
     }
 
     private fun checkHeaterStatus(input: LambdaInput, isPostCat: Boolean): Boolean {
-        if (input.engineRuntimeSeconds < HEATER_WARMUP_SECONDS) return true
-        val voltage = if (isPostCat) input.o2VoltageB1S2 else input.o2VoltageB1S1
+        if (input.engineRuntimeSeconds < HEATER_WARMUP_SECONDS) { return true }
+        val voltage = if (isPostCat) { input.o2VoltageB1S2 } else { input.o2VoltageB1S1 }
         return voltage > 0 && input.coolantTemp > MIN_COOLANT_FOR_ANALYSIS
     }
 
     private fun calculateLambdaValue(voltage: Double): Double {
-        if (voltage <= 0) return 0.0
+        if (voltage <= 0) { return 0.0 }
         return when {
             voltage < NARROWBAND_LEAN_THRESHOLD -> WIDEBAND_LEAN + (NARROWBAND_LEAN_THRESHOLD - voltage) * 2.0
             voltage > NARROWBAND_RICH_THRESHOLD -> WIDEBAND_RICH - (voltage - NARROWBAND_RICH_THRESHOLD) * 2.0
@@ -362,8 +361,8 @@ class LambdaO2SensorAnalyzer {
         val parts = mutableListOf<String>()
 
         parts.add("Pre-Cat: ${"%.3f".format(preCat.voltage)}V " +
-                "(Lambda: ${"%.2f".format(preCat.lambda)}), " +
-                "Kreuzrate: ${"%.1f".format(preCat.crossCountRate)}/s.")
+            "(Lambda: ${"%.2f".format(preCat.lambda)}), " +
+            "Kreuzrate: ${"%.1f".format(preCat.crossCountRate)}/s.")
 
         if (postCat != null) {
             parts.add("Post-Cat: ${"%.3f".format(postCat.voltage)}V.")
@@ -392,28 +391,28 @@ class LambdaO2SensorAnalyzer {
             issues.isEmpty() -> "Lambdasonden und Katalysator funktionieren normal."
             issues.any { it == LambdaIssue.HEATER_FAULT } -> {
                 "Lambdasonden-Heizelement pruefen. " +
-                        "Bei ${input.totalKm.toInt()} km: Verkabelung und Sicherung kontrollieren."
+                    "Bei ${input.totalKm.toInt()} km: Verkabelung und Sicherung kontrollieren."
             }
             issues.any { it == LambdaIssue.PRE_CAT_STUCK || it == LambdaIssue.PRE_CAT_SLOW } -> {
                 "Pre-Cat-Lambdasonde reagiert nicht normal. " +
-                        "Sensor pruefen oder ersetzen. Verkabelung kontrollieren."
+                    "Sensor pruefen oder ersetzen. Verkabelung kontrollieren."
             }
             issues.any { it == LambdaIssue.CATALYST_WORN } -> {
                 "Katalysator-Wirkung vermindert (${(catalystEff * 100).toInt()}%). " +
-                        "Katalysator pruefen lassen. " +
-                        "Bei ${input.totalKm.toInt()} km kann Verschleiss normal sein."
+                    "Katalysator pruefen lassen. " +
+                    "Bei ${input.totalKm.toInt()} km kann Verschleiss normal sein."
             }
             issues.any { it == LambdaIssue.LEAN_CONDITION } -> {
                 "System zu mager. Luftleck, Kraftstoffdruck " +
-                        "und MAF-Sensor pruefen."
+                    "und MAF-Sensor pruefen."
             }
             issues.any { it == LambdaIssue.RICH_CONDITION } -> {
                 "System zu fett. Einspritzventile, Kraftstoffdruck " +
-                        "und Luftfilter pruefen."
+                    "und Luftfilter pruefen."
             }
             issues.any { it == LambdaIssue.CIRCUIT_FAULT } -> {
                 "Lambdasonden-Stromkreisfehler. Verkabelung " +
-                        "und Sensor pruefen."
+                    "und Sensor pruefen."
             }
             else -> {
                 "Lambdasonden-System bei Werkstatt pruefen lassen."

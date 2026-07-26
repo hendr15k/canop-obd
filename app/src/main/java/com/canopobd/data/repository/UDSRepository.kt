@@ -5,7 +5,6 @@ import com.canopobd.bluetooth.ELM327BTConnection
 import com.canopobd.data.protocol.DIDValue
 import com.canopobd.data.protocol.RoutineControlType
 import com.canopobd.data.protocol.UDSClient
-import com.canopobd.data.protocol.UDSNegativeResponseCode
 import com.canopobd.data.protocol.UDSSessionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

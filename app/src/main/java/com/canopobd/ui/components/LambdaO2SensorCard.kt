@@ -16,8 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -68,7 +66,7 @@ fun LambdaO2SensorCard(
                         color = colors.gaugeRed.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
                     )
-                } else Modifier
+                } else { Modifier }
             ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surfaceCard,
@@ -192,7 +190,7 @@ private fun PreCatSensorSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = if (lambdaData.preCatLambda > 0) "%.2f".format(lambdaData.preCatLambda) else "—",
+                text = if (lambdaData.preCatLambda > 0) { "%.2f".format(lambdaData.preCatLambda) } else { "—" },
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.textPrimary
@@ -225,13 +223,13 @@ private fun PreCatSensorSection(
                             modifier = Modifier
                                 .size(6.dp)
                                 .background(
-                                    if (lambdaData.preCatHeaterActive) colors.gaugeOrange else colors.textDim,
+                                    if (lambdaData.preCatHeaterActive) { colors.gaugeOrange } else { colors.textDim },
                                     RoundedCornerShape(3.dp)
                                 )
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (lambdaData.preCatHeaterActive) stringResource(R.string.active) else stringResource(R.string.inactive),
+                            text = if (lambdaData.preCatHeaterActive) { stringResource(R.string.active) } else { stringResource(R.string.inactive) },
                             fontSize = 10.sp,
                             color = colors.textSecondary
                         )
@@ -272,7 +270,7 @@ private fun PostCatSensorSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = if (lambdaData.postCatVoltage > 0) "%.3f".format(lambdaData.postCatVoltage) else "—",
+                text = if (lambdaData.postCatVoltage > 0) { "%.3f".format(lambdaData.postCatVoltage) } else { "—" },
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.textPrimary
@@ -293,7 +291,7 @@ private fun PostCatSensorSection(
                 Column {
                     Text(stringResource(R.string.lambda_short), fontSize = 9.sp, color = colors.textDim)
                     Text(
-                        text = if (lambdaData.postCatLambda > 0) "%.2f".format(lambdaData.postCatLambda) else "—",
+                        text = if (lambdaData.postCatLambda > 0) { "%.2f".format(lambdaData.postCatLambda) } else { "—" },
                         fontSize = 11.sp,
                         color = colors.textSecondary
                     )
@@ -305,13 +303,13 @@ private fun PostCatSensorSection(
                             modifier = Modifier
                                 .size(6.dp)
                                 .background(
-                                    if (lambdaData.postCatHeaterActive) colors.gaugeOrange else colors.textDim,
+                                    if (lambdaData.postCatHeaterActive) { colors.gaugeOrange } else { colors.textDim },
                                     RoundedCornerShape(3.dp)
                                 )
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (lambdaData.postCatHeaterActive) stringResource(R.string.active) else stringResource(R.string.inactive),
+                            text = if (lambdaData.postCatHeaterActive) { stringResource(R.string.active) } else { stringResource(R.string.inactive) },
                             fontSize = 10.sp,
                             color = colors.textSecondary
                         )
@@ -363,7 +361,7 @@ private fun O2VoltageChart(
                 .background(colors.surfaceVariant)
                 .padding(4.dp)
         ) {
-            if (voltageHistory.size < 2) return@Canvas
+            if (voltageHistory.size < 2) { return@Canvas }
 
             val maxV = 1.0f
             val minV = 0.0f
@@ -373,7 +371,7 @@ private fun O2VoltageChart(
             voltageHistory.forEachIndexed { index, voltage ->
                 val x = size.width * index / (voltageHistory.size - 1).coerceAtLeast(1)
                 val y = size.height - ((voltage - minV) / range * size.height).coerceIn(0f, size.height)
-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                if (index == 0) { path.moveTo(x, y) } else { path.lineTo(x, y) }
             }
 
             drawPath(

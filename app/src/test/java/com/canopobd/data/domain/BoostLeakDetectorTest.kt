@@ -108,7 +108,10 @@ class BoostLeakDetectorTest {
             ltftB1 = 5.0
         )
         val result = detector.analyze(input)
-        assertTrue(result.severity == BoostLeakDetector.LeakSeverity.SEVERE || result.severity == BoostLeakDetector.LeakSeverity.MODERATE)
+        assertTrue(
+            result.severity == BoostLeakDetector.LeakSeverity.SEVERE ||
+                result.severity == BoostLeakDetector.LeakSeverity.MODERATE,
+        )
     }
 
     @Test

@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,19 +36,19 @@ import kotlin.math.min
 
 /**
  * Dialog zur Anzeige detaillierter Kraftstoff-Trim-Daten für den A14NET Motor.
- * 
+ *
  * Kraftstoff-Trim-Interpretation:
  * - STFT (Short Term Fuel Trim): Kurzfristige Korrekturen der Kraftstoffzufuhr
  * - LTFT (Long Term Fuel Trim): Langfristige Anpassungen basierend auf STFT-Mittelwerten
  * - Positive Werte = System fügt Kraftstoff hinzu (kompensiert für mageres Gemisch)
  * - Negative Werte = System reduziert Kraftstoff (kompensiert für fettes Gemisch)
- * 
+ *
  * Normalwerte A14NET:
  * - Ideal: ±5% (System optimal)
  * - Akzeptabel: ±5-10% (leichte Abweichung)
  * - Warnung: ±10-15% (Wartung empfohlen)
  * - Problem: >±15% (sofortige Diagnose erforderlich)
- * 
+ *
  * Typische A14NET-Probleme:
  * - MAF-Sensor Verschmutzung (besonders nach 60-100tkm)
  * - PCV-Ventil Defekt (Ölverbrauch, blauer Rauch)
@@ -69,21 +68,21 @@ fun FuelTrimDialog(
     modifier: Modifier = Modifier
 ) {
     val analyzer = remember { FuelTrimAnalyzer() }
-    
+
     // Analyse für beide Bänke berechnen
-    val statusB1 = remember(stftBank1, ltftBank1) { 
-        analyzer.analyze(stftBank1, ltftBank1) 
+    val statusB1 = remember(stftBank1, ltftBank1) {
+        analyzer.analyze(stftBank1, ltftBank1)
     }
-    val statusB2 = remember(stftBank2, ltftBank2) { 
-        analyzer.analyze(stftBank2, ltftBank2) 
+    val statusB2 = remember(stftBank2, ltftBank2) {
+        analyzer.analyze(stftBank2, ltftBank2)
     }
-    val actionB1 = remember(statusB1) { 
-        analyzer.getRecommendedAction(statusB1) 
+    val actionB1 = remember(statusB1) {
+        analyzer.getRecommendedAction(statusB1)
     }
-    val actionB2 = remember(statusB2) { 
-        analyzer.getRecommendedAction(statusB2) 
+    val actionB2 = remember(statusB2) {
+        analyzer.getRecommendedAction(statusB2)
     }
-    
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -119,15 +118,15 @@ fun FuelTrimDialog(
                     }
                     IconButton(onClick = onDismiss) {
                         Icon(
-                            Icons.Filled.Close, 
-                            contentDescription = stringResource(R.string.close), 
+                            Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.close),
                             tint = textSecondary
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Info-Banner
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -152,9 +151,9 @@ fun FuelTrimDialog(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
@@ -166,7 +165,7 @@ fun FuelTrimDialog(
                             statusB2 = statusB2
                         )
                     }
-                    
+
                     // STFT/LTFT Detail-Anzeige Bank 1
                     item {
                         TrimBankCard(
@@ -181,7 +180,7 @@ fun FuelTrimDialog(
                             healthScore = statusB1.healthScore
                         )
                     }
-                    
+
                     // STFT/LTFT Detail-Anzeige Bank 2
                     item {
                         TrimBankCard(
@@ -196,7 +195,7 @@ fun FuelTrimDialog(
                             healthScore = statusB2.healthScore
                         )
                     }
-                    
+
                     // Wartungsempfehlungen
                     item {
                         MaintenanceRecommendationsCard(
@@ -204,7 +203,7 @@ fun FuelTrimDialog(
                             statusB2 = statusB2
                         )
                     }
-                    
+
                     // Technische Referenz
                     item {
                         TechnicalReferenceCard()
@@ -233,7 +232,7 @@ private fun SystemStatusCard(
         overallHealth >= 30 -> "Warnung — Wartung empfohlen"
         else -> "Problem erkannt — Diagnose erforderlich!"
     }
-    
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -265,9 +264,9 @@ private fun SystemStatusCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(
                 text = statusText,
                 fontSize = 14.sp,
@@ -275,9 +274,9 @@ private fun SystemStatusCard(
                 color = healthColor,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -363,7 +362,7 @@ private fun TrimBankCard(
                         color = canopoAccent
                     )
                 }
-                
+
                 // Richtung-Pfeil
                 val directionIcon = when {
                     totalTrim > 3 -> Icons.AutoMirrored.Filled.TrendingUp
@@ -382,9 +381,9 @@ private fun TrimBankCard(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // STFT und LTFT Balken
             TrimBarRow(
                 label = "STFT",
@@ -392,18 +391,18 @@ private fun TrimBankCard(
                 value = stft,
                 maxRange = 25.0
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             TrimBarRow(
                 label = "LTFT",
                 subLabel = "Langzeit-Trim",
                 value = ltft,
                 maxRange = 25.0
             )
-            
+
             Spacer(modifier = Modifier.height(10.dp))
-            
+
             // Gesamt-Trim mit speziellem Balken
             TrimBarRow(
                 label = "GESAMT",
@@ -412,13 +411,13 @@ private fun TrimBankCard(
                 maxRange = 30.0,
                 isHighlighted = true
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             HorizontalDivider(color = borderSubtle, thickness = 1.dp)
-            
+
             Spacer(modifier = Modifier.height(10.dp))
-            
+
             // Status-Text
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -452,9 +451,9 @@ private fun TrimBankCard(
                     color = statusColor
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(6.dp))
-            
+
             // Empfehlung
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -491,7 +490,7 @@ private fun TrimBarRow(
         abs(value) < 15 -> gaugeOrange
         else -> gaugeRed
     }
-    
+
     val animatedValue by animateFloatAsState(
         targetValue = value.toFloat(),
         animationSpec = spring(
@@ -500,7 +499,7 @@ private fun TrimBarRow(
         ),
         label = "trim_value"
     )
-    
+
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -528,9 +527,9 @@ private fun TrimBarRow(
                 color = barColor
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         // Fortschrittsbalken mit Mittellinie
         Box(
             modifier = Modifier
@@ -543,7 +542,7 @@ private fun TrimBarRow(
                 val centerX = size.width / 2
                 val barHeight = size.height
                 val maxBarWidth = centerX
-                
+
                 // Mittellinie (0%)
                 drawLine(
                     color = Color.White.copy(alpha = 0.2f),
@@ -551,13 +550,13 @@ private fun TrimBarRow(
                     end = Offset(centerX, barHeight),
                     strokeWidth = 1.dp.toPx()
                 )
-                
+
                 // Warnmarkierungen
-                val warningLow = maxBarWidth * 0.33f  // ±10%
-                val warningHigh = maxBarWidth * 0.5f  // ±15%
-                
+                val warningLow = maxBarWidth * 0.33f // ±10%
+                val warningHigh = maxBarWidth * 0.5f // ±15%
+
                 listOf(centerX - warningLow, centerX + warningLow,
-                       centerX - warningHigh, centerX + warningHigh).forEach { x ->
+                    centerX - warningHigh, centerX + warningHigh).forEach { x ->
                     drawLine(
                         color = Color.White.copy(alpha = 0.1f),
                         start = Offset(x, 0f),
@@ -565,11 +564,11 @@ private fun TrimBarRow(
                         strokeWidth = 1.dp.toPx()
                     )
                 }
-                
+
                 // Farbiger Balken
                 val normalizedValue = (animatedValue / maxRange).toFloat().coerceIn(-1f, 1f)
                 val barWidth = maxBarWidth * abs(normalizedValue)
-                
+
                 if (normalizedValue > 0) {
                     // Zu mager (fügt Kraftstoff hinzu)
                     drawRect(
@@ -585,7 +584,7 @@ private fun TrimBarRow(
                         size = Size(barWidth, barHeight)
                     )
                 }
-                
+
                 // Glow-Effekt
                 if (abs(animatedValue) > 5f) {
                     val glowWidth = maxBarWidth * abs(normalizedValue)
@@ -612,7 +611,7 @@ private fun TrimBarRow(
                     }
                 }
             }
-            
+
             // Bereichs-Labels
             Row(
                 modifier = Modifier
@@ -702,7 +701,7 @@ private fun MaintenanceRecommendationsCard(
                 ))
             }
         }
-        
+
         // Generelle Empfehlungen
         add(Recommendation(
             "Regelmäßige Ölwechsel",
@@ -710,7 +709,7 @@ private fun MaintenanceRecommendationsCard(
             Icons.Filled.OilBarrel,
             canopoAccent
         ))
-        
+
         if (statusB1.healthScore < 80 || statusB2.healthScore < 80) {
             add(Recommendation(
                 "Fehlerspeicher prüfen",
@@ -720,7 +719,7 @@ private fun MaintenanceRecommendationsCard(
             ))
         }
     }
-    
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -742,9 +741,9 @@ private fun MaintenanceRecommendationsCard(
                     color = canopoHighlight
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(10.dp))
-            
+
             recommendations.forEach { rec ->
                 Row(
                     modifier = Modifier
@@ -801,9 +800,9 @@ private fun TechnicalReferenceCard() {
                     color = textSecondary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 ReferenceRow("STFT", "Kurzzeit-Korrektur (±100% max)", gaugeCyan)
                 ReferenceRow("LTFT", "Langzeit-Speicher (adaptiv)", gaugeCyan)

@@ -227,7 +227,11 @@ class WastegateHealthAnalyzerTest {
                 wastegateDuty = params.first,
                 avgWastegateDuty = params.first,
                 targetBoost = 1.0,
-                actualBoost = if (expectedCondition == WastegateHealthAnalyzer.WastegateCondition.STUCK_OPEN) 0.5 else 1.0,
+                actualBoost = if (expectedCondition == WastegateHealthAnalyzer.WastegateCondition.STUCK_OPEN) {
+                    0.5
+                } else {
+                    1.0
+                },
                 rpm = params.second,
                 engineLoad = params.third
             )

@@ -177,8 +177,9 @@ private fun DataList(recordedData: List<DataRecord>) {
 
 @Composable
 private fun DataRecordItem(record: DataRecord) {
-    val dateFormat = remember { DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault()).withZone(ZoneId.systemDefault()) }
-    
+    val dateFormat =
+        remember { DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault()).withZone(ZoneId.systemDefault()) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -228,7 +229,7 @@ private fun TrendGraph(recordedData: List<DataRecord>) {
                 color = textSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -239,37 +240,37 @@ private fun TrendGraph(recordedData: List<DataRecord>) {
                 val maxRpm = recordedData.takeLast(100).maxOf { it.rpm }.coerceAtLeast(1.0)
                 val minRpm = recordedData.takeLast(100).minOf { it.rpm }
                 val range = (maxRpm - minRpm).coerceAtLeast(1.0)
-                
+
                 val path = Path()
                 val points = recordedData.takeLast(100)
-                
+
                 points.forEachIndexed { index, record ->
                     val x = size.width * index / (points.size - 1).coerceAtLeast(1)
                     val y = size.height - ((record.rpm - minRpm) / range * size.height).toFloat()
-                    
+
                     if (index == 0) {
                         path.moveTo(x, y)
                     } else {
                         path.lineTo(x, y)
                     }
                 }
-                
+
                 drawPath(
                     path = path,
                     color = gaugeGreen,
                     style = Stroke(width = 3f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = stringResource(R.string.datalog_speed_trend),
                 fontSize = 12.sp,
                 color = textSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,21 +279,21 @@ private fun TrendGraph(recordedData: List<DataRecord>) {
                     .padding(8.dp)
             ) {
                 val maxSpeed = recordedData.takeLast(100).maxOf { it.speed }.coerceAtLeast(1.0)
-                
+
                 val path = Path()
                 val points = recordedData.takeLast(100)
-                
+
                 points.forEachIndexed { index, record ->
                     val x = size.width * index / (points.size - 1).coerceAtLeast(1)
                     val y = size.height - (record.speed / maxSpeed * size.height).toFloat()
-                    
+
                     if (index == 0) {
                         path.moveTo(x, y)
                     } else {
                         path.lineTo(x, y)
                     }
                 }
-                
+
                 drawPath(
                     path = path,
                     color = canopoAccent,
@@ -308,7 +309,7 @@ private fun exportCsv(context: Context, csv: String) {
         val fileName = "canop_obd_log_${System.currentTimeMillis()}.csv"
         val file = File(context.cacheDir, fileName)
         file.writeText(csv)
-        
+
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/csv"

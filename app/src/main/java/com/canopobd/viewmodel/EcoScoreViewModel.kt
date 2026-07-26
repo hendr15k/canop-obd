@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.max
-import kotlin.math.min
 
 class EcoScoreViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -59,7 +58,11 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
 
     fun updateFromOBDData(data: OBDData, fuelLevelPercent: Double) {
         val now = System.currentTimeMillis()
-        val dt = if (lastTimestamp > 0) (now - lastTimestamp) / 1000.0 else 0.0
+        val dt = if (lastTimestamp > 0) {
+            (now - lastTimestamp) / 1000.0
+        } else {
+            0.0
+        }
         lastTimestamp = now
 
         if (data.speed > 0 && dt > 0) {
@@ -88,8 +91,11 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun updateEfficiency(data: OBDData, fuelLevelPercent: Double) {
-        val fuelUsedLiters = if (tripStartFuelLiters == 0.0) 0.0 else
+        val fuelUsedLiters = if (tripStartFuelLiters == 0.0) {
+            0.0
+        } else {
             max(0.0, tripStartFuelLiters - (fuelLevelPercent / 100.0 * FUEL_TANK_LITERS))
+        }
 
         if (tripStartFuelLiters == 0.0 && fuelLevelPercent > 0) {
             tripStartFuelLiters = fuelLevelPercent / 100.0 * FUEL_TANK_LITERS
@@ -97,31 +103,55 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
 
         val instantConsumption = if (data.mafRate > 0 && data.speed > 0) {
             (data.mafRate * 3600.0) / (data.speed * MAF_CONVERSION_FACTOR)
-        } else 0.0
+        } else {
+            0.0
+        }
 
         val averageConsumption = if (tripDistanceKm > 0 && fuelUsedLiters > 0) {
             (fuelUsedLiters / tripDistanceKm) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 
         val idlePercent = if (tripDurationSeconds > 0) {
             (tripIdleSeconds.toDouble() / tripDurationSeconds) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 
         val cruisingPercent = if (tripDurationSeconds > 0) {
             ((tripDurationSeconds - tripIdleSeconds).toDouble() / tripDurationSeconds) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 
         _efficiency.value = FuelEfficiencyMetrics(
             instantLPer100km = instantConsumption,
             averageLPer100km = averageConsumption,
-            instantMpg = if (instantConsumption > 0) 235.215 / instantConsumption else 0.0,
-            averageMpg = if (averageConsumption > 0) 235.215 / averageConsumption else 0.0,
+            instantMpg = if (instantConsumption > 0) {
+                235.215 / instantConsumption
+            } else {
+                0.0
+            },
+            averageMpg = if (averageConsumption > 0) {
+                235.215 / averageConsumption
+            } else {
+                0.0
+            },
             fuelUsedLiters = fuelUsedLiters,
             fuelUsedGallons = fuelUsedLiters * 0.264172,
             distanceKm = tripDistanceKm,
             distanceMiles = tripDistanceKm * 0.621371,
-            averageSpeedKmh = if (tripDurationSeconds > 0) tripDistanceKm / (tripDurationSeconds / 3600.0) else 0.0,
-            averageSpeedMph = if (tripDurationSeconds > 0) (tripDistanceKm * 0.621371) / (tripDurationSeconds / 3600.0) else 0.0,
+            averageSpeedKmh = if (tripDurationSeconds > 0) {
+                tripDistanceKm / (tripDurationSeconds / 3600.0)
+            } else {
+                0.0
+            },
+            averageSpeedMph = if (tripDurationSeconds > 0) {
+                (tripDistanceKm * 0.621371) / (tripDurationSeconds / 3600.0)
+            } else {
+                0.0
+            },
             cruisingTimePercent = cruisingPercent,
             idleTimePercent = idlePercent
         )
@@ -164,9 +194,9 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         }
 
         val overallScore = ((efficiencyScore * 0.35 +
-                smoothnessScore * 0.25 +
-                cruisingScore * 0.20 +
-                momentumScore * 0.20)).toInt().coerceIn(0, 100)
+            smoothnessScore * 0.25 +
+            cruisingScore * 0.20 +
+            momentumScore * 0.20)).toInt().coerceIn(0, 100)
 
         _ecoScore.value = EcoScoreData(
             overallScore = overallScore,
@@ -183,11 +213,17 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         val fuelUsed = _efficiency.value.fuelUsedLiters
         val distance = _efficiency.value.distanceKm
         val tripCO2 = fuelUsed * CO2Data.CO2_PER_LITER_GASOLINE_KG
-        val perKm = if (distance > 0) tripCO2 / distance else 0.0
+        val perKm = if (distance > 0) {
+            tripCO2 / distance
+        } else {
+            0.0
+        }
 
         val annualProjection = if (_efficiency.value.averageLPer100km > 0) {
             (_efficiency.value.averageLPer100km / 100.0 * 15000.0) * CO2Data.CO2_PER_LITER_GASOLINE_KG
-        } else 0.0
+        } else {
+            0.0
+        }
 
         _co2Data.value = CO2Data(
             tripCO2Kg = tripCO2,
@@ -205,9 +241,17 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         val costPerLiter = _fuelCost.value.fuelPricePerLiter
 
         val tripCost = eff.fuelUsedLiters * costPerLiter
-        val costPerKm = if (eff.distanceKm > 0) tripCost / eff.distanceKm else 0.0
+        val costPerKm = if (eff.distanceKm > 0) {
+            tripCost / eff.distanceKm
+        } else {
+            0.0
+        }
 
-        val annualLiters = if (eff.averageLPer100km > 0) eff.averageLPer100km / 100.0 * 15000.0 else 0.0
+        val annualLiters = if (eff.averageLPer100km > 0) {
+            eff.averageLPer100km / 100.0 * 15000.0
+        } else {
+            0.0
+        }
         val annualCost = annualLiters * costPerLiter
 
         _fuelCost.value = _fuelCost.value.copy(
@@ -229,7 +273,11 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         val avgConsumption = _efficiency.value.averageLPer100km
 
         val usableFuel = max(0.0, fuelLevelLiters - reserveLiters)
-        val estimatedRange = if (avgConsumption > 0) (usableFuel / avgConsumption * 100.0).toInt() else 0
+        val estimatedRange = if (avgConsumption > 0) {
+            (usableFuel / avgConsumption * 100.0).toInt()
+        } else {
+            0
+        }
 
         val bestRange = (usableFuel / 5.0 * 100.0).toInt()
         val worstRange = (usableFuel / 9.0 * 100.0).toInt()
@@ -265,9 +313,13 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         if (isDecelerating) {
             decelSamples++
             brakeEventCount++
-            if (speedDelta < -8.0) harshBrakeCount++
+            if (speedDelta < -8.0) {
+                harshBrakeCount++
+            }
         }
-        if (isCoasting) coastingSamples++
+        if (isCoasting) {
+            coastingSamples++
+        }
 
         val brakeScore = when {
             brakeEventCount == 0 -> 80
@@ -277,7 +329,11 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        val cruiseScore = if (eff.cruisingTimePercent > 60) 90 else 50
+        val cruiseScore = if (eff.cruisingTimePercent > 60) {
+            90
+        } else {
+            50
+        }
         val anticipationScore = when {
             totalSamples < 10 -> 70
             coastingSamples == 0 -> 40

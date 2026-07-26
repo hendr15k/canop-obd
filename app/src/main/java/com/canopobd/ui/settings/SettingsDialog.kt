@@ -267,8 +267,7 @@ private fun SegmentedSelector(
                     .weight(1f)
                     .clip(RoundedCornerShape(AppRadius.sm))
                     .background(
-                        if (isSelected) colors.gradientAccent
-                        else Brushes.Transparent
+                        if (isSelected) { colors.gradientAccent } else { Brushes.Transparent }
                     )
                     .clickable { onSelect(index) }
                     .padding(vertical = 10.dp),
@@ -277,8 +276,8 @@ private fun SegmentedSelector(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) colors.surfaceBlack else colors.textSecondary,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    color = if (isSelected) { colors.surfaceBlack } else { colors.textSecondary },
+                    fontWeight = if (isSelected) { FontWeight.Bold } else { FontWeight.Medium }
                 )
             }
         }
@@ -350,12 +349,11 @@ private fun UnitSelector(
                     .weight(1f)
                     .clip(RoundedCornerShape(AppRadius.md))
                     .background(
-                        if (isSelected) colors.surfaceBase
-                        else colors.surfaceRaised
+                        if (isSelected) { colors.surfaceBase } else { colors.surfaceRaised }
                     )
                     .border(
-                        width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) colors.primary else colors.borderSubtle,
+                        width = if (isSelected) { 2.dp } else { 1.dp },
+                        color = if (isSelected) { colors.primary } else { colors.borderSubtle },
                         shape = RoundedCornerShape(AppRadius.md)
                     )
                     .clickable { onUnitSelected(unit) }
@@ -367,15 +365,14 @@ private fun UnitSelector(
                         .size(40.dp)
                         .clip(RoundedCornerShape(AppRadius.sm))
                         .background(
-                            if (isSelected) colors.primary.copy(alpha = 0.18f)
-                            else colors.surfaceElevated
+                            if (isSelected) { colors.primary.copy(alpha = 0.18f) } else { colors.surfaceElevated }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (unit == MeasurementUnit.METRIC) Icons.Filled.Speed else Icons.Filled.Thermostat,
+                        imageVector = if (unit == MeasurementUnit.METRIC) { Icons.Filled.Speed } else { Icons.Filled.Thermostat },
                         contentDescription = null,
-                        tint = if (isSelected) colors.primary else colors.textTertiary,
+                        tint = if (isSelected) { colors.primary } else { colors.textTertiary },
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -383,12 +380,12 @@ private fun UnitSelector(
                 Text(
                     text = unit.label,
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (isSelected) colors.textPure else colors.textPrimary,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    color = if (isSelected) { colors.textPure } else { colors.textPrimary },
+                    fontWeight = if (isSelected) { FontWeight.Bold } else { FontWeight.Medium }
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = if (unit == MeasurementUnit.METRIC) "km/h · °C" else "mph · °F",
+                    text = if (unit == MeasurementUnit.METRIC) { "km/h · °C" } else { "mph · °F" },
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.textTertiary
                 )

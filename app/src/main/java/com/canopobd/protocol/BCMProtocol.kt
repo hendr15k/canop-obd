@@ -34,28 +34,28 @@ object BCMProtocol {
 
     // Opel Astra J ECU Addresses (GMLAN)
     object ECU {
-        const val ECM_TX = "7E0"      // Engine Control Module
+        const val ECM_TX = "7E0" // Engine Control Module
         const val ECM_RX = "7E8"
-        const val TCM_TX = "7E1"       // Transmission Control Module
+        const val TCM_TX = "7E1" // Transmission Control Module
         const val TCM_RX = "7E9"
-        const val BCM_TX = "7C0"       // Body Control Module
+        const val BCM_TX = "7C0" // Body Control Module
         const val BCM_RX = "7C8"
-        const val IPC_TX = "7C3"       // Instrument Panel Cluster
+        const val IPC_TX = "7C3" // Instrument Panel Cluster
         const val IPC_RX = "7CB"
-        const val ABS_TX = "7C2"       // ABS Module
+        const val ABS_TX = "7C2" // ABS Module
         const val ABS_RX = "7CA"
-        const val SRS_TX = "7C5"       // Airbag Module
+        const val SRS_TX = "7C5" // Airbag Module
         const val SRS_RX = "7CD"
     }
 
     // PSA/Stellantis CAN IDs (Astra J uses some PSA components)
     object PSA_CAN {
-        const val PORTEC_TX = "74B"    // Door Control Unit (Windows)
-        const val BMF_TX = "752"       // Body Module Front
-        const val BSI_TX = "76B"       // Built-in Systems Interface
-        const val DDM_TX = "240"       // Driver Door Module
-        const val PDM_TX = "340"       // Passenger Door Module
-        const val RDM_TX = "440"       // Rear Door Module
+        const val PORTEC_TX = "74B" // Door Control Unit (Windows)
+        const val BMF_TX = "752" // Body Module Front
+        const val BSI_TX = "76B" // Built-in Systems Interface
+        const val DDM_TX = "240" // Driver Door Module
+        const val PDM_TX = "340" // Passenger Door Module
+        const val RDM_TX = "440" // Rear Door Module
     }
 
     object DIDs {
@@ -94,11 +94,11 @@ object BCMProtocol {
 
     object Window {
         const val CMD_PREFIX = 0x2EFF02
-        
+
         const val CAN_ID_PORTEC = "74B"
         const val CAN_ID_BMF = "752"
         const val CAN_ID_BSI = "76B"
-        
+
         // Window indices
         const val WINDOW_ALL = 0x00
         const val WINDOW_DRIVER = 0x01
@@ -106,17 +106,17 @@ object BCMProtocol {
         const val WINDOW_REAR_LEFT = 0x03
         const val WINDOW_REAR_RIGHT = 0x04
         const val WINDOW_SUNROOF = 0x05
-        
+
         // Directions (position in %)
         const val DIRECTION_UP = 0x00
-        const val DIRECTION_DOWN = 0x64  // 100%
+        const val DIRECTION_DOWN = 0x64 // 100%
         const val DIRECTION_STOP = 0xFF
-        
+
         // Preset positions
-        const val POSITION_25 = 0x19  // 25%
-        const val POSITION_50 = 0x32  // 50%
-        const val POSITION_75 = 0x4B  // 75%
-        
+        const val POSITION_25 = 0x19 // 25%
+        const val POSITION_50 = 0x32 // 50%
+        const val POSITION_75 = 0x4B // 75%
+
         fun openDriver() = buildDirectFrame(WINDOW_DRIVER, DIRECTION_DOWN)
         fun closeDriver() = buildDirectFrame(WINDOW_DRIVER, DIRECTION_UP)
         fun stopDriver() = buildDirectFrame(WINDOW_DRIVER, DIRECTION_STOP)
@@ -128,11 +128,11 @@ object BCMProtocol {
         fun closeRearRight() = buildDirectFrame(WINDOW_REAR_RIGHT, DIRECTION_UP)
         fun openAll() = hexToBytes("2EFF020064646464")
         fun closeAll() = hexToBytes("2EFF020000000000")
-        
+
         fun buildDirectFrame(windowByte: Int, direction: Int): ByteArray {
             return byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x02.toByte(), windowByte.toByte(), direction.toByte())
         }
-        
+
         fun buildPositionFrame(windowByte: Int, position: Int): ByteArray {
             val pos = position.coerceIn(0, 100)
             return byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x02.toByte(), windowByte.toByte(), pos.toByte())
@@ -148,18 +148,18 @@ object BCMProtocol {
         const val LEFT_MIRROR = 0x01
         const val RIGHT_MIRROR = 0x02
         const val BOTH_MIRRORS = 0x03
-        
+
         // Mirror movement directions
         const val MOVE_UP = 0x01
         const val MOVE_DOWN = 0x02
         const val MOVE_LEFT = 0x04
         const val MOVE_RIGHT = 0x08
-        
+
         fun foldFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x03.toByte(), 0x04.toByte())
         fun unfoldFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x03.toByte(), 0x05.toByte())
         fun heatingOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x03.toByte(), 0x08.toByte())
         fun heatingOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x03.toByte(), 0x00.toByte())
-        
+
         fun moveFrame(mirror: Int, direction: Int): ByteArray {
             return byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x03.toByte(), mirror.toByte(), direction.toByte())
         }
@@ -179,13 +179,13 @@ object BCMProtocol {
         const val LEAVING_HOME_DISABLE = 0x00
         const val FOG_LIGHTS_ON = 0x80
         const val FOG_LIGHTS_OFF = 0x00
-        
+
         // Ambient lighting
         const val AMBIENT_OFF = 0x00
-        const val AMBIENT_LOW = 0x32  // 50%
-        const val AMBIENT_MEDIUM = 0x64  // 100%
-        const val AMBIENT_HIGH = 0x96  // 150% (if supported)
-        
+        const val AMBIENT_LOW = 0x32 // 50%
+        const val AMBIENT_MEDIUM = 0x64 // 100%
+        const val AMBIENT_HIGH = 0x96 // 150% (if supported)
+
         fun parkingOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x04.toByte(), 0x01.toByte())
         fun parkingOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x04.toByte(), 0x00.toByte())
         fun drlOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x04.toByte(), 0x02.toByte())
@@ -205,7 +205,7 @@ object BCMProtocol {
         const val STEERING_LEVEL_2 = 0x08
         const val STEERING_LEVEL_3 = 0x0C
         const val STEERING_OFF = 0x00
-        
+
         fun rearOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), 0x01.toByte())
         fun rearOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), 0x00.toByte())
         fun frontOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x05.toByte(), 0x02.toByte())
@@ -232,7 +232,7 @@ object BCMProtocol {
         const val REAR_OFF = 0x00
         const val FRONT_WIPE = 0x01
         const val FRONT_WASH = 0x02
-        
+
         fun frontOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x06.toByte(), 0x00.toByte())
         fun frontLowFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x06.toByte(), 0x01.toByte())
         fun frontHighFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x06.toByte(), 0x02.toByte())
@@ -243,7 +243,7 @@ object BCMProtocol {
 
     object Horn {
         const val CMD_PREFIX = 0x2EFF07
-        
+
         fun honkFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x07.toByte(), 0x01.toByte())
         fun stopFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x07.toByte(), 0x00.toByte())
     }
@@ -253,8 +253,8 @@ object BCMProtocol {
         const val OPEN = 0x64
         const val CLOSE = 0x00
         const val STOP = 0xFF
-        const val VENT = 0x32  // 50% vent position
-        
+        const val VENT = 0x32 // 50% vent position
+
         fun openFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x08.toByte(), 0x64.toByte())
         fun closeFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x08.toByte(), 0x00.toByte())
         fun stopFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x08.toByte(), 0xFF.toByte())
@@ -271,7 +271,7 @@ object BCMProtocol {
         const val PASSENGER_LEVEL_2 = 0x08
         const val PASSENGER_LEVEL_3 = 0x0C
         const val PASSENGER_OFF = 0x00
-        
+
         fun driverLevel1Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x01.toByte())
         fun driverLevel2Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x02.toByte())
         fun driverLevel3Frame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x09.toByte(), 0x03.toByte())
@@ -287,16 +287,16 @@ object BCMProtocol {
         const val DEFAULT = 0x01
         const val PROGRAMMING = 0x02
         const val EXTENDED = 0x03
-        const val EOL = 0x04  // End of Line
+        const val EOL = 0x04 // End of Line
     }
 
     // UDS Security Access Levels
     object SecurityLevel {
-        const val LEVEL_1 = 0x01  // Basic diagnostics
-        const val LEVEL_3 = 0x03  // Extended diagnostics
-        const val LEVEL_5 = 0x05  // Configuration
-        const val LEVEL_7 = 0x07  // Calibration
-        const val LEVEL_9 = 0x09  // Programming
+        const val LEVEL_1 = 0x01 // Basic diagnostics
+        const val LEVEL_3 = 0x03 // Extended diagnostics
+        const val LEVEL_5 = 0x05 // Configuration
+        const val LEVEL_7 = 0x07 // Calibration
+        const val LEVEL_9 = 0x09 // Programming
     }
 
     // Common UDS Routine IDs
@@ -321,12 +321,12 @@ object BCMProtocol {
         const val MODE_PERMANENT = 0x0A
         // Mode 04 - Clear DTCs
         const val MODE_CLEAR = 0x04
-        
+
         // DTC Status Byte Masks
         const val STATUS_MALFUNCTION = 0x01
         const val STATUS_PENDING = 0x08
         const val STATUS_PERMANENT = 0x20
-        
+
         fun buildClearDTCs() = "04"
         fun buildReadDTCs() = "03"
         fun buildReadPendingDTCs() = "07"
@@ -370,7 +370,7 @@ object BCMProtocol {
         const val DISTANCE_MIL = 0x21
         const val DTC_CNT = 0x22
         const val FUEL_RAIL_PRESSURE = 0x59
-        
+
         val PID_NAMES = mapOf(
             SUPPORTED_PIDS to "Supported PIDs",
             DTC_STATUS to "DTC Status",
@@ -391,7 +391,7 @@ object BCMProtocol {
             RUN_TIME to "Engine Run Time (s)",
             DISTANCE_MIL to "Distance with MIL (km)"
         )
-        
+
         fun buildPID(pid: Int): String = "01" + String.format("%02X", pid)
     }
 
@@ -412,7 +412,7 @@ object BCMProtocol {
         const val BLOWER_SPEED_4 = 0x04
         const val BLOWER_SPEED_5 = 0x05
         const val BLOWER_SPEED_MAX = 0x06
-        
+
         // Temperature (16 = 16°C, 32 = 32°C)
         const val TEMP_16C = 0x10
         const val TEMP_18C = 0x12
@@ -421,13 +421,13 @@ object BCMProtocol {
         const val TEMP_24C = 0x18
         const val TEMP_26C = 0x1A
         const val TEMP_28C = 0x1C
-        
+
         // Zone selections
         const val ZONE_DRIVER = 0x01
         const val ZONE_PASSENGER = 0x02
         const val ZONE_REAR = 0x04
         const val ZONE_ALL = 0x07
-        
+
         fun acOnFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_ON.toByte())
         fun acOffFrame() = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), AC_OFF.toByte())
         fun recirculationFrame(enable: Boolean) = byteArrayOf(0x2E.toByte(), 0xFF.toByte(), 0x11.toByte(), if (enable) RECIRCULATION.toByte() else AC_OFF.toByte())
@@ -446,12 +446,12 @@ object BCMProtocol {
     object TPMS {
         const val ROUTINE_RESET = 0x0302
         const val ROUTINE_LEARN = 0x0307
-        
+
         // Tire Pressure Thresholds (kPa)
-        const val PRESSURE_LOW = 200  // ~29 psi
-        const val PRESSURE_NORMAL = 230  // ~33 psi
-        const val PRESSURE_HIGH = 250  // ~36 psi
-        
+        const val PRESSURE_LOW = 200 // ~29 psi
+        const val PRESSURE_NORMAL = 230 // ~33 psi
+        const val PRESSURE_HIGH = 250 // ~36 psi
+
         fun buildTPMSResetFrame() = "310302"
         fun buildTPMSLearnFrame() = "310307"
     }
@@ -459,13 +459,13 @@ object BCMProtocol {
     object CANParser {
         fun parseHVACMessage(canId: String, data: ByteArray): HVACStatus? {
             if (data.size < 8) return null
-            
+
             return when (canId.uppercase()) {
                 "7E5", "7ED", "420", "422" -> parseHVACStatusByte(data)
                 else -> null
             }
         }
-        
+
         private fun parseHVACStatusByte(data: ByteArray): HVACStatus {
             val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
             val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
@@ -474,7 +474,7 @@ object BCMProtocol {
             val byte4 = data.getOrNull(4)?.toInt()?.and(0xFF) ?: 0
             val byte5 = data.getOrNull(5)?.toInt()?.and(0xFF) ?: 0
             val byte6 = data.getOrNull(6)?.toInt()?.and(0xFF) ?: 0
-            
+
             return HVACStatus(
                 acCompressorActive = (byte0 and 0x01) != 0,
                 fanSpeed = (byte1 and 0x0F),
@@ -493,16 +493,16 @@ object BCMProtocol {
                 timestamp = System.currentTimeMillis()
             )
         }
-        
+
         fun parseTPMSMessage(canId: String, data: ByteArray): TPMSStatus? {
             if (data.size < 6) return null
-            
+
             return when (canId.uppercase()) {
                 "420", "422", "428" -> parseTPMSStatusByte(data)
                 else -> null
             }
         }
-        
+
         private fun parseTPMSStatusByte(data: ByteArray): TPMSStatus {
             val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
             val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
@@ -540,13 +540,13 @@ object BCMProtocol {
 
         fun parseTCMMessage(canId: String, data: ByteArray): TCMStatus? {
             if (data.size < 8) return null
-            
+
             return when (canId.uppercase()) {
                 "7E1", "7E9", "424", "426" -> parseTCMStatusByte(data)
                 else -> null
             }
         }
-        
+
         private fun parseTCMStatusByte(data: ByteArray): TCMStatus {
             val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
             val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
@@ -555,7 +555,7 @@ object BCMProtocol {
             val byte4 = data.getOrNull(4)?.toInt()?.and(0xFF) ?: 0
             val byte5 = data.getOrNull(5)?.toInt()?.and(0xFF) ?: 0
             val byte6 = data.getOrNull(6)?.toInt()?.and(0xFF) ?: 0
-            
+
             val gear = when (byte0 and 0x0F) {
                 0x01 -> 1
                 0x02 -> 2
@@ -568,7 +568,7 @@ object BCMProtocol {
 
             val oilTemp = if ((byte1 and 0xFF) in 1..200) (byte1 and 0xFF) - 40 else 0
             val pressure = (byte2 and 0xFF) * 4
-            
+
             return TCMStatus(
                 currentGear = gear,
                 oilTempCelsius = oilTemp,
@@ -585,13 +585,13 @@ object BCMProtocol {
 
         fun parseECMMessage(canId: String, data: ByteArray): ECMStatus? {
             if (data.size < 8) return null
-            
+
             return when (canId.uppercase()) {
                 "7E0", "7E8", "430", "432" -> parseECMStatusByte(data)
                 else -> null
             }
         }
-        
+
         private fun parseECMStatusByte(data: ByteArray): ECMStatus {
             val byte0 = data.getOrNull(0)?.toInt()?.and(0xFF) ?: 0
             val byte1 = data.getOrNull(1)?.toInt()?.and(0xFF) ?: 0
@@ -606,7 +606,7 @@ object BCMProtocol {
             val coolant = if (byte4 in 1..200) byte4 - 40 else 0
             val throttle = (byte5 * 100.0 / 255.0)
             val load = ((byte6.toInt() and 0xFF) * 100.0 / 255.0)
-            
+
             return ECMStatus(
                 rpm = rpm,
                 speedKmh = speed,
@@ -624,7 +624,7 @@ object BCMProtocol {
             )
         }
     }
-    
+
     data class HVACStatus(
         val acCompressorActive: Boolean = false,
         val fanSpeed: Int = 0,
@@ -644,11 +644,11 @@ object BCMProtocol {
     ) {
         val outsideTempCelsius: Int
             get() = if (outsideTempRaw in 1..200) outsideTempRaw - 50 else 0
-            
+
         val cabinTempCelsius: Int
             get() = if (cabinTempRaw in 1..200) cabinTempRaw - 50 else 0
     }
-    
+
     data class TPMSStatus(
         val frontLeftPSI: Double = 0.0,
         val frontRightPSI: Double = 0.0,
@@ -697,24 +697,24 @@ object BCMProtocol {
         // IPC CAN IDs
         const val IPC_TX = "7C3"
         const val IPC_RX = "7CB"
-        
+
         // IPC DIDs
         const val CLUSTER_CONFIG = 0xC100
         const val ODOMETER = 0xC200
         const val SERVICE_REMINDER = 0xC300
         const val UNITS_CONFIG = 0xC400
-        
+
         // Service Interval DIDs
         const val OIL_LIFE_DISTANCE = 0xD001
         const val OIL_LIFE_TIME = 0xD002
         const val INSPECTION_DISTANCE = 0xD003
         const val INSPECTION_TIME = 0xD004
-        
+
         // Unit Settings
         const val UNITS_METRIC = 0x01
         const val UNITS_IMPERIAL = 0x02
         const val UNITS_US = 0x03
-        
+
         fun buildOdometerRead() = "22" + String.format("%02X%02X", (ODOMETER shr 8) and 0xFF, ODOMETER and 0xFF)
         fun buildUnitsRead() = "22" + String.format("%02X%02X", (UNITS_CONFIG shr 8) and 0xFF, UNITS_CONFIG and 0xFF)
         fun buildUnitsWrite(units: Int) = "2E" + String.format("%02X%02X%02X", (UNITS_CONFIG shr 8) and 0xFF, UNITS_CONFIG and 0xFF, units)
@@ -725,23 +725,23 @@ object BCMProtocol {
         const val MODEL_OPEL_ASTRA_J = "ASTRA_J"
         const val MODEL_OPEL_INSIGNIA = "INSIGNIA"
         const val MODEL_VAUXHALL_ASTRA = "VAUXHALL_ASTRA"
-        
+
         // VIN Structure
         const val VIN_OFFSET_COUNTRY = 1
         const val VIN_OFFSET_MANUFACTURER = 2
         const val VIN_OFFSET_MODEL_YEAR = 9
         const val VIN_OFFSET_PLANT = 10
-        
+
         // Country Codes
         const val COUNTRY_USA = "1"
         const val COUNTRY_CANADA = "2"
         const val COUNTRY_GERMANY = "W"
         const val COUNTRY_UK = "V"
-        
+
         // Manufacturer Codes
-        const val MFR_OPEL = "A"  // Opel/Vauxhall
-        const val MFR_GM = "G"    // General Motors
-        
+        const val MFR_OPEL = "A" // Opel/Vauxhall
+        const val MFR_GM = "G" // General Motors
+
         fun parseVIN(vin: String): Map<String, String> {
             if (vin.length != 17) return emptyMap()
             return mapOf(
@@ -752,7 +752,7 @@ object BCMProtocol {
                 "serial" to vin.substring(11, 17)
             )
         }
-        
+
         fun getYearCode(year: Char): Int {
             return when (year) {
                 'A' -> 2010
@@ -779,7 +779,7 @@ object BCMProtocol {
     object OilReset {
         const val ROUTINE_ID = 0x0303
         const val SERVICE_TYPE = 0xD800
-        
+
         fun buildOilResetFrame() = "310303"
         fun buildInspectionResetFrame() = "310304"
     }
@@ -787,7 +787,7 @@ object BCMProtocol {
     // Readiness Monitor Status
     object Readiness {
         const val PID = 0x01
-        
+
         const val MISFIRE = 0
         const val FUEL_SYSTEM = 1
         const val COMPONENTS = 2
@@ -797,14 +797,14 @@ object BCMProtocol {
         const val O2_HEATER = 6
         const val O2_SENSOR = 7
         const val EGR = 8
-        
+
         val MONITOR_NAMES = listOf(
             "Misfire", "Fuel System", "Components", "Ignition",
             "Emissions", "Evaporative System", "O2 Heater", "O2 Sensor", "EGR/VVT System"
         )
-        
+
         fun buildReadinessRequest() = "0101"
-        
+
         fun parseReadiness(data: Int): List<Boolean> {
             return (0..8).map { shift -> (data shr shift) and 1 == 0 }
         }
@@ -870,7 +870,7 @@ data class BCMCommand(
     val type: BCMCommandType
 )
 
-    object BCMCommandMapper {
+object BCMCommandMapper {
 
     @Suppress("UNUSED_PARAMETER")
     fun mapToCommand(action: String, value: Any? = null): BCMCommand? {
@@ -881,7 +881,7 @@ data class BCMCommand(
             "UNLOCK_DRIVER" -> BCMCommand(BCMProtocol.DIDs.DOOR_LOCK_STATUS, String.format("%02X", BCMProtocol.DoorLock.UNLOCK_DRIVER), BCMCommandType.UDS_WRITE)
             "UNLOCK_TAILGATE" -> BCMCommand(BCMProtocol.DIDs.DOOR_LOCK_STATUS, String.format("%02X", BCMProtocol.DoorLock.UNLOCK_TAILGATE), BCMCommandType.UDS_WRITE)
             "UNLOCK_FUEL" -> BCMCommand(BCMProtocol.DIDs.DOOR_LOCK_STATUS, String.format("%02X", BCMProtocol.DoorLock.UNLOCK_FUEL), BCMCommandType.UDS_WRITE)
-            
+
             // Spiegel
             "MIRROR_FOLD" -> BCMCommand(BCMProtocol.DIDs.MIRROR_STATUS, String.format("%02X", BCMProtocol.Mirror.FOLD), BCMCommandType.UDS_WRITE)
             "MIRROR_UNFOLD" -> BCMCommand(BCMProtocol.DIDs.MIRROR_STATUS, String.format("%02X", BCMProtocol.Mirror.UNFOLD), BCMCommandType.UDS_WRITE)
@@ -891,7 +891,7 @@ data class BCMCommand(
             "MIRROR_MOVE_DOWN" -> BCMCommand(BCMProtocol.DIDs.MIRROR_STATUS, String.format("%02X%02X", BCMProtocol.Mirror.BOTH_MIRRORS, BCMProtocol.Mirror.MOVE_DOWN), BCMCommandType.UDS_WRITE)
             "MIRROR_MOVE_LEFT" -> BCMCommand(BCMProtocol.DIDs.MIRROR_STATUS, String.format("%02X%02X", BCMProtocol.Mirror.BOTH_MIRRORS, BCMProtocol.Mirror.MOVE_LEFT), BCMCommandType.UDS_WRITE)
             "MIRROR_MOVE_RIGHT" -> BCMCommand(BCMProtocol.DIDs.MIRROR_STATUS, String.format("%02X%02X", BCMProtocol.Mirror.BOTH_MIRRORS, BCMProtocol.Mirror.MOVE_RIGHT), BCMCommandType.UDS_WRITE)
-            
+
             // Heizung
             "REAR_HEATING_ON" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, String.format("%02X", BCMProtocol.Heating.REAR_ON), BCMCommandType.UDS_WRITE)
             "REAR_HEATING_OFF" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, String.format("%02X", BCMProtocol.Heating.REAR_OFF), BCMCommandType.UDS_WRITE)
@@ -901,7 +901,7 @@ data class BCMCommand(
             "STEERING_HEATING_2" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, String.format("%02X", BCMProtocol.Heating.STEERING_LEVEL_2), BCMCommandType.UDS_WRITE)
             "STEERING_HEATING_3" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, String.format("%02X", BCMProtocol.Heating.STEERING_LEVEL_3), BCMCommandType.UDS_WRITE)
             "STEERING_HEATING_OFF" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, String.format("%02X", BCMProtocol.Heating.STEERING_OFF), BCMCommandType.UDS_WRITE)
-            
+
             // Scheibenwischer
             "WIPER_OFF" -> BCMCommand(BCMProtocol.DIDs.WIPER_STATUS, String.format("%02X", BCMProtocol.Wiper.OFF), BCMCommandType.UDS_WRITE)
             "WIPER_LOW" -> BCMCommand(BCMProtocol.DIDs.WIPER_STATUS, String.format("%02X", BCMProtocol.Wiper.LOW), BCMCommandType.UDS_WRITE)
@@ -909,7 +909,7 @@ data class BCMCommand(
             "WIPER_AUTO" -> BCMCommand(BCMProtocol.DIDs.WIPER_STATUS, String.format("%02X", BCMProtocol.Wiper.AUTO), BCMCommandType.UDS_WRITE)
             "WIPER_REAR_ON" -> BCMCommand(BCMProtocol.DIDs.WIPER_STATUS, String.format("%02X", BCMProtocol.Wiper.REAR_ON), BCMCommandType.UDS_WRITE)
             "WIPER_REAR_OFF" -> BCMCommand(BCMProtocol.DIDs.WIPER_STATUS, String.format("%02X", BCMProtocol.Wiper.REAR_OFF), BCMCommandType.UDS_WRITE)
-            
+
             // Beleuchtung
             "AMBIENT_LIGHT_INCREASE" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, "0064", BCMCommandType.UDS_WRITE)
             "AMBIENT_LIGHT_DECREASE" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, "0000", BCMCommandType.UDS_WRITE)
@@ -926,17 +926,17 @@ data class BCMCommand(
             "DRL_OFF" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, String.format("%02X", BCMProtocol.Lighting.DRL_OFF), BCMCommandType.UDS_WRITE)
             "FOG_LIGHTS_ON" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, String.format("%02X", BCMProtocol.Lighting.FOG_LIGHTS_ON), BCMCommandType.UDS_WRITE)
             "FOG_LIGHTS_OFF" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, String.format("%02X", BCMProtocol.Lighting.FOG_LIGHTS_OFF), BCMCommandType.UDS_WRITE)
-            
+
             // Horn
             "HORN" -> BCMCommand(BCMProtocol.DIDs.HORN_STATUS, "01", BCMCommandType.UDS_WRITE)
             "HORN_STOP" -> BCMCommand(BCMProtocol.DIDs.HORN_STATUS, "00", BCMCommandType.UDS_WRITE)
-            
+
             // Sunroof
             "SUNROOF_OPEN" -> BCMCommand(BCMProtocol.DIDs.SUNROOF_STATUS, "64", BCMCommandType.UDS_WRITE)
             "SUNROOF_CLOSE" -> BCMCommand(BCMProtocol.DIDs.SUNROOF_STATUS, "00", BCMCommandType.UDS_WRITE)
             "SUNROOF_STOP" -> BCMCommand(BCMProtocol.DIDs.SUNROOF_STATUS, "FF", BCMCommandType.UDS_WRITE)
             "SUNROOF_VENT" -> BCMCommand(BCMProtocol.DIDs.SUNROOF_STATUS, "32", BCMCommandType.UDS_WRITE)
-            
+
             // Sitzheizung
             "SEAT_DRIVER_HEAT_1" -> BCMCommand(BCMProtocol.DIDs.SEAT_HEATING_STATUS, String.format("%02X", BCMProtocol.SeatHeating.DRIVER_LEVEL_1), BCMCommandType.UDS_WRITE)
             "SEAT_DRIVER_HEAT_2" -> BCMCommand(BCMProtocol.DIDs.SEAT_HEATING_STATUS, String.format("%02X", BCMProtocol.SeatHeating.DRIVER_LEVEL_2), BCMCommandType.UDS_WRITE)
@@ -946,13 +946,13 @@ data class BCMCommand(
             "SEAT_PASSENGER_HEAT_2" -> BCMCommand(BCMProtocol.DIDs.SEAT_HEATING_STATUS, String.format("%02X", BCMProtocol.SeatHeating.PASSENGER_LEVEL_2), BCMCommandType.UDS_WRITE)
             "SEAT_PASSENGER_HEAT_3" -> BCMCommand(BCMProtocol.DIDs.SEAT_HEATING_STATUS, String.format("%02X", BCMProtocol.SeatHeating.PASSENGER_LEVEL_3), BCMCommandType.UDS_WRITE)
             "SEAT_PASSENGER_OFF" -> BCMCommand(BCMProtocol.DIDs.SEAT_HEATING_STATUS, String.format("%02X", BCMProtocol.SeatHeating.PASSENGER_OFF), BCMCommandType.UDS_WRITE)
-            
+
             // Status lesen
             "READ_STATUS" -> BCMCommand(BCMProtocol.DIDs.DOOR_LOCK_STATUS, "", BCMCommandType.UDS_READ)
             "READ_WINDOW_STATUS" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "", BCMCommandType.UDS_READ)
             "READ_LIGHTING_STATUS" -> BCMCommand(BCMProtocol.DIDs.LIGHTING_STATUS, "", BCMCommandType.UDS_READ)
             "READ_HEATING_STATUS" -> BCMCommand(BCMProtocol.DIDs.HEATING_STATUS, "", BCMCommandType.UDS_READ)
-            
+
             // Fenster (Format: 2E FF 02 [windowIdx] [direction])
             "WINDOW_DRIVER_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0100", BCMCommandType.UDS_WRITE)
             "WINDOW_DRIVER_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "0164", BCMCommandType.UDS_WRITE)
@@ -968,7 +968,7 @@ data class BCMCommand(
             "WINDOW_REAR_RIGHT_STOP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "04FF", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_UP" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "00000000", BCMCommandType.UDS_WRITE)
             "WINDOW_ALL_DOWN" -> BCMCommand(BCMProtocol.DIDs.WINDOW_STATUS, "64646464", BCMCommandType.UDS_WRITE)
-            
+
             // Klima
             "CLIMATE_AC_ON" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "01", BCMCommandType.UDS_WRITE)
             "CLIMATE_AC_OFF" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "00", BCMCommandType.UDS_WRITE)
@@ -976,7 +976,7 @@ data class BCMCommand(
             "CLIMATE_DEFROST_REAR" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "08", BCMCommandType.UDS_WRITE)
             "CLIMATE_DEFROST_ALL" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "1C", BCMCommandType.UDS_WRITE)
             "CLIMATE_AUTO" -> BCMCommand(BCMProtocol.DIDs.CLIMATE_STATUS, "02", BCMCommandType.UDS_WRITE)
-            
+
             // TPMS — UDS Routine Control (0x31)
             "TPMS_RESET" -> BCMCommand(0, "310302", BCMCommandType.UDS_ROUTINE)
 
@@ -989,7 +989,7 @@ data class BCMCommand(
             "DTC_READ_PENDING" -> BCMCommand(0, "07", BCMCommandType.OBD_MODE)
             "DTC_CLEAR" -> BCMCommand(0, "04", BCMCommandType.OBD_MODE)
             "DTC_READ_PERMANENT" -> BCMCommand(0, "0A", BCMCommandType.OBD_MODE)
-            
+
             else -> null
         }
     }
