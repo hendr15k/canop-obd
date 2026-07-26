@@ -3686,7 +3686,6 @@
     <ID>MatchingDeclarationName:DashboardCustomizationDialog.kt$GaugeOption</ID>
     <ID>MatchingDeclarationName:EGTMonitorScreen.kt$EGTData</ID>
     <ID>MatchingDeclarationName:ExtendedTurboMonitorDialog.kt$ExtendedTurboData</ID>
-    <ID>MatchingDeclarationName:NavRoutes.kt$NavRoute</ID>
     <ID>MatchingDeclarationName:OverboostScreen.kt$OverboostHistory</ID>
     <ID>MatchingDeclarationName:QuickActionsDialog.kt$QuickAction</ID>
     <ID>MatchingDeclarationName:ShiftRecommendation.kt$ShiftRecommendationEngine</ID>
@@ -4730,7 +4729,6 @@
     <ID>UnusedPrivateProperty:ChainTensionerAnalyzer.kt$ChainTensionerAnalyzer$private val calibration: AstraJ14TurboCalibration = AstraJ14TurboCalibration.INSTANCE</ID>
     <ID>UnusedPrivateProperty:CoolantSystemHealth.kt$CoolantSystemHealth.Companion$// Aufwaerm-Raten (°C pro Minute) private const val WARMUP_RATE_NORMAL_MIN = 5.0</ID>
     <ID>UnusedPrivateProperty:CoolantSystemHealth.kt$CoolantSystemHealth.Companion$private const val WARMUP_RATE_NORMAL_MAX = 20.0</ID>
-    <ID>UnusedPrivateProperty:DashboardViewModel.kt$DashboardViewModel$private val _dtcProcessingJob = MutableStateFlow&lt;Job?&gt;(null)</ID>
     <ID>UnusedPrivateProperty:DashboardViewModel.kt$DashboardViewModel$private val driveStyleAnalyzer = DriveStyleAnalyzer()</ID>
     <ID>UnusedPrivateProperty:DashboardViewModel.kt$DashboardViewModel$private val drivingEfficiencyScorer = DrivingEfficiencyScorer()</ID>
     <ID>UnusedPrivateProperty:DashboardViewModel.kt$DashboardViewModel$private val fuelSystemAnalyzer = FuelSystemAnalyzer()</ID>

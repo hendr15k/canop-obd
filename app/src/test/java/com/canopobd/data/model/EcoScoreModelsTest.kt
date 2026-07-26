@@ -111,7 +111,7 @@ class EcoScoreModelsTest {
 
     @Test
     fun `RangeEstimation constants are correctly defined`() {
-        assertEquals(52.0, RangeEstimation.ASTRA_J_TANK_LITERS, 0.001)
+        assertEquals(56.0, RangeEstimation.ASTRA_J_TANK_LITERS, 0.001)
         assertEquals(5.0, RangeEstimation.RESERVE_LITERS, 0.001)
     }
 

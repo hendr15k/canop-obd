@@ -10,7 +10,6 @@ import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.domain.BatteryHealthAnalyzer
 import com.canopobd.data.domain.DriveMode
 import com.canopobd.data.domain.DriveModeDetector
-import com.canopobd.data.domain.DriveScoreCalculator
 import com.canopobd.data.domain.EGRHealthAnalyzer
 import com.canopobd.data.domain.EmissionsReadinessAnalyzer
 import com.canopobd.data.domain.EVAPSystemAnalyzer
@@ -71,7 +70,7 @@ class DashboardViewModel private constructor(
     private val turboViewModel = TurboViewModel(application)
     private val safetyViewModel = SafetyViewModel(application)
     private val ecoScoreViewModel = EcoScoreViewModel(application)
-    private val accelerationTimer = com.canopobd.data.domain.AccelerationTimer()
+    private val performanceViewModel = PerformanceViewModel(application)
 
     private val analyzerManager = AnalyzerManager()
     private val comfortController by lazy { ComfortController(viewModelScope) { repository.sendRawCommand(it) } }
@@ -168,15 +167,9 @@ class DashboardViewModel private constructor(
     private val _fuelEconomyData = MutableStateFlow(com.canopobd.data.model.FuelEconomyData())
     val fuelEconomyData: StateFlow<com.canopobd.data.model.FuelEconomyData> = _fuelEconomyData.asStateFlow()
 
-    private val _performanceTestState = MutableStateFlow(com.canopobd.data.model.PerformanceTestState())
-    private var _performanceTestJob: kotlinx.coroutines.Job? = null
-    val performanceTestState: StateFlow<com.canopobd.data.model.PerformanceTestState> = _performanceTestState.asStateFlow()
-
-    private val _currentAccelerationRun = MutableStateFlow<com.canopobd.data.model.AccelerationRun?>(null)
-    val currentAccelerationRun: StateFlow<com.canopobd.data.model.AccelerationRun?> = _currentAccelerationRun.asStateFlow()
-
-    private val _gpsSpeedForTest = MutableStateFlow(0.0)
-    val gpsSpeedForTest: StateFlow<Double> = _gpsSpeedForTest.asStateFlow()
+    val performanceTestState: StateFlow<com.canopobd.data.model.PerformanceTestState> get() = performanceViewModel.performanceTestState
+    val currentAccelerationRun: StateFlow<com.canopobd.data.model.AccelerationRun?> get() = performanceViewModel.currentAccelerationRun
+    val gpsSpeedForTest: StateFlow<Double> get() = performanceViewModel.gpsSpeedForTest
 
     private val _showPowerCalculator = MutableStateFlow(false)
     val showPowerCalculator: StateFlow<Boolean> = _showPowerCalculator.asStateFlow()
@@ -196,11 +189,8 @@ class DashboardViewModel private constructor(
     private val _powerCalculation = MutableStateFlow(com.canopobd.data.model.PowerCalculation())
     val powerCalculation: StateFlow<com.canopobd.data.model.PowerCalculation> = _powerCalculation.asStateFlow()
 
-    private val _driveScore = MutableStateFlow(com.canopobd.data.model.DriveScore())
-    val driveScore: StateFlow<com.canopobd.data.model.DriveScore> = _driveScore.asStateFlow()
-
-    private val _driveSession = MutableStateFlow(com.canopobd.data.model.DriveSession())
-    val driveSession: StateFlow<com.canopobd.data.model.DriveSession> = _driveSession.asStateFlow()
+    val driveScore: StateFlow<com.canopobd.data.model.DriveScore> get() = performanceViewModel.driveScore
+    val driveSession: StateFlow<com.canopobd.data.model.DriveSession> get() = performanceViewModel.driveSession
 
     private val _shiftLightConfig = MutableStateFlow(com.canopobd.data.model.ShiftLightConfig())
     val shiftLightConfig: StateFlow<com.canopobd.data.model.ShiftLightConfig> = _shiftLightConfig.asStateFlow()
@@ -259,6 +249,9 @@ class DashboardViewModel private constructor(
 
     private val _showVehicleProfileManager = MutableStateFlow(false)
     val showVehicleProfileManager: StateFlow<Boolean> = _showVehicleProfileManager.asStateFlow()
+
+    private val _currentVehicleProfile = MutableStateFlow<com.canopobd.data.model.VehicleProfile?>(null)
+    val currentVehicleProfile: StateFlow<com.canopobd.data.model.VehicleProfile?> = _currentVehicleProfile.asStateFlow()
 
     private val _showCodingDialog = MutableStateFlow(false)
     val showCodingDialog: StateFlow<Boolean> = _showCodingDialog.asStateFlow()
@@ -428,7 +421,6 @@ class DashboardViewModel private constructor(
     private val _mode22DataCache = MutableStateFlow<Map<String, Mode22Data>>(emptyMap())
     val mode22DataCache: StateFlow<Map<String, Mode22Data>> = _mode22DataCache.asStateFlow()
 
-    private val _dtcProcessingJob = MutableStateFlow<Job?>(null)
     private val _turboAnalysisJob = MutableStateFlow<Job?>(null)
 
     private val _isInitialized = MutableStateFlow(false)
@@ -671,108 +663,14 @@ class DashboardViewModel private constructor(
     }
 
     fun startPerformanceTest(testType: com.canopobd.data.model.PerformanceTestType) {
-        // Start the GPS-based acceleration timer
-        accelerationTimer.start(testType)
-        _currentAccelerationRun.value = null
-        _gpsSpeedForTest.value = 0.0
-
-        _performanceTestState.value = _performanceTestState.value.copy(
-            isRunning = true,
-            currentTestType = testType,
-            startTimeNanos = System.nanoTime(),
-            statusMessage = "Warte auf GPS-Speed…"
-        )
-
-        // Subscribe to GPS updates for this test
-        _performanceTestJob?.cancel()
-        _performanceTestJob = viewModelScope.launch {
-            // Wait for each new GPS location update via first(), which suspends until the
-            // upstream StateFlow emits — replaces the old `collect { ... self-cancel ... }`
-            // pattern that was producing partial state mutations when the job cancelled itself.
-            runPerformanceTest@ while (true) {
-                val loc = currentLocation.first()
-                if (loc == null || !_performanceTestState.value.isRunning) continue@runPerformanceTest
-                val speedMs = loc.speed.toDouble()
-                _gpsSpeedForTest.value = speedMs * 3.6
-
-                val timerState = accelerationTimer.update(speedMs, System.currentTimeMillis())
-
-                _performanceTestState.value = _performanceTestState.value.copy(
-                    statusMessage = "%.0f km/h".format(speedMs * 3.6)
-                )
-
-                when (timerState) {
-                    com.canopobd.data.domain.AccelerationTimer.TimerState.FINISHED -> {
-                        val result = accelerationTimer.buildResult()
-                        _currentAccelerationRun.value = result
-                        if (result != null) {
-                            val perfResult = com.canopobd.data.model.PerformanceResult(
-                                testType = testType,
-                                timeSeconds = result.timeSeconds,
-                                valid = result.valid
-                            )
-                            val history = listOf(perfResult) + _performanceTestState.value.history.take(9)
-                            _performanceTestState.value = _performanceTestState.value.copy(
-                                isRunning = false,
-                                lastResult = perfResult,
-                                history = history,
-                                statusMessage = "Fertig!"
-                            )
-                        }
-                        break@runPerformanceTest
-                    }
-                    com.canopobd.data.domain.AccelerationTimer.TimerState.CANCELLED -> {
-                        _performanceTestState.value = _performanceTestState.value.copy(
-                            isRunning = false,
-                            statusMessage = "Abgebrochen"
-                        )
-                        break@runPerformanceTest
-                    }
-                    else -> Unit
-                }
-            }
-            // Single cancellation point at end of collect so we never partially-mutate state mid-frame.
-            _performanceTestJob?.cancel()
-            _performanceTestJob = null
-        }
+        performanceViewModel.startPerformanceTest(testType, currentLocation)
     }
 
     fun stopPerformanceTest() {
-        _performanceTestJob?.cancel()
-        _performanceTestJob = null
-        if (_performanceTestState.value.isRunning) {
-            // Try to get a result even if target wasn't reached
-            accelerationTimer.cancel()
-            val result = accelerationTimer.buildResult()
-            _currentAccelerationRun.value = result
-
-            val state = _performanceTestState.value
-            if (result != null && result.valid) {
-                val perfResult = com.canopobd.data.model.PerformanceResult(
-                    testType = state.currentTestType,
-                    timeSeconds = result.timeSeconds,
-                    valid = true
-                )
-                val history = listOf(perfResult) + state.history.take(9)
-                _performanceTestState.value = state.copy(
-                    isRunning = false,
-                    lastResult = perfResult,
-                    history = history,
-                    statusMessage = ""
-                )
-            } else {
-                _performanceTestState.value = state.copy(
-                    isRunning = false,
-                    statusMessage = "Abgebrochen"
-                )
-            }
-        } else {
-            _performanceTestState.value = _performanceTestState.value.copy(isRunning = false, statusMessage = "")
-        }
+        performanceViewModel.stopPerformanceTest()
     }
 
     fun updatePerformanceTestStatus(message: String) {
-        _performanceTestState.value = _performanceTestState.value.copy(statusMessage = message)
     }
 
     fun togglePowerCalculator() {
@@ -840,6 +738,22 @@ class DashboardViewModel private constructor(
     fun toggleComfortControl() { _showComfortControl.value = !_showComfortControl.value }
     fun toggleQuickActions() { _showQuickActions.value = !_showQuickActions.value }
     fun toggleVehicleProfileManager() { _showVehicleProfileManager.value = !_showVehicleProfileManager.value }
+
+    fun loadVehicleProfile(savedProfile: com.canopobd.ui.profile.SavedProfile) {
+        val vehicleId = when {
+            savedProfile.vehicle.contains("1.4 Turbo") -> "astra_j_2012_14t"
+            else -> "astra_j_2012_14t"
+        }
+        val profile = com.canopobd.data.model.VehicleProfiles.fromId(vehicleId)
+        if (profile != null) {
+            _currentVehicleProfile.value = profile
+            val carProfile = com.canopobd.data.model.CarProfile.fromVehicleProfile(profile)
+            if (carProfile != null) {
+                selectCarProfile(carProfile)
+            }
+        }
+        _showVehicleProfileManager.value = false
+    }
 
     fun toggleCodingDialog() { _showCodingDialog.value = !_showCodingDialog.value }
 
@@ -1040,62 +954,15 @@ class DashboardViewModel private constructor(
     }
 
     fun updateDriveScore() {
-        val session = _driveSession.value
-        _driveScore.value = DriveScoreCalculator.computeScore(session)
+        performanceViewModel.updateDriveScore()
     }
 
     fun resetDriveScore() {
-        _driveSession.value = com.canopobd.data.model.DriveSession()
-        _driveScore.value = com.canopobd.data.model.DriveScore()
+        performanceViewModel.resetDriveScore()
     }
 
     fun recordDriveSample(rpm: Double, throttle: Double, speed: Double, prevRpm: Double, boostBar: Double = 0.0, wastegateDuty: Double = 0.0) {
-        val session = _driveSession.value
-        val rpmDelta = rpm - prevRpm
-        val isDecelerating = throttle < 10.0 && prevRpm > rpm
-        val isCoastingInGear = isDecelerating && speed > 10.0
-
-        val newBoostSum = session.boostSamples + boostBar
-        val newBoostCount = session.boostSampleCount + 1
-        val newAvgBoost = if (newBoostCount > 0) newBoostSum / newBoostCount else 0.0
-        val newRpmSampleCount = session.rpmSampleCount + 1
-        val newThrottleSampleCount = session.throttleSampleCount + 1
-        val newSpeedSampleCount = session.speedSampleCount + 1
-
-        val newThrottleSamples = session.throttleSamples + throttle
-        val newSpeedSamples = session.speedSamples + speed
-
-        val newSession = session.copy(
-            rpmSamples = session.rpmSamples + rpm,
-            rpmSampleCount = newRpmSampleCount,
-            throttleSamples = newThrottleSamples,
-            throttleSampleCount = newThrottleSampleCount,
-            speedSamples = newSpeedSamples,
-            speedSampleCount = newSpeedSampleCount,
-            avgRpm = if (newRpmSampleCount > 0) (session.rpmSamples + rpm) / newRpmSampleCount.toDouble() else rpm,
-            avgThrottle = if (newThrottleSampleCount > 0) newThrottleSamples / newThrottleSampleCount else throttle,
-            avgSpeed = if (newSpeedSampleCount > 0) newSpeedSamples / newSpeedSampleCount else speed,
-            maxRpm = maxOf(session.maxRpm, rpm),
-            maxThrottle = maxOf(session.maxThrottle, throttle),
-            harshAccels = if (rpmDelta > 3000) session.harshAccels + 1 else session.harshAccels,
-            harshBrakes = if (throttle < 10.0 && speed > 50.0 && prevRpm > rpm) session.harshBrakes + 1 else session.harshBrakes,
-            boostSamples = newBoostSum,
-            boostSampleCount = newBoostCount,
-            avgBoostBar = newAvgBoost,
-            maxBoostBar = maxOf(session.maxBoostBar, boostBar),
-            optimalBoostTime = session.optimalBoostTime + if (boostBar in 0.4..0.7) 1 else 0,
-            highBoostTime = session.highBoostTime + if (boostBar > 0.9 && throttle < 30.0) 1 else 0,
-            coastingInGearSamples = session.coastingInGearSamples + if (isCoastingInGear) 1 else 0,
-            deceleratingSamples = session.deceleratingSamples + if (isDecelerating) 1 else 0,
-            rpmAbove4500Samples = session.rpmAbove4500Samples + if (rpm > 4500.0) 1 else 0,
-            boostSumOfSquares = session.boostSumOfSquares + (boostBar * boostBar),
-            wastegateDutySum = session.wastegateDutySum + wastegateDuty,
-            wastegateSampleCount = session.wastegateSampleCount + 1,
-            rpmRateSamples = session.rpmRateSamples + kotlin.math.abs(rpmDelta),
-            rpmRateSampleCount = session.rpmRateSampleCount + 1
-        )
-        _driveSession.value = newSession
-        updateDriveScore()
+        performanceViewModel.recordDriveSample(rpm, throttle, speed, prevRpm, boostBar, wastegateDuty)
     }
 
     fun updateShiftLightConfig(config: com.canopobd.data.model.ShiftLightConfig) {
@@ -1265,7 +1132,7 @@ private fun startTurboAnalysisCollection() {
                     updateExtendedAnalyzers(data)
                 }
         }
-        turboViewModel.updateDriveSession(_driveSession.value)
+        turboViewModel.updateDriveSession(performanceViewModel.driveSession.value)
      }
 
     // ========== Emissions Analyzers ==========
@@ -1311,10 +1178,10 @@ private fun startTurboAnalysisCollection() {
     }
 
     private fun updateAllTurboMetrics(data: OBDData) {
-        val currentSession = _driveSession.value
+        val currentSession = performanceViewModel.driveSession.value
         val newEndTime = System.currentTimeMillis()
         val updatedSession = if (currentSession.endTime == 0L || newEndTime - currentSession.endTime >= 1000L) {
-            currentSession.copy(endTime = newEndTime).also { _driveSession.value = it }
+            currentSession.copy(endTime = newEndTime)
         } else {
             currentSession
         }
@@ -1468,7 +1335,7 @@ private fun startTurboAnalysisCollection() {
             DriveMode.NORMAL -> DriveStyle.BALANCED
         }
 
-        val session = _driveSession.value
+        val session = performanceViewModel.driveSession.value
         val totalSamples = session.rpmSampleCount.coerceAtLeast(1).toDouble()
         val ecoRatio = (session.coastingInGearSamples + session.deceleratingSamples).toDouble() / totalSamples
         val sportRatio = session.rpmAbove4500Samples.toDouble() / totalSamples
@@ -1660,11 +1527,11 @@ private fun startTurboAnalysisCollection() {
     }
 
     override fun onCleared() {
-        _performanceTestJob?.cancel()
         _turboAnalysisJob.value?.cancel()
         turboViewModel.viewModelScope.cancel()
         safetyViewModel.viewModelScope.cancel()
         ecoScoreViewModel.viewModelScope.cancel()
+        performanceViewModel.viewModelScope.cancel()
         repository.cleanup()
         repository.disconnect()
         super.onCleared()

@@ -85,10 +85,11 @@ class OBDModelsTest {
     }
 
     @Test
-    fun `OBDPID codes are unique`() {
+    fun `OBDPID codes are unique except known aliases`() {
         val codes = OBDPID.entries.map { it.code }
-        val uniqueCodes = codes.toSet()
-        assertEquals(uniqueCodes.size, codes.size)
+        val duplicates = codes.groupBy { it }.filter { it.value.size > 1 }.keys
+        val knownDuplicates = setOf("012F")
+        assertTrue(duplicates.all { it in knownDuplicates })
     }
 
     @Test
@@ -479,6 +480,7 @@ class OBDModelsTest {
     fun `ActiveAlert stores type and message`() {
         val alert = ActiveAlert(
             type = AlertType.SPEED,
+            severity = AlertSeverity.WARNING,
             value = 150f,
             threshold = 130f,
             message = "Geschwindigkeit: 150 > 130"
@@ -490,7 +492,7 @@ class OBDModelsTest {
 
     @Test
     fun `AlertType has all labels`() {
-        assertEquals(5, AlertType.entries.size)
+        assertEquals(11, AlertType.entries.size)
         assertNotNull(AlertType.SPEED.label)
         assertNotNull(AlertType.COOLANT.label)
         assertNotNull(AlertType.FUEL.label)

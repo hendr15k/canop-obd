@@ -24,7 +24,7 @@ class TurboSpoolAnalyzerTest {
         wastegateDutyIdle = 90.0,
         turboRpmAtSpool = 100000.0,
         rpmAtThrottleApplication = 2000.0,
-        rpmAt80PercentBoost = 52000.0,
+        rpmAt80PercentBoost = 60000.0,
         engineLoad = 40.0,
         intakeTemp = 25.0,
         boostPressureKpa = 70.0
@@ -33,7 +33,7 @@ class TurboSpoolAnalyzerTest {
     @Test
     fun `analyze optimal spool returns OPTIMAL status`() {
         val result = analyzer.analyze(createOptimalInput())
-        assertEquals(TurboSpoolAnalyzer.SpoolStatus.GOOD, result.status)
+        assertEquals(TurboSpoolAnalyzer.SpoolStatus.OPTIMAL, result.status)
     }
 
     @Test

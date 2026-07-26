@@ -194,6 +194,7 @@ class CanopoModelsTest {
     fun `ActiveAlert stores correct values`() {
         val alert = ActiveAlert(
             type = AlertType.SPEED,
+            severity = AlertSeverity.WARNING,
             value = 150f,
             threshold = 130f,
             message = "Speed too high"
@@ -205,7 +206,7 @@ class CanopoModelsTest {
 
     @Test
     fun `AlertType has all types`() {
-        assertEquals(5, AlertType.entries.size)
+        assertEquals(11, AlertType.entries.size)
         assertNotNull(AlertType.SPEED.label)
         assertNotNull(AlertType.COOLANT.label)
         assertNotNull(AlertType.FUEL.label)

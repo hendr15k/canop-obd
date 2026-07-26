@@ -488,6 +488,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showComfortControl by viewModel.showComfortControl.collectAsState()
     val showQuickActions by viewModel.showQuickActions.collectAsState()
     val showVehicleProfileManager by viewModel.showVehicleProfileManager.collectAsState()
+    val currentVehicleProfile by viewModel.currentVehicleProfile.collectAsState()
     val showCodingDialog by viewModel.showCodingDialog.collectAsState()
     val codingInProgress by viewModel.codingInProgress.collectAsState()
     val codingResult by viewModel.codingResult.collectAsState()
@@ -772,8 +773,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleQuickActions = viewModel::toggleQuickActions,
         onToggleVehicleProfileManager = viewModel::toggleVehicleProfileManager,
         onExecuteQuickAction = viewModel::executeQuickAction,
-        onLoadProfile = { _ -> },
-        currentVehicleProfile = null,
+        onLoadProfile = viewModel::loadVehicleProfile,
+        currentVehicleProfile = currentVehicleProfile,
         onToggleExtendedTurbo = viewModel::toggleExtendedTurbo,
         onToggleExtendedFuel = viewModel::toggleExtendedFuel,
         onToggleExtendedMaintenance = viewModel::toggleExtendedMaintenance,
