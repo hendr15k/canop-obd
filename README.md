@@ -24,6 +24,23 @@ canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert für den
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/01_dashboard.png" width="180" alt="Dashboard">
+  <img src="screenshots/09_dashboard_scrolled.png" width="180" alt="Dashboard gescrollt">
+  <img src="screenshots/05_turbo.png" width="180" alt="Turbo-Monitor">
+  <img src="screenshots/04_sensoren.png" width="180" alt="Sensoren">
+</p>
+<p align="center">
+  <img src="screenshots/02_trip.png" width="180" alt="Trip Computer">
+  <img src="screenshots/06_fahrzeug.png" width="180" alt="Fahrzeug">
+  <img src="screenshots/07_fenster.png" width="180" alt="Fenster-Steuerung">
+  <img src="screenshots/10_settings.png" width="180" alt="Einstellungen">
+</p>
+
+---
+
 ## Features
 
 ### Dashboard

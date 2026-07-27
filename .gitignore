@@ -13,3 +13,4 @@ captures/
 *.ap_
 *.dex
 release.keystore
+core.*
