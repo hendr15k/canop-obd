@@ -553,27 +553,52 @@ class ELM327BTConnection(
         }
     }
 
-    private fun parseDTCCodes(response: String, pending: Boolean): List<DiagnosticTroubleCode> {
-        val codes = mutableListOf<DiagnosticTroubleCode>()
-        val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
+        // Standard ELM327 mode 03 format: "43 XX YY ZZ ..." where each 2-byte pair is a DTC
+        // Each DTC is encoded as: byte0 = type + offset, byte1 = hex digits
+        // byte0: nibble0 maps to P/C/B/U prefix (0=P,4=C,8=B,C=U)
+        //        nibble1: 0/1,4,5 → no letter; 2 → 2nd letter '0'; 3 → 2nd letter '1';
+        //        6 → '2'; 7 → '3'; A→'2'; B→'3'; C→'0'; D→'1'; E→'2'; F→'3'
+        // bytes 1-2: the 4 hex chars of the code (P0340 = 0340)
+        private fun parseDTCCodes(response: String, pending: Boolean): List<DiagnosticTroubleCode> {
+            val codes = mutableListOf<DiagnosticTroubleCode>()
+            val hex = response.replace("\r", "").replace("\n", "").trim()
 
-        if (hex.contains("ERROR") || hex.isEmpty()) {
+            if (hex.contains("ERROR") || hex.isEmpty() || hex.length < 8) {
+                return codes
+            }
+
+            val cleanHex = hex.drop(4)
+            val chars = cleanHex.chunked(4)
+
+            for (chunk in chars) {
+                if (chunk.length == 4) {
+                    val code = formatDTCFromHex(chunk)
+                    val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
+                    codes.add(DiagnosticTroubleCode(code, description, pending))
+                }
+            }
             return codes
         }
 
-        val cleanHex = hex.drop(4)
-        val chars = cleanHex.chunked(4)
-
-        for (chunk in chars) {
-            if (chunk.length == 4) {
-                val firstChar = dtcHexPrefix(chunk[0])
-                val code = "$firstChar${chunk.substring(1)}"
-                val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
-                codes.add(DiagnosticTroubleCode(code, description, pending))
+        private fun formatDTCFromHex(hex4: String): String {
+            if (hex4.length != 4) return "P0000"
+            val typeNibble = hex4[0]
+            val prefix = when (typeNibble) {
+                '0', '1' -> 'P'
+                '4', '5' -> 'C'
+                '8', '9' -> 'B'
+                'C', 'D' -> 'U'
+                else -> 'P'
             }
+            val codeDigit = when (typeNibble) {
+                '0', '4', '8', 'C' -> '0'
+                '1', '5', '9', 'D' -> '1'
+                '2', '6', 'A', 'E' -> '2'
+                '3', '7', 'B', 'F' -> '3'
+                else -> '0'
+            }
+            return "$prefix$codeDigit${hex4.substring(1)}"
         }
-        return codes
-    }
 
     suspend fun getBatteryVoltage(): Double? {
         return try {

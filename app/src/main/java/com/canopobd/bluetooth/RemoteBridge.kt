@@ -117,8 +117,6 @@ class RemoteBridge(
         }
         serverSocket = null
         _isServerRunning.value = false
-        scope.cancel()
-        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     }
 
     private inner class ClientHandler(
@@ -153,11 +151,11 @@ class RemoteBridge(
         private fun handleCommand(cmd: String) {
             val response = when {
                 cmd.equals("ATRV", ignoreCase = true) -> {
-                    scope.launch {
+                    runBlocking(Dispatchers.IO) {
                         val voltage = elmConnection.getBatteryVoltage()
                         writer?.println(if (voltage != null) "${voltage}V" else "0V")
-                        sendPrompt()
                     }
+                    sendPrompt()
                     return
                 }
                 cmd.equals("ATZ", ignoreCase = true) -> "ELM327 v1.5"
@@ -172,8 +170,8 @@ class RemoteBridge(
                     cmd.startsWith("04") || cmd.startsWith("05") || cmd.startsWith("06") ||
                     cmd.startsWith("07") || cmd.startsWith("08") || cmd.startsWith("09") -> {
                     scope.launch {
-                        val response = sendPIDCommand(cmd)
-                        writer?.println(response)
+                        val resp = sendPIDCommand(cmd)
+                        writer?.println(resp)
                         sendPrompt()
                     }
                     return

@@ -618,6 +618,7 @@ sealed class OBDConnectionState {
     object Connecting : OBDConnectionState()
     object Connected : OBDConnectionState()
     data class Error(val message: String) : OBDConnectionState()
+    object Disconnecting : OBDConnectionState()
 }
 
 data class BluetoothDeviceInfo(

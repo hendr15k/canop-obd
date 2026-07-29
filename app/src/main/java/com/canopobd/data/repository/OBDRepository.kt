@@ -276,7 +276,7 @@ class OBDRepository(
         prefs.getStringSet("primary_gauges", null)?.let { ids ->
             _primaryGaugeIds.value = ids
         }
-        _pollMode.value = PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
+        _pollMode.value = runCatching { PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL") }.getOrNull() ?: PollMode.NORMAL
         _emulatorMode.value = prefs.getBoolean("emulator_mode", false)
         _alertConfig.value = AlertConfig(
             speedWarning = prefs.getFloat("alert_speed", 130f),
@@ -467,6 +467,11 @@ class OBDRepository(
     }
 
     private fun handleConnectionLoss(error: String) {
+        if (_connectionState.value is OBDConnectionState.Disconnecting) {
+            _connectionState.value = OBDConnectionState.Error(error)
+            _lastError.value = error
+            return
+        }
         val lastAddr = lastConnectedAddress
         if (_autoReconnect.value && lastAddr != null) {
             scheduleReconnect(lastAddr)
@@ -475,6 +480,13 @@ class OBDRepository(
             _lastError.value = error
         }
     }
+
+    fun requestDisconnect() {
+        _connectionState.value = OBDConnectionState.Disconnecting
+        disconnect()
+    }
+
+    fun isConnected(): Boolean = _connectionState.value !is OBDConnectionState.Disconnected && _connectionState.value !is OBDConnectionState.Disconnecting
 
     fun cleanup() {
         runCatching { connection?.disconnect() }
@@ -537,7 +549,8 @@ class OBDRepository(
             tripRpmSum += rpm
             tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
 
-            val dtHours = (now - tripPrevTimestamp) / 3_600_000.0
+            val dtMs = (now - tripPrevTimestamp).coerceAtLeast(0L)
+            val dtHours = dtMs / 3_600_000.0
             if (dtHours > 0) {
                 val clampedSpeed = speed.coerceAtLeast(0.0)
                 val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)

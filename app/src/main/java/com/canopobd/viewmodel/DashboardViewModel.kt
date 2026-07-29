@@ -503,7 +503,7 @@ class DashboardViewModel private constructor(
         canRepository?.stopCANMonitoring()
         canRepository?.shutdown()
         canRepository = null
-        repository.disconnect()
+        repository.requestDisconnect()
     }
 
     private fun checkMaintenanceNotifications() {
@@ -1598,7 +1598,6 @@ class DashboardViewModel private constructor(
         ecoScoreViewModel.viewModelScope.cancel()
         performanceViewModel.viewModelScope.cancel()
         repository.cleanup()
-        repository.disconnect()
         super.onCleared()
     }
 

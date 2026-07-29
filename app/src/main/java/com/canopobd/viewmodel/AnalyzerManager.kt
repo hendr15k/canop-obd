@@ -73,6 +73,7 @@ class AnalyzerManager {
     )
     val lambdaBalanceData = MutableStateFlow(LambdaBalanceAnalyzer.LambdaBalance())
     val fuelConsumptionData = MutableStateFlow(FuelConsumptionAnalyzer.FuelConsumptionData())
+    private var fuelConsumptionSampleCount = 0L
     val gearboxResult = MutableStateFlow(
         M32GearboxMonitor.GearboxAnalysis(
             health = M32GearboxMonitor.GearboxHealth.UNKNOWN, healthScore = 0,
@@ -451,14 +452,21 @@ class AnalyzerManager {
         try {
             if (data.speed > 5.0 && data.mafRate > 0) {
                 val l100km = fuelConsumptionAnalyzer.calculateFromMAF(data.mafRate, data.speed)
-                fuelConsumptionData.value = fuelConsumptionData.value.copy(
-                    instantL100km = l100km,
-                    avgL100km = if (l100km > 0) {
-                        (fuelConsumptionData.value.avgL100km + l100km) / 2.0
-                    } else {
-                        fuelConsumptionData.value.avgL100km
-                    }
-                )
+                fuelConsumptionSampleCount++
+                if (fuelConsumptionSampleCount == 1L) {
+                    fuelConsumptionData.value = fuelConsumptionData.value.copy(
+                        instantL100km = l100km,
+                        avgL100km = l100km
+                    )
+                } else {
+                    val prevAvg = fuelConsumptionData.value.avgL100km
+                    val count = fuelConsumptionSampleCount.toDouble()
+                    val newAvg = (prevAvg * (count - 1) + l100km) / count
+                    fuelConsumptionData.value = fuelConsumptionData.value.copy(
+                        instantL100km = l100km,
+                        avgL100km = newAvg
+                    )
+                }
             }
         } catch (e: Exception) { Log.w(TAG, "FuelConsumptionAnalyzer failed", e) }
 

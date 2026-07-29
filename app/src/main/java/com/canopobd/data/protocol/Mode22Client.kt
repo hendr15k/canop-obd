@@ -4,6 +4,8 @@ import android.util.Log
 import com.canopobd.bluetooth.ELM327BTConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 data class Mode22DIDInfo(
     val code: String,
@@ -197,6 +199,7 @@ class Mode22Client(private val connection: ELM327BTConnection) {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val _cachedValues = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     val cachedValues: StateFlow<Map<String, ByteArray>> = _cachedValues.asStateFlow()
+    private val cacheMutex = Mutex()
 
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
@@ -232,9 +235,9 @@ class Mode22Client(private val connection: ELM327BTConnection) {
             val response = connection.sendRawCommand(command)
             val data = parseDIDResponse(response, cleanDid)
             if (data != null) {
-                val current = _cachedValues.value.toMutableMap()
-                current[cleanDid] = data
-                _cachedValues.value = current
+                cacheMutex.withLock {
+                    _cachedValues.value = _cachedValues.value.toMutableMap().also { it[cleanDid] = data }
+                }
                 emit(data)
             } else {
                 emit(null)
@@ -248,20 +251,31 @@ class Mode22Client(private val connection: ELM327BTConnection) {
 
     fun readMultipleDIDs(dids: List<String>): Flow<Map<String, ByteArray?>> = flow {
         val results = mutableMapOf<String, ByteArray?>()
+        var allSuccess = true
         for (did in dids) {
             val cleanDid = did.uppercase().replace(" ", "").removePrefix("0X").removePrefix("22")
             try {
                 val command = "22$cleanDid"
                 val response = connection.sendRawCommand(command)
                 val data = parseDIDResponse(response, cleanDid)
-                results[cleanDid] = data
+                if (data != null) {
+                    results[cleanDid] = data
+                } else {
+                    results[cleanDid] = null
+                    allSuccess = false
+                }
                 delay(50)
             } catch (e: Exception) {
                 Log.w(TAG, "Read DID $did failed: ${e.message}")
                 results[cleanDid] = null
+                allSuccess = false
             }
         }
-        emit(results)
+        if (allSuccess && results.isNotEmpty()) {
+            emit(results)
+        } else if (results.isNotEmpty()) {
+            emit(results)
+        }
     }.flowOn(Dispatchers.IO)
 
     fun discoverAvailableDIDs(): Flow<List<String>> = flow {
