@@ -163,6 +163,25 @@ class AccelerationTimerTest {
     }
 
     @Test
+    fun `100-200 test does not start before 100 kmh`() {
+        timer.start(PerformanceTestType.HUNDRED_200)
+
+        assertEquals(
+            AccelerationTimer.TimerState.WAITING_START,
+            timer.update(20.0, 1000L)
+        )
+        assertEquals(
+            AccelerationTimer.TimerState.RUNNING,
+            timer.update(AccelerationTimer.TARGET_SPEED_100_MS, 2000L)
+        )
+
+        timer.update(AccelerationTimer.TARGET_SPEED_200_MS, 12000L)
+        val result = timer.buildResult()
+        assertNotNull(result)
+        assertEquals(10.0, result!!.timeSeconds, 0.001)
+    }
+
+    @Test
     fun `max acceleration tracked correctly`() {
         timer.start(PerformanceTestType.ZERO_100)
         timer.update(1.0, 1000L)

@@ -209,10 +209,12 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
         absHasFault.value = hasABSDtc
         espHasFault.value = hasESPDtc
-        if (hasAirbagDtc) {
-            airbagDriverFront.value = false
-            airbagPassengerFront.value = false
-        }
+        airbagDriverFront.value = !hasAirbagDtc
+        airbagPassengerFront.value = !hasAirbagDtc
+        airbagDriverSide.value = !hasAirbagDtc
+        airbagPassengerSide.value = !hasAirbagDtc
+        airbagCurtainLeft.value = !hasAirbagDtc
+        airbagCurtainRight.value = !hasAirbagDtc
 
         _safetyDTCs.value = safetyDtcList
         updateSummary()

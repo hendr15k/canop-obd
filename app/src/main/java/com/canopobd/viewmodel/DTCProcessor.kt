@@ -55,7 +55,8 @@ class DTCProcessor {
     }
 
     fun processAllDTCs(response: DTCResponse?) {
-        val allCodes = (response?.codes ?: emptyList()) + (response?.pendingCodes ?: emptyList())
+        val allCodes = ((response?.codes ?: emptyList()) + (response?.pendingCodes ?: emptyList()))
+            .distinctBy { it.code.trim().uppercase() }
         val processed = allCodes.map { processDTC(it.code) }
         _processedDTCs.value = processed
         _criticalDTCs.value = processed.filter { it.severity == DTCSeverity.CRITICAL }

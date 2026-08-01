@@ -178,16 +178,9 @@ class TurboEfficiencyAnalyzer(
         }
 
         val deviation = ((actualBar - targetBar) / targetBar) * 100.0
-        val efficiency = when {
-            // Perfektreffer
-            abs(deviation) < 5.0 -> 100.0
-            // Leichte Abweichung
-            abs(deviation) < 15.0 -> 90.0 - abs(deviation)
-            // Moderate Abweichung
-            abs(deviation) < 30.0 -> 75.0 - abs(deviation)
-            // Starke Abweichung
-            else -> (50.0 - abs(deviation) * 0.5).coerceAtLeast(0.0)
-        }
+        // Keep the score continuous at the former band boundaries. A banded
+        // formula caused abrupt 10-15 point jumps for tiny input changes.
+        val efficiency = (100.0 - abs(deviation) * 2.0).coerceIn(0.0, 100.0)
 
         return efficiency to deviation
     }

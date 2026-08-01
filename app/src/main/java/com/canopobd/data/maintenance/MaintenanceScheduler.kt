@@ -10,8 +10,10 @@ object MaintenanceScheduler {
     private val scheduledReminders = ConcurrentHashMap<String, ScheduledMaintenance>()
     private val maintenanceAlerts = CopyOnWriteArrayList<MaintenanceAlert>()
 
-    // Store last service data for each maintenance type
-    private val lastServiceData = ConcurrentHashMap<MaintenanceType, ServiceRecord>()
+    // Store last service data keyed by schedule ID so that schedules sharing
+    // a MaintenanceType (front/rear brake pads, timing chain vs turbo check)
+    // do not overwrite each other's service records.
+    private val lastServiceData = ConcurrentHashMap<String, ServiceRecord>()
 
     const val ALERT_THRESHOLD_KM = 500
     const val ALERT_THRESHOLD_DAYS = 14
@@ -85,8 +87,8 @@ object MaintenanceScheduler {
     private fun createOilChangeSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 15000
         val intervalMonths = 12
-        val lastServiceKm = findLastServiceKm(MaintenanceType.OIL_CHANGE, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.OIL_CHANGE, currentDate)
+        val lastServiceKm = findLastServiceKm("oil_change", currentKm)
+        val lastServiceDate = findLastServiceDate("oil_change", currentDate)
 
         scheduledReminders["oil_change"] = ScheduledMaintenance(
             id = "oil_change",
@@ -121,8 +123,8 @@ object MaintenanceScheduler {
     private fun createSparkPlugSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 60000
         val intervalMonths = 48
-        val lastServiceKm = findLastServiceKm(MaintenanceType.SPARK_PLUGS, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.SPARK_PLUGS, currentDate)
+        val lastServiceKm = findLastServiceKm("spark_plugs", currentKm)
+        val lastServiceDate = findLastServiceDate("spark_plugs", currentDate)
 
         scheduledReminders["spark_plugs"] = ScheduledMaintenance(
             id = "spark_plugs",
@@ -156,8 +158,8 @@ object MaintenanceScheduler {
     private fun createAirFilterSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 30000
         val intervalMonths = 24
-        val lastServiceKm = findLastServiceKm(MaintenanceType.AIR_FILTER, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.AIR_FILTER, currentDate)
+        val lastServiceKm = findLastServiceKm("air_filter", currentKm)
+        val lastServiceDate = findLastServiceDate("air_filter", currentDate)
 
         scheduledReminders["air_filter"] = ScheduledMaintenance(
             id = "air_filter",
@@ -194,10 +196,10 @@ object MaintenanceScheduler {
         val intervalMonthsFirst = 60
         val intervalKmSubsequent = 40000
         val intervalMonthsSubsequent = 24
-        val lastServiceKm = findLastServiceKm(MaintenanceType.COOLANT, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.COOLANT, currentDate)
+        val lastServiceKm = findLastServiceKm("coolant", currentKm)
+        val lastServiceDate = findLastServiceDate("coolant", currentDate)
 
-        val isFirstChange = lastServiceKm == 0
+        val isFirstChange = !hasServiceRecord("coolant")
         val intervalKm = if (isFirstChange) intervalKmFirst else intervalKmSubsequent
         val intervalMonths = if (isFirstChange) intervalMonthsFirst else intervalMonthsSubsequent
 
@@ -233,8 +235,8 @@ object MaintenanceScheduler {
     private fun createTurboInspectionSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 60000
         val intervalMonths = 48
-        val lastServiceKm = findLastServiceKm(MaintenanceType.TURBO_INSPECTION, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.TURBO_INSPECTION, currentDate)
+        val lastServiceKm = findLastServiceKm("turbo_inspection", currentKm)
+        val lastServiceDate = findLastServiceDate("turbo_inspection", currentDate)
 
         scheduledReminders["turbo_inspection"] = ScheduledMaintenance(
             id = "turbo_inspection",
@@ -264,8 +266,8 @@ object MaintenanceScheduler {
     private fun createTransmissionFluidSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 60000
         val intervalMonths = 48
-        val lastServiceKm = findLastServiceKm(MaintenanceType.TRANSMISSION_FLUID, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.TRANSMISSION_FLUID, currentDate)
+        val lastServiceKm = findLastServiceKm("transmission_fluid", currentKm)
+        val lastServiceDate = findLastServiceDate("transmission_fluid", currentDate)
 
         scheduledReminders["transmission_fluid"] = ScheduledMaintenance(
             id = "transmission_fluid",
@@ -299,8 +301,8 @@ object MaintenanceScheduler {
     private fun createBrakePadsFrontSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 30000
         val intervalMonths = 24
-        val lastServiceKm = findLastServiceKm(MaintenanceType.BRAKE_PADS, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.BRAKE_PADS, currentDate)
+        val lastServiceKm = findLastServiceKm("brake_pads_front", currentKm)
+        val lastServiceDate = findLastServiceDate("brake_pads_front", currentDate)
 
         scheduledReminders["brake_pads_front"] = ScheduledMaintenance(
             id = "brake_pads_front",
@@ -335,8 +337,8 @@ object MaintenanceScheduler {
     private fun createBrakePadsRearSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 40000
         val intervalMonths = 36
-        val lastServiceKm = findLastServiceKm(MaintenanceType.BRAKE_PADS, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.BRAKE_PADS, currentDate)
+        val lastServiceKm = findLastServiceKm("brake_pads_rear", currentKm)
+        val lastServiceDate = findLastServiceDate("brake_pads_rear", currentDate)
 
         scheduledReminders["brake_pads_rear"] = ScheduledMaintenance(
             id = "brake_pads_rear",
@@ -371,12 +373,12 @@ object MaintenanceScheduler {
     private fun createTimingChainSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 150000
         val intervalMonths = 120
-        val lastServiceKm = findLastServiceKm(MaintenanceType.TURBO_BOOST_CHECK, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.TURBO_BOOST_CHECK, currentDate)
+        val lastServiceKm = findLastServiceKm("timing_chain", currentKm)
+        val lastServiceDate = findLastServiceDate("timing_chain", currentDate)
 
         scheduledReminders["timing_chain"] = ScheduledMaintenance(
             id = "timing_chain",
-            type = MaintenanceType.TURBO_BOOST_CHECK,
+            type = MaintenanceType.TIMING_CHAIN,
             title = "Timing-Kette Prüfung",
             lastServiceKm = lastServiceKm,
             lastServiceDate = lastServiceDate,
@@ -402,8 +404,8 @@ object MaintenanceScheduler {
     private fun createInspectionSchedule(currentKm: Int, currentDate: Long) {
         val intervalKm = 60000
         val intervalMonths = 24
-        val lastServiceKm = findLastServiceKm(MaintenanceType.INSPECTION, currentKm)
-        val lastServiceDate = findLastServiceDate(MaintenanceType.INSPECTION, currentDate)
+        val lastServiceKm = findLastServiceKm("inspection", currentKm)
+        val lastServiceDate = findLastServiceDate("inspection", currentDate)
 
         scheduledReminders["inspection"] = ScheduledMaintenance(
             id = "inspection",
@@ -481,6 +483,7 @@ object MaintenanceScheduler {
 
     fun completeMaintenance(id: String, km: Int, date: Long = System.currentTimeMillis()) {
         scheduledReminders[id]?.let { current ->
+            lastServiceData[id] = ServiceRecord(km, date)
             scheduledReminders[id] = current.copy(
                 lastServiceKm = km,
                 lastServiceDate = date,
@@ -611,28 +614,24 @@ object MaintenanceScheduler {
         val total: Double get() = urgentTotal + warningTotal + infoTotal
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun findLastServiceKm(type: MaintenanceType, currentKm: Int): Int {
-        return lastServiceData[type]?.lastServiceKm ?: 0
+    private fun findLastServiceKm(id: String, currentKm: Int): Int {
+        return lastServiceData[id]?.lastServiceKm ?: currentKm
     }
 
-    private fun findLastServiceDate(type: MaintenanceType, currentDate: Long): Long {
-        return lastServiceData[type]?.lastServiceDate ?: (currentDate - (30L * 24 * 60 * 60 * 1000))
+    private fun findLastServiceDate(id: String, currentDate: Long): Long {
+        return lastServiceData[id]?.lastServiceDate ?: (currentDate - (30L * 24 * 60 * 60 * 1000))
     }
 
-    /**
-     * Updates the last service record for a maintenance type.
-     * Call this when a service is completed.
-     */
-    fun updateLastService(type: MaintenanceType, serviceKm: Int, serviceDate: Long) {
-        lastServiceData[type] = ServiceRecord(serviceKm, serviceDate)
+    private fun hasServiceRecord(id: String): Boolean {
+        return lastServiceData.containsKey(id)
     }
 
-    /**
-     * Clears the last service record for a maintenance type.
-     */
-    fun clearLastService(type: MaintenanceType) {
-        lastServiceData.remove(type)
+    fun updateLastService(id: String, serviceKm: Int, serviceDate: Long) {
+        lastServiceData[id] = ServiceRecord(serviceKm, serviceDate)
+    }
+
+    fun clearLastService(id: String) {
+        lastServiceData.remove(id)
     }
 
     /**

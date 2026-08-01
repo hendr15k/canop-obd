@@ -29,16 +29,23 @@ class GPSTracker(private val context: Context) {
 
     private val db = CanopoDatabase.getInstance(context)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // Trip persistence must outlive the location scope during cleanup. The
+    // final trip is assembled synchronously, but the Room insert is async.
+    private val persistenceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
+    @Volatile
     var tripAvgRpm: Double = 0.0
         private set
+    @Volatile
     var tripMaxRpm: Double = 0.0
         private set
+    @Volatile
     var tripFuelUsedLiters: Float = 0f
         private set
+    @Volatile
     var tripVin: String = ""
         private set
 
@@ -164,7 +171,7 @@ class GPSTracker(private val context: Context) {
     }
 
     private fun persistTrip(trip: GPSTrip) {
-        scope.launch {
+        persistenceScope.launch {
             try {
                 val tripEntity = TripEntity(
                     startTime = trip.startTime,
@@ -280,6 +287,8 @@ class GPSTracker(private val context: Context) {
     fun cleanup() {
         if (_isTracking.value) { stopTracking() }
         scope.cancel()
+        // Do not cancel persistenceScope here: stopTracking() may have just
+        // queued the completed trip for insertion.
     }
 
     fun updateTripOBDData(avgRpm: Double, maxRpm: Double, fuelUsedLiters: Float, vin: String) {

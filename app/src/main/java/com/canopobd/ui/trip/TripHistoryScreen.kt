@@ -17,11 +17,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.data.local.TripEntity
+import com.canopobd.data.repository.PdfReportExporter
+import com.canopobd.R
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -34,13 +37,16 @@ fun TripHistoryScreen(
     onBack: () -> Unit,
     onDeleteTrip: (Long) -> Unit,
     onClearAll: () -> Unit,
-    onShareCsv: () -> Unit
+    onShareCsv: () -> Unit,
+    onShareStats: (String) -> Unit = {}
 ) {
+    val exportContext = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf<Long?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
     var compareMode by remember { mutableStateOf(false) }
     var selectedTripIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showCompareDialog by remember { mutableStateOf(false) }
+    var showStatsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTripIds.size) {
         if (compareMode && selectedTripIds.size < 2) {
@@ -83,6 +89,12 @@ fun TripHistoryScreen(
                                 Icon(Icons.AutoMirrored.Filled.CompareArrows, "Vergleichen")
                             }
                         } else {
+                            IconButton(onClick = { showStatsDialog = true }) {
+                                Icon(Icons.Filled.QueryStats, "Statistik")
+                            }
+                            IconButton(onClick = { exportTripPdf(exportContext, trips) }) {
+                                Icon(Icons.Filled.PictureAsPdf, "Als PDF exportieren")
+                            }
                             IconButton(onClick = { compareMode = true }) {
                                 Icon(Icons.AutoMirrored.Filled.CompareArrows, "Vergleichen")
                             }
@@ -219,6 +231,17 @@ fun TripHistoryScreen(
                 }
             )
         }
+    }
+
+    if (showStatsDialog) {
+        TripStatisticsDialog(
+            trips = trips,
+            onDismiss = { showStatsDialog = false },
+            onShareReport = { report ->
+                onShareStats(report)
+                showStatsDialog = false
+            }
+        )
     }
 }
 
@@ -610,4 +633,20 @@ private fun TripComparisonDialog(
             }
         }
     )
+}
+
+private fun exportTripPdf(context: android.content.Context, trips: List<TripEntity>) {
+    val summary = PdfReportExporter.exportTripReport(context, trips)
+    if (summary != null) {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(android.content.Intent.EXTRA_STREAM, summary.uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(android.content.Intent.createChooser(intent, "Trip Report PDF"))
+        } catch (e: android.content.ActivityNotFoundException) {
+            android.util.Log.e("TripHistoryScreen", "No app to handle PDF share", e)
+        }
+    }
 }

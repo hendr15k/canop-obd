@@ -214,6 +214,7 @@ fun DashboardScreen(
     tripHistoryEntities: List<TripEntity>,
     onDeleteTrip: (Long) -> Unit,
     onShareTripCsv: () -> Unit,
+    onShareStats: (String) -> Unit = {},
     onTogglePowerCalculator: () -> Unit,
     onToggleDriveScore: () -> Unit,
     onToggleShiftLight: () -> Unit,
@@ -305,6 +306,8 @@ fun DashboardScreen(
     accelerationRun: com.canopobd.data.model.AccelerationRun? = null,
     onToggleSafetySystems: () -> Unit = {},
     onToggleEcoScore: () -> Unit = {},
+    language: com.canopobd.data.locale.AppLanguage = com.canopobd.data.locale.AppLanguage.SYSTEM,
+    onLanguageChange: (com.canopobd.data.locale.AppLanguage) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = LocalAppColors.current
@@ -591,7 +594,7 @@ fun DashboardScreen(
             DTCDialog(dtcResponse = dtcResponse, onDismiss = onToggleDTCDialog, onClearDTCs = onClearDTCs)
         }
         if (showSettings) {
-            SettingsDialog(pollRate = pollRate, measurementUnit = measurementUnit, autoReconnect = autoReconnect, pollMode = pollMode, appThemeMode = appThemeMode, emulatorMode = emulatorMode, onDismiss = onToggleSettings, onPollRateChange = onSetPollRate, onUnitChange = onSetMeasurementUnit, onAutoReconnectChange = onSetAutoReconnect, onPollModeChange = onSetPollMode, onSetAppThemeMode = onSetAppThemeMode, onSetEmulatorMode = onSetEmulatorMode)
+            SettingsDialog(pollRate = pollRate, measurementUnit = measurementUnit, autoReconnect = autoReconnect, pollMode = pollMode, appThemeMode = appThemeMode, emulatorMode = emulatorMode, language = language, onDismiss = onToggleSettings, onPollRateChange = onSetPollRate, onUnitChange = onSetMeasurementUnit, onAutoReconnectChange = onSetAutoReconnect, onPollModeChange = onSetPollMode, onSetAppThemeMode = onSetAppThemeMode, onSetEmulatorMode = onSetEmulatorMode, onLanguageChange = onLanguageChange)
         }
         if (showDataLog) {
             DataLogDialog(recordedData = recordedData, isRecording = recordingActive, onDismiss = onToggleDataLog, onStartRecording = onStartRecording, onStopRecording = onStopRecording, onClearData = onClearRecordedData, onExportData = onGetExportData)
@@ -641,7 +644,8 @@ fun DashboardScreen(
                 onBack = onToggleTripHistory,
                 onDeleteTrip = onDeleteTrip,
                 onClearAll = onClearTripHistory,
-                onShareCsv = onShareTripCsv
+                onShareCsv = onShareTripCsv,
+                onShareStats = onShareStats
             )
         }
         if (showPowerCalculator) {
@@ -838,11 +842,24 @@ private fun buildGaugeMap(data: OBDData, unit: MeasurementUnit): Map<String, Gau
     "fuel" to GaugeItem("fuel", "Fuel", data.fuelLevel.toFloat(), "%", 0f, 100f, Color(0xFFFF9100)),
     "timing" to GaugeItem("timing", "Timing", data.timingAdvance.toFloat(), "°", -64f, 64f, Color(0xFF00BCD4)),
     "maf" to GaugeItem("maf", "MAF", data.mafRate.toFloat(), "g/s", 0f, 500f, Color(0xFFE91E63)),
-    "intake_temp" to GaugeItem("intake_temp", "Intake", unit.convertTemp(data.intakeTemp).toFloat(), unit.tempUnit, -40f, 215f, Color(0xFFFF5722)),
-    "fuel_trim" to GaugeItem("fuel_trim", "Fuel Trim", abs(data.shortTermFuelTrimB1 + data.longTermFuelTrimB1).toFloat(), "%", 0f, 50f, Color(0xFFFFAB40), isPercentage = true),
-    "load" to GaugeItem("load", "Abs Load", data.absoluteLoadValue.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE)),
-    "fuel_rate" to GaugeItem("fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF3D57)),
-    "accel_pedal" to GaugeItem("accel_pedal", "Accel Pedal", data.acceleratorPosD.toFloat(), "%", 0f, 100f, Color(0xFF00E5FF)),
+    "intake_temp" to GaugeItem(
+        "intake_temp", "Intake", unit.convertTemp(data.intakeTemp).toFloat(), unit.tempUnit,
+        -40f, 215f, Color(0xFFFF5722)
+    ),
+    "fuel_trim" to GaugeItem(
+        "fuel_trim", "Fuel Trim",
+        (abs(data.shortTermFuelTrimB1) + abs(data.longTermFuelTrimB1)).toFloat(),
+        "%", 0f, 50f, Color(0xFFFFAB40), isPercentage = true
+    ),
+    "load" to GaugeItem(
+        "load", "Abs Load", data.absoluteLoadValue.toFloat(), "%", 0f, 100f, Color(0xFF69F0AE)
+    ),
+    "fuel_rate" to GaugeItem(
+        "fuel_rate", "Fuel Rate", data.engineFuelRate.toFloat(), "L/h", 0f, 50f, Color(0xFFFF3D57)
+    ),
+    "accel_pedal" to GaugeItem(
+        "accel_pedal", "Accel Pedal", data.acceleratorPosD.toFloat(), "%", 0f, 100f, Color(0xFF00E5FF)
+    ),
     "hybrid_battery" to GaugeItem("hybrid_battery", "Hybrid Batt", data.hybridBatteryRemaining.toFloat(), "%", 0f, 100f,
         when {
             data.hybridBatteryRemaining < 20 -> Color(0xFFFF3D57)

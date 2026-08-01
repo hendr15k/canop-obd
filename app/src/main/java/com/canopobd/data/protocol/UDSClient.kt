@@ -38,45 +38,36 @@ class UDSClient(private val connection: ELM327BTConnection) {
 
     private fun extractDataFromResponse(response: String, serviceId: Int): ByteArray {
         val cleaned = parseISOTPDelimiter(response)
-        if (cleaned.isEmpty()) { return ByteArray(0) }
+        if (cleaned.isEmpty() || cleaned.length % 2 != 0) return ByteArray(0)
 
-        try {
-            val positiveResponseId = (serviceId + 0x40).toString(16).uppercase().padStart(2, '0')
-            val negativeResponseId = "7F"
-
-            if (cleaned.length >= 6 && cleaned.substring(0, 2).uppercase() == positiveResponseId) {
-                return cleaned.substring(6).chunked(2).mapNotNull { hex ->
-                    if (hex.length == 2) {
-                        try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-                    } else { null }
-                }.toByteArray()
-            }
-
-            if (cleaned.length >= 2 && cleaned.substring(0, 2).uppercase() == negativeResponseId) {
-                return cleaned.substring(2).chunked(2).mapNotNull { hex ->
-                    if (hex.length == 2) {
-                        try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-                    } else { null }
-                }.toByteArray()
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to parse UDS response header: ${e.message}")
-        }
-
-        return cleaned.chunked(2).mapNotNull { hex ->
-            if (hex.length == 2) {
-                try { hex.toInt(16).toByte() } catch (e: Exception) { null }
-            } else { null }
+        val bytes = cleaned.chunked(2).mapNotNull { hex ->
+            runCatching { hex.toInt(16).toByte() }.getOrNull()
         }.toByteArray()
+        if (bytes.isEmpty()) return ByteArray(0)
+
+        // ELM adapters may include an ISO-TP PCI byte (or a two-byte first-frame
+        // header). Keep the UDS service byte in the returned data contract so
+        // callers can consistently inspect [service, DID/sub-function, payload].
+        val positiveService = (serviceId + 0x40) and 0xFF
+        val serviceIndex = bytes.indices
+            .take(3)
+            .firstOrNull { index ->
+                val value = bytes[index].toInt() and 0xFF
+                value == positiveService || value == 0x7F
+            }
+            ?: 0
+
+        return bytes.copyOfRange(serviceIndex, bytes.size)
     }
 
     private fun isPositiveResponse(response: ByteArray, serviceId: Int): Boolean {
-        return response.isNotEmpty() && response[0].toInt() == serviceId + 0x40
+        return response.isNotEmpty() &&
+            (response[0].toInt() and 0xFF) == ((serviceId + 0x40) and 0xFF)
     }
 
     private fun extractErrorCode(response: ByteArray): Int? {
-        if (response.size >= 3 && response[0].toInt() == 0x7F) {
-            return response[2].toInt()
+        if (response.size >= 3 && (response[0].toInt() and 0xFF) == 0x7F) {
+            return response[2].toInt() and 0xFF
         }
         return null
     }
@@ -409,7 +400,9 @@ class UDSClient(private val connection: ELM327BTConnection) {
     fun getSecurityLevel(): Int = securityLevel
 
     fun parseDIDValue(did: String, data: ByteArray): DIDValue {
-        val rawData = data.drop(2).toByteArray()
+        // Positive ReadDataByIdentifier responses contain service, DID high,
+        // DID low, then the payload.
+        val rawData = data.drop(3).toByteArray()
         val parsed: Any? = when {
             rawData.size >= 17 && isPrintable(rawData) -> String(rawData, Charsets.US_ASCII).trim()
             rawData.size >= 2 -> parseNumericValue(rawData)
@@ -434,11 +427,9 @@ class UDSClient(private val connection: ELM327BTConnection) {
                 if (data[0].toInt() and 0x80 != 0) { value - 65536 } else { value }
             }
             4 -> {
-                val value = ((data[0].toInt() and 0xFF) shl 24) or
-                    ((data[1].toInt() and 0xFF) shl 16) or
-                    ((data[2].toInt() and 0xFF) shl 8) or
-                    (data[3].toInt() and 0xFF)
-                value.toDouble()
+                data.fold(0L) { value, byte ->
+                    (value shl 8) or (byte.toLong() and 0xFF)
+                }.toDouble()
             }
             else -> data.joinToString("") { "%02X".format(it) }
         }

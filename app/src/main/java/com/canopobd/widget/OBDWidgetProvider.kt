@@ -2,6 +2,7 @@ package com.canopobd.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
@@ -11,6 +12,17 @@ import com.canopobd.R
 import com.canopobd.MainActivity
 
 class OBDWidgetProvider : AppWidgetProvider() {
+
+    companion object {
+        fun updateAll(context: Context) {
+            val manager = AppWidgetManager.getInstance(context)
+            val component = ComponentName(context, OBDWidgetProvider::class.java)
+            val ids = manager.getAppWidgetIds(component)
+            if (ids.isNotEmpty()) {
+                OBDWidgetProvider().onUpdate(context, manager, ids)
+            }
+        }
+    }
 
     override fun onUpdate(
         context: Context,
@@ -32,7 +44,7 @@ class OBDWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_rpm, "%.0f".format(rpm))
             views.setTextViewText(R.id.widget_speed, "%.0f".format(speed))
             views.setTextViewText(R.id.widget_speed_unit, if (unitKmh) "km/h" else "mph")
-            views.setTextViewText(R.id.widget_coolant, "%.0f°C".format(coolant))
+            views.setTextViewText(R.id.widget_coolant, "%.0f°%s".format(coolant, if (unitKmh) "C" else "F"))
             views.setTextViewText(R.id.widget_load, "%.0f%%".format(load))
             views.setTextViewText(R.id.widget_fuel, "%.0f%%".format(fuel))
 

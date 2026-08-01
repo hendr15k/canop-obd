@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -32,6 +34,7 @@ class ELM327BTConnection(
         private const val COMMAND_TIMEOUT_MS = 3000L
         private const val INITIAL_RETRY_DELAY_MS = 100L
         private const val MAX_RETRY_DELAY_MS = 500L
+        private const val MAX_BATTERY_VOLTAGE = 20.0
 
         private val DTC_DESCRIPTIONS = mapOf(
             "P0100" to "Mass Air Flow Circuit Malfunction",
@@ -422,6 +425,7 @@ class ELM327BTConnection(
     private var socket: BluetoothSocket? = null
     private var inputStream: InputStream? = null
     private var outputStream: OutputStream? = null
+    private val commandMutex = Mutex()
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected
@@ -545,60 +549,64 @@ class ELM327BTConnection(
 
     suspend fun clearDTCs(): Boolean = withContext(Dispatchers.IO) {
         try {
-            sendCommandWithTimeout("04")
-            true
+            val response = sendCommandWithTimeout("04")
+            response.replace(" ", "").startsWith("44")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to clear DTCs: ${e.message}")
             false
         }
     }
 
-        // Standard ELM327 mode 03 format: "43 XX YY ZZ ..." where each 2-byte pair is a DTC
-        // Each DTC is encoded as: byte0 = type + offset, byte1 = hex digits
-        // byte0: nibble0 maps to P/C/B/U prefix (0=P,4=C,8=B,C=U)
-        //        nibble1: 0/1,4,5 → no letter; 2 → 2nd letter '0'; 3 → 2nd letter '1';
-        //        6 → '2'; 7 → '3'; A→'2'; B→'3'; C→'0'; D→'1'; E→'2'; F→'3'
-        // bytes 1-2: the 4 hex chars of the code (P0340 = 0340)
-        private fun parseDTCCodes(response: String, pending: Boolean): List<DiagnosticTroubleCode> {
-            val codes = mutableListOf<DiagnosticTroubleCode>()
-            val hex = response.replace("\r", "").replace("\n", "").trim()
+    // Standard ELM327 mode 03 format: "43 XX YY ZZ ..." where each 2-byte pair is a DTC
+    // Each DTC is encoded as: byte0 = type + offset, byte1 = hex digits
+    // byte0: nibble0 maps to P/C/B/U prefix (0=P,4=C,8=B,C=U)
+    //        nibble1: 0/1,4,5 → no letter; 2 → 2nd letter '0'; 3 → 2nd letter '1';
+    //        6 → '2'; 7 → '3'; A→'2'; B→'3'; C→'0'; D→'1'; E→'2'; F→'3'
+    // bytes 1-2: the 4 hex chars of the code (P0340 = 0340)
+    private fun parseDTCCodes(response: String, pending: Boolean): List<DiagnosticTroubleCode> {
+        val codes = mutableListOf<DiagnosticTroubleCode>()
+        val hex = response.replace("\r", "").replace("\n", "").replace(" ", "").trim().uppercase()
+        val responsePrefix = if (pending) "47" else "43"
 
-            if (hex.contains("ERROR") || hex.isEmpty() || hex.length < 8) {
-                return codes
-            }
-
-            val cleanHex = hex.drop(4)
-            val chars = cleanHex.chunked(4)
-
-            for (chunk in chars) {
-                if (chunk.length == 4) {
-                    val code = formatDTCFromHex(chunk)
-                    val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
-                    codes.add(DiagnosticTroubleCode(code, description, pending))
-                }
-            }
+        if (hex.contains("ERROR") || hex.isEmpty() || !hex.startsWith(responsePrefix) || hex.length < 6) {
             return codes
         }
 
-        private fun formatDTCFromHex(hex4: String): String {
-            if (hex4.length != 4) return "P0000"
-            val typeNibble = hex4[0]
-            val prefix = when (typeNibble) {
-                '0', '1' -> 'P'
-                '4', '5' -> 'C'
-                '8', '9' -> 'B'
-                'C', 'D' -> 'U'
-                else -> 'P'
+        // The first byte is the positive response service (43/47). The
+        // remaining bytes are complete two-byte DTC values.
+        val cleanHex = hex.drop(2)
+        val chars = cleanHex.chunked(4)
+
+        for (chunk in chars) {
+            if (chunk.length == 4) {
+                if (chunk == "0000") continue
+                val code = formatDTCFromHex(chunk)
+                val description = DTC_DESCRIPTIONS[code] ?: "Unknown fault code"
+                codes.add(DiagnosticTroubleCode(code, description, pending))
             }
-            val codeDigit = when (typeNibble) {
-                '0', '4', '8', 'C' -> '0'
-                '1', '5', '9', 'D' -> '1'
-                '2', '6', 'A', 'E' -> '2'
-                '3', '7', 'B', 'F' -> '3'
-                else -> '0'
-            }
-            return "$prefix$codeDigit${hex4.substring(1)}"
         }
+        return codes
+    }
+
+    private fun formatDTCFromHex(hex4: String): String {
+        if (hex4.length != 4) return "P0000"
+        val typeNibble = hex4[0]
+        val prefix = when (typeNibble) {
+            '0', '1' -> 'P'
+            '4', '5' -> 'C'
+            '8', '9' -> 'B'
+            'C', 'D' -> 'U'
+            else -> 'P'
+        }
+        val codeDigit = when (typeNibble) {
+            '0', '4', '8', 'C' -> '0'
+            '1', '5', '9', 'D' -> '1'
+            '2', '6', 'A', 'E' -> '2'
+            '3', '7', 'B', 'F' -> '3'
+            else -> '0'
+        }
+        return "$prefix$codeDigit${hex4.substring(1)}"
+    }
 
     suspend fun getBatteryVoltage(): Double? {
         return try {
@@ -611,8 +619,8 @@ class ELM327BTConnection(
     }
 
     private fun parseVoltageResponse(response: String): Double? {
-        val cleaned = response.replace("V", "").replace("v", "").trim()
-        return cleaned.toDoubleOrNull()
+        val cleaned = response.replace("V", "", ignoreCase = true).replace(',', '.').trim()
+        return cleaned.toDoubleOrNull()?.takeIf { it in 0.0..MAX_BATTERY_VOLTAGE }
     }
 
     private suspend fun sendCommand(cmd: String): String = withContext(Dispatchers.IO) {
@@ -621,35 +629,35 @@ class ELM327BTConnection(
 
     suspend fun sendRawCommand(cmd: String): String = sendCommand(cmd)
 
-    private suspend fun sendCommandWithTimeout(cmd: String): String = withContext(Dispatchers.IO) {
-        val output = outputStream ?: throw IOException("Not connected")
-        val input = inputStream ?: throw IOException("Not connected")
+    private suspend fun sendCommandWithTimeout(cmd: String): String = commandMutex.withLock {
+        withContext(Dispatchers.IO) {
+            val output = outputStream ?: throw IOException("Not connected")
+            val input = inputStream ?: throw IOException("Not connected")
 
-        val clearBuffer = ByteArray(64)
-        try { while (input.available() > 0) input.read(clearBuffer) } catch (e: Exception) { Log.v(TAG, "Buffer clear warning: ${e.message}") }
+            val clearBuffer = ByteArray(64)
+            try { while (input.available() > 0) input.read(clearBuffer) } catch (e: Exception) { Log.v(TAG, "Buffer clear warning: ${e.message}") }
 
-        output.write("$cmd\r".toByteArray())
-        output.flush()
+            output.write("$cmd\r".toByteArray())
+            output.flush()
 
-        val deadline = System.currentTimeMillis() + COMMAND_TIMEOUT_MS
-        val responseBuilder = StringBuilder()
-        val readBuffer = ByteArray(256)
+            val deadline = System.currentTimeMillis() + COMMAND_TIMEOUT_MS
+            val responseBuilder = StringBuilder()
+            val readBuffer = ByteArray(256)
 
-        while (System.currentTimeMillis() < deadline) {
-            if (input.available() > 0) {
-                val bytesRead = withContext(Dispatchers.IO) {
-                    input.read(readBuffer)
+            while (System.currentTimeMillis() < deadline) {
+                if (input.available() > 0) {
+                    val bytesRead = input.read(readBuffer)
+                    if (bytesRead > 0) {
+                        responseBuilder.append(String(readBuffer, 0, bytesRead, Charsets.US_ASCII))
+                        if (responseBuilder.contains(">")) break
+                    }
+                } else {
+                    delay(30L)
                 }
-                if (bytesRead > 0) {
-                    responseBuilder.append(String(readBuffer, 0, bytesRead, Charsets.US_ASCII))
-                    if (responseBuilder.contains(">")) break
-                }
-            } else {
-                delay(30L)
             }
-        }
 
-        cleanResponse(responseBuilder.toString())
+            cleanResponse(responseBuilder.toString())
+        }
     }
 
     private fun parseResponse(response: String, pid: OBDPID): Double? {
@@ -676,7 +684,7 @@ class ELM327BTConnection(
             .replace("\n", " ")
             .replace(">", "")
             .trim()
-            .filter { it.isDigit() || it.isLetter() || it == ' ' || it == ':' }
+            .filter { it.isDigit() || it.isLetter() || it == ' ' || it == ':' || it == '.' }
             .trim()
     }
 
@@ -742,7 +750,8 @@ class ELM327BTConnection(
                     try {
                         val rpmResp = sendCommandWithTimeout("020C")
                         if (!rpmResp.contains("ERROR")) {
-                            val rpmHex = rpmResp.replace(" ", "").drop(6)
+                            // 42 + PID 0C precede the two RPM data bytes.
+                            val rpmHex = rpmResp.replace(" ", "").drop(4)
                             if (rpmHex.length >= 4) {
                                 data["RPM"] = ((rpmHex.substring(0, 2).toInt(16) * 256 + rpmHex.substring(2, 4).toInt(16)) / 4.0)
                             }
@@ -909,7 +918,12 @@ class ELM327BTConnection(
      * @return Raw response string from ELM327, or null if error
      */
     suspend fun sendMode22Command(pidCode: String): String? = withContext(Dispatchers.IO) {
-        val command = if (pidCode.startsWith("22")) pidCode else "22$pidCode"
+        val normalized = pidCode.replace(" ", "").uppercase()
+        val command = if (normalized.startsWith("22") && normalized.length >= 6) {
+            normalized
+        } else {
+            "22$normalized"
+        }
         try {
             Log.d(TAG, "Sending Mode 22 command: $command")
             val response = sendCommandWithTimeout(command)
@@ -935,7 +949,7 @@ class ELM327BTConnection(
      */
     suspend fun requestMode22PID(pidCode: String): Double? = withContext(Dispatchers.IO) {
         val response = sendMode22Command(pidCode) ?: return@withContext null
-        parseMode22Response(response, pidCode)
+        parseMode22Response(response, normalizeMode22PidCode(pidCode))
     }
 
     /**
@@ -1011,7 +1025,12 @@ class ELM327BTConnection(
             return null
         }
 
-        val pidDef = Mode22PIDs.PID_DEFINITIONS["22$pidCode"]
+        val normalizedPidCode = normalizeMode22PidCode(pidCode)
+        if (!hex.startsWith("62$normalizedPidCode")) {
+            Log.w(TAG, "Mode 22 parse error - unexpected PID echo: $hex")
+            return null
+        }
+        val pidDef = Mode22PIDs.PID_DEFINITIONS["22$normalizedPidCode"]
         if (pidDef == null) {
             Log.w(TAG, "Mode 22 parse error - unknown PID: $pidCode")
             return null
@@ -1044,6 +1063,15 @@ class ELM327BTConnection(
         } catch (e: Exception) {
             Log.e(TAG, "Mode 22 formula error for $pidCode: ${e.message}")
             null
+        }
+    }
+
+    private fun normalizeMode22PidCode(pidCode: String): String {
+        val normalized = pidCode.replace(" ", "").uppercase()
+        return if (normalized.startsWith("22") && normalized.length >= 6) {
+            normalized.substring(2, 6)
+        } else {
+            normalized.takeLast(4)
         }
     }
 

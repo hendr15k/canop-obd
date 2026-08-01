@@ -31,6 +31,7 @@ import com.canopobd.data.domain.SensorHealthMonitor
 import com.canopobd.data.domain.OilHealthPredictor
 import com.canopobd.data.domain.ValidationResult
 import com.canopobd.ui.comfort.ComfortCommand
+import com.canopobd.notifications.LiveAlertNotifier
 import com.canopobd.notifications.MaintenanceNotificationManager
 import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
@@ -49,16 +50,21 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private const val PSI_TO_KPA = 6.89476
+private const val LOW_TIRE_PRESSURE_PSI = 28.0
+
 class DashboardViewModel private constructor(
     application: Application
 ) : ViewModel() {
 
     private val context: Application = application
     private val notificationManager = MaintenanceNotificationManager(application)
+    private val liveAlertNotifier = LiveAlertNotifier(application)
     private val viewModelPrefs = application.getSharedPreferences("dashboard_vm", Context.MODE_PRIVATE)
 
     init {
         notificationManager.createNotificationChannel()
+        liveAlertNotifier.createChannel()
     }
 
     companion object {
@@ -77,6 +83,8 @@ class DashboardViewModel private constructor(
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val repository = OBDRepository(context, bluetoothManager?.adapter)
     private var canRepository: CANRepository? = null
+    private var canInitializationJob: Job? = null
+    private var previousRpmForDriveScore = 0.0
 
     val connectionState: StateFlow<OBDConnectionState> = repository.connectionState
     val climateReading = repository.climateReading
@@ -119,6 +127,14 @@ class DashboardViewModel private constructor(
     val activeAlerts = repository.activeAlerts
     val freezeFrames = repository.freezeFrames
     val importedData = repository.importedData
+
+    init {
+        viewModelScope.launch {
+            repository.activeAlerts.collect { alerts ->
+                liveAlertNotifier.notifyChanges(alerts)
+            }
+        }
+    }
 
     private val _showCustomization = MutableStateFlow(false)
     val showCustomization: StateFlow<Boolean> = _showCustomization.asStateFlow()
@@ -442,6 +458,12 @@ class DashboardViewModel private constructor(
         checkForUpdate()
         startTurboAnalysisCollection()
         startWarningMonitoring()
+        viewModelScope.launch {
+            dtcResponse.collect { response ->
+                safetyViewModel.updateFromSafetyDTCs(response)
+                dtcProcessor.processAllDTCs(response)
+            }
+        }
     }
 
     fun onPermissionsGranted() {
@@ -484,14 +506,30 @@ class DashboardViewModel private constructor(
     }
 
     private fun initializeCANRepository() {
+        canInitializationJob?.cancel()
         val conn = repository.connection
-        if (conn != null && canRepository == null) {
-            canRepository = CANRepository(conn)
-            viewModelScope.launch {
-                canRepository?.initialize()
-                canRepository?.startCANMonitoring { canMessage ->
-                    repository.processCANMessage(canMessage.canId, canMessage.data)
-                }
+        if (conn == null) return
+
+        canInitializationJob = viewModelScope.launch(Dispatchers.IO) {
+            // The repository connects asynchronously. Waiting for a new
+            // Connected state prevents CAN commands from racing ELM setup.
+            repository.connectionState
+                .dropWhile { it is OBDConnectionState.Connected }
+                .first { it is OBDConnectionState.Connected }
+
+            if (!conn.isConnected.value || canRepository != null) return@launch
+
+            val candidate = CANRepository(conn)
+            val result = candidate.initialize()
+            if (result.isFailure) {
+                Log.w(TAG, "CAN initialization failed: ${result.exceptionOrNull()?.message}")
+                candidate.shutdown()
+                return@launch
+            }
+
+            canRepository = candidate
+            candidate.startCANMonitoring { canMessage ->
+                repository.processCANMessage(canMessage.canId, canMessage.data)
             }
         }
     }
@@ -500,6 +538,8 @@ class DashboardViewModel private constructor(
         checkMaintenanceNotifications()
         sessionNotifiedMaintenance.clear()
         lastMaintenanceCheckTime = 0L
+        canInitializationJob?.cancel()
+        canInitializationJob = null
         canRepository?.stopCANMonitoring()
         canRepository?.shutdown()
         canRepository = null
@@ -808,13 +848,25 @@ class DashboardViewModel private constructor(
         rlPressure: Double, rlTemp: Int, rlBattery: Int,
         rrPressure: Double, rrTemp: Int, rrBattery: Int
     ): List<com.canopobd.ui.tpms.TireData> {
-        val psiToBar = 0.0689476
-        val lowThreshold = 28.0
+        val psiToKpa = PSI_TO_KPA
+        val lowThresholdPsi = LOW_TIRE_PRESSURE_PSI
         return listOf(
-            com.canopobd.ui.tpms.TireData("Vorne Links", (flPressure * psiToBar).toFloat(), flTemp, isLow = flPressure > 0 && flPressure < lowThreshold, sensorBattery = flBattery),
-            com.canopobd.ui.tpms.TireData("Vorne Rechts", (frPressure * psiToBar).toFloat(), frTemp, isLow = frPressure > 0 && frPressure < lowThreshold, sensorBattery = frBattery),
-            com.canopobd.ui.tpms.TireData("Hinten Links", (rlPressure * psiToBar).toFloat(), rlTemp, isLow = rlPressure > 0 && rlPressure < lowThreshold, sensorBattery = rlBattery),
-            com.canopobd.ui.tpms.TireData("Hinten Rechts", (rrPressure * psiToBar).toFloat(), rrTemp, isLow = rrPressure > 0 && rrPressure < lowThreshold, sensorBattery = rrBattery)
+            com.canopobd.ui.tpms.TireData(
+                "Vorne Links", (flPressure * psiToKpa).toFloat(), flTemp,
+                isLow = flPressure > 0 && flPressure < lowThresholdPsi, sensorBattery = flBattery
+            ),
+            com.canopobd.ui.tpms.TireData(
+                "Vorne Rechts", (frPressure * psiToKpa).toFloat(), frTemp,
+                isLow = frPressure > 0 && frPressure < lowThresholdPsi, sensorBattery = frBattery
+            ),
+            com.canopobd.ui.tpms.TireData(
+                "Hinten Links", (rlPressure * psiToKpa).toFloat(), rlTemp,
+                isLow = rlPressure > 0 && rlPressure < lowThresholdPsi, sensorBattery = rlBattery
+            ),
+            com.canopobd.ui.tpms.TireData(
+                "Hinten Rechts", (rrPressure * psiToKpa).toFloat(), rrTemp,
+                isLow = rrPressure > 0 && rrPressure < lowThresholdPsi, sensorBattery = rrBattery
+            )
         )
     }
 
@@ -1134,6 +1186,7 @@ class DashboardViewModel private constructor(
 
     fun checkForUpdate() {
         viewModelScope.launch(Dispatchers.IO) {
+            if (!UpdateChecker.shouldCheckForUpdate(context)) return@launch
             val update = UpdateChecker.checkForUpdate(context)
             if (update != null) {
                 _availableUpdate.value = update
@@ -1165,6 +1218,23 @@ class DashboardViewModel private constructor(
                 .filter { data -> data.rpm > 0 }
                 .conflate()
                 .collect { data ->
+                    val baroKpa = data.barometricPressure.takeIf { it > 0.0 } ?: 100.0
+                    val absoluteBoostKpa = if (data.boostPressure > 0.0) {
+                        data.boostPressure
+                    } else {
+                        data.intakePressure
+                    }
+                    safetyViewModel.updateFromOBDData(data)
+                    ecoScoreViewModel.updateFromOBDData(data, data.fuelLevel)
+                    performanceViewModel.recordDriveSample(
+                        rpm = data.rpm,
+                        throttle = data.throttle,
+                        speed = data.speed,
+                        prevRpm = previousRpmForDriveScore,
+                        boostBar = ((absoluteBoostKpa - baroKpa) / 100.0).coerceAtLeast(0.0),
+                        wastegateDuty = data.wastegateControl
+                    )
+                    previousRpmForDriveScore = data.rpm
                     updateAllTurboMetrics(data)
                     updateEmissionsAnalyzers(data)
                     updateExtendedAnalyzers(data)
@@ -1465,7 +1535,7 @@ class DashboardViewModel private constructor(
             ))
         }
 
-        val oilPressureBar = data.turboOilPressure ?: 0.0
+        val oilPressureBar = (data.turboOilPressure ?: 0.0) / 100.0
         if (data.rpm > 1000 && oilPressureBar > 0 && oilPressureBar < calibration.minOilPressureIdle) {
             warnings.add(VehicleWarning(
                 "OIL_PRESSURE", WarningPriority.CRITICAL,

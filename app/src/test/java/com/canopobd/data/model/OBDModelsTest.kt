@@ -120,6 +120,13 @@ class OBDModelsTest {
         val bytes = byteArrayOf(0xFF.toByte(), 0xFF.toByte())
         val result = OBDPID.FUEL_RAIL_PRESSURE.formula(bytes)
         assertTrue(result > 0)
+        assertEquals("0159", OBDPID.FUEL_RAIL_PRESSURE.code)
+    }
+
+    @Test
+    fun `OBDPID BOOST_PRESSURE returns absolute pressure`() {
+        val bytes = byteArrayOf(0x0C.toByte(), 0x80.toByte()) // 100 kPa
+        assertEquals(100.0, OBDPID.BOOST_PRESSURE.formula(bytes), 0.001)
     }
 
     @Test

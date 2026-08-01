@@ -99,6 +99,9 @@ class M32GearboxMonitor(
             0 to 3.182 // Rueckwaerts
         )
         private const val FINAL_DRIVE = 3.940
+        // Engine RPM / vehicle speed includes wheel circumference. The Astra
+        // J tyre sizes produce roughly 8.4 wheel RPM per km/h.
+        private const val WHEEL_RPM_PER_KMH = 8.4
 
         // Schwellenwerte
         private const val RATIO_TOLERANCE = 0.08 // 8% Toleranz fuer RPM/Geschwindigkeit
@@ -227,10 +230,10 @@ class M32GearboxMonitor(
         if (rpmHistory.size < 10 || speedHistory.size < 10) return 0 to 70
 
         val expectedRatio = if (gear > 0 && gear in GEAR_RATIOS) {
-            GEAR_RATIOS.getValue(gear) * FINAL_DRIVE
+            GEAR_RATIOS.getValue(gear) * FINAL_DRIVE * WHEEL_RPM_PER_KMH
         } else {
             // Verwende Durchschnitts-Verhaeltnis wenn Gang nicht bekannt
-            GEAR_RATIOS.values.average() * FINAL_DRIVE
+            GEAR_RATIOS.values.average() * FINAL_DRIVE * WHEEL_RPM_PER_KMH
         }
 
         var anomalousReadings = 0

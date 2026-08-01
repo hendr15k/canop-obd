@@ -186,6 +186,24 @@ class AnalyzerManager {
     // --- Voltage histories ---
     private val voltageDeque = ArrayDeque<Double>(65)
     private val o2VoltageDeque = ArrayDeque<Double>(65)
+    private val gearboxRpmHistory = ArrayDeque<Double>(100)
+    private val gearboxSpeedHistory = ArrayDeque<Double>(100)
+    private val throttleHistory = ArrayDeque<Double>(100)
+    private val boostHistory = ArrayDeque<Double>(100)
+    private val wastegateHistory = ArrayDeque<Double>(100)
+    private val loadHistory = ArrayDeque<Double>(100)
+    private var analyzerSessionStartTime = 0L
+    private var analyzerSampleCount = 0
+    private var analyzerIdleSamples = 0
+    private var analyzerHarshAccelerations = 0
+    private var analyzerHarshBrakes = 0
+    private var analyzerCoastingSamples = 0
+    private var previousAnalyzerSpeed = 0.0
+
+    private fun addAnalyzerSample(history: ArrayDeque<Double>, value: Double) {
+        history.addLast(value)
+        if (history.size > 100) history.removeFirst()
+    }
     val voltageHistory = MutableStateFlow<List<Double>>(emptyList())
     val o2VoltageHistory = MutableStateFlow<List<Double>>(emptyList())
 
@@ -201,6 +219,10 @@ class AnalyzerManager {
     var turboSpoolTracking = false
     var turboSpoolStartTime = 0L
     var turboSpoolStartBoost = 0.0
+    private var turboSpoolStartRpm = 0.0
+    private var turboSpoolStartWastegate = 0.0
+    private var turboSpoolEndRpm = 0.0
+    private var turboSpoolEndWastegate = 0.0
 
     private data class BoostBarValues(val actualBar: Double, val targetBar: Double, val absoluteBoostKpa: Double)
 
@@ -339,6 +361,7 @@ class AnalyzerManager {
         lambdaAnalysis.value = result
     }
 
+    @Suppress("MagicNumber", "LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth")
     fun updateExtendedAnalyzers(
         data: OBDData,
         dtcCodes: List<String>,
@@ -349,18 +372,42 @@ class AnalyzerManager {
         wastegateDuty: Double,
         canTransmissionData: Any? = null
     ) {
-        val oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp
         val now = System.currentTimeMillis()
+        if (analyzerSessionStartTime == 0L) analyzerSessionStartTime = now
+
+        gearboxRpmHistory.addLast(data.rpm)
+        gearboxSpeedHistory.addLast(data.speed)
+        if (gearboxRpmHistory.size > 100) gearboxRpmHistory.removeFirst()
+        if (gearboxSpeedHistory.size > 100) gearboxSpeedHistory.removeFirst()
+        addAnalyzerSample(throttleHistory, data.throttle)
+        addAnalyzerSample(boostHistory, calcBoostBarValues(data).actualBar)
+        addAnalyzerSample(wastegateHistory, wastegateDuty)
+        addAnalyzerSample(loadHistory, data.engineLoad)
+        analyzerSampleCount++
+        if (data.speed < 3.0 && data.rpm > 500.0) analyzerIdleSamples++
+        val speedDelta = data.speed - previousAnalyzerSpeed
+        if (analyzerSampleCount > 1) {
+            if (speedDelta > 15.0) analyzerHarshAccelerations++
+            if (speedDelta < -15.0) analyzerHarshBrakes++
+        }
+        if (data.throttle < 10.0 && data.speed > 10.0 && speedDelta > -3.0) {
+            analyzerCoastingSamples++
+        }
+        previousAnalyzerSpeed = data.speed
+
+        val oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp
         if (lastOilTempSampleTime > 0 && oilTemp > 0) {
-            val dtHours = (now - lastOilTempSampleTime) / 3_600_000.0
+            // OilHealthPredictor receives these counters in seconds and
+            // converts them to hours when calculating thermal load.
+            val dtSeconds = (now - lastOilTempSampleTime).coerceAtLeast(0L) / 1000.0
             if (oilTemp > 110) {
-                oilTimeAbove110C += dtHours
+                oilTimeAbove110C += dtSeconds
             }
             if (oilTemp > 115) {
-                oilTimeAbove115C += dtHours
+                oilTimeAbove115C += dtSeconds
             }
             if (oilTemp > 120) {
-                oilTimeAbove120C += dtHours
+                oilTimeAbove120C += dtSeconds
             }
             if (lastOilTempWasCold && data.coolantTemp > 70 && data.runTime < 600) {
                 oilShortTripCount++
@@ -371,7 +418,7 @@ class AnalyzerManager {
 
         try {
             val oilInput = OilConditionMonitor.OilInput(
-                oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.coolantTemp,
+                oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp,
                 oilPressure = 0.0,
                 coolantTemp = data.coolantTemp,
                 rpm = data.rpm,
@@ -405,6 +452,8 @@ class AnalyzerManager {
         try {
             sensorValidator.addMaf(data.mafRate)
             sensorValidator.addRpm(data.rpm)
+            sensorValidator.addIat(data.intakeTemp)
+            sensorValidator.addCoolant(data.coolantTemp)
             sensorValidationResult.value = sensorValidator.validateMaf(data.mafRate)
             val boostBar = if (data.boostPressure > 0) {
                 (data.boostPressure - data.barometricPressure).coerceAtLeast(0.0) / 100.0
@@ -473,8 +522,8 @@ class AnalyzerManager {
         try {
             val tcmData = canTransmissionData as? TransmissionData
             val m32Input = M32GearboxMonitor.GearboxInput(
-                rpmHistory = listOf(data.rpm),
-                speedHistory = listOf(data.speed),
+                rpmHistory = gearboxRpmHistory.toList(),
+                speedHistory = gearboxSpeedHistory.toList(),
                 gearPosition = tcmData?.gear ?: 0,
                 clutchPosition = if (tcmData?.clutchStatus == "slipping") {
                     1.0
@@ -599,9 +648,13 @@ class AnalyzerManager {
                     turboSpoolTracking = true
                     turboSpoolStartTime = nowMs
                     turboSpoolStartBoost = boost.actualBar
+                    turboSpoolStartRpm = data.rpm
+                    turboSpoolStartWastegate = data.wastegateControl
                 }
                 if (turboSpoolTracking && boost.actualBar >= targetBoostAt80 * 0.8) {
                     val elapsed = (nowMs - turboSpoolStartTime) / 1000.0
+                    turboSpoolEndRpm = data.rpm
+                    turboSpoolEndWastegate = data.wastegateControl
                     turboSpoolTracking = false
                     if (elapsed > 0.1 && elapsed < 10.0) {
                         elapsed
@@ -616,23 +669,101 @@ class AnalyzerManager {
                 }
             }
 
+            val completedSpool = spoolTime > 0.0
             val turboSpoolInput = TurboSpoolAnalyzer.SpoolInput(
                 throttleApplication = data.throttle,
-                boostAtThrottleApplication = boost.actualBar,
+                boostAtThrottleApplication = if (completedSpool) turboSpoolStartBoost else boost.actualBar,
                 boostAt80Percent = targetBoostAt80,
                 targetBoostAt80 = targetBoostAt80,
                 spoolTimeSeconds = spoolTime,
-                wastegateDutyAtSpool = data.wastegateControl,
-                wastegateDutyIdle = wastegateDuty,
+                wastegateDutyAtSpool = if (completedSpool) turboSpoolEndWastegate else data.wastegateControl,
+                wastegateDutyIdle = if (completedSpool) turboSpoolStartWastegate else wastegateDuty,
                 turboRpmAtSpool = data.turboRpm,
-                rpmAtThrottleApplication = data.rpm,
-                rpmAt80PercentBoost = data.rpm,
+                rpmAtThrottleApplication = if (completedSpool) turboSpoolStartRpm else data.rpm,
+                rpmAt80PercentBoost = if (completedSpool) turboSpoolEndRpm else data.rpm,
                 engineLoad = data.engineLoad,
                 intakeTemp = data.intakeTemp,
                 boostPressureKpa = boost.absoluteBoostKpa
             )
             turboSpoolResult.value = turboSpoolAnalyzer.analyze(turboSpoolInput)
         } catch (e: Exception) { Log.w(TAG, "TurboSpoolAnalyzer failed", e) }
+
+        try {
+            val rpmHistory = gearboxRpmHistory.toList()
+            val speedHistory = gearboxSpeedHistory.toList()
+            val throttleValues = throttleHistory.toList()
+            val boostValues = boostHistory.toList()
+            val loadValues = loadHistory.toList()
+            driveStyleResult.value = driveStyleAnalyzer.analyze(
+                DriveStyleAnalyzer.DriveStyleInput(
+                    rpmHistory = rpmHistory,
+                    throttleHistory = throttleValues,
+                    speedHistory = speedHistory,
+                    boostHistory = boostValues,
+                    boostDutyHistory = wastegateHistory.toList(),
+                    engineLoadHistory = loadValues,
+                    sessionDurationSec = ((now - analyzerSessionStartTime) / 1000L).coerceAtLeast(0L),
+                    totalKm = currentKm.toDouble()
+                )
+            )
+
+            val rpmDistribution = rpmHistory.groupingBy {
+                when {
+                    it < 2_000.0 -> "<2k"
+                    it < 3_000.0 -> "2k-3k"
+                    it < 4_000.0 -> "3k-4k"
+                    it < 5_000.0 -> "4k-5k"
+                    else -> "5k+"
+                }
+            }.eachCount()
+            val efficiencyInput = DrivingEfficiencyScorer.DriveSessionData(
+                avgRpm = rpmHistory.averageOrZero(),
+                maxRpm = rpmHistory.maxOrZero(),
+                avgSpeed = speedHistory.averageOrZero(),
+                maxSpeed = speedHistory.maxOrZero(),
+                avgThrottle = throttleValues.averageOrZero(),
+                maxThrottle = throttleValues.maxOrZero(),
+                avgLoad = loadValues.averageOrZero(),
+                idleTimePercent = if (analyzerSampleCount > 0) {
+                    analyzerIdleSamples.toDouble() / analyzerSampleCount * 100.0
+                } else {
+                    0.0
+                },
+                harshAccelerations = analyzerHarshAccelerations,
+                harshBrakes = analyzerHarshBrakes,
+                totalSamples = analyzerSampleCount,
+                avgBoostBar = boostValues.averageOrZero(),
+                coastingSamples = analyzerCoastingSamples,
+                rpmDistribution = rpmDistribution
+            )
+            drivingEfficiencyResult.value = drivingEfficiencyScorer.calculateScore(efficiencyInput)
+
+            if (data.fuelRailPressure > 0.0 || data.mafRate > 0.0 ||
+                data.shortTermFuelTrimB1 != 0.0 || data.longTermFuelTrimB1 != 0.0
+            ) {
+                fuelSystemResult.value = fuelSystemAnalyzer.analyze(
+                    FuelSystemAnalyzer.FuelSystemInput(
+                        activeDTCs = dtcCodes,
+                        fuelRailPressureBar = data.fuelRailPressure / 100.0,
+                        fuelPressureLowBar = data.fuelPressure / 100.0,
+                        stftB1 = data.shortTermFuelTrimB1,
+                        ltftB1 = data.longTermFuelTrimB1,
+                        stftB2 = data.shortTermFuelTrimB2,
+                        ltftB2 = data.longTermFuelTrimB2,
+                        mafRate = data.mafRate,
+                        mapPressure = data.intakePressure,
+                        engineLoad = data.engineLoad,
+                        rpm = data.rpm,
+                        throttle = data.throttle,
+                        coolantTemp = data.coolantTemp,
+                        fuelLevel = data.fuelLevel,
+                        engineFuelRate = data.engineFuelRate,
+                        o2Voltage = data.o2VoltageB1S1,
+                        totalKm = currentKm.toDouble()
+                    )
+                )
+            }
+        } catch (e: Exception) { Log.w(TAG, "Driving analyzers failed", e) }
 
         try {
             extendedAnalyzerData.value = ExtendedAnalyzerSummary(
@@ -723,4 +854,8 @@ class AnalyzerManager {
         }
         return baseConsumption * rpmFactor * boostFactor * (1 + loadFactor)
     }
+
+    private fun List<Double>.averageOrZero(): Double = if (isEmpty()) 0.0 else average()
+
+    private fun List<Double>.maxOrZero(): Double = maxOrNull() ?: 0.0
 }

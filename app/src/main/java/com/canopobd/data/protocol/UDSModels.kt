@@ -1,5 +1,7 @@
 package com.canopobd.data.protocol
 
+private const val SUB_FUNCTION_NOT_SUPPORTED_IN_SESSION_CODE = 0x7E
+
 data class UDSResponse(
     val isPositive: Boolean,
     val serviceId: Int,
@@ -107,8 +109,10 @@ enum class UDSNegativeResponseCode(val code: Int, val label: String) {
     GENERAL_PROGRAMMING_FAILURE(0x72, "General Programming Failure"),
     WRONG_BLOCK_SEQUENCE_COUNTER(0x73, "Wrong Block Sequence Counter"),
     REQUEST_CORRECTLY_RECEIVED_PENDING(0x78, "Request Correctly Received - Response Pending"),
-    SUB_FUNCTION_NOT_SUPPORTED_IN_SESSION(0x12, "Sub-Function Not Supported In Session"),
-    DTC_NOT_READY(0x25, "DTC Not Ready")
+    SUB_FUNCTION_NOT_SUPPORTED_IN_SESSION(
+        SUB_FUNCTION_NOT_SUPPORTED_IN_SESSION_CODE,
+        "Sub-Function Not Supported In Session"
+    )
 }
 
 data class UDSError(

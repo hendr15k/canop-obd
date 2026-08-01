@@ -151,8 +151,14 @@ class Mode22Client(private val connection: ELM327BTConnection) {
 
         val TURBO_SPECIFIC_DIDS = mapOf(
             "220001" to Mode22DIDInfo(
-                "220001", "Actual Torque", DIDCategory.ENGINE, "Nm", 1,
-                { b -> if (b.isNotEmpty()) ((b[0].toInt() and 0xFF) - 125).toDouble() else 0.0 },
+                "220001", "Actual Torque", DIDCategory.ENGINE, "Nm", 2,
+                { b ->
+                    if (b.size >= 2) {
+                        ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF) - 500).toDouble()
+                    } else {
+                        0.0
+                    }
+                },
                 "Aktuelles Motordrehmoment"
             ),
             "220002" to Mode22DIDInfo(
@@ -271,9 +277,9 @@ class Mode22Client(private val connection: ELM327BTConnection) {
                 allSuccess = false
             }
         }
+        // Do not publish a mixed snapshot. Consumers treat one emission as a
+        // coherent set of DIDs and would otherwise combine fresh and stale data.
         if (allSuccess && results.isNotEmpty()) {
-            emit(results)
-        } else if (results.isNotEmpty()) {
             emit(results)
         }
     }.flowOn(Dispatchers.IO)

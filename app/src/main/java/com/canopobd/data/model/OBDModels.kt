@@ -1,5 +1,8 @@
 package com.canopobd.data.model
 
+private const val FUEL_RAIL_PRESSURE_SCALE = 10.0
+private const val TIMING_CHAIN_DEFAULT_INTERVAL_KM = 150_000
+
 enum class OBDPID(
     val code: String,
     val displayName: String,
@@ -49,8 +52,12 @@ enum class OBDPID(
     DISTANCE_MIL("0121", "Distance with MIL", "km", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
     }),
-    FUEL_RAIL_PRESSURE("012A", "Fuel Rail Pressure", "kPa", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 0.079 else 0.0
+    FUEL_RAIL_PRESSURE("0159", "Fuel Rail Pressure", "kPa", 2, { b ->
+        if (b.size >= 2) {
+            ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * FUEL_RAIL_PRESSURE_SCALE
+        } else {
+            0.0
+        }
     }),
     COMMANDED_EGR("012C", "Commanded EGR", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
@@ -125,7 +132,7 @@ enum class OBDPID(
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
     BOOST_PRESSURE("0170", "Boost Pressure", "kPa", 2, { b ->
-        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 0.03125 - 100.0 else 0.0
+        if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 0.03125 else 0.0
     }),
     VGT_CONTROL("0171", "VGT Control", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
@@ -446,7 +453,9 @@ enum class ColorTheme(val displayName: String, val primaryColor: Long, val accen
     CANOPO("Canopo Dark", 0xFF7B2FFF, 0xFF7B2FFF, 0xFF16213E, 0xFF00FF88, 0xFFFFE066, 0xFFFF8C00, 0xFFFF4444),
     BLUE_STEEL("Blue Steel", 0xFF1E88E5, 0xFF42A5F5, 0xFF0D1B2A, 0xFF4CAF50, 0xFFFFEB3B, 0xFFFF9800, 0xFFF44336),
     AMBER("Amber", 0xFFFFB300, 0xFFFFD54F, 0xFF1A1A1A, 0xFF69F0AE, 0xFFFFE082, 0xFFFFAB40, 0xFFFF5252),
-    NEON("Neon", 0xFF00E5FF, 0xFF18FFFF, 0xFF0A0A0A, 0xFF00E676, 0xFFFFEA00, 0xFFFF9100, 0xFFFF1744);
+    NEON("Neon", 0xFF00E5FF, 0xFF18FFFF, 0xFF0A0A0A, 0xFF00E676, 0xFFFFEA00, 0xFFFF9100, 0xFFFF1744),
+    SUNSET("Sunset", 0xFFFF6B35, 0xFFFFB347, 0xFF1A0F1E, 0xFF8BC34A, 0xFFFFE082, 0xFFFF7043, 0xFFE53935),
+    FOREST("Forest", 0xFF2E7D32, 0xFF66BB6A, 0xFF0F1A12, 0xFF81C784, 0xFFDCE775, 0xFFFFB74D, 0xFFEF5350);
 
     companion object {
         fun fromName(name: String): ColorTheme = entries.find { it.name == name } ?: CANOPO
@@ -824,7 +833,8 @@ enum class MaintenanceType(val label: String, val defaultInterval: Int) {
     TURBO_INSPECTION("Turbolader-Inspektion", 60000),
     COOLANT("Kühlmittel", 60000),
     SPARK_PLUGS("Zündkerzen", 30000),
-    TURBO_BOOST_CHECK("Ladedruck prüfen", 45000)
+    TURBO_BOOST_CHECK("Ladedruck prüfen", 45000),
+    TIMING_CHAIN("Steuerkette", TIMING_CHAIN_DEFAULT_INTERVAL_KM)
 }
 
 enum class MaintenanceStatus {
@@ -885,16 +895,23 @@ data class PowerCalculation(
     val isValid: Boolean = false
 ) {
     companion object {
+        private const val STOICHIOMETRIC_AFR = 14.7
+        private const val GASOLINE_LHV_KJ_PER_KG = 43_900.0
+        private const val BRAKE_THERMAL_EFFICIENCY = 0.30
+
         @Suppress("UNUSED_PARAMETER")
         fun calculate(mafGS: Double, rpm: Double, intakeTempC: Double = 25.0, veFactor: Double = 0.85): PowerCalculation {
             if (mafGS <= 0.0 || rpm <= 0.0 || rpm > 8000.0) {
                 return PowerCalculation()
             }
-            val airFlowKgH = mafGS * 3600.0
-            val airFlowKgs = airFlowKgH / 3600.0
-            val bmep = (airFlowKgs * 1.4 * 287.0 * (intakeTempC + 273.15)) / (0.85 * rpm * 0.5)
-            val torqueNm = (bmep * 0.5 * 0.002) * 1000.0
-            val powerKw = (torqueNm * rpm) / 9549.0
+
+            // MAF is measured in g/s. Estimate fuel energy from the
+            // stoichiometric mixture and convert it to brake power.
+            val airMassKgPerSecond = mafGS / 1000.0
+            val fuelMassKgPerSecond = airMassKgPerSecond / STOICHIOMETRIC_AFR
+            val powerKw = fuelMassKgPerSecond * GASOLINE_LHV_KJ_PER_KG *
+                BRAKE_THERMAL_EFFICIENCY * veFactor.coerceIn(0.0, 1.0)
+            val torqueNm = (powerKw * 9549.0) / rpm
             val hp = powerKw * 1.341
             val hpMetric = powerKw * 1.3596
             return PowerCalculation(

@@ -51,11 +51,16 @@ import com.canopobd.ui.dashboard.DashboardScreen
 import com.canopobd.ui.theme.*
 import com.canopobd.ui.update.UpdateDialog
 import com.canopobd.viewmodel.DashboardViewModel
+import com.canopobd.data.locale.LocaleManager
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: DashboardViewModel by lazy {
         ViewModelProvider(this, DashboardViewModel.Factory(application))[DashboardViewModel::class.java]
+    }
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LocaleManager.wrapContext(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -517,6 +522,18 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val ecoTips by viewModel.ecoTips.collectAsState()
     var csvShareContent by remember { mutableStateOf<String?>(null) }
     val activityContext = LocalContext.current
+    var languageState by remember { mutableStateOf(com.canopobd.data.locale.LocaleManager.getLanguage(activityContext)) }
+    val onLanguageChange: (com.canopobd.data.locale.AppLanguage) -> Unit = { language ->
+        com.canopobd.data.locale.LocaleManager.setLanguage(activityContext, language)
+        languageState = language
+        activityContext.startActivity(
+            android.content.Intent(activityContext, MainActivity::class.java).apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        )
+        (activityContext as? android.app.Activity)?.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        (activityContext as? android.app.Activity)?.finish()
+    }
 
     LaunchedEffect(csvShareContent) {
         csvShareContent?.let { content ->
@@ -722,6 +739,18 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onShareTripCsv = {
             viewModel.exportTripHistoryToCsv { csv -> csvShareContent = csv }
         },
+        onShareStats = { report ->
+            try {
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_TEXT, report)
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                activityContext.startActivity(android.content.Intent.createChooser(intent, "Statistik teilen"))
+            } catch (e: android.content.ActivityNotFoundException) {
+                android.util.Log.e("MainActivity", "No app to handle stats share", e)
+            }
+        },
         onTogglePowerCalculator = viewModel::togglePowerCalculator,
         onToggleDriveScore = viewModel::toggleDriveScore,
         onToggleShiftLight = viewModel::toggleShiftLight,
@@ -821,6 +850,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         gpsSpeedKmh = gpsSpeedForTest,
         accelerationRun = currentAccelerationRun,
         onToggleSafetySystems = viewModel::toggleSafetySystems,
-        onToggleEcoScore = viewModel::toggleEcoScore
+        onToggleEcoScore = viewModel::toggleEcoScore,
+        language = languageState,
+        onLanguageChange = onLanguageChange
     )
 }

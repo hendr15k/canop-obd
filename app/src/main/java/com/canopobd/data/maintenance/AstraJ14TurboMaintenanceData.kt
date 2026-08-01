@@ -341,5 +341,6 @@ object AstraJ14TurboMaintenanceData {
         MaintenanceType.TIRES -> REIFEN
         MaintenanceType.INSPECTION -> TUV_INSPECTION
         MaintenanceType.TURBO_BOOST_CHECK -> TURBO_INSPECTION
+        MaintenanceType.TIMING_CHAIN -> TURBO_INSPECTION
     }
 }

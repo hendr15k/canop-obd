@@ -17,6 +17,9 @@ class UDSRepository(private val connection: ELM327BTConnection) {
 
     companion object {
         private const val TAG = "UDSRepository"
+        private const val ONE_BYTE_DID_RESPONSE_SIZE = 4
+        private const val TWO_BYTE_DID_RESPONSE_SIZE = 5
+        private const val FUEL_CONSUMPTION_SCALE = 20.0
 
         fun getAllSupportedDIDs(): List<String> = listOf(
             UDSConstants.GMOpelDIDs.ECU_INFO,
@@ -199,8 +202,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.TORQUE).collect { response ->
-                if (response.isPositive && response.data.size >= 4) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= TWO_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.size >= 2) {
                         val torqueRaw = (raw[0].toInt() and 0xFF) * 256 + (raw[1].toInt() and 0xFF)
                         val torqueNm = (torqueRaw - 500).toDouble()
@@ -225,8 +228,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.BOOST_PRESSURE).collect { response ->
-                if (response.isPositive && response.data.size >= 4) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= TWO_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.size >= 2) {
                         val boostKpa = (raw[0].toInt() and 0xFF) * 256 + (raw[1].toInt() and 0xFF)
                         emit(boostKpa.toDouble())
@@ -250,8 +253,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.BATTERY_VOLTAGE).collect { response ->
-                if (response.isPositive && response.data.size >= 4) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= TWO_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.size >= 2) {
                         val voltageRaw = (raw[0].toInt() and 0xFF) * 256 + (raw[1].toInt() and 0xFF)
                         val voltageV = voltageRaw / 100.0
@@ -276,11 +279,11 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.FUEL_CONSUMPTION).collect { response ->
-                if (response.isPositive && response.data.size >= 4) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= TWO_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.size >= 2) {
                         val fuelRaw = (raw[0].toInt() and 0xFF) * 256 + (raw[1].toInt() and 0xFF)
-                        val fuelLh = fuelRaw / 100.0
+                        val fuelLh = fuelRaw / FUEL_CONSUMPTION_SCALE
                         emit(fuelLh)
                     } else {
                         emit(null)
@@ -302,8 +305,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.COOLANT_TEMP).collect { response ->
-                if (response.isPositive && response.data.size >= 3) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= ONE_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.isNotEmpty()) {
                         val tempC = (raw[0].toInt() and 0xFF) - 40
                         emit(tempC.toDouble())
@@ -327,8 +330,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.ENGINE_SPEED).collect { response ->
-                if (response.isPositive && response.data.size >= 4) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= TWO_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.size >= 2) {
                         val rpmRaw = (raw[0].toInt() and 0xFF) * 256 + (raw[1].toInt() and 0xFF)
                         val rpm = rpmRaw.toDouble() / 4.0
@@ -353,8 +356,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.VEHICLE_SPEED).collect { response ->
-                if (response.isPositive && response.data.size >= 3) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= ONE_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.isNotEmpty()) {
                         val speed = (raw[0].toInt() and 0xFF).toDouble()
                         emit(speed)
@@ -378,8 +381,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.THROTTLE_POSITION).collect { response ->
-                if (response.isPositive && response.data.size >= 3) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= ONE_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.isNotEmpty()) {
                         val throttle = (raw[0].toInt() and 0xFF) * 100.0 / 255.0
                         emit(throttle)
@@ -403,8 +406,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.OIL_TEMP).collect { response ->
-                if (response.isPositive && response.data.size >= 3) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= ONE_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.isNotEmpty()) {
                         val tempC = (raw[0].toInt() and 0xFF) - 40
                         emit(tempC.toDouble())
@@ -428,8 +431,8 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.FUEL_LEVEL).collect { response ->
-                if (response.isPositive && response.data.size >= 3) {
-                    val raw = response.data.drop(2)
+                if (response.isPositive && response.data.size >= ONE_BYTE_DID_RESPONSE_SIZE) {
+                    val raw = response.data.drop(3)
                     if (raw.isNotEmpty()) {
                         val fuel = (raw[0].toInt() and 0xFF) * 100.0 / 255.0
                         emit(fuel)

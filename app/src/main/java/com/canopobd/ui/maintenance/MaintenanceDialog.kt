@@ -58,11 +58,13 @@ fun MaintenanceDialog(
     val tabs = listOf("Wartungen", "Öl-Temperatur", "Verbrauch", "Kosten")
 
     // Erweitertes Service-Objekt
-    val maintenanceService = remember { MaintenanceService() }
-    val reminders by remember { mutableStateOf(maintenanceService.getAllReminders()) }
-    val oilTempStats by remember { mutableStateOf(maintenanceService.getOilTempStatistics()) }
-    val fuelStats by remember { mutableStateOf(maintenanceService.getFuelConsumptionStatistics()) }
-    val costEstimate by remember { mutableStateOf(maintenanceService.estimateMaintenanceCosts()) }
+    val maintenanceService = remember(currentKm) {
+        MaintenanceService().also { it.initialize(currentKm) }
+    }
+    val reminders = maintenanceService.getAllReminders()
+    val oilTempStats = maintenanceService.getOilTempStatistics()
+    val fuelStats = maintenanceService.getFuelConsumptionStatistics()
+    val costEstimate = maintenanceService.estimateMaintenanceCosts()
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -1668,4 +1670,5 @@ private fun getIconForMaintenanceType(type: MaintenanceType) = when (type) {
     MaintenanceType.COOLANT -> Icons.Filled.Settings
     MaintenanceType.SPARK_PLUGS -> Icons.Filled.Settings
     MaintenanceType.TURBO_BOOST_CHECK -> Icons.Filled.Speed
+    MaintenanceType.TIMING_CHAIN -> Icons.Filled.Warning
 }

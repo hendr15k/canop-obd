@@ -222,6 +222,11 @@ class MaintenanceService {
      * Erstellt eine Benachrichtigung
      */
     private fun createNotification(reminder: MaintenanceReminder, message: String) {
+        if (notifications.any {
+                it.reminderId == reminder.id && it.message == message && !it.isDismissed
+            }) {
+            return
+        }
         val notification = MaintenanceReminderNotification(
             reminderId = reminder.id,
             type = reminder.type,
@@ -246,9 +251,10 @@ class MaintenanceService {
      * Markiert eine Benachrichtigung als gelesen
      */
     fun markNotificationRead(notificationId: String) {
-        val index = notifications.indexOfFirst { it.reminderId == notificationId }
-        if (index >= 0) {
-            notifications[index] = notifications[index].copy(isRead = true)
+        notifications.forEachIndexed { index, notification ->
+            if (notification.reminderId == notificationId) {
+                notifications[index] = notification.copy(isRead = true)
+            }
         }
     }
 
@@ -256,9 +262,10 @@ class MaintenanceService {
      * Verwirft eine Benachrichtigung
      */
     fun dismissNotification(notificationId: String) {
-        val index = notifications.indexOfFirst { it.reminderId == notificationId }
-        if (index >= 0) {
-            notifications[index] = notifications[index].copy(isDismissed = true)
+        notifications.forEachIndexed { index, notification ->
+            if (notification.reminderId == notificationId) {
+                notifications[index] = notification.copy(isDismissed = true)
+            }
         }
     }
 
@@ -524,6 +531,7 @@ class MaintenanceService {
             MaintenanceType.TIRES -> TIRES_COST
             MaintenanceType.INSPECTION -> INSPECTION_COST
             MaintenanceType.TURBO_BOOST_CHECK -> TURBO_INSPECTION_COST
+            MaintenanceType.TIMING_CHAIN -> TURBO_INSPECTION_COST
         }
     }
 

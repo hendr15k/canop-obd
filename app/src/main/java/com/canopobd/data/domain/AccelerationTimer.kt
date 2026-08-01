@@ -108,8 +108,17 @@ class AccelerationTimer {
 
         when (state) {
             TimerState.WAITING_START -> {
-                // Check if vehicle has started moving
-                if (speedMs >= START_SPEED_MS && speedMs > lastSpeedMs) {
+                val requiredStartSpeed = startSpeedForType(currentTestType)
+                val hasReachedStart = if (requiredStartSpeed > START_SPEED_MS) {
+                    speedMs >= requiredStartSpeed &&
+                        (lastSpeedMs < requiredStartSpeed || lastSpeedMs == 0.0)
+                } else {
+                    speedMs >= START_SPEED_MS && speedMs > lastSpeedMs
+                }
+
+                // For a rolling test, timing starts at 100 km/h rather than
+                // at the first non-zero GPS sample.
+                if (hasReachedStart) {
                     state = TimerState.RUNNING
                     startTimeMs = timestampMs
                     maxSpeedMs = speedMs
@@ -150,9 +159,10 @@ class AccelerationTimer {
                     (it.speedKmh / (targetSpeed * 3.6) * 100).toInt()
                 } ?: 0
 
-                if (progress / 10 > lastPhasePercent / 10 && progress in listOf(10, 20, 30, 40, 50, 60, 70, 80, 90)) {
+                val phasePercent = (progress / 10) * 10
+                if (progress / 10 > lastPhasePercent / 10 && phasePercent in 10..90) {
                     phaseMarkers.add(AccelerationPhase(
-                        name = "$progress%",
+                        name = "$phasePercent%",
                         timestamp = timestampMs,
                         speedKmh = speedMs * 3.6,
                         rpm = rpm
@@ -169,10 +179,9 @@ class AccelerationTimer {
                         speedKmh = speedMs * 3.6,
                         rpm = rpm
                     ))
-                }
-
-                // Timeout check
-                if (elapsed > MAX_TEST_TIME_MS) {
+                } else if (elapsed > MAX_TEST_TIME_MS) {
+                    // A sample that reaches the target after the timeout is
+                    // still a completed run, not a cancelled one.
                     state = TimerState.CANCELLED
                 }
             }

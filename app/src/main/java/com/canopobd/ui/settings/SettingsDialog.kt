@@ -23,6 +23,7 @@ import com.canopobd.R
 import com.canopobd.data.model.AppThemeMode
 import com.canopobd.data.model.MeasurementUnit
 import com.canopobd.data.model.PollMode
+import com.canopobd.data.locale.AppLanguage
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
@@ -35,13 +36,15 @@ fun SettingsDialog(
     pollMode: PollMode,
     appThemeMode: AppThemeMode,
     emulatorMode: Boolean,
+    language: AppLanguage,
     onDismiss: () -> Unit,
     onPollRateChange: (Long) -> Unit,
     onUnitChange: (MeasurementUnit) -> Unit,
     onAutoReconnectChange: (Boolean) -> Unit,
     onPollModeChange: (PollMode) -> Unit,
     onSetAppThemeMode: (AppThemeMode) -> Unit,
-    onSetEmulatorMode: (Boolean) -> Unit
+    onSetEmulatorMode: (Boolean) -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit
 ) {
     val colors = LocalAppColors.current
     Dialog(
@@ -177,6 +180,22 @@ fun SettingsDialog(
                             options = AppThemeMode.entries.map { it.displayName },
                             selectedIndex = AppThemeMode.entries.indexOf(appThemeMode),
                             onSelect = { onSetAppThemeMode(AppThemeMode.entries[it]) }
+                        )
+                    }
+
+                    // ----- LANGUAGE -----
+                    item {
+                        Spacer(Modifier.height(4.dp))
+                        SettingsSectionHeader(
+                            icon = Icons.Filled.Language,
+                            title = stringResource(R.string.language)
+                        )
+                    }
+                    item {
+                        SegmentedSelector(
+                            options = AppLanguage.entries.map { it.displayName },
+                            selectedIndex = AppLanguage.entries.indexOf(language),
+                            onSelect = { onLanguageChange(AppLanguage.entries[it]) }
                         )
                     }
 

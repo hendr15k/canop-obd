@@ -216,14 +216,14 @@ class EGTMonitor(
         val change = avgSecond - avgFirst
 
         val (trend, score) = when {
+            abs(change) > TREND_VOLATILE_THRESHOLD -> {
+                EGTTrend.VOLATILE to 40
+            }
             change > TREND_RISING_THRESHOLD -> {
                 EGTTrend.RISING to 30
             }
             change < -TREND_FALLING_THRESHOLD -> {
                 EGTTrend.FALLING to 80
-            }
-            abs(change) > TREND_VOLATILE_THRESHOLD -> {
-                EGTTrend.VOLATILE to 40
             }
             else -> {
                 EGTTrend.STABLE to 100

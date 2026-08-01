@@ -345,7 +345,6 @@ data class Mode22Response(
     override fun hashCode(): Int {
         var result = pid.hashCode()
         result = 31 * result + rawResponse.hashCode()
-        result = 31 * result + dataBytes.contentHashCode()
         return result
     }
 }

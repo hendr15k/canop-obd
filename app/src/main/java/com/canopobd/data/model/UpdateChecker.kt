@@ -76,7 +76,7 @@ object UpdateChecker {
 
             if (apkUrl.isEmpty()) return@withContext null
 
-            val remoteCode = parseVersionCode(body, versionName)
+            val remoteCode = parseVersionCode(body)
             val isNewer = compareVersions(versionName, currentVersionName) > 0 || remoteCode > currentCode
             if (!isNewer) return@withContext null
 
@@ -125,17 +125,13 @@ object UpdateChecker {
         prefs.edit().putString(KEY_SKIPPED_VERSION, versionName).apply()
     }
 
-    private fun parseVersionCode(body: String, versionName: String): Int {
+    private fun parseVersionCode(body: String): Int {
         val codePattern = Regex("""versionCode[:\s]*(\d+)""", RegexOption.IGNORE_CASE)
         codePattern.find(body)?.groupValues?.get(1)?.toIntOrNull()?.let { return it }
 
-        val parts = versionName.split(".")
-        if (parts.size >= 3) {
-            val major = parts[0].toIntOrNull() ?: 0
-            val minor = parts[1].toIntOrNull() ?: 0
-            val patch = parts[2].toIntOrNull() ?: 0
-            return major * 100 + minor * 10 + patch + 1
-        }
+        // A version name is not a reliable substitute for the Gradle
+        // versionCode (e.g. 1.6.0 must not become code 161). Version-name
+        // comparison above already handles releases without metadata.
         return 0
     }
 }

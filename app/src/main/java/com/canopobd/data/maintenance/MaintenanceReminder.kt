@@ -92,17 +92,31 @@ data class MaintenanceReminder(
     val completedDate: Long? = null,
     val completedKm: Int? = null
 ) {
+    private fun effectiveIntervalKm(): Int = when (drivingConditions) {
+        DrivingConditions.SEVERE -> severeIntervalKm
+        DrivingConditions.HIGHWAY -> highwayIntervalKm
+        DrivingConditions.NORMAL -> intervalKm
+    }
+
+    private fun effectiveIntervalMonths(): Int = when (drivingConditions) {
+        DrivingConditions.SEVERE -> severeIntervalMonths
+        DrivingConditions.HIGHWAY -> highwayIntervalMonths
+        DrivingConditions.NORMAL -> intervalMonths
+    }
+
+    private fun matchesTrigger(kmCondition: Boolean, timeCondition: Boolean): Boolean = when (triggerType) {
+        ReminderTriggerType.KM_BASED -> kmCondition
+        ReminderTriggerType.TIME_BASED -> timeCondition
+        ReminderTriggerType.KM_OR_TIME -> kmCondition || timeCondition
+        ReminderTriggerType.KM_AND_TIME -> kmCondition && timeCondition
+    }
+
     /**
      * Berechnet die verbleibenden Kilometer bis zum nächsten Service
      */
     val kmRemaining: Int
         get() {
-            val effectiveInterval = when (drivingConditions) {
-                DrivingConditions.SEVERE -> (intervalKm * drivingConditions.kmFactor).toInt()
-                DrivingConditions.HIGHWAY -> (intervalKm * drivingConditions.kmFactor).toInt()
-                DrivingConditions.NORMAL -> intervalKm
-            }
-            return (lastServiceKm + effectiveInterval) - currentKm
+            return (lastServiceKm + effectiveIntervalKm()) - currentKm
         }
 
     /**
@@ -110,12 +124,8 @@ data class MaintenanceReminder(
      */
     val monthsRemaining: Int
         get() {
-            if (lastServiceDate == 0L) return intervalMonths
-            val effectiveInterval = when (drivingConditions) {
-                DrivingConditions.SEVERE -> (intervalMonths * drivingConditions.timeFactor).toInt()
-                DrivingConditions.HIGHWAY -> (intervalMonths * drivingConditions.timeFactor).toInt()
-                DrivingConditions.NORMAL -> intervalMonths
-            }
+            val effectiveInterval = effectiveIntervalMonths()
+            if (lastServiceDate == 0L) return effectiveInterval
             val monthsSinceLastService = ((currentDate - lastServiceDate) / (30L * 24 * 60 * 60 * 1000)).toInt()
             return effectiveInterval - monthsSinceLastService
         }
@@ -125,13 +135,13 @@ data class MaintenanceReminder(
      */
     val progressPercent: Float
         get() {
-            val effectiveInterval = when (drivingConditions) {
-                DrivingConditions.SEVERE -> (intervalKm * drivingConditions.kmFactor).toInt()
-                DrivingConditions.HIGHWAY -> (intervalKm * drivingConditions.kmFactor).toInt()
-                DrivingConditions.NORMAL -> intervalKm
-            }
+            val effectiveInterval = effectiveIntervalKm()
             val used = currentKm - lastServiceKm
-            return (used.toFloat() / effectiveInterval * 100f).coerceIn(0f, 100f)
+            return if (effectiveInterval > 0) {
+                (used.toFloat() / effectiveInterval * 100f).coerceIn(0f, 100f)
+            } else {
+                0f
+            }
         }
 
     /**
@@ -140,9 +150,15 @@ data class MaintenanceReminder(
     val status: MaintenanceReminderStatus
         get() = when {
             isCompleted -> MaintenanceReminderStatus.COMPLETED
-            kmRemaining < 0 || monthsRemaining < 0 -> MaintenanceReminderStatus.OVERDUE
-            kmRemaining < intervalKm * 0.1 || monthsRemaining < 2 -> MaintenanceReminderStatus.DUE_SOON
-            kmRemaining < intervalKm * 0.25 || monthsRemaining < 3 -> MaintenanceReminderStatus.UPCOMING
+            matchesTrigger(kmRemaining < 0, monthsRemaining < 0) -> MaintenanceReminderStatus.OVERDUE
+            matchesTrigger(
+                kmRemaining < effectiveIntervalKm() * 0.1,
+                monthsRemaining < 2
+            ) -> MaintenanceReminderStatus.DUE_SOON
+            matchesTrigger(
+                kmRemaining < effectiveIntervalKm() * 0.25,
+                monthsRemaining < 3
+            ) -> MaintenanceReminderStatus.UPCOMING
             else -> MaintenanceReminderStatus.OK
         }
 

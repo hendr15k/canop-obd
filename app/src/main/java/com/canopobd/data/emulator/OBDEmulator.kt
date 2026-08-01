@@ -221,7 +221,8 @@ class OBDEmulator(
             hybridBatteryRemaining = 0.0,
             vin = "W0LSHGE1SB1234567",
             timestamp = System.currentTimeMillis(),
-            boostPressure = currentBoost,
+            // OBDData.boostPressure is absolute kPa, matching the live PID.
+            boostPressure = 101.0 + currentBoost * 100.0,
             vgtControl = 45.0 + throttlePosition * 0.20,
             wastegateControl = calculateWastegateDuty(),
             exhaustPressure = 105.0 + currentBoost * 0.5,
@@ -243,7 +244,7 @@ class OBDEmulator(
             o2VoltageB2S1 = 0.45 + sin(timeSeconds * 4 + 0.5) * 0.35,
             o2VoltageB2S2 = 0.45 + sin(timeSeconds * 4 + 1.5) * 0.35,
             intakeAirTemp2 = currentCoolantTemp - 8,
-            turboOilPressure = 1.5 + currentRpm / 4000.0 + currentBoost * 0.3,
+            turboOilPressure = (1.5 + currentRpm / 4000.0 + currentBoost * 0.3) * 100.0,
             turboInletTemp = calculateTurboInletTemp(),
             turboOutletTemp = calculateTurboOutletTemp(),
             turboWastegateB = calculateWastegateDuty(),

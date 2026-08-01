@@ -806,7 +806,7 @@ object BCMProtocol {
         fun buildReadinessRequest() = "0101"
 
         fun parseReadiness(data: Int): List<Boolean> {
-            return (0..8).map { shift -> (data shr shift) and 1 == 0 }
+            return (0..8).map { shift -> (data shr shift) and 1 != 0 }
         }
     }
 

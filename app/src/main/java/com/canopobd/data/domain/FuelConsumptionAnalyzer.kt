@@ -32,6 +32,7 @@ class FuelConsumptionAnalyzer {
 
     companion object {
         private const val FUEL_DENSITY = 0.75
+        private const val STOICHIOMETRIC_AFR = 14.7
         private const val LPH_TO_L100_CONVERSION = 100.0
         private const val MIN_SPEED_FOR_CALC = 5.0
         private const val SAMPLE_WINDOW_SIZE = 100
@@ -63,7 +64,9 @@ class FuelConsumptionAnalyzer {
         if (maf <= 0 || speed < MIN_SPEED_FOR_CALC) { return 0.0 }
 
         val fuelRateGh = maf * 3.6
-        val fuelRateLph = fuelRateGh / FUEL_DENSITY
+        // MAF is the air mass flow. Convert it to fuel flow using the
+        // stoichiometric air-fuel ratio before applying fuel density.
+        val fuelRateLph = fuelRateGh / STOICHIOMETRIC_AFR / FUEL_DENSITY
         val l100km = (fuelRateLph * LPH_TO_L100_CONVERSION) / speed
 
         return if (l100km.isFinite() && l100km > 0 && l100km < 100) { l100km } else { 0.0 }
@@ -158,9 +161,9 @@ class FuelConsumptionAnalyzer {
     fun getEfficiencyRating(consumption: Double): EfficiencyRating {
         return when {
             consumption <= 0 -> EfficiencyRating.AVERAGE
-            consumption < CITY_CONSUMPTION_MIN -> EfficiencyRating.EXCELLENT
-            consumption < CITY_CONSUMPTION_MAX -> EfficiencyRating.GOOD
-            consumption < HIGHWAY_CONSUMPTION_MAX -> EfficiencyRating.AVERAGE
+            consumption < HIGHWAY_CONSUMPTION_MAX -> EfficiencyRating.EXCELLENT
+            consumption < CITY_CONSUMPTION_MIN -> EfficiencyRating.GOOD
+            consumption < CITY_CONSUMPTION_MAX -> EfficiencyRating.AVERAGE
             consumption < SPORT_CONSUMPTION_MIN -> EfficiencyRating.POOR
             else -> EfficiencyRating.CRITICAL
         }

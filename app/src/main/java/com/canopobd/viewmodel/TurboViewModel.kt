@@ -38,7 +38,9 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateFromOBDData(data: OBDData, carProfile: CarProfile) {
         val calibration = AstraJ14TurboCalibration.INSTANCE
+        val baroKpa = data.barometricPressure.takeIf { it > 0.0 } ?: 100.0
         val absoluteBoostKpa = if (data.boostPressure > 0) { data.boostPressure } else { data.intakePressure }
+        val relativeBoostKpa = (absoluteBoostKpa - baroKpa).coerceAtLeast(0.0)
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
         turboSpeedRpm.value = data.turboRpm
@@ -46,10 +48,10 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         wastegateDuty.value = data.wastegateControl
 
         val boostAnalysis = analyzeBoost(
-            absoluteBoostKpa, targetBoostKpa, calibration
+            relativeBoostKpa, targetBoostKpa, calibration
         )
         val wgAnalysis = analyzeWastegateWithSession(
-            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, absoluteBoostKpa, null
+            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, relativeBoostKpa, null
         )
         wastegatePosition.value = wgAnalysis.position
 
@@ -74,7 +76,9 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         driveSession: DriveSession
     ) {
         val calibration = AstraJ14TurboCalibration.INSTANCE
+        val baroKpa = data.barometricPressure.takeIf { it > 0.0 } ?: 100.0
         val absoluteBoostKpa = if (data.boostPressure > 0) { data.boostPressure } else { data.intakePressure }
+        val relativeBoostKpa = (absoluteBoostKpa - baroKpa).coerceAtLeast(0.0)
         val targetBoostKpa = calibration.normalBoostTargetBar * 100.0
 
         turboSpeedRpm.value = data.turboRpm
@@ -82,10 +86,10 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         wastegateDuty.value = data.wastegateControl
 
         val boostAnalysis = analyzeBoost(
-            absoluteBoostKpa, targetBoostKpa, calibration
+            relativeBoostKpa, targetBoostKpa, calibration
         )
         val wgAnalysis = analyzeWastegateWithSession(
-            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, absoluteBoostKpa, driveSession
+            data.wastegateControl, data.rpm.toInt(), data.engineLoad, calibration, relativeBoostKpa, driveSession
         )
         wastegatePosition.value = wgAnalysis.position
 
@@ -137,7 +141,7 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
     private fun updateOilDataInternal(data: OBDData) {
         _oilData.value = _oilData.value.copy(
             temperature = data.oilTemp,
-            pressure = data.turboOilPressure ?: 0.0,
+            pressure = (data.turboOilPressure ?: 0.0) / 100.0,
             timestamp = System.currentTimeMillis()
         )
     }
@@ -250,10 +254,10 @@ class TurboViewModel(application: Application) : AndroidViewModel(application) {
         val wastegateScore = wastegateAnalysis.healthScore
 
         val egtScore = when {
-            egt > calibration.maxEgtC -> 10
-            egt > 950 -> 20
-            egt > calibration.maxEgtC * 0.9 -> 50
-            egt > 800 -> 70
+            egt > 950 -> 10
+            egt > calibration.maxEgtC -> 20
+            egt > 800 -> 50
+            egt > calibration.maxEgtC * 0.9 -> 70
             else -> 100
         }
 

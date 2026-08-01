@@ -148,13 +148,12 @@ class RemoteBridge(
             }
         }
 
-        private fun handleCommand(cmd: String) {
+        @Suppress("CyclomaticComplexMethod")
+        private suspend fun handleCommand(cmd: String) {
             val response = when {
                 cmd.equals("ATRV", ignoreCase = true) -> {
-                    runBlocking(Dispatchers.IO) {
-                        val voltage = elmConnection.getBatteryVoltage()
-                        writer?.println(if (voltage != null) "${voltage}V" else "0V")
-                    }
+                    val voltage = elmConnection.getBatteryVoltage()
+                    writer?.println(if (voltage != null) "${voltage}V" else "0V")
                     sendPrompt()
                     return
                 }
@@ -169,11 +168,9 @@ class RemoteBridge(
                 cmd.startsWith("01") || cmd.startsWith("02") || cmd.startsWith("03") ||
                     cmd.startsWith("04") || cmd.startsWith("05") || cmd.startsWith("06") ||
                     cmd.startsWith("07") || cmd.startsWith("08") || cmd.startsWith("09") -> {
-                    scope.launch {
-                        val resp = sendPIDCommand(cmd)
-                        writer?.println(resp)
-                        sendPrompt()
-                    }
+                    val resp = sendPIDCommand(cmd)
+                    writer?.println(resp)
+                    sendPrompt()
                     return
                 }
                 else -> "?"
@@ -197,7 +194,7 @@ class RemoteBridge(
                 .replace("\n", " ")
                 .replace(">", "")
                 .trim()
-                .filter { it.isDigit() || it.isLetter() || it == ' ' || it == ':' }
+                .filter { it.isDigit() || it.isLetter() || it == ' ' || it == ':' || it == '.' }
                 .trim()
         }
 

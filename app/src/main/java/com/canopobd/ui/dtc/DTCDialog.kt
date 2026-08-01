@@ -13,12 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.canopobd.R
 import com.canopobd.data.model.DiagnosticTroubleCode
 import com.canopobd.data.model.DTCResponse
+import com.canopobd.data.repository.PdfReportExporter
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
@@ -29,6 +31,7 @@ fun DTCDialog(
     onClearDTCs: () -> Unit
 ) {
     val colors = LocalAppColors.current
+    val exportContext = LocalContext.current
     val allCount = (dtcResponse?.codes?.size ?: 0) + (dtcResponse?.pendingCodes?.size ?: 0)
     val eyebrow = if (allCount > 0) "$allCount Codes gefunden" else null
 
@@ -128,13 +131,25 @@ fun DTCDialog(
                 }
                 DividerLine()
                 Box(modifier = Modifier.padding(16.dp)) {
-                    GradientButton(
-                        text = stringResource(R.string.dtc_clear),
-                        onClick = onClearDTCs,
-                        icon = Icons.Filled.Delete,
-                        gradient = colors.gradientCritical,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        GradientButton(
+                            text = stringResource(R.string.dtc_export_pdf),
+                            onClick = { exportDtcPdf(exportContext, dtcResponse) },
+                            icon = Icons.Filled.PictureAsPdf,
+                            gradient = colors.gradientAccent,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GradientButton(
+                            text = stringResource(R.string.dtc_clear),
+                            onClick = onClearDTCs,
+                            icon = Icons.Filled.Delete,
+                            gradient = colors.gradientCritical,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
@@ -189,6 +204,26 @@ private fun DTCItem(dtc: DiagnosticTroubleCode, isPending: Boolean) {
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.textSecondary
             )
+        }
+    }
+}
+
+private fun exportDtcPdf(context: android.content.Context, dtcResponse: DTCResponse?) {
+    val codes = buildList {
+        dtcResponse?.codes?.forEach { add("[ST] ${it.code} — ${it.description}") }
+        dtcResponse?.pendingCodes?.forEach { add("[PD] ${it.code} — ${it.description}") }
+    }
+    val summary = PdfReportExporter.exportDiagnosticReport(context, codes, emptyList())
+    if (summary != null) {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(android.content.Intent.EXTRA_STREAM, summary.uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(android.content.Intent.createChooser(intent, "Diagnostic Report PDF"))
+        } catch (e: android.content.ActivityNotFoundException) {
+            android.util.Log.e("DTCDialog", "No app to handle PDF share", e)
         }
     }
 }

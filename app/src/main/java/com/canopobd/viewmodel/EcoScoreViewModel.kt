@@ -2,6 +2,7 @@ package com.canopobd.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import com.canopobd.data.domain.FuelConsumptionAnalyzer
 import com.canopobd.data.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,10 +12,7 @@ import kotlin.math.max
 class EcoScoreViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        private const val FUEL_TANK_LITERS = 52.0
-        // Combined conversion factor from MAF [g/s] and speed [km/h]
-        // to instantaneous fuel consumption; recipe: 3600 s/h / (14.7 stoich × 750 g/L).
-        private const val MAF_CONVERSION_FACTOR = 12128.4
+        private const val FUEL_TANK_LITERS = 56.0
     }
 
     private val _ecoScore = MutableStateFlow(EcoScoreData())
@@ -43,8 +41,8 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
 
     private var tripStartFuelLiters = 0.0
     private var tripDistanceKm = 0.0
-    private var tripDurationSeconds = 0L
-    private var tripIdleSeconds = 0L
+    private var tripDurationSeconds = 0.0
+    private var tripIdleSeconds = 0.0
     private var tripMaxSpeed = 0.0
     private var totalIdleTimeMs = 0L
     private var lastSpeed = 0.0
@@ -55,6 +53,7 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
     private var coastingSamples = 0
     private var totalSamples = 0
     private var decelSamples = 0
+    private val fuelConsumptionAnalyzer = FuelConsumptionAnalyzer()
 
     fun updateFromOBDData(data: OBDData, fuelLevelPercent: Double) {
         val now = System.currentTimeMillis()
@@ -65,13 +64,15 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         }
         lastTimestamp = now
 
-        if (data.speed > 0 && dt > 0) {
-            tripDistanceKm += data.speed / 3600.0 * dt
-            tripDurationSeconds += dt.toLong()
+        if (dt > 0) {
+            tripDurationSeconds += dt
+            if (data.speed > 0) {
+                tripDistanceKm += data.speed / 3600.0 * dt
+            }
         }
 
         if (data.speed < 3.0 && data.rpm > 500) {
-            tripIdleSeconds += dt.toLong()
+            tripIdleSeconds += dt
         }
 
         if (data.speed > tripMaxSpeed) {
@@ -102,7 +103,7 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
         }
 
         val instantConsumption = if (data.mafRate > 0 && data.speed > 0) {
-            (data.mafRate * 3600.0) / (data.speed * MAF_CONVERSION_FACTOR)
+            fuelConsumptionAnalyzer.calculateFromMAF(data.mafRate, data.speed)
         } else {
             0.0
         }
@@ -424,8 +425,8 @@ class EcoScoreViewModel(application: Application) : AndroidViewModel(application
     fun resetTripData() {
         tripStartFuelLiters = 0.0
         tripDistanceKm = 0.0
-        tripDurationSeconds = 0L
-        tripIdleSeconds = 0L
+        tripDurationSeconds = 0.0
+        tripIdleSeconds = 0.0
         tripMaxSpeed = 0.0
         totalIdleTimeMs = 0L
         lastSpeed = 0.0

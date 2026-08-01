@@ -116,7 +116,7 @@ class CANMonitor(private val connection: ELM327BTConnection) {
             delay(100)
             sendCommand("ATS0")
             delay(100)
-            sendCommand("ATH0")
+            sendCommand("ATH1")
             delay(100)
             sendCommand("ATSP6")
             delay(100)

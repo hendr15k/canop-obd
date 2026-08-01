@@ -67,6 +67,7 @@ class OilHealthPredictor(
         val lastOilChangeTimestamp: Long = 0L,
         val engineRuntimeSec: Double = 0.0,
         val drivingPattern: DrivingPattern = DrivingPattern.UNKNOWN,
+        // Durations are supplied in seconds and converted to hours below.
         val timeAbove110C: Double = 0.0,
         val timeAbove115C: Double = 0.0,
         val timeAbove120C: Double = 0.0,

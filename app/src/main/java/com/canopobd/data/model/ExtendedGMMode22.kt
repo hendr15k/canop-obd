@@ -364,7 +364,7 @@ object ExtendedGMMode22 {
             for (bit in 0..7) {
                 if (byteVal and (1 shl (7 - bit)) != 0) {
                     val pidNum = baseNum + (byteIndex * 8) + bit + 1
-                    val pidHex = "22%04X".format(pidNum)
+                    val pidHex = "%06X".format(pidNum)
                     if (pidHex in PID_MAP) {
                         supported.add(pidHex)
                     }

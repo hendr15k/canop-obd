@@ -283,9 +283,10 @@ class TurboSpoolAnalyzer(
             else -> 1.0
         }
 
+        val totalWeight = (WEIGHT_SPOOL_TIME + WEIGHT_WG_RESPONSE + WEIGHT_TURBO_ACCEL).toDouble()
         val weightedScore = (spoolScore * WEIGHT_SPOOL_TIME +
             wgScore * WEIGHT_WG_RESPONSE +
-            accelScore * WEIGHT_TURBO_ACCEL) / 100.0
+            accelScore * WEIGHT_TURBO_ACCEL) / totalWeight
 
         return (weightedScore * loadFactor).toInt().coerceIn(0, 100)
     }

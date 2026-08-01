@@ -10,6 +10,7 @@ import com.canopobd.bluetooth.Mode22PIDs
 import com.canopobd.bluetooth.Mode22TurboData
 import com.canopobd.bluetooth.RemoteBridge
 import com.canopobd.data.emulator.OBDEmulator
+import com.canopobd.data.domain.FuelConsumptionAnalyzer
 import com.canopobd.data.local.AlertConfigDao
 import com.canopobd.data.local.AlertConfigEntity
 import com.canopobd.data.local.AppSettingsDao
@@ -22,8 +23,12 @@ import com.canopobd.data.local.TripDao
 import com.canopobd.data.local.TripEntity
 import com.canopobd.data.model.*
 import com.canopobd.gps.GPSTracker
+import com.canopobd.widget.OBDWidgetProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+
+private const val MIN_SPEED_FOR_MAF_CALC = 5.0
+private const val MIN_TORQUE_CSV_COLUMNS = 11
 
 @SuppressLint("MissingPermission")
 class OBDRepository(
@@ -115,6 +120,7 @@ class OBDRepository(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val persistTripScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val fuelConsumptionAnalyzer = FuelConsumptionAnalyzer()
     val tripHistoryEntities: StateFlow<List<TripEntity>> = tripDao.getAll()
         .stateIn(scope, SharingStarted.Lazily, emptyList())
     private var pollingJob: Job? = null
@@ -150,6 +156,7 @@ class OBDRepository(
         OBDPID.ACTUAL_TORQUE,
         OBDPID.REFERENCE_TORQUE,
         OBDPID.BOOST_PRESSURE,
+        OBDPID.TURBO_RPM,
         OBDPID.WASTEGATE_CONTROL,
         OBDPID.EGT_BANK1,
         OBDPID.ETHANOL_FUEL_PERCENT,
@@ -276,7 +283,9 @@ class OBDRepository(
         prefs.getStringSet("primary_gauges", null)?.let { ids ->
             _primaryGaugeIds.value = ids
         }
-        _pollMode.value = runCatching { PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL") }.getOrNull() ?: PollMode.NORMAL
+        _pollMode.value = runCatching {
+            PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
+        }.getOrNull() ?: PollMode.NORMAL
         _emulatorMode.value = prefs.getBoolean("emulator_mode", false)
         _alertConfig.value = AlertConfig(
             speedWarning = prefs.getFloat("alert_speed", 130f),
@@ -338,6 +347,9 @@ class OBDRepository(
     }
 
     fun connect(address: String) {
+        if (_emulatorMode.value) {
+            setEmulatorMode(false)
+        }
         val attempt = connectAttempt.incrementAndGet()
         val conn = connection
         if (conn == null) {
@@ -419,9 +431,16 @@ class OBDRepository(
         reconnectJob?.cancel()
         reconnectJob = null
         stopRemoteServer()
+        val gpsTripWasActive = isGPSTracking.value
         stopGPSTracking()
         pollingJob?.cancel()
         pollingJob = null
+        emulatorPollingJob?.cancel()
+        emulatorPollingJob = null
+        emulator?.disconnect()
+        emulator = null
+        _emulatorMode.value = false
+        prefs.edit().putBoolean("emulator_mode", false).apply()
         flushRecordedData()
         connection?.disconnect()
         _connectionState.value = OBDConnectionState.Disconnected
@@ -433,7 +452,8 @@ class OBDRepository(
         // doesn't interrupt the room insert before the user-disconnect writes are flushed.
         val trip = _tripData.value
         val capturedStartTime = synchronized(tripLock) { tripStartTime }
-        if (trip.distanceKm > 0.1) {
+        // GPSTracker persists the same trip when GPS tracking was active.
+        if (!gpsTripWasActive && trip.distanceKm > 0.1) {
             persistTripScope.launch {
                 try {
                     tripDao.insert(
@@ -467,6 +487,9 @@ class OBDRepository(
     }
 
     private fun handleConnectionLoss(error: String) {
+        pollingJob?.cancel()
+        pollingJob = null
+        runCatching { connection?.disconnect() }
         if (_connectionState.value is OBDConnectionState.Disconnecting) {
             _connectionState.value = OBDConnectionState.Error(error)
             _lastError.value = error
@@ -486,7 +509,7 @@ class OBDRepository(
         disconnect()
     }
 
-    fun isConnected(): Boolean = _connectionState.value !is OBDConnectionState.Disconnected && _connectionState.value !is OBDConnectionState.Disconnecting
+    fun isConnected(): Boolean = _connectionState.value is OBDConnectionState.Connected
 
     fun cleanup() {
         runCatching { connection?.disconnect() }
@@ -547,11 +570,16 @@ class OBDRepository(
             tripSamples++
             tripSpeedSum += speed
             tripRpmSum += rpm
-            tripFuelUsedSum += fuelRate * (_pollRate.value / 3_600_000.0)
 
             val dtMs = (now - tripPrevTimestamp).coerceAtLeast(0L)
             val dtHours = dtMs / 3_600_000.0
             if (dtHours > 0) {
+                // Bluetooth and extra PID reads make the real cycle longer
+                // than the configured delay; integrate fuel over that real
+                // elapsed time just like distance.
+                if (fuelRate > 0) {
+                    tripFuelUsedSum += fuelRate * dtHours
+                }
                 val clampedSpeed = speed.coerceAtLeast(0.0)
                 val distanceKm = ((tripPrevSpeed + clampedSpeed) / 2.0 * dtHours).coerceAtLeast(0.0)
                 _tripData.value = _tripData.value.copy(
@@ -600,6 +628,7 @@ class OBDRepository(
                 .putFloat("widget_fuel", data.fuelLevel.toFloat())
                 .putBoolean("unit_metric", unit == MeasurementUnit.METRIC)
                 .apply()
+            OBDWidgetProvider.updateAll(context)
         }
     }
 
@@ -619,52 +648,74 @@ class OBDRepository(
 
                     updateTripData(speed, rpm, fuelRate, results[OBDPID.FUEL_LEVEL] ?: _tripData.value.fuelEndLevel, now)
 
+                    val previousData = _obdData.value
                     _obdData.value = OBDData(
-                        rpm = results[OBDPID.RPM] ?: _obdData.value.rpm,
+                        rpm = results[OBDPID.RPM] ?: previousData.rpm,
                         speed = speed,
-                        coolantTemp = results[OBDPID.COOLANT_TEMP] ?: _obdData.value.coolantTemp,
-                        intakeTemp = results[OBDPID.INTAKE_TEMP] ?: _obdData.value.intakeTemp,
-                        throttle = results[OBDPID.THROTTLE] ?: _obdData.value.throttle,
-                        engineLoad = results[OBDPID.ENGINE_LOAD] ?: _obdData.value.engineLoad,
-                        fuelLevel = results[OBDPID.FUEL_LEVEL] ?: _obdData.value.fuelLevel,
+                        coolantTemp = results[OBDPID.COOLANT_TEMP] ?: previousData.coolantTemp,
+                        intakeTemp = results[OBDPID.INTAKE_TEMP] ?: previousData.intakeTemp,
+                        throttle = results[OBDPID.THROTTLE] ?: previousData.throttle,
+                        engineLoad = results[OBDPID.ENGINE_LOAD] ?: previousData.engineLoad,
+                        fuelLevel = results[OBDPID.FUEL_LEVEL] ?: previousData.fuelLevel,
                         batteryVoltage = batteryVoltage,
-                        timingAdvance = results[OBDPID.TIMING_ADVANCE] ?: _obdData.value.timingAdvance,
-                        mafRate = results[OBDPID.MAF_RATE] ?: _obdData.value.mafRate,
-                        fuelPressure = results[OBDPID.FUEL_PRESSURE] ?: _obdData.value.fuelPressure,
-                        intakePressure = results[OBDPID.INTAKE_PRESSURE] ?: _obdData.value.intakePressure,
-                        runTime = results[OBDPID.RUN_TIME] ?: _obdData.value.runTime,
-                        fuelRailPressure = results[OBDPID.FUEL_RAIL_PRESSURE] ?: _obdData.value.fuelRailPressure,
-                        commandedEGR = results[OBDPID.COMMANDED_EGR] ?: _obdData.value.commandedEGR,
-                        egrTemp = results[OBDPID.EGR_TEMP] ?: _obdData.value.egrTemp,
-                        commandedEvapPurge = results[OBDPID.COMMANDED_EVAPORATIVE_PURGE] ?: _obdData.value.commandedEvapPurge,
-                        barometricPressure = results[OBDPID.BAROMETRIC_PRESSURE] ?: _obdData.value.barometricPressure,
-                        o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: _obdData.value.o2VoltageB1S1,
-                        o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: _obdData.value.o2VoltageB1S2,
-                        catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: _obdData.value.catalystTemp,
-                        controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE] ?: _obdData.value.controlModuleVoltage,
-                        absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: _obdData.value.absoluteLoadValue,
+                        timingAdvance = results[OBDPID.TIMING_ADVANCE] ?: previousData.timingAdvance,
+                        mafRate = results[OBDPID.MAF_RATE] ?: previousData.mafRate,
+                        fuelPressure = results[OBDPID.FUEL_PRESSURE] ?: previousData.fuelPressure,
+                        intakePressure = results[OBDPID.INTAKE_PRESSURE] ?: previousData.intakePressure,
+                        runTime = results[OBDPID.RUN_TIME] ?: previousData.runTime,
+                        fuelRailPressure = results[OBDPID.FUEL_RAIL_PRESSURE] ?: previousData.fuelRailPressure,
+                        commandedEGR = results[OBDPID.COMMANDED_EGR] ?: previousData.commandedEGR,
+                        egrTemp = results[OBDPID.EGR_TEMP] ?: previousData.egrTemp,
+                        commandedEvapPurge = results[OBDPID.COMMANDED_EVAPORATIVE_PURGE]
+                            ?: previousData.commandedEvapPurge,
+                        barometricPressure = results[OBDPID.BAROMETRIC_PRESSURE] ?: previousData.barometricPressure,
+                        o2VoltageB1S1 = results[OBDPID.O2_VOLTAGE_B1S1] ?: previousData.o2VoltageB1S1,
+                        o2VoltageB1S2 = results[OBDPID.O2_VOLTAGE_B1S2] ?: previousData.o2VoltageB1S2,
+                        catalystTemp = results[OBDPID.CATALYST_TEMP_B1S1] ?: previousData.catalystTemp,
+                        controlModuleVoltage = results[OBDPID.CONTROL_MODULE_VOLTAGE]
+                            ?: previousData.controlModuleVoltage,
+                        absoluteLoadValue = results[OBDPID.ABSOLUTE_LOAD_VALUE] ?: previousData.absoluteLoadValue,
                         engineFuelRate = fuelRate,
-                        shortTermFuelTrimB1 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK1] ?: _obdData.value.shortTermFuelTrimB1,
-                        longTermFuelTrimB1 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK1] ?: _obdData.value.longTermFuelTrimB1,
-                        shortTermFuelTrimB2 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK2] ?: _obdData.value.shortTermFuelTrimB2,
-                        longTermFuelTrimB2 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK2] ?: _obdData.value.longTermFuelTrimB2,
-                        fuelAirRatio = results[OBDPID.FUEL_AIR_EQUIV_RATIO] ?: _obdData.value.fuelAirRatio,
-                        acceleratorPosD = results[OBDPID.ACCELERATOR_POS_D] ?: _obdData.value.acceleratorPosD,
-                        throttleC = results[OBDPID.THROTTLE_C] ?: _obdData.value.throttleC,
-                        throttleActuator = results[OBDPID.THROTTLE_ACTUATOR] ?: _obdData.value.throttleActuator,
-                        hybridBatteryRemaining = results[OBDPID.HYBRID_BATTERY_REMAINING] ?: _obdData.value.hybridBatteryRemaining,
-                        turboOilPressure = results[OBDPID.TURBO_OIL_PRESSURE],
-                        turboWastegateB = results[OBDPID.TURBO_WASTEGATE_B],
-                        turboBoostB = results[OBDPID.TURBO_BOOST_B],
-                        turboVgtPosition = results[OBDPID.TURBO_VARIABLE_GEOM],
-                        turboWaterCoolFlow = results[OBDPID.TURBO_WATER_COOL],
-                        turboCompInletTemp = results[OBDPID.TURBO_COMP_INLET_TEMP],
-                        turboCompOutletTemp = results[OBDPID.TURBO_COMP_OUTLET_TEMP],
-                        turboTurbineInletTemp = results[OBDPID.TURBO_TURBINE_INLET_TEMP],
-                        turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP],
+                        shortTermFuelTrimB1 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK1]
+                            ?: previousData.shortTermFuelTrimB1,
+                        longTermFuelTrimB1 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK1]
+                            ?: previousData.longTermFuelTrimB1,
+                        shortTermFuelTrimB2 = results[OBDPID.SHORT_TERM_FUEL_TRIM_BANK2]
+                            ?: previousData.shortTermFuelTrimB2,
+                        longTermFuelTrimB2 = results[OBDPID.LONG_TERM_FUEL_TRIM_BANK2]
+                            ?: previousData.longTermFuelTrimB2,
+                        fuelAirRatio = results[OBDPID.FUEL_AIR_EQUIV_RATIO] ?: previousData.fuelAirRatio,
+                        acceleratorPosD = results[OBDPID.ACCELERATOR_POS_D] ?: previousData.acceleratorPosD,
+                        throttleC = results[OBDPID.THROTTLE_C] ?: previousData.throttleC,
+                        throttleActuator = results[OBDPID.THROTTLE_ACTUATOR] ?: previousData.throttleActuator,
+                        hybridBatteryRemaining = results[OBDPID.HYBRID_BATTERY_REMAINING]
+                            ?: previousData.hybridBatteryRemaining,
+                        boostPressure = results[OBDPID.BOOST_PRESSURE] ?: previousData.boostPressure,
+                        turboRpm = results[OBDPID.TURBO_RPM] ?: previousData.turboRpm,
+                        wastegateControl = results[OBDPID.WASTEGATE_CONTROL] ?: previousData.wastegateControl,
+                        egtBank1 = results[OBDPID.EGT_BANK1] ?: previousData.egtBank1,
+                        oilTemp = results[OBDPID.OIL_TEMP] ?: previousData.oilTemp,
+                        chargeAirCoolerTemp = results[OBDPID.CHARGE_AIR_COOLER_TEMP]
+                            ?: previousData.chargeAirCoolerTemp,
+                        demandTorque = results[OBDPID.DEMAND_TORQUE] ?: previousData.demandTorque,
+                        actualTorque = results[OBDPID.ACTUAL_TORQUE] ?: previousData.actualTorque,
+                        referenceTorque = results[OBDPID.REFERENCE_TORQUE] ?: previousData.referenceTorque,
+                        ethanolPercent = results[OBDPID.ETHANOL_FUEL_PERCENT] ?: previousData.ethanolPercent,
+                        turboOilPressure = results[OBDPID.TURBO_OIL_PRESSURE] ?: previousData.turboOilPressure,
+                        turboWastegateB = results[OBDPID.TURBO_WASTEGATE_B] ?: previousData.turboWastegateB,
+                        turboBoostB = results[OBDPID.TURBO_BOOST_B] ?: previousData.turboBoostB,
+                        turboVgtPosition = results[OBDPID.TURBO_VARIABLE_GEOM] ?: previousData.turboVgtPosition,
+                        turboWaterCoolFlow = results[OBDPID.TURBO_WATER_COOL] ?: previousData.turboWaterCoolFlow,
+                        turboCompInletTemp = results[OBDPID.TURBO_COMP_INLET_TEMP] ?: previousData.turboCompInletTemp,
+                        turboCompOutletTemp = results[OBDPID.TURBO_COMP_OUTLET_TEMP]
+                            ?: previousData.turboCompOutletTemp,
+                        turboTurbineInletTemp = results[OBDPID.TURBO_TURBINE_INLET_TEMP]
+                            ?: previousData.turboTurbineInletTemp,
+                        turboTurbineOutletTemp = results[OBDPID.TURBO_TURBINE_OUTLET_TEMP]
+                            ?: previousData.turboTurbineOutletTemp,
                         vin = storedVin,
                         timestamp = now,
-                        distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: _obdData.value.distanceWithMil
+                        distanceWithMil = results[OBDPID.DISTANCE_MIL] ?: previousData.distanceWithMil
                     )
 
                     gpsTracker.updateTripOBDData(
@@ -726,8 +777,7 @@ class OBDRepository(
                     _lastError.value = "Polling-Fehler: ${e.message}"
                     recordConnectionFailure()
                     if (consecutivePollingFailures >= 5) {
-                        _connectionState.value = OBDConnectionState.Error("Verbindung unterbrochen")
-                        _lastError.value = "Verbindung unterbrochen nach $consecutivePollingFailures Fehlern"
+                        handleConnectionLoss("Verbindung unterbrochen nach $consecutivePollingFailures Fehlern")
                         break
                     }
                 }
@@ -1282,7 +1332,7 @@ class OBDRepository(
             val parts = line.split(",")
             try {
                 when {
-                    isTorqueFormat && parts.size >= 5 -> {
+                    isTorqueFormat && parts.size >= MIN_TORQUE_CSV_COLUMNS -> {
                         entries.add(CsvImportEntry(
                             timestamp = parts[0].toLongOrNull() ?: 0L,
                             rpm = parts[5].toDoubleOrNull() ?: 0.0,
@@ -1423,10 +1473,8 @@ class OBDRepository(
             }
         }
 
-        if (d.mafRate > 0.1 && speedKmh > 0.5) {
-            val lps = d.mafRate * 0.0014
-            val lph = lps * 3600.0
-            val l100km = (lph / speedKmh) * 100.0
+        if (d.mafRate > 0.1 && speedKmh > MIN_SPEED_FOR_MAF_CALC) {
+            val l100km = fuelConsumptionAnalyzer.calculateFromMAF(d.mafRate, speedKmh)
             if (l100km > 0.5 && l100km < 100.0) {
                 val kmL = 100.0 / l100km
                 val mpgUs = 235.214583 / l100km
@@ -1493,9 +1541,14 @@ class OBDRepository(
     }
 
     fun setEmulatorMode(enabled: Boolean) {
+        if (_emulatorMode.value == enabled) return
         _emulatorMode.value = enabled
         prefs.edit().putBoolean("emulator_mode", enabled).apply()
         if (enabled) {
+            reconnectJob?.cancel()
+            pollingJob?.cancel()
+            pollingJob = null
+            runCatching { connection?.disconnect() }
             connectEmulator()
         } else {
             disconnectEmulator()
@@ -1504,6 +1557,9 @@ class OBDRepository(
 
     fun connectEmulator() {
         if (emulator != null) { return }
+        pollingJob?.cancel()
+        pollingJob = null
+        runCatching { connection?.disconnect() }
         emulator = OBDEmulator()
         _connectionState.value = OBDConnectionState.Connected
         _detectedProtocol.value = "OBD Emulator (Simulated)"
@@ -1512,6 +1568,8 @@ class OBDRepository(
     }
 
     fun disconnectEmulator() {
+        pollingJob?.cancel()
+        pollingJob = null
         emulatorPollingJob?.cancel()
         emulatorPollingJob = null
         flushRecordedData()
