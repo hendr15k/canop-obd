@@ -3,6 +3,8 @@ package com.canopobd.ui.update
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -232,36 +234,39 @@ private fun downloadApk(
     onComplete: (File) -> Unit,
     onError: (String) -> Unit
 ) {
+    // Lazy im Funktions-Scope: Ein statischer Handler(Looper.getMainLooper())
+    // wuerde reine JVM-Unit-Tests crashen (kein Main-Looper vorhanden).
+    val mainHandler = Handler(Looper.getMainLooper())
     Thread {
         try {
             val connection = URL(url).openConnection()
             connection.connectTimeout = 30000
             connection.readTimeout = 30000
             val fileLength = connection.contentLength
-            val inputStream = connection.inputStream
 
             val file = File(context.cacheDir, "canop-obd-update.apk")
-            val outputStream = file.outputStream()
+            connection.inputStream.use { inputStream ->
+                file.outputStream().use { outputStream ->
+                    val buffer = ByteArray(8192)
+                    var totalRead = 0L
+                    var bytesRead: Int
 
-            val buffer = ByteArray(8192)
-            var totalRead = 0L
-            var bytesRead: Int
-
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-                totalRead += bytesRead
-                if (fileLength > 0) {
-                    onProgress(totalRead.toFloat() / fileLength)
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        outputStream.write(buffer, 0, bytesRead)
+                        totalRead += bytesRead
+                        if (fileLength > 0) {
+                            val progress = totalRead.toFloat() / fileLength
+                            mainHandler.post { onProgress(progress) }
+                        }
+                    }
+                    outputStream.flush()
                 }
             }
 
-            outputStream.flush()
-            outputStream.close()
-            inputStream.close()
-
-            onComplete(file)
+            mainHandler.post { onComplete(file) }
         } catch (e: Exception) {
-            onError(e.message ?: "Unknown error")
+            val message = e.message ?: "Unknown error"
+            mainHandler.post { onError(message) }
         }
     }.start()
 }

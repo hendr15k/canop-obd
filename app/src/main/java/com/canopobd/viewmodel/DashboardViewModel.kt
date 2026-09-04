@@ -1620,8 +1620,8 @@ class DashboardViewModel private constructor(
 
     fun requestMode22Data(pid: String) {
         viewModelScope.launch(Dispatchers.IO) {
+            val rawPid = if (pid.startsWith("22")) pid.drop(2) else pid
             try {
-                val rawPid = if (pid.startsWith("22")) pid.drop(2) else pid
                 val canRepo = canRepository
                 if (canRepo != null) {
                     canRepo.mode22Client.readDID(rawPid).collect { result ->
@@ -1634,24 +1634,18 @@ class DashboardViewModel private constructor(
                                 timestamp = System.currentTimeMillis()
                             ))
                         } else {
-                            _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
-                                pid = rawPid,
-                                value = 0.0,
-                                unit = "",
-                                timestamp = System.currentTimeMillis()
-                            ))
+                            // Unsupported/failed DID: leave no stale value behind.
+                            // A cached 0.0 would be indistinguishable from a real
+                            // zero reading, so remove any previous entry instead.
+                            _mode22DataCache.value = _mode22DataCache.value - rawPid
                         }
                     }
                 } else {
-                    _mode22DataCache.value = _mode22DataCache.value + (rawPid to Mode22Data(
-                        pid = rawPid,
-                        value = 0.0,
-                        unit = "",
-                        timestamp = System.currentTimeMillis()
-                    ))
+                    // No CAN repository: nothing was read, so cache nothing.
+                    _mode22DataCache.value = _mode22DataCache.value - rawPid
                 }
             } catch (e: Exception) {
-                _mode22DataCache.value = _mode22DataCache.value - pid
+                _mode22DataCache.value = _mode22DataCache.value - rawPid
             }
         }
     }

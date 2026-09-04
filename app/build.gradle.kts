@@ -69,6 +69,23 @@ android {
             val ksPath = System.getenv("KEYSTORE_PATH") ?: ""
             if (ksPath.isNotEmpty() && file(ksPath).exists()) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                // Fail-open verhindern: Ein Release ohne Keystore waere faktisch
+                // unsigniert und wuerde Updates mit Signatur-Mismatch brechen.
+                // CI setzt KEYSTORE_PATH; lokal explizit -PallowUnsignedRelease
+                // uebergeben, wenn das wirklich gewollt ist. Nur pruefen, wenn
+                // tatsaechlich ein Release-Build angefragt ist (sonst wuerde
+                // schon jede Test-/Debug-Konfiguration fehlschlagen).
+                val releaseRequested = gradle.startParameter.taskNames.any {
+                    it.contains("Release", ignoreCase = true)
+                }
+                if (releaseRequested && !project.hasProperty("allowUnsignedRelease")) {
+                    throw GradleException(
+                        "Release signing keystore missing (KEYSTORE_PATH='$ksPath'). " +
+                            "Set KEYSTORE_PATH/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD " +
+                            "or pass -PallowUnsignedRelease for a local unsigned build."
+                    )
+                }
             }
         }
     }

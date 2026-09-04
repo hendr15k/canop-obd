@@ -20,6 +20,7 @@ class UDSRepository(private val connection: ELM327BTConnection) {
         private const val ONE_BYTE_DID_RESPONSE_SIZE = 4
         private const val TWO_BYTE_DID_RESPONSE_SIZE = 5
         private const val FUEL_CONSUMPTION_SCALE = 20.0
+        private const val BATTERY_VOLTAGE_SCALE = 10.0
 
         fun getAllSupportedDIDs(): List<String> = listOf(
             UDSConstants.GMOpelDIDs.ECU_INFO,
@@ -253,11 +254,12 @@ class UDSRepository(private val connection: ELM327BTConnection) {
                 return@flow
             }
             udsClient.readDataByIdentifier(UDSConstants.GMOpelDIDs.BATTERY_VOLTAGE).collect { response ->
-                if (response.isPositive && response.data.size >= TWO_BYTE_DID_RESPONSE_SIZE) {
+                // F4F1 is a 1-byte DID (Mode22Client: value = b0 / 10),
+                // so a valid positive response is 4 bytes [0x62, F4, F1, XX].
+                if (response.isPositive && response.data.size >= ONE_BYTE_DID_RESPONSE_SIZE) {
                     val raw = response.data.drop(3)
-                    if (raw.size >= 2) {
-                        val voltageRaw = (raw[0].toInt() and 0xFF) * 256 + (raw[1].toInt() and 0xFF)
-                        val voltageV = voltageRaw / 100.0
+                    if (raw.size >= 1) {
+                        val voltageV = (raw[0].toInt() and 0xFF) / BATTERY_VOLTAGE_SCALE
                         emit(voltageV)
                     } else {
                         emit(null)

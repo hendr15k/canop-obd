@@ -187,7 +187,10 @@ class M32GearboxMonitor(
         var harshShifts = 0
         var missedShifts = 0
 
-        for (i in 3 until rpmHistory.size - 1) {
+        // Beide Historien koennen unterschiedlich lang sein (verschiedene
+        // Sensoren/Poll-Raten) -> kuerzere bestimmt, sonst IndexOutOfBounds.
+        val sampleCount = minOf(rpmHistory.size, speedHistory.size)
+        for (i in 3 until sampleCount - 1) {
             val rpmBefore = rpmHistory[i - 1]
             val rpmAfter = rpmHistory[i]
             val rpmDrop = rpmBefore - rpmAfter

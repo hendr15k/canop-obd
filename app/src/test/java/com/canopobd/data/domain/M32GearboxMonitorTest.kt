@@ -39,4 +39,24 @@ class M32GearboxMonitorTest {
         // Kein IndexOutOfBounds, Ergebnis vorhanden (Anomalie-Prozent 0-100)
         assertTrue(result.rpmSpeedRatioAnomaly in 0..100)
     }
+
+    @Test
+    fun `unequal histories do not crash shift quality evaluation`() {
+        val monitor = M32GearboxMonitor()
+        // Regression: evaluateShiftQuality looped over rpmHistory indices
+        // and indexed speedHistory without minOf -> IndexOutOfBounds when
+        // rpm history is longer (different sensor poll rates). The RPM drop
+        // at index 21 forces the branch that indexes speedHistory[21],
+        // which does not exist (size 20).
+        val rpm = MutableList(25) { 3000.0 }
+        rpm[21] = 2000.0
+        val result = monitor.analyze(
+            M32GearboxMonitor.GearboxInput(
+                rpmHistory = rpm,
+                speedHistory = List(20) { 30.0 },
+                gearPosition = 3
+            )
+        )
+        assertTrue(result.shiftQualityScore in 0..100)
+    }
 }

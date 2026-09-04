@@ -2,7 +2,6 @@ package com.canopobd.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -761,80 +760,6 @@ fun ChainTensionerWarningCard(
             }
             if (hasRattle) {
                 StatusPill(text = "AKTION", color = c, icon = Icons.Filled.Warning)
-            }
-        }
-    }
-}
-
-// ============================================================================
-// CRITICAL WARNING OVERLAY
-// ============================================================================
-@Composable
-fun CriticalWarningOverlay(
-    title: String,
-    message: String,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-    autoDismissSeconds: Int = 10
-) {
-    val colors = LocalAppColors.current
-    val secondsLeft = remember { mutableStateOf(autoDismissSeconds) }
-    LaunchedEffect(Unit) {
-        while (secondsLeft.value > 0) {
-            kotlinx.coroutines.delay(1000)
-            secondsLeft.value--
-        }
-        onDismiss()
-    }
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f))
-            .clickable(onClick = onDismiss),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(32.dp)
-                .clip(RoundedCornerShape(AppRadius.lg))
-                .background(colors.surfaceBase)
-                .border(2.dp, colors.critical, RoundedCornerShape(AppRadius.lg))
-                .padding(20.dp)
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(colors.critical.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Warning,
-                        contentDescription = null,
-                        tint = colors.critical,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = colors.critical,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.textPrimary
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = "Schließt in ${secondsLeft.value}s",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.textTertiary
-                )
             }
         }
     }

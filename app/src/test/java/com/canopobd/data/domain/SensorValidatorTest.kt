@@ -231,6 +231,18 @@ class SensorValidatorTest {
         assertTrue(result is ValidationResult.Valid)
     }
 
+    @Test
+    fun `RPM - rate check compares against last stored value`() {
+        validator.addRpm(2000.0)
+        validator.addRpm(2100.0)
+        // +100 gegenueber letztem Wert -> kein Sprung
+        assertTrue(validator.validateRpm(2200.0) is ValidationResult.Valid)
+        // +900 gegenueber letztem Wert -> Sprung (alter Code verglich gegen
+        // vorletzten Wert und meldete hier faelschlich nichts/zu viel)
+        val result = validator.validateRpm(3000.0)
+        assertTrue(result is ValidationResult.Suspicious)
+    }
+
     // --- ValidationResult sealed class tests ---
 
     @Test
