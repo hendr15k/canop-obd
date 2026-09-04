@@ -87,15 +87,14 @@ class M32GearboxMonitor(
     )
 
     companion object {
-        // Getriebe-Uebersetzungsverhaeltnisse M32 (A14NET)
-        // Diese Werte sind naeherungsweise und koennen variieren
+        // Getriebe-Uebersetzungsverhaeltnisse M32 (A14NET, README)
         private val GEAR_RATIOS = mapOf(
             1 to 3.727,
-            2 to 2.097,
-            3 to 1.393,
-            4 to 1.062,
-            5 to 0.858,
-            6 to 0.698,
+            2 to 2.044,
+            3 to 1.357,
+            4 to 1.034,
+            5 to 0.825,
+            6 to 0.667,
             0 to 3.182 // Rueckwaerts
         )
         private const val FINAL_DRIVE = 3.940
@@ -232,14 +231,18 @@ class M32GearboxMonitor(
         val expectedRatio = if (gear > 0 && gear in GEAR_RATIOS) {
             GEAR_RATIOS.getValue(gear) * FINAL_DRIVE * WHEEL_RPM_PER_KMH
         } else {
-            // Verwende Durchschnitts-Verhaeltnis wenn Gang nicht bekannt
-            GEAR_RATIOS.values.average() * FINAL_DRIVE * WHEEL_RPM_PER_KMH
+            // Verwende Durchschnitts-Verhaeltnis wenn Gang nicht bekannt.
+            // Rueckwaertsgang (Key 0) ausschliessen, sonst verzerrt er den
+            // Erwartungswert fuer die Vorwaertsfahrt.
+            GEAR_RATIOS.filterKeys { it > 0 }.values.average() * FINAL_DRIVE * WHEEL_RPM_PER_KMH
         }
 
         var anomalousReadings = 0
         var totalReadings = 0
 
-        for (i in rpmHistory.indices) {
+        // Beide Historien koennen unterschiedlich lang sein -> kuerzere bestimmt.
+        val sampleCount = minOf(rpmHistory.size, speedHistory.size)
+        for (i in 0 until sampleCount) {
             if (speedHistory[i] > 5.0 && rpmHistory[i] > 500) {
                 val actualRatio = rpmHistory[i] / speedHistory[i]
                 val deviation = abs(actualRatio - expectedRatio) / expectedRatio

@@ -13,12 +13,14 @@ import com.canopobd.data.model.GPSTrip
 import com.google.android.gms.location.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -71,6 +73,12 @@ class GPSTracker(private val context: Context) {
     private var tripDistanceMeters: Double = 0.0
     private var lastLocation: GPSLocation? = null
     private var locationCallback: LocationCallback? = null
+
+    companion object {
+        // Max. Wartezeit beim Shutdown auf laufende Trip-Inserts, bevor der
+        // Persistence-Scope abgebrochen wird (verhindert Leak + Datenverlust).
+        private const val PERSISTENCE_DRAIN_TIMEOUT_MS = 5000L
+    }
 
     private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
         .setMinUpdateIntervalMillis(500L)
@@ -287,8 +295,19 @@ class GPSTracker(private val context: Context) {
     fun cleanup() {
         if (_isTracking.value) { stopTracking() }
         scope.cancel()
-        // Do not cancel persistenceScope here: stopTracking() may have just
-        // queued the completed trip for insertion.
+        // persistenceScope NICHT hart canceln: stopTracking() hat ggf. gerade
+        // den finalen Trip-Insert gequeued. Stattdessen noch bis zu 5 s auf
+        // laufende Inserts warten, dann erst abbrechen (kein Leak mehr, kein
+        // Datenverlust bei normalem Shutdown). Eigener Drain-Scope, weil
+        // `scope` oben bereits gecancelt ist und kein launch mehr annimmt.
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                withTimeout(PERSISTENCE_DRAIN_TIMEOUT_MS) {
+                    persistenceScope.coroutineContext[Job]?.children?.forEach { it.join() }
+                }
+            } catch (e: Exception) { Log.d("GPSTracker", "persistence drain: ${e.message}") }
+            persistenceScope.cancel()
+        }
     }
 
     fun updateTripOBDData(avgRpm: Double, maxRpm: Double, fuelUsedLiters: Float, vin: String) {

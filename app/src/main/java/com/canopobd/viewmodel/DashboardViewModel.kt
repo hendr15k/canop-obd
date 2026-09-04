@@ -130,6 +130,9 @@ class DashboardViewModel private constructor(
 
     init {
         viewModelScope.launch {
+            // Hinweis: kein distinctUntilChanged() noetig/verboten auf
+            // StateFlow (Operator Fusion) - StateFlow emitiert nur bei
+            // geaenderten Listen; Spam-Schutz steckt in notifyChanges().
             repository.activeAlerts.collect { alerts ->
                 liveAlertNotifier.notifyChanges(alerts)
             }
@@ -511,11 +514,14 @@ class DashboardViewModel private constructor(
         if (conn == null) return
 
         canInitializationJob = viewModelScope.launch(Dispatchers.IO) {
-            // The repository connects asynchronously. Waiting for a new
-            // Connected state prevents CAN commands from racing ELM setup.
-            repository.connectionState
-                .dropWhile { it is OBDConnectionState.Connected }
-                .first { it is OBDConnectionState.Connected }
+            // Die aktuelle Verbindung ist bereits Connected -> sofort
+            // initialisieren. (Frueheres dropWhile{Connected}.first{Connected}
+            // hat das aktuelle Connected verworfen und auf ein *naechstes*
+            // gewartet -> CAN-Init hing bei bestehender Verbindung.)
+            val current = repository.connectionState.value
+            if (current !is OBDConnectionState.Connected) {
+                repository.connectionState.first { it is OBDConnectionState.Connected }
+            }
 
             if (!conn.isConnected.value || canRepository != null) return@launch
 
@@ -1663,10 +1669,11 @@ class DashboardViewModel private constructor(
 
     override fun onCleared() {
         _turboAnalysisJob.value?.cancel()
-        turboViewModel.viewModelScope.cancel()
-        safetyViewModel.viewModelScope.cancel()
-        ecoScoreViewModel.viewModelScope.cancel()
-        performanceViewModel.viewModelScope.cancel()
+        // Hinweis: Turbo-/Safety-/Eco-/PerformanceViewModel werden hier per
+        // `new` gehalten, nicht via ViewModelProvider. Ihre Scopes duerfen
+        // NICHT von aussen gecancelt werden (doppelte cancel() nach VM-Tod);
+        // sie werden mit dieser VM garbage-collected. Langfristig: als
+        // normale Klassen ohne ViewModel-Basis auslagern.
         repository.cleanup()
         super.onCleared()
     }

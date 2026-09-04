@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canopobd.data.local.TripEntity
 import com.canopobd.data.repository.PdfReportExporter
-import com.canopobd.R
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

@@ -662,11 +662,21 @@ class ELM327BTConnection(
 
     private fun parseResponse(response: String, pid: OBDPID): Double? {
         val hex = response.replace(" ", "").replace("\r", "").replace("\n", "").trim()
-        if (hex.contains("ERROR") || hex.isEmpty()) {
+        // ELM-Fehlersignale duerfen nie als Daten dekodiert werden.
+        if (hex.isEmpty() || isElmErrorSignal(hex)) {
             return null
         }
 
-        val dataHex = hex.drop(4)
+        // Antwort muss "41 <PID>" widerspiegeln (Echo/Falsch-PID abwehren).
+        // ATRV (Batterie) ist ein AT-Kommando ohne 41-Praefix und wird hier
+        // nie erwartet (siehe getBatteryVoltage/parseVoltageResponse).
+        val expectedPrefix = "41" + pid.code.drop(2).uppercase()
+        val payloadHex = if (hex.uppercase().startsWith(expectedPrefix)) {
+            hex.drop(4)
+        } else {
+            return null
+        }
+        val dataHex = payloadHex
         if (dataHex.length < pid.byteCount * 2) {
             return null
         }
@@ -677,6 +687,10 @@ class ELM327BTConnection(
 
         return pid.formula(bytes)
     }
+
+    private fun isElmErrorSignal(hex: String): Boolean =
+        hex.contains("ERROR") || hex.contains("NODATA") ||
+            hex.contains("UNABLE") || hex.contains("SEARCHING") || hex.contains("?")
 
     private fun cleanResponse(response: String): String {
         return response
@@ -750,14 +764,16 @@ class ELM327BTConnection(
                     try {
                         val rpmResp = sendCommandWithTimeout("020C")
                         if (!rpmResp.contains("ERROR")) {
-                            // 42 + PID 0C precede the two RPM data bytes.
-                            val rpmHex = rpmResp.replace(" ", "").drop(4)
+                            // Mode-02-Antwort: "42 0C <Frame> <2 Datenbytes>".
+                            // "42"+"PID" (4 Hex) + Frame-Byte (2 Hex) = drop(6).
+                            val rpmHex = rpmResp.replace(" ", "").drop(6)
                             if (rpmHex.length >= 4) {
                                 data["RPM"] = ((rpmHex.substring(0, 2).toInt(16) * 256 + rpmHex.substring(2, 4).toInt(16)) / 4.0)
                             }
                         }
                         val speedResp = sendCommandWithTimeout("020D")
                         if (!speedResp.contains("ERROR")) {
+                            // s.o.: "42 0D <Frame> <Daten>", Daten ab Index 6.
                             val speedHex = speedResp.replace(" ", "").drop(6)
                             if (speedHex.length >= 2) {
                                 data["Speed"] = speedHex.substring(0, 2).toInt(16).toDouble()
@@ -765,6 +781,7 @@ class ELM327BTConnection(
                         }
                         val coolResp = sendCommandWithTimeout("0205")
                         if (!coolResp.contains("ERROR")) {
+                            // s.o.: Frame-Byte ueberspringen, Daten ab Index 6.
                             val coolHex = coolResp.replace(" ", "").drop(6)
                             if (coolHex.length >= 2) {
                                 data["Coolant"] = (coolHex.substring(0, 2).toInt(16) - 40).toDouble()

@@ -11,7 +11,6 @@ import com.canopobd.MainActivity
 import com.canopobd.R
 import com.canopobd.data.model.ActiveAlert
 import com.canopobd.data.model.AlertSeverity
-import com.canopobd.data.model.AlertType
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class LiveAlertNotifier(private val context: Context) {
@@ -41,6 +40,17 @@ class LiveAlertNotifier(private val context: Context) {
     }
 
     fun notifyChanges(alerts: List<ActiveAlert>) {
+        // Ohne erteilte Runtime-Permission (Android 13+) keine Notifications
+        // posten: nach Revoke wuerde notify() mit SecurityException crashen.
+        // Der Aufrufer filtert zusaetzlich per distinctUntilChanged (kein Spam
+        // bei unveraenderten Alert-Listen).
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            inFlightIds.value = alerts.map { it.type.name }.toSet()
+            return
+        }
         val currentKeys = alerts.map { it.type.name }.toSet()
 
         // Clear notifications for types no longer present
