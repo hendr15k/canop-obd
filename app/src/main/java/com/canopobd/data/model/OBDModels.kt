@@ -1,6 +1,8 @@
 package com.canopobd.data.model
 
 private const val FUEL_RAIL_PRESSURE_SCALE = 10.0
+private const val PERCENT_FULL_SCALE = 255.0
+private const val PERCENT_FACTOR = 100.0
 private const val TIMING_CHAIN_DEFAULT_INTERVAL_KM = 150_000
 
 enum class OBDPID(
@@ -128,7 +130,7 @@ enum class OBDPID(
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * PERCENT_FACTOR / PERCENT_FULL_SCALE else 0.0
     }),
     BOOST_PRESSURE("0170", "Boost Pressure", "kPa", 2, { b ->
         if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 0.03125 else 0.0
