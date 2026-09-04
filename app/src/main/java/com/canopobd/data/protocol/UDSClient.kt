@@ -273,7 +273,10 @@ class UDSClient(private val connection: ELM327BTConnection) {
 
     fun testerPresent(): Flow<UDSResponse> = flow {
         try {
-            val subFunction = "00"
+            // Suppress-Positive-Response-Bit (0x80): Standard-Keep-Alive,
+            // antwortet bei Erfolg nicht -> kein Bus-Traffic, Session bleibt.
+            // 0x00 (antwortpflichtig) nur fuer explizite Diagnose verwenden.
+            val subFunction = "80"
             val command = "3E$subFunction"
             val response = withContext(Dispatchers.IO) {
                 connection.sendRawCommand(command)

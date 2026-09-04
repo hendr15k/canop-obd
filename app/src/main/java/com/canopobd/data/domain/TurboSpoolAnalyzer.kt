@@ -199,7 +199,14 @@ class TurboSpoolAnalyzer(
     }
 
     /**
-     * Bewertet Turbo-Drehzahl-Acceleration während der Spule
+     * Bewertet Turbo-Drehzahl-Acceleration während der Spule.
+     *
+     * Hinweis zur Semantik: rpmAt80PercentBoost/rpmAtThrottleApplication sind
+     * trotz des Namens TURBO-Drehzahlen (Tests: 2000 -> 102000 rpm in 2 s =
+     * 50000 rpm/s, Schwelle TURBO_ACCEL_OPTIMAL). Bei MOTOR-Drehzahlen (~10^3
+     * rpm/s) wuerde der Score fast immer auf 15 fallen. Wer Motor-RPM
+     * uebergibt, muss Schwellen auf ~1-3k rpm/s senken oder turboRpmAtSpool
+     * verwenden.
      */
     private fun evaluateTurboAcceleration(input: SpoolInput): Double {
         if (input.spoolTimeSeconds <= 0 || input.rpmAt80PercentBoost <= input.rpmAtThrottleApplication) {

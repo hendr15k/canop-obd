@@ -547,9 +547,10 @@ class OBDModelsTest {
 
     @Test
     fun `OBDPID THROTTLE_C formula returns percentage`() {
-        val bytes = byteArrayOf(0x80.toByte(), 0x00.toByte())
+        // SAE J1979 PID 015D: 1 Byte, A * 100 / 255 (0x80 -> 50.2 %)
+        val bytes = byteArrayOf(0x80.toByte())
         val result = OBDPID.THROTTLE_C.formula(bytes)
-        assertEquals(12850.2, result, 1.0)
+        assertEquals(50.2, result, 1.0)
     }
 
     @Test
@@ -560,9 +561,18 @@ class OBDModelsTest {
     }
 
     @Test
-    fun `OBDPID HYBRID_BATTERY_REMAINING formula returns byte value`() {
+    fun `OBDPID HYBRID_BATTERY_REMAINING formula returns scaled percentage`() {
+        // SAE J1979 PID 015B: A * 100 / 255 (0x64 = 100 -> 39.2 %)
         val bytes = byteArrayOf(0x64.toByte())
         val result = OBDPID.HYBRID_BATTERY_REMAINING.formula(bytes)
+        assertEquals(100.0 * 100.0 / 255.0, result, 0.001)
+    }
+
+    @Test
+    fun `OBDPID ABSOLUTE_THROTTLE_B formula returns single byte percentage`() {
+        // SAE J1979 PID 014D: A * 100 / 255 (1 Byte, war faelschlich 2-Byte)
+        val bytes = byteArrayOf(0xFF.toByte())
+        val result = OBDPID.ABSOLUTE_THROTTLE_B.formula(bytes)
         assertEquals(100.0, result, 0.001)
     }
 
@@ -615,7 +625,7 @@ class OBDModelsTest {
         assertEquals(15000, MaintenanceType.OIL_CHANGE.defaultInterval)
         assertEquals(30000, MaintenanceType.TIRES.defaultInterval)
         assertEquals(60000, MaintenanceType.INSPECTION.defaultInterval)
-        assertEquals(10, MaintenanceType.entries.size)
+        assertEquals(11, MaintenanceType.entries.size)
     }
 
     @Test

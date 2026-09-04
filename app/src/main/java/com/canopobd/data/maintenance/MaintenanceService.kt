@@ -531,7 +531,9 @@ class MaintenanceService {
             MaintenanceType.TIRES -> TIRES_COST
             MaintenanceType.INSPECTION -> INSPECTION_COST
             MaintenanceType.TURBO_BOOST_CHECK -> TURBO_INSPECTION_COST
-            MaintenanceType.TIMING_CHAIN -> TURBO_INSPECTION_COST
+            // Steuerkette A14NET: ca. 800-1500 EUR (eigene Konstante statt
+            // Turbo-Inspektionskosten).
+            MaintenanceType.TIMING_CHAIN -> TIMING_CHAIN_COST
         }
     }
 

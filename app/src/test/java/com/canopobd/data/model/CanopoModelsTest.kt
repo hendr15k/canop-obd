@@ -357,7 +357,7 @@ class CanopoModelsTest {
 
     @Test
     fun `MaintenanceType entries cover common services`() {
-        assertEquals(10, MaintenanceType.entries.size)
+        assertEquals(11, MaintenanceType.entries.size)
         assertNotNull(MaintenanceType.OIL_CHANGE.defaultInterval)
         assertNotNull(MaintenanceType.TIRES.defaultInterval)
         assertNotNull(MaintenanceType.BRAKE_PADS.defaultInterval)

@@ -48,9 +48,12 @@ class EmissionsReadinessAnalyzer {
 
     fun analyze(input: ReadinessInput): ReadinessAnalysis {
         val monitors = parseReadinessBits(input.readinessBits)
-        val completedCount = monitors.count { it.isComplete }
-        val totalCount = monitors.size
-        val allComplete = completedCount == totalCount
+        // Nur unterstuetzte Monitore zaehlen (GPF ist auf dem A14NET nicht
+        // unterstuetzt und darf allComplete nie blockieren).
+        val supported = monitors.filter { it.isSupported }
+        val completedCount = supported.count { it.isComplete }
+        val totalCount = supported.size
+        val allComplete = supported.isNotEmpty() && completedCount == totalCount
         val hasDTC = input.activeDTCs.isNotEmpty()
 
         val overallScore = calculateReadinessScore(monitors, hasDTC, input)
@@ -86,8 +89,10 @@ class EmissionsReadinessAnalyzer {
     }
 
     private fun createMonitor(type: com.canopobd.data.model.MonitorType, bits: Int, bitPosition: Int, isSupported: Boolean): com.canopobd.data.model.EmissionsReadinessMonitor {
+        // OBD-II (Mode 01 PID 01): Bit = 1 bedeutet Monitor NICHT bereit
+        // (incomplete), Bit = 0 bedeutet bereit (complete). Darum == 0.
         val isComplete = if (bitPosition >= 0) {
-            isSupported && ((bits shr bitPosition) and 1) == 1
+            isSupported && ((bits shr bitPosition) and 1) == 0
         } else {
             false
         }

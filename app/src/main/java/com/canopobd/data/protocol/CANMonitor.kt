@@ -197,13 +197,16 @@ class CANMonitor(private val connection: ELM327BTConnection) {
         }
     }
 
-    suspend fun setFilter(canId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun setFilter(canId: String, mask: String = "7FF"): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             currentFilter = canId.uppercase()
             val hexId = canId.uppercase().replace(" ", "").replace("0X", "")
+            // ATCM erwartet die MASKE, nicht die ID (Copy-Paste-Bug: frueher
+            // wurde hexId auch als Maske gesetzt -> Filter wirkungslos).
+            val hexMask = mask.uppercase().replace(" ", "").replace("0X", "")
             sendCommand("ATCF$hexId")
             delay(50)
-            sendCommand("ATCM$hexId")
+            sendCommand("ATCM$hexMask")
             delay(50)
             Result.success(Unit)
         } catch (e: Exception) {

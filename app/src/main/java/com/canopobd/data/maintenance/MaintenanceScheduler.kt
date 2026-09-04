@@ -121,8 +121,10 @@ object MaintenanceScheduler {
     }
 
     private fun createSparkPlugSchedule(currentKm: Int, currentDate: Long) {
-        val intervalKm = 60000
-        val intervalMonths = 48
+        // A14NET-Turbo: verkuerztes Intervall 30.000 km / 24 Monate
+        // (MAINTENANCE_INTERVALS + NGK-Vorgabe; Scheduler nutzte 60.000).
+        val intervalKm = 30000
+        val intervalMonths = 24
         val lastServiceKm = findLastServiceKm("spark_plugs", currentKm)
         val lastServiceDate = findLastServiceDate("spark_plugs", currentDate)
 

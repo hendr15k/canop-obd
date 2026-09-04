@@ -68,9 +68,8 @@ enum class OBDPID(
     COMMANDED_EVAPORATIVE_PURGE("012E", "Commanded Evap Purge", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
-    FUEL_TANK_LEVEL_INPUT("012F", "Fuel Tank Level Input", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
-    }),
+    // Hinweis: SAE J1979 definiert 012F nur einmal (Fuel Tank Level Input).
+    // Das frühere FUEL_TANK_LEVEL_INPUT-Duplikat wurde entfernt; FUEL_LEVEL ist kanonisch.
     WARMUPS_SINCE_DTC_CLEAR("0130", "Warmups since DTC Clear", "", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
     }),
@@ -113,8 +112,8 @@ enum class OBDPID(
     FUEL_AIR_EQUIV_RATIO("0144", "Fuel Air Equiv Ratio", "", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) / 32768.0 else 0.0
     }),
-    ABSOLUTE_THROTTLE_B("014D", "Throttle B", "%", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    ABSOLUTE_THROTTLE_B("014D", "Throttle B", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     TIME_RUN_WITH_MIL("014E", "Time Run MIL On", "min", 2, { b ->
         if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)).toDouble() else 0.0
@@ -122,14 +121,14 @@ enum class OBDPID(
     ACCELERATOR_POS_D("0151", "Accelerator Pedal D", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
-    THROTTLE_C("015D", "Throttle C", "%", 2, { b ->
-        if (b.size >= 2) ((b[0].toInt() and 0xFF) * 256 + (b[1].toInt() and 0xFF)) * 100.0 / 255.0 else 0.0
+    THROTTLE_C("015D", "Throttle C", "%", 1, { b ->
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     THROTTLE_ACTUATOR("0136", "Throttle Actuator", "%", 1, { b ->
         if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     HYBRID_BATTERY_REMAINING("015B", "Hybrid Battery Remaining", "%", 1, { b ->
-        if (b.isNotEmpty()) (b[0].toInt() and 0xFF).toDouble() else 0.0
+        if (b.isNotEmpty()) (b[0].toInt() and 0xFF) * 100.0 / 255.0 else 0.0
     }),
     BOOST_PRESSURE("0170", "Boost Pressure", "kPa", 2, { b ->
         if (b.size >= 2) (256.0 * (b[0].toInt() and 0xFF) + (b[1].toInt() and 0xFF)) * 0.03125 else 0.0
