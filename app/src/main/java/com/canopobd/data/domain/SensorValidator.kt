@@ -110,10 +110,9 @@ class SensorValidator(private val calibration: AstraJ14TurboCalibration?) {
         if (rpm < 0 || rpm > 7000) return ValidationResult.Invalid("RPM ungültig")
         if (rpm > 6500) return ValidationResult.Suspicious("Redline erreicht!")
 
-        // Rate of Change Check
+        // Rate of Change Check (gegen letzten gespeicherten Wert, wie validateIat)
         if (rpmHistory.size >= 2) {
-            val recent = rpmHistory.takeLast(2)
-            val change = abs(rpm - recent.first())
+            val change = abs(rpm - rpmHistory.last())
             if (change > MAX_RPM_CHANGE && rpm > 1000) {
                 return ValidationResult.Suspicious("RPM-Sprung: ${change.toInt()} RPM")
             }

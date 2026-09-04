@@ -80,9 +80,7 @@ import com.canopobd.ui.profile.QuickActionsDialog
 import com.canopobd.ui.profile.VehicleProfileManagerDialog
 import com.canopobd.ui.profile.SavedProfile
 import com.canopobd.ui.tpms.TPMSDialog
-import com.canopobd.ui.climate.ClimateControlDialog
 import com.canopobd.ui.climate.ClimateCommand
-import com.canopobd.ui.window.WindowControlDialog
 import com.canopobd.data.domain.WindowAction
 import com.canopobd.ui.components.TCMECMCANStatusCard
 import kotlin.math.abs
@@ -745,31 +743,10 @@ fun DashboardScreen(
                 tireData = tpmsData
             )
         }
-        if (showClimateControl) {
-            ClimateControlDialog(
-                initialState = com.canopobd.ui.climate.ClimateState(),
-                onCommand = onSendClimateCommand,
-                onDismiss = onToggleClimateControl
-            )
-        }
-        if (showWindowControl) {
-            WindowControlDialog(
-                initialState = com.canopobd.data.domain.WindowState(),
-                onCommand = onSendWindowCommand,
-                onDismiss = onToggleWindowControl,
-                onSetPosition = onSendWindowPosition,
-                onVentilateAll = onSendWindowVentilateAll,
-                onToggleChildLock = onToggleWindowChildLock,
-                onToggleExpressMode = onToggleWindowExpressMode,
-                onSunroofCommand = onSendSunroofCommand,
-                onPollStatus = onPollWindowStatus,
-                externalState = null,
-                onWindowStateChange = null,
-                childLock = windowChildLock,
-                isMoving = windowIsMoving,
-                expressMode = windowExpressMode
-            )
-        }
+        // Hinweis: Climate-/Window-Dialoge werden in MainActivity mit echtem
+        // ViewModel-State (externalState) gerendert. Die frueheren Duplikate
+        // hier (Default-State, externalState=null) stapelten zwei Dialoge
+        // uebereinander und verloren die Zwei-Wege-Sync.
         if (showQuickActions) {
             QuickActionsDialog(
                 onDismiss = onToggleQuickActions,

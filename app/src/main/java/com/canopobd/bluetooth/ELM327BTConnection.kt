@@ -35,6 +35,9 @@ class ELM327BTConnection(
         private const val INITIAL_RETRY_DELAY_MS = 100L
         private const val MAX_RETRY_DELAY_MS = 500L
         private const val MAX_BATTERY_VOLTAGE = 20.0
+        // SAE J1979 Mode 01 PID 01: Byte B Bit 3 = Zuendungsart
+        // (gesetzt = Selbstzuender/Compression, sonst Fremdzuender/Spark)
+        private const val PID01_IGNITION_COMPRESSION_MASK = 0x08
 
         private val DTC_DESCRIPTIONS = mapOf(
             "P0100" to "Mass Air Flow Circuit Malfunction",
@@ -1483,11 +1486,11 @@ class ELM327BTConnection(
                 val dtcStatus = hex.substring(4, 6).toInt(16)
                 info["dtcCount"] = (dtcStatus and 0x7F)
                 info["milOn"] = (dtcStatus and 0x80) != 0
-                info["ignitionType"] = when ((dtcStatus shr 6) and 0x03) {
-                    1 -> "Compression"
-                    2 -> "Spark"
-                    else -> "Unknown"
-                }
+                // SAE J1979 Mode 01 PID 01: Zündungsart steht in Daten-Byte B
+                // Bit 3 (0 = Fremdzündung, 1 = Selbstzündung), nicht in Byte A
+                // (MIL + DTC-Count), das mit MIL/Fehlerzahl variiert.
+                val byteB = hex.substring(6, 8).toInt(16)
+                info["ignitionType"] = if ((byteB and PID01_IGNITION_COMPRESSION_MASK) != 0) "Compression" else "Spark"
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to get DTC status info: ${e.message}")

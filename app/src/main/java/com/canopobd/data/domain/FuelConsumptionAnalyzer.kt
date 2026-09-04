@@ -36,6 +36,9 @@ class FuelConsumptionAnalyzer {
         private const val LPH_TO_L100_CONVERSION = 100.0
         private const val MIN_SPEED_FOR_CALC = 5.0
         private const val SAMPLE_WINDOW_SIZE = 100
+        // Max. plausible sample gap: groessere Luecken (App im Hintergrund,
+        // Uhrensprung) wuerden Distanz/Kraftstoff unbegrenzt aufblaehen.
+        private const val MAX_SAMPLE_GAP_MS = 60_000L
 
         private const val CITY_CONSUMPTION_MIN = 8.0
         private const val CITY_CONSUMPTION_MAX = 10.0
@@ -78,15 +81,20 @@ class FuelConsumptionAnalyzer {
             fuelSamples.removeAt(0)
         }
 
-        val distanceDelta = if (sample.speedKmh > 0 && lastTimestamp > 0) {
-            val timeDeltaHours = (sample.timestamp - lastTimestamp) / 3600000.0
+        // Out-of-order/verzoegerte Samples duerfen Distanz und Kraftstoff nie
+        // verringern oder aufblaehen: dt auf [0, MAX_SAMPLE_GAP_MS] klemmen.
+        val timeDeltaMs = if (lastTimestamp > 0) {
+            (sample.timestamp - lastTimestamp).coerceIn(0L, MAX_SAMPLE_GAP_MS)
+        } else { 0L }
+        val timeDeltaHours = timeDeltaMs / 3600000.0
+
+        val distanceDelta = if (sample.speedKmh > 0 && timeDeltaMs > 0) {
             sample.speedKmh * timeDeltaHours
         } else { 0.0 }
 
         tripDistance += distanceDelta
 
-        val fuelDelta = if (sample.fuelRateLph > 0 && lastTimestamp > 0) {
-            val timeDeltaHours = (sample.timestamp - lastTimestamp) / 3600000.0
+        val fuelDelta = if (sample.fuelRateLph > 0 && timeDeltaMs > 0) {
             sample.fuelRateLph * timeDeltaHours
         } else { 0.0 }
 
@@ -101,7 +109,11 @@ class FuelConsumptionAnalyzer {
         }
 
         lastSpeed = sample.speedKmh
-        lastTimestamp = sample.timestamp
+        // lastTimestamp nur monoton vorwaerts bewegen: Ein Out-of-order-Sample
+        // darf das naechste Delta nicht aufblaehen.
+        if (sample.timestamp > lastTimestamp) {
+            lastTimestamp = sample.timestamp
+        }
     }
 
     fun updateAverage(newSample: FuelSample) {

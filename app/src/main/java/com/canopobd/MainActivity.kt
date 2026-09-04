@@ -207,15 +207,11 @@ private fun SplashScreen(appColors: AppColors) {
 
 @Composable
 private fun MainContent(viewModel: DashboardViewModel) {
+    // POST_NOTIFICATIONS ist optional: Wer nur Notifications ablehnt, darf
+    // trotzdem das Dashboard nutzen (Alerts erscheinen dann als In-App-Karte).
+    // Nur Bluetooth + Location sind zum Verbinden erforderlich.
     val requiredPermissions = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            listOf(
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.POST_NOTIFICATIONS
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             listOf(
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN,
@@ -223,6 +219,13 @@ private fun MainContent(viewModel: DashboardViewModel) {
             )
         } else {
             listOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+    val optionalPermissions = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            listOf(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            emptyList()
         }
     }
 
@@ -238,7 +241,11 @@ private fun MainContent(viewModel: DashboardViewModel) {
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        permissionsGranted = results.values.all { it }
+        // Nur erforderliche Permissions entscheiden ueber den App-Zugang;
+        // optionale (Notifications) duerfen abgelehnt werden.
+        permissionsGranted = requiredPermissions.all { perm ->
+            results[perm] ?: (ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED)
+        }
         if (permissionsGranted) {
             viewModel.onPermissionsGranted()
         }
@@ -246,7 +253,7 @@ private fun MainContent(viewModel: DashboardViewModel) {
 
     LaunchedEffect(Unit) {
         if (!permissionsGranted) {
-            launcher.launch(requiredPermissions.toTypedArray())
+            launcher.launch((requiredPermissions + optionalPermissions).toTypedArray())
         } else {
             viewModel.onPermissionsGranted()
         }

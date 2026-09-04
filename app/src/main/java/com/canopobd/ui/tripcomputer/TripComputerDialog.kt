@@ -271,7 +271,11 @@ private fun exportFile(context: Context, content: String, filename: String, mime
     try {
         val cacheFile = java.io.File(context.cacheDir, filename)
         cacheFile.writeText(content)
-        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", cacheFile)
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            cacheFile
+        )
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = mime
             putExtra(Intent.EXTRA_STREAM, uri)

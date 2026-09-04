@@ -96,6 +96,15 @@ class MaintenanceNotificationManager(private val context: Context) {
     }
 
     fun showMaintenanceNotification(reminder: MaintenanceReminder, notificationId: Int) {
+        // Ohne erteilte Runtime-Permission (Android 13+) kein notify():
+        // nach Revoke wuerde das mit SecurityException crashen (wie in
+        // LiveAlertNotifier bereits abgesichert).
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }

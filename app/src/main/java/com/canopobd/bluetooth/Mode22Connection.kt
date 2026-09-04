@@ -150,14 +150,13 @@ object Mode22PIDs {
     // PID Definitions with formulas
     val PID_DEFINITIONS = mapOf(
         // Vehicle Info
-        VIN to Mode22PIDInfo("F190", "VIN", "chars", 17) { b ->
-            val vinStr = b.filter { it.toInt() in 0x20..0x7E }.map { it.toInt().toChar() }.joinToString("")
-            if (vinStr.isNotEmpty()) vinStr.length.toDouble() else 0.0
-        },
-        CALIBRATION_ID to Mode22PIDInfo("F191", "Calibration ID", "", 16) { b ->
-            val calStr = b.filter { it.toInt() in 0x20..0x7E }.map { it.toInt().toChar() }.joinToString("")
-            if (calStr.isNotEmpty()) calStr.length.toDouble() else 0.0
-        },
+        // VIN ist ein ASCII-String und passt nicht in Double (frueher wurde
+        // irrefuehrend die String-Laenge, z.B. 17.0, zurueckgegeben).
+        // String-DIDs ueber parseVIN()/parseVINMode22()/getCachedValue()
+        // lesen, nicht ueber diese Formel.
+        VIN to Mode22PIDInfo("F190", "VIN", "chars", 17) { _ -> 0.0 },
+        // Wie VIN: ASCII-String, kein numerischer Wert (s.o.).
+        CALIBRATION_ID to Mode22PIDInfo("F191", "Calibration ID", "", 16) { _ -> 0.0 },
         CALIBRATION_VERIFICATION to Mode22PIDInfo("F192", "CVN", "", 4) { b ->
             if (b.size >= 4) {
                 (((b[0].toInt() and 0xFF) shl 24) or
