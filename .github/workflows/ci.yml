@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: detekt-report
-          path: build/reports/detekt/detekt.xml
+          path: app/build/reports/detekt/detekt.xml
           retention-days: 7
         continue-on-error: true
 
@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ktlint-report
-          path: build/reports/ktlint/*.xml
+          path: app/build/reports/ktlint/*.xml
           retention-days: 7
         continue-on-error: true
 

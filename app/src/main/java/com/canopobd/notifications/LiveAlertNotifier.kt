@@ -18,6 +18,19 @@ class LiveAlertNotifier(private val context: Context) {
     companion object {
         const val CHANNEL_ID = "live_obd_alerts"
         const val NOTIFICATION_BASE_ID = 5000
+
+        /**
+         * Stable notification id per alert type. Ordinal-based: unlike the
+         * previous name.hashCode() scheme this can neither go negative nor
+         * collide across the fixed AlertType set.
+         */
+        fun notificationIdForKey(typeName: String): Int {
+            val ordinal = com.canopobd.data.model.AlertType.valueOf(typeName).ordinal
+            return NOTIFICATION_BASE_ID + ordinal
+        }
+
+        fun notificationIdForType(type: com.canopobd.data.model.AlertType): Int =
+            NOTIFICATION_BASE_ID + type.ordinal
     }
 
     private val manager: NotificationManager? =
@@ -40,6 +53,17 @@ class LiveAlertNotifier(private val context: Context) {
     }
 
     fun notifyChanges(alerts: List<ActiveAlert>) {
+        val currentKeys = alerts.map { it.type.name }.toSet()
+
+        // Clear notifications for types no longer present — always, even
+        // without POST_NOTIFICATIONS permission: otherwise a revoke orphans
+        // posted notifications because the next alerts=[] call can no longer
+        // diff against the already-emptied in-flight set.
+        val previouslyActive = inFlightIds.value
+        previouslyActive.filter { it !in currentKeys }.forEach { key ->
+            manager?.cancel(notificationIdForKey(key))
+        }
+
         // Ohne erteilte Runtime-Permission (Android 13+) keine Notifications
         // posten: nach Revoke wuerde notify() mit SecurityException crashen.
         // Der Aufrufer filtert zusaetzlich per distinctUntilChanged (kein Spam
@@ -48,21 +72,14 @@ class LiveAlertNotifier(private val context: Context) {
             context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
             android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
-            inFlightIds.value = alerts.map { it.type.name }.toSet()
+            inFlightIds.value = currentKeys
             return
-        }
-        val currentKeys = alerts.map { it.type.name }.toSet()
-
-        // Clear notifications for types no longer present
-        val previouslyActive = inFlightIds.value
-        previouslyActive.filter { it !in currentKeys }.forEach { key ->
-            manager?.cancel(NOTIFICATION_BASE_ID + key.hashCode())
         }
 
         // Post new/updated notifications
         alerts.forEach { alert ->
             val notification = buildNotification(alert)
-            val id = NOTIFICATION_BASE_ID + alert.type.name.hashCode()
+            val id = notificationIdForKey(alert.type.name)
             manager?.notify(id, notification)
         }
 

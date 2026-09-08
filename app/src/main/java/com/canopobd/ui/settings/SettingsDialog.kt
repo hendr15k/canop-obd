@@ -27,6 +27,14 @@ import com.canopobd.data.locale.AppLanguage
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
+private const val PollRateFastMs = 250L
+private const val PollRateDefaultMs = 500L
+private const val PollRateRelaxedMs = 1000L
+private const val PollRateSlowMs = 2000L
+private val PollRateOptions = listOf(PollRateFastMs, PollRateDefaultMs, PollRateRelaxedMs, PollRateSlowMs)
+private const val PollRateSubSecondThresholdMs = 1000L
+private const val PollRateMsPerSecond = 1000L
+
 @Composable
 fun SettingsDialog(
     pollRate: Long,
@@ -244,8 +252,8 @@ private fun PollRateSelector(
     onPollRateChange: (Long) -> Unit
 ) {
     val colors = LocalAppColors.current
-    val options = listOf(250L, 500L, 1000L, 2000L)
-    val labels = options.map { if (it < 1000) "$it ms" else "${it / 1000} s" }
+    val options = PollRateOptions
+    val labels = options.map { if (it < PollRateSubSecondThresholdMs) "$it ms" else "${it / PollRateMsPerSecond} s" }
     val selectedIndex = options.indexOf(pollRate).takeIf { it >= 0 } ?: 1
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(

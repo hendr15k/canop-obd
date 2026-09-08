@@ -838,6 +838,30 @@ enum class MaintenanceType(val label: String, val defaultInterval: Int) {
     TIMING_CHAIN("Steuerkette", TIMING_CHAIN_DEFAULT_INTERVAL_KM)
 }
 
+/**
+ * Maps ExtendedMaintenanceDialog service ids (lower_snake_case, e.g. "oil_change",
+ * "brake_pads_front") to [MaintenanceType].
+ *
+ * The dialog emits ids that neither match the enum's UPPER_SNAKE_CASE names nor
+ * always have an enum entry (brake_pads_front/rear, cabin_filter, pcv_valve,
+ * maf_sensor, ...). Callers must use this instead of [MaintenanceType.valueOf],
+ * which throws IllegalArgumentException on every tap.
+ *
+ * @return the matching type, or null when the id has no enum counterpart.
+ */
+fun maintenanceTypeForServiceId(serviceId: String): MaintenanceType? = when (serviceId) {
+    "oil_change" -> MaintenanceType.OIL_CHANGE
+    "timing_chain" -> MaintenanceType.TIMING_CHAIN
+    "transmission_oil" -> MaintenanceType.TRANSMISSION_FLUID
+    "brake_pads_front", "brake_pads_rear" -> MaintenanceType.BRAKE_PADS
+    "air_filter" -> MaintenanceType.AIR_FILTER
+    "spark_plugs" -> MaintenanceType.SPARK_PLUGS
+    "coolant" -> MaintenanceType.COOLANT
+    "turbo_visual" -> MaintenanceType.TURBO_INSPECTION
+    "turbo_pressure" -> MaintenanceType.TURBO_BOOST_CHECK
+    else -> null
+}
+
 enum class MaintenanceStatus {
     OK, DUE_SOON, OVERDUE
 }
