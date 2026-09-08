@@ -717,7 +717,11 @@ fun DashboardScreen(
             ExtendedMaintenanceDialog(
                 currentKm = currentKm,
                 onDismiss = onToggleExtendedMaintenance,
-                onCompleteService = { type, km, interval -> onSetMaintenanceItem(com.canopobd.data.model.MaintenanceType.valueOf(type), km, interval) }
+                onCompleteService = { type, km, interval ->
+                    com.canopobd.data.model.maintenanceTypeForServiceId(type)?.let { mapped ->
+                        onSetMaintenanceItem(mapped, km, interval)
+                    }
+                }
             )
         }
         if (showComfortControl) {

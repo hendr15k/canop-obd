@@ -107,10 +107,12 @@ class ComfortController(
                     bytesToHex(BCMProtocol.Climate.blowerSpeedFrame(6))
                 }
                 is ClimateCommand.SET_TEMP_DRIVER -> {
-                    bytesToHex(BCMProtocol.Climate.temperatureFrame(climateState.value.driverTemp))
+                    climateState.value = climateState.value.copy(driverTemp = command.temp)
+                    bytesToHex(BCMProtocol.Climate.temperatureFrame(command.temp))
                 }
                 is ClimateCommand.SET_TEMP_PASSENGER -> {
-                    bytesToHex(BCMProtocol.Climate.temperatureFrame(climateState.value.passengerTemp))
+                    climateState.value = climateState.value.copy(passengerTemp = command.temp)
+                    bytesToHex(BCMProtocol.Climate.temperatureFrame(command.temp))
                 }
                 is ClimateCommand.TOGGLE_SYNC -> {
                     val newState = climateState.value.copy(syncEnabled = !climateState.value.syncEnabled)

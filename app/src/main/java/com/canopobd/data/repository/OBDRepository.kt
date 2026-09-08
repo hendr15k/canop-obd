@@ -197,6 +197,14 @@ class OBDRepository(
     private val _activeAlerts = MutableStateFlow<List<ActiveAlert>>(emptyList())
     val activeAlerts: StateFlow<List<ActiveAlert>> = _activeAlerts.asStateFlow()
 
+    // Fresh alert triggers for (re-)notification (sound/vibration). Unlike
+    // activeAlerts — which mirrors the currently true conditions on every
+    // poll — this only emits newly triggered types, throttled by
+    // AlertConfig.hysteresisSeconds.
+    private val _alertEvents =
+        kotlinx.coroutines.flow.MutableSharedFlow<List<ActiveAlert>>(extraBufferCapacity = 1)
+    val alertEvents: kotlinx.coroutines.flow.SharedFlow<List<ActiveAlert>> = _alertEvents
+
     private val _freezeFrames = MutableStateFlow<List<FreezeFrame>>(emptyList())
     val freezeFrames: StateFlow<List<FreezeFrame>> = _freezeFrames.asStateFlow()
 
@@ -446,6 +454,8 @@ class OBDRepository(
         _connectionState.value = OBDConnectionState.Disconnected
         _obdData.value = OBDData()
         _dtcResponse.value = null
+        _activeAlerts.value = emptyList()
+        lastAlertTrigger.clear()
         trendRecorder.clear()
         _trendHistory.value = TrendHistory()
         // Save trip to Room Database on a dedicated scope so cleanup()'s scope.cancel()
@@ -1008,7 +1018,7 @@ class OBDRepository(
         val cfg = _alertConfig.value
         val d = _obdData.value
         val now = System.currentTimeMillis()
-        val cooldownMs = cfg.cooldownSeconds * 1000L
+        val hysteresisMs = cfg.hysteresisSeconds * 1000L
 
         val candidateAlerts = mutableListOf<ActiveAlert>()
 
@@ -1040,17 +1050,57 @@ class OBDRepository(
         candidateAlerts.addAll(evaluateChargeAirTempAlert(cfg, d))
         candidateAlerts.addAll(evaluateFuelTrimAlert(cfg, d))
 
-        val filtered = candidateAlerts.filter { alert ->
-            val lastTrigger = lastAlertTrigger[alert.type]
-            if (lastTrigger == null || now - lastTrigger > cooldownMs) {
-                lastAlertTrigger[alert.type] = now
-                true
-            } else {
-                false
-            }
-        }
+        // Still-true alerts stay in the active set on every poll; only fresh
+        // triggers (or re-triggers after hysteresisSeconds) are returned for
+        // (re-)notification. Previously the whole active set was replaced by
+        // the cooldown-filtered list, so LiveAlertNotifier cancelled a
+        // still-true alert on the next poll and it flapped ~1 poll per
+        // cooldown window.
+        val (active, toNotify) = partitionAlertNotifications(
+            previousActive = _activeAlerts.value.associateBy { it.type },
+            candidates = candidateAlerts,
+            now = now,
+            lastTrigger = lastAlertTrigger,
+            hysteresisMs = hysteresisMs
+        )
 
-        _activeAlerts.value = filtered
+        _activeAlerts.value = active
+        if (toNotify.isNotEmpty()) {
+            scope.launch { _alertEvents.emit(toNotify) }
+        }
+    }
+
+    companion object {
+        /**
+         * Pure alert-partition decision, extracted for JVM regression tests.
+         *
+         * @return pair of (active alerts = all currently true conditions,
+         * fresh triggers for notification).
+         */
+        internal fun partitionAlertNotifications(
+            previousActive: Map<AlertType, ActiveAlert>,
+            candidates: List<ActiveAlert>,
+            now: Long,
+            lastTrigger: MutableMap<AlertType, Long>,
+            hysteresisMs: Long
+        ): Pair<List<ActiveAlert>, List<ActiveAlert>> {
+            val toNotify = candidates.filter { alert ->
+                val prev = previousActive[alert.type]
+                if (prev == null) {
+                    lastTrigger[alert.type] = now
+                    true
+                } else if (now - (lastTrigger[alert.type] ?: 0L) > hysteresisMs) {
+                    lastTrigger[alert.type] = now
+                    true
+                } else {
+                    false
+                }
+            }
+            previousActive.keys
+                .filter { it !in candidates.map { a -> a.type }.toSet() }
+                .forEach { lastTrigger.remove(it) }
+            return candidates to toNotify
+        }
     }
 
     private fun evaluateThreshold(

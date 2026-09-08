@@ -30,14 +30,12 @@ import androidx.compose.ui.window.DialogProperties
 import com.canopobd.data.model.*
 import com.canopobd.ui.theme.*
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun EcoScoreDialog(
     ecoScore: EcoScoreData,
     co2Data: CO2Data,
     fuelCost: FuelCostData,
     rangeEstimation: RangeEstimation,
-    efficiency: FuelEfficiencyMetrics,
     drivingStyle: DrivingStyleAnalysis,
     tips: List<EcoTip>,
     onDismiss: () -> Unit,

@@ -27,7 +27,14 @@ import com.canopobd.data.locale.AppLanguage
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
-@Suppress("UNUSED_PARAMETER")
+private const val PollRateFastMs = 250L
+private const val PollRateDefaultMs = 500L
+private const val PollRateRelaxedMs = 1000L
+private const val PollRateSlowMs = 2000L
+private val PollRateOptions = listOf(PollRateFastMs, PollRateDefaultMs, PollRateRelaxedMs, PollRateSlowMs)
+private const val PollRateSubSecondThresholdMs = 1000L
+private const val PollRateMsPerSecond = 1000L
+
 @Composable
 fun SettingsDialog(
     pollRate: Long,
@@ -123,6 +130,13 @@ fun SettingsDialog(
                             options = PollMode.entries.map { it.label },
                             selectedIndex = PollMode.entries.indexOf(pollMode),
                             onSelect = { onPollModeChange(PollMode.entries[it]) }
+                        )
+                    }
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        PollRateSelector(
+                            pollRate = pollRate,
+                            onPollRateChange = onPollRateChange
                         )
                     }
 
@@ -229,6 +243,30 @@ fun SettingsDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PollRateSelector(
+    pollRate: Long,
+    onPollRateChange: (Long) -> Unit
+) {
+    val colors = LocalAppColors.current
+    val options = PollRateOptions
+    val labels = options.map { if (it < PollRateSubSecondThresholdMs) "$it ms" else "${it / PollRateMsPerSecond} s" }
+    val selectedIndex = options.indexOf(pollRate).takeIf { it >= 0 } ?: 1
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = stringResource(R.string.poll_rate),
+            style = MaterialTheme.typography.labelLarge,
+            color = colors.textSecondary,
+            fontWeight = FontWeight.Medium
+        )
+        SegmentedSelector(
+            options = labels,
+            selectedIndex = selectedIndex,
+            onSelect = { index -> onPollRateChange(options[index]) }
+        )
     }
 }
 

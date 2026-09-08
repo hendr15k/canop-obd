@@ -33,6 +33,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > /tmp/release-key.jks
+          test -s /tmp/release-key.jks || { echo "::error::Keystore decode produced an empty file — check RELEASE_KEYSTORE_BASE64 secret"; exit 1; }
 
       - name: Extract version
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

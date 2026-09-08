@@ -1,6 +1,8 @@
 package com.canopobd.ui.hud
 
 import android.app.Activity
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -38,16 +40,14 @@ fun HUDModeActivity(
     DisposableEffect(Unit) {
         val window = (context as? Activity)?.window
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window?.setFlags(
-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS or
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
-            0
-        )
+        val controller = window?.decorView?.windowInsetsController
+        if (controller != null) {
+            // Explicitly show both bars (clears any legacy translucent flags' effect).
+            controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+            controller.systemBarsBehavior =
+                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
         onDispose {
-            window?.clearFlags(
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS or
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION
-            )
             window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
