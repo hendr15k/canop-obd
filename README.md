@@ -9,7 +9,7 @@
   <img src="https://github.com/hendr15k/canop-obd/actions/workflows/build.yml/badge.svg" alt="Build">
   <img src="https://img.shields.io/badge/platform-Android%208.0%2B-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/kotlin-1.9.22-purple" alt="Kotlin">
-  <img src="https://img.shields.io/badge/version-1.6.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.7.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/files-153-orange" alt="Files">
   <img src="https://img.shields.io/badge/lines-78k-red" alt="Lines">
 </p>
