@@ -27,7 +27,6 @@ import com.canopobd.data.locale.AppLanguage
 import com.canopobd.ui.components.*
 import com.canopobd.ui.theme.*
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun SettingsDialog(
     pollRate: Long,
@@ -123,6 +122,13 @@ fun SettingsDialog(
                             options = PollMode.entries.map { it.label },
                             selectedIndex = PollMode.entries.indexOf(pollMode),
                             onSelect = { onPollModeChange(PollMode.entries[it]) }
+                        )
+                    }
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        PollRateSelector(
+                            pollRate = pollRate,
+                            onPollRateChange = onPollRateChange
                         )
                     }
 
@@ -229,6 +235,30 @@ fun SettingsDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PollRateSelector(
+    pollRate: Long,
+    onPollRateChange: (Long) -> Unit
+) {
+    val colors = LocalAppColors.current
+    val options = listOf(250L, 500L, 1000L, 2000L)
+    val labels = options.map { if (it < 1000) "$it ms" else "${it / 1000} s" }
+    val selectedIndex = options.indexOf(pollRate).takeIf { it >= 0 } ?: 1
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = stringResource(R.string.poll_rate),
+            style = MaterialTheme.typography.labelLarge,
+            color = colors.textSecondary,
+            fontWeight = FontWeight.Medium
+        )
+        SegmentedSelector(
+            options = labels,
+            selectedIndex = selectedIndex,
+            onSelect = { index -> onPollRateChange(options[index]) }
+        )
     }
 }
 

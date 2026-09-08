@@ -508,9 +508,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val windowChildLock by viewModel.windowChildLock.collectAsState()
     val windowIsMoving by viewModel.windowIsMoving.collectAsState()
     val windowExpressMode by viewModel.windowExpressMode.collectAsState()
-    val windowOpenCount = remember { derivedStateOf {
-        com.canopobd.data.domain.WindowControlMonitor.evaluate(viewModel.windowState.value).openWindowCount
-    } }.value
+    val windowState by viewModel.windowState.collectAsState()
+    val windowOpenCount by remember {
+        derivedStateOf {
+            com.canopobd.data.domain.WindowControlMonitor.evaluate(windowState).openWindowCount
+        }
+    }
     val tpmsData by viewModel.tpmsData.collectAsState()
     val tcmReading by viewModel.tcmReading.collectAsState()
     val ecmReading by viewModel.ecmReading.collectAsState()
@@ -580,7 +583,6 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
             co2Data = co2Data,
             fuelCost = fuelCostData,
             rangeEstimation = rangeEstimation,
-            efficiency = com.canopobd.data.model.FuelEfficiencyMetrics(),
             drivingStyle = drivingStyleAnalysis,
             tips = ecoTips,
             onDismiss = viewModel::dismissEcoScore,
@@ -596,21 +598,23 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         )
     }
 
+    val climateStateForDialog by viewModel.climateState.collectAsState()
     if (showClimateControl) {
         com.canopobd.ui.climate.ClimateControlDialog(
-            initialState = viewModel.climateState.value,
+            initialState = climateStateForDialog,
             onCommand = viewModel::onSendClimateCommand,
             onDismiss = viewModel::toggleClimateControl,
-            externalState = viewModel.climateState.value,
+            externalState = climateStateForDialog,
             onClimateStateChange = { newState ->
                 viewModel.updateClimateState(newState)
             }
         )
     }
 
+    val windowStateForDialog by viewModel.windowState.collectAsState()
     if (showWindowControl) {
         com.canopobd.ui.window.WindowControlDialog(
-            initialState = viewModel.windowState.value,
+            initialState = windowStateForDialog,
             onCommand = viewModel::onSendWindowCommand,
             onDismiss = viewModel::toggleWindowControl,
             onSetPosition = viewModel::onSendWindowPosition,
@@ -619,7 +623,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
             onToggleExpressMode = viewModel::toggleWindowExpressMode,
             onSunroofCommand = viewModel::onSendSunroofCommand,
             onPollStatus = viewModel::pollWindowStatus,
-            externalState = viewModel.windowState.value,
+            externalState = windowStateForDialog,
             onWindowStateChange = { newState ->
                 viewModel.updateWindowState(newState)
             },

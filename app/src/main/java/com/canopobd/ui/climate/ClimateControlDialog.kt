@@ -39,7 +39,6 @@ enum class ClimateZone {
     DRIVER, PASSENGER, REAR, ALL
 }
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun ClimateControlDialog(
     initialState: ClimateState = ClimateState(),
@@ -182,7 +181,8 @@ fun ClimateControlDialog(
                                         if (localState.syncEnabled) {
                                             localState = localState.copy(passengerTemp = localState.passengerTemp + 1)
                                         }
-                                        onCommand(ClimateCommand.SET_TEMP_DRIVER)
+                                        onClimateStateChange?.invoke(localState)
+                                        onCommand(ClimateCommand.SET_TEMP_DRIVER(localState.driverTemp))
                                     }
                                 },
                                 onDecrease = {
@@ -191,7 +191,8 @@ fun ClimateControlDialog(
                                         if (localState.syncEnabled) {
                                             localState = localState.copy(passengerTemp = localState.passengerTemp - 1)
                                         }
-                                        onCommand(ClimateCommand.SET_TEMP_DRIVER)
+                                        onClimateStateChange?.invoke(localState)
+                                        onCommand(ClimateCommand.SET_TEMP_DRIVER(localState.driverTemp))
                                     }
                                 },
                                 colors = colors
@@ -209,13 +210,15 @@ fun ClimateControlDialog(
                                 onIncrease = {
                                     if (localState.passengerTemp < 30) {
                                         localState = localState.copy(passengerTemp = localState.passengerTemp + 1)
-                                        onCommand(ClimateCommand.SET_TEMP_PASSENGER)
+                                        onClimateStateChange?.invoke(localState)
+                                        onCommand(ClimateCommand.SET_TEMP_PASSENGER(localState.passengerTemp))
                                     }
                                 },
                                 onDecrease = {
                                     if (localState.passengerTemp > 16) {
                                         localState = localState.copy(passengerTemp = localState.passengerTemp - 1)
-                                        onCommand(ClimateCommand.SET_TEMP_PASSENGER)
+                                        onClimateStateChange?.invoke(localState)
+                                        onCommand(ClimateCommand.SET_TEMP_PASSENGER(localState.passengerTemp))
                                     }
                                 },
                                 colors = colors
@@ -644,7 +647,7 @@ sealed class ClimateCommand {
     object FAN_SPEED_1 : ClimateCommand()
     object FAN_SPEED_3 : ClimateCommand()
     object FAN_MAX : ClimateCommand()
-    object SET_TEMP_DRIVER : ClimateCommand()
-    object SET_TEMP_PASSENGER : ClimateCommand()
+    data class SET_TEMP_DRIVER(val temp: Int) : ClimateCommand()
+    data class SET_TEMP_PASSENGER(val temp: Int) : ClimateCommand()
     object TOGGLE_SYNC : ClimateCommand()
 }
