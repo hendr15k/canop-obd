@@ -33,6 +33,9 @@ import com.canopobd.data.domain.ValidationResult
 import com.canopobd.ui.comfort.ComfortCommand
 import com.canopobd.notifications.LiveAlertNotifier
 import com.canopobd.notifications.MaintenanceNotificationManager
+import com.canopobd.data.domain.AnalyzerSnapshot
+import com.canopobd.data.domain.DiagnosisReport
+import com.canopobd.data.domain.DiagnosisReportBuilder
 import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
 import com.canopobd.data.domain.EngineWarmupMonitor
@@ -155,6 +158,9 @@ class DashboardViewModel private constructor(
 
     private val _showDiagnostics = MutableStateFlow(false)
     val showDiagnostics: StateFlow<Boolean> = _showDiagnostics.asStateFlow()
+
+    private val _showDiagnosisReport = MutableStateFlow(false)
+    val showDiagnosisReport: StateFlow<Boolean> = _showDiagnosisReport.asStateFlow()
 
     private val _showAlertSettings = MutableStateFlow(false)
     val showAlertSettings: StateFlow<Boolean> = _showAlertSettings.asStateFlow()
@@ -656,6 +662,43 @@ class DashboardViewModel private constructor(
     fun toggleAlertSettings() {
         _showAlertSettings.value = !_showAlertSettings.value
     }
+
+    fun toggleDiagnosisReport() {
+        _showDiagnosisReport.value = !_showDiagnosisReport.value
+    }
+
+    fun buildDiagnosisReport(): DiagnosisReport = DiagnosisReportBuilder.build(
+        obdData = obdData.value,
+        dtcResponse = dtcResponse.value,
+        freezeFrames = freezeFrames.value,
+        protocol = detectedProtocol.value,
+        odometerKm = currentKm.value,
+        appVersion = UpdateChecker.getCurrentVersionName(context),
+        snapshot = AnalyzerSnapshot(
+            batteryAnalysis = batteryAnalysis.value,
+            egrAnalysis = egrAnalysis.value,
+            evapAnalysis = evapAnalysis.value,
+            saiAnalysis = saiAnalysis.value,
+            lambdaAnalysis = lambdaAnalysis.value,
+            emissionsReadiness = emissionsReadiness.value,
+            oilCondition = oilConditionResult.value,
+            pcv = pcvResult.value,
+            gearbox = gearboxResult.value,
+            chain = chainTensionerResult.value,
+            egt = egtResult.value,
+            coolant = coolantResult.value,
+            oilPrediction = oilHealthPrediction.value,
+            turboSpool = turboSpoolResult.value,
+            turboEfficiency = turboEfficiencyResult.value,
+            boostLeak = boostLeakResult.value,
+            wastegate = wastegateResult.value,
+            sensorHealth = sensorHealthSummary.value,
+            fuelSystem = fuelSystemResult.value,
+            warmup = warmupResult.value,
+            driveStyle = driveStyleResult.value,
+            efficiency = drivingEfficiencyResult.value
+        )
+    )
 
     fun toggleDataAnalysis() {
         _showDataAnalysis.value = !_showDataAnalysis.value

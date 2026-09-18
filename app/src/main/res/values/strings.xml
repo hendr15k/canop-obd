@@ -155,6 +155,18 @@
     <string name="diagnostics_no_freeze_frames">Keine Freeze Frames</string>
     <string name="diagnostics_problem_cases">Diagnose-Fälle</string>
     <string name="diagnostics_problem_cases_desc">Hilfreiche Informationen zu typischen Problemen: Turbo, Sensoren, Abgassystem</string>
+    <string name="diagnosis_report_open">Diagnosebericht</string>
+    <string name="diagnosis_report_title">Diagnosebericht</string>
+    <string name="diagnosis_report_eyebrow">Stand %1$s</string>
+    <string name="diagnosis_report_score_label">Gesamtbewertung</string>
+    <string name="diagnosis_report_meta">VIN %1$s • %2$d km • %3$s</string>
+    <string name="diagnosis_report_dtcs">Fehlercodes</string>
+    <string name="diagnosis_report_no_dtcs">Keine Fehlercodes gespeichert</string>
+    <string name="diagnosis_report_findings">Systembefunde (%1$d)</string>
+    <string name="diagnosis_report_no_findings">Noch keine Analysedaten – starte eine Fahrt mit verbundenem Adapter</string>
+    <string name="diagnosis_report_warnings">Kritische Hinweise</string>
+    <string name="diagnosis_report_share_text">Text teilen</string>
+    <string name="diagnosis_report_share_pdf">PDF teilen</string>
 
     <!-- Alerts -->
     <string name="alerts_title">Warnungen</string>

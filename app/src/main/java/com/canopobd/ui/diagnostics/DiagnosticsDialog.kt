@@ -31,7 +31,8 @@ fun DiagnosticsDialog(
     protocol: String,
     supportedPIDs: List<String>,
     freezeFrames: List<FreezeFrame>,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onShowDiagnosisReport: () -> Unit = {}
 ) {
     var showProblemCases by remember { mutableStateOf(false) }
     val colors = LocalAppColors.current
@@ -93,6 +94,16 @@ fun DiagnosticsDialog(
                         )
                     }
                 }
+            }
+
+            item {
+                GradientButton(
+                    text = stringResource(R.string.diagnosis_report_open),
+                    onClick = onShowDiagnosisReport,
+                    icon = Icons.Filled.Summarize,
+                    gradient = colors.gradientAccent,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             item { SectionHeader(title = stringResource(R.string.diagnostics_protocol), icon = Icons.Filled.Memory) }

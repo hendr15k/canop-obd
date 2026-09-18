@@ -388,6 +388,7 @@ private fun PermissionBadge(
 }
 
 @Composable
+@Suppress("CyclomaticComplexMethod", "LongMethod")
 private fun DashboardContent(viewModel: DashboardViewModel) {
     val connectionState by viewModel.connectionState.collectAsState()
     val obdData by viewModel.obdData.collectAsState()
@@ -412,6 +413,10 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val showDiagnostics by viewModel.showDiagnostics.collectAsState()
     val showAlertSettings by viewModel.showAlertSettings.collectAsState()
     val showDataAnalysis by viewModel.showDataAnalysis.collectAsState()
+    val showDiagnosisReport by viewModel.showDiagnosisReport.collectAsState()
+    val diagnosisReport = remember(showDiagnosisReport) {
+        if (showDiagnosisReport) viewModel.buildDiagnosisReport() else null
+    }
     val remoteServerRunning by viewModel.remoteServerRunning.collectAsState()
     val remoteServerIp by viewModel.remoteServerIp.collectAsState()
     val remoteServerPort by viewModel.remoteServerPort.collectAsState()
@@ -714,6 +719,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         onToggleDiagnostics = viewModel::toggleDiagnostics,
         onToggleAlertSettings = viewModel::toggleAlertSettings,
         onToggleDataAnalysis = viewModel::toggleDataAnalysis,
+        showDiagnosisReport = showDiagnosisReport,
+        diagnosisReport = diagnosisReport,
+        onToggleDiagnosisReport = viewModel::toggleDiagnosisReport,
         onStartRemoteServer = viewModel::startRemoteServer,
         onStopRemoteServer = viewModel::stopRemoteServer,
         onStartRecording = viewModel::startRecording,

@@ -40,6 +40,7 @@ import com.canopobd.ui.theme.*
 import com.canopobd.ui.tripcomputer.TripComputerDialog
 import com.canopobd.ui.hud.HUDModeActivity
 import com.canopobd.ui.readiness.ReadinessMonitorDialog
+import com.canopobd.ui.diagnostics.DiagnosisReportDialog
 import com.canopobd.ui.diagnostics.DiagnosticsDialog
 import com.canopobd.ui.alerts.AlertSettingsDialog
 import com.canopobd.ui.analysis.DataAnalysisDialog
@@ -111,6 +112,9 @@ fun DashboardScreen(
     showDiagnostics: Boolean,
     showAlertSettings: Boolean,
     showDataAnalysis: Boolean,
+    showDiagnosisReport: Boolean,
+    diagnosisReport: com.canopobd.data.domain.DiagnosisReport?,
+    onToggleDiagnosisReport: () -> Unit,
     showFuelEconomy: Boolean,
     showMaintenance: Boolean,
     showPerformanceTest: Boolean,
@@ -632,7 +636,16 @@ fun DashboardScreen(
             ReadinessMonitorDialog(readiness = readinessMonitor, onDismiss = onToggleReadiness)
         }
         if (showDiagnostics) {
-            DiagnosticsDialog(protocol = detectedProtocol, supportedPIDs = supportedPIDs, freezeFrames = freezeFrames, onDismiss = onToggleDiagnostics)
+            DiagnosticsDialog(
+                protocol = detectedProtocol,
+                supportedPIDs = supportedPIDs,
+                freezeFrames = freezeFrames,
+                onDismiss = onToggleDiagnostics,
+                onShowDiagnosisReport = onToggleDiagnosisReport
+            )
+        }
+        if (showDiagnosisReport && diagnosisReport != null) {
+            DiagnosisReportDialog(report = diagnosisReport, onDismiss = onToggleDiagnosisReport)
         }
         if (showAlertSettings) {
             AlertSettingsDialog(alertConfig = alertConfig, activeAlerts = activeAlerts, onDismiss = onToggleAlertSettings, onUpdateConfig = onSetAlertConfig)

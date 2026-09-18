@@ -9,7 +9,7 @@
   <img src="https://github.com/hendr15k/canop-obd/actions/workflows/build.yml/badge.svg" alt="Build">
   <img src="https://img.shields.io/badge/platform-Android%208.0%2B-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/kotlin-1.9.22-purple" alt="Kotlin">
-  <img src="https://img.shields.io/badge/version-1.7.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.8.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/files-153-orange" alt="Files">
   <img src="https://img.shields.io/badge/lines-78k-red" alt="Lines">
 </p>
@@ -114,6 +114,7 @@ canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert für den
 ### Diagnose
 - **71+ DTCs** – Astra-J-spezifische Fehlercodes mit Beschreibung, Schweregrad, Ursache, Lösung und Kostenschätzung
 - **Freeze Frames** – Sensordaten zum Fehlerzeitpunkt
+- **Diagnosebericht** – Gesamtbewertung, alle DTCs + 22 Systembefunde (Batterie, Turbo, Öl, Kette …) als Text/PDF teilbar
 - **Protokoll-Erkennung** – ISO 15765-4 CAN (11bit/29bit, 250k/500k)
 
 ### Daten & Export
