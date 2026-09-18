@@ -166,7 +166,7 @@ class CanopoModelsTest {
 
     @Test
     fun `PollMode intervals are correct`() {
-        assertEquals(50L, PollMode.FAST.pollInterval)
+        assertEquals(250L, PollMode.FAST.pollInterval)
         assertEquals(500L, PollMode.NORMAL.pollInterval)
         assertEquals(2000L, PollMode.ECO.pollInterval)
     }

@@ -125,8 +125,10 @@ object UpdateChecker {
         prefs.edit().putString(KEY_SKIPPED_VERSION, versionName).apply()
     }
 
-    private fun parseVersionCode(body: String): Int {
-        val codePattern = Regex("""versionCode[:\s]*(\d+)""", RegexOption.IGNORE_CASE)
+    internal fun parseVersionCode(body: String): Int {
+        // Release bodies use markdown ("**versionCode:** 9"), so tolerate
+        // non-word chars between the key and the digits. Internal for JVM tests.
+        val codePattern = Regex("""versionCode\W+(\d+)""", RegexOption.IGNORE_CASE)
         codePattern.find(body)?.groupValues?.get(1)?.toIntOrNull()?.let { return it }
 
         // A version name is not a reliable substitute for the Gradle
