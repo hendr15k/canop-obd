@@ -4,6 +4,9 @@ private const val FUEL_RAIL_PRESSURE_SCALE = 10.0
 private const val PERCENT_FULL_SCALE = 255.0
 private const val PERCENT_FACTOR = 100.0
 private const val TIMING_CHAIN_DEFAULT_INTERVAL_KM = 150_000
+private const val POLL_INTERVAL_FAST_MS = 250L
+private const val POLL_INTERVAL_NORMAL_MS = 500L
+private const val POLL_INTERVAL_ECO_MS = 2000L
 
 enum class OBDPID(
     val code: String,
@@ -606,9 +609,9 @@ data class ConnectionStats(
 }
 
 enum class PollMode(val label: String, val pollInterval: Long) {
-    FAST("Fast (50ms)", 50L),
-    NORMAL("Normal (500ms)", 500L),
-    ECO("Eco (2000ms)", 2000L)
+    FAST("Fast (250ms)", POLL_INTERVAL_FAST_MS),
+    NORMAL("Normal (500ms)", POLL_INTERVAL_NORMAL_MS),
+    ECO("Eco (2000ms)", POLL_INTERVAL_ECO_MS)
 }
 
 enum class MeasurementUnit(val label: String, val speedFactor: Double, val speedUnit: String, val tempFactor: Double, val tempOffset: Double, val tempUnit: String) {

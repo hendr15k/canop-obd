@@ -27,10 +27,13 @@ jobs:
       - name: Decode keystore
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > /tmp/release-key.jks
+          test -s /tmp/release-key.jks || { echo "::error::Keystore decode produced an empty file — check RELEASE_KEYSTORE_BASE64 secret"; exit 1; }
 
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          echo "VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | sed 's/.*= \([0-9]*\).*/\1/')" >> $GITHUB_OUTPUT
 
       - name: Build release APK
         run: ./gradlew assembleRelease --no-daemon
@@ -47,6 +50,8 @@ jobs:
           name: "canop-obd v${{ steps.version.outputs.VERSION }}"
           body: |
             ## canop-obd v${{ steps.version.outputs.VERSION }}
+
+            **versionCode:** ${{ steps.version.outputs.VERSION_CODE }}
 
             ### Installation
             1. Download the APK below

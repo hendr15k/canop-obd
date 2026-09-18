@@ -160,7 +160,6 @@ class OBDRepository(
         OBDPID.WASTEGATE_CONTROL,
         OBDPID.EGT_BANK1,
         OBDPID.ETHANOL_FUEL_PERCENT,
-        OBDPID.CONTROL_MODULE_VOLTAGE,
         OBDPID.DISTANCE_MIL,
         OBDPID.ABSOLUTE_THROTTLE_B,
         OBDPID.TURBO_OIL_PRESSURE,
@@ -291,6 +290,9 @@ class OBDRepository(
         prefs.getStringSet("primary_gauges", null)?.let { ids ->
             _primaryGaugeIds.value = ids
         }
+        runCatching {
+            MeasurementUnit.valueOf(prefs.getString("measurement_unit", "METRIC") ?: "METRIC")
+        }.getOrNull()?.let { _measurementUnit.value = it }
         _pollMode.value = runCatching {
             PollMode.valueOf(prefs.getString("poll_mode", "NORMAL") ?: "NORMAL")
         }.getOrNull() ?: PollMode.NORMAL
@@ -834,7 +836,7 @@ class OBDRepository(
 
     fun readDTCs() {
         val conn = connection ?: return
-        scope.launch { _dtcResponse.value = conn.readDTCs() }
+        scope.launch { _dtcResponse.value = conn.readAllDTCs() }
     }
 
     fun clearDTCs() {
@@ -928,7 +930,10 @@ class OBDRepository(
         prefs.edit().putLong("poll_rate", r).apply()
     }
 
-    fun setMeasurementUnit(unit: MeasurementUnit) { _measurementUnit.value = unit }
+    fun setMeasurementUnit(unit: MeasurementUnit) {
+        _measurementUnit.value = unit
+        prefs.edit().putString("measurement_unit", unit.name).apply()
+    }
 
     fun setAutoReconnect(enabled: Boolean) {
         _autoReconnect.value = enabled

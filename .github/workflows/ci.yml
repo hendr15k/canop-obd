@@ -30,6 +30,9 @@ jobs:
       - name: Ktlint
         run: ./gradlew ktlintCheck --no-daemon
 
+      - name: Android Lint
+        run: ./gradlew lintDebug --no-daemon
+
       - name: Detekt
         run: ./gradlew detekt --no-daemon
 

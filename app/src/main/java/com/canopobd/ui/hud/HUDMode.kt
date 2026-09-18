@@ -40,12 +40,20 @@ fun HUDModeActivity(
     DisposableEffect(Unit) {
         val window = (context as? Activity)?.window
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val controller = window?.decorView?.windowInsetsController
-        if (controller != null) {
-            // Explicitly show both bars (clears any legacy translucent flags' effect).
-            controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-            controller.systemBarsBehavior =
-                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        // windowInsetsController exists only on API 30+ (minSdk 26):
+        // guard it, otherwise HUD crashes on older devices with
+        // NoSuchMethodError instead of degrading gracefully.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val controller = window?.decorView?.windowInsetsController
+            if (controller != null) {
+                // Explicitly show both bars (clears any legacy translucent flags' effect).
+                controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         }
         onDispose {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

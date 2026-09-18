@@ -74,12 +74,18 @@ android {
                 // unsigniert und wuerde Updates mit Signatur-Mismatch brechen.
                 // CI setzt KEYSTORE_PATH; lokal explizit -PallowUnsignedRelease
                 // uebergeben, wenn das wirklich gewollt ist. Nur pruefen, wenn
-                // tatsaechlich ein Release-Build angefragt ist (sonst wuerde
-                // schon jede Test-/Debug-Konfiguration fehlschlagen).
-                val releaseRequested = gradle.startParameter.taskNames.any {
-                    it.contains("Release", ignoreCase = true)
+                // ein Packaging-/Signing-Task angefragt ist (eine grobe
+                // "Release"-Substring-Pruefung wuerde schon kompilieren wie
+                // compileReleaseKotlin blockieren, das kein Signing braucht).
+                val signingRequested = gradle.startParameter.taskNames.any { name ->
+                    val n = name.substringAfterLast(':')
+                    n.equals("assembleRelease", ignoreCase = true) ||
+                        n.equals("packageRelease", ignoreCase = true) ||
+                        n.startsWith("package", ignoreCase = true) && n.endsWith("Release", ignoreCase = true) ||
+                        n.startsWith("bundle", ignoreCase = true) && n.endsWith("Release", ignoreCase = true) ||
+                        n.startsWith("validateSigning", ignoreCase = true)
                 }
-                if (releaseRequested && !project.hasProperty("allowUnsignedRelease")) {
+                if (signingRequested && !project.hasProperty("allowUnsignedRelease")) {
                     throw GradleException(
                         "Release signing keystore missing (KEYSTORE_PATH='$ksPath'). " +
                             "Set KEYSTORE_PATH/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD " +
