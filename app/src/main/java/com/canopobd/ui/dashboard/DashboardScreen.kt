@@ -225,6 +225,7 @@ fun DashboardScreen(
     driveStyleResult: com.canopobd.data.domain.DriveStyleAnalyzer.DriveStyleAnalysis,
     drivingEfficiencyResult: com.canopobd.data.domain.DrivingEfficiencyScorer.EfficiencyScore,
     fuelSystemResult: com.canopobd.data.domain.FuelSystemAnalyzer.FuelSystemAnalysis,
+    warmupResult: com.canopobd.data.domain.EngineWarmupMonitor.WarmupAnalysis,
     gearboxResult: com.canopobd.data.domain.M32GearboxMonitor.GearboxAnalysis?,
     chainTensionerResult: com.canopobd.data.domain.ChainTensionerAnalyzer.ChainTensionerAnalysis?,
     coolantResult: com.canopobd.data.domain.CoolantSystemHealth.CoolantAnalysis?,
@@ -460,6 +461,18 @@ fun DashboardScreen(
                             colors = colors,
                             modifier = Modifier.weight(1f)
                         )
+                        EngineWarmupCard(
+                            analysis = warmupResult,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         SensorValidationCard(
                             validationResult = sensorValidationResult,
                             colors = colors,

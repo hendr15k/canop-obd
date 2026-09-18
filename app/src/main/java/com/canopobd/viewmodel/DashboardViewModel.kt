@@ -35,6 +35,7 @@ import com.canopobd.notifications.LiveAlertNotifier
 import com.canopobd.notifications.MaintenanceNotificationManager
 import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
+import com.canopobd.data.domain.EngineWarmupMonitor
 import com.canopobd.data.domain.FuelSystemAnalyzer
 import com.canopobd.data.repository.CANRepository
 
@@ -85,6 +86,7 @@ class DashboardViewModel private constructor(
     private var canRepository: CANRepository? = null
     private var canInitializationJob: Job? = null
     private var previousRpmForDriveScore = 0.0
+    private var extendedAnalyzerTick = 0L
 
     val connectionState: StateFlow<OBDConnectionState> = repository.connectionState
     val climateReading = repository.climateReading
@@ -419,6 +421,7 @@ class DashboardViewModel private constructor(
     val driveStyleResult: StateFlow<DriveStyleAnalyzer.DriveStyleAnalysis> get() = analyzerManager.driveStyleResult
     val drivingEfficiencyResult: StateFlow<DrivingEfficiencyScorer.EfficiencyScore> get() = analyzerManager.drivingEfficiencyResult
     val fuelSystemResult: StateFlow<FuelSystemAnalyzer.FuelSystemAnalysis> get() = analyzerManager.fuelSystemResult
+    val warmupResult: StateFlow<EngineWarmupMonitor.WarmupAnalysis> get() = analyzerManager.warmupResult
 
     val extendedAnalyzerData: StateFlow<AnalyzerManager.ExtendedAnalyzerSummary> get() = analyzerManager.extendedAnalyzerData
 
@@ -1243,7 +1246,12 @@ class DashboardViewModel private constructor(
                     previousRpmForDriveScore = data.rpm
                     updateAllTurboMetrics(data)
                     updateEmissionsAnalyzers(data)
-                    updateExtendedAnalyzers(data)
+                    // Schwere 30-Analyzer-Läufe nur bei jeder 2. Probe, damit
+                    // ein schneller Poll-Takt (<500 ms) die UI nicht flutet.
+                    extendedAnalyzerTick++
+                    if (extendedAnalyzerTick % 2 == 0L) {
+                        updateExtendedAnalyzers(data)
+                    }
                 }
         }
         turboViewModel.updateDriveSession(performanceViewModel.driveSession.value)

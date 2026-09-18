@@ -468,6 +468,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val driveStyleResult by viewModel.driveStyleResult.collectAsState()
     val drivingEfficiencyResult by viewModel.drivingEfficiencyResult.collectAsState()
     val fuelSystemResult by viewModel.fuelSystemResult.collectAsState()
+    val warmupResult by viewModel.warmupResult.collectAsState()
     val gearboxResult by viewModel.gearboxResult.collectAsState()
     val chainTensionerResult by viewModel.chainTensionerResult.collectAsState()
     val coolantResult by viewModel.coolantResult.collectAsState()
@@ -774,6 +775,7 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         driveStyleResult = driveStyleResult,
         drivingEfficiencyResult = drivingEfficiencyResult,
         fuelSystemResult = fuelSystemResult,
+        warmupResult = warmupResult,
         gearboxResult = gearboxResult,
         chainTensionerResult = chainTensionerResult,
         coolantResult = coolantResult,

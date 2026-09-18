@@ -32,6 +32,7 @@ class LambdaO2SensorAnalyzer {
         val postCatSensor: com.canopobd.data.model.LambdaSensorStatus?,
         val catalystEfficiency: Double,
         val catalystHealthScore: Int,
+        val overallHealthScore: Int,
         val fuelTrimStatus: String,
         val detectedIssues: List<LambdaIssue>,
         val diagnosis: String,
@@ -89,7 +90,7 @@ class LambdaO2SensorAnalyzer {
             preCatScore * WEIGHT_VOLTAGE +
             crossCountScore * WEIGHT_CROSS_COUNT +
             catalystScore * WEIGHT_CATALYST) / 100
-        rawScore.coerceIn(0, 100)
+        val overallHealthScore = rawScore.coerceIn(0, 100)
 
         val preCatLambda = calculateLambdaValue(input.o2VoltageB1S1)
         val preCatHeaterOK = checkHeaterStatus(input, false)
@@ -124,6 +125,7 @@ class LambdaO2SensorAnalyzer {
             postCatSensor = postCatSensor,
             catalystEfficiency = catalystEff,
             catalystHealthScore = catalystScore,
+            overallHealthScore = overallHealthScore,
             fuelTrimStatus = fuelTrimStatus,
             detectedIssues = issues,
             diagnosis = diagnosis,

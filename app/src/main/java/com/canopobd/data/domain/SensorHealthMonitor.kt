@@ -199,12 +199,13 @@ class SensorHealthMonitor(
         val loadHealth = analyzeEngineLoad(data.engineLoad)
         val fuelHealth = analyzeFuelLevel(data.fuelLevel)
         val o2Health = analyzeO2Sensor(data.o2VoltageB1S1)
+        val egtHealth = analyzeEGT(data.egtBank1)
 
         // Collect all health results
         listOf(
             rpmHealth, speedHealth, mafHealth, boostHealth, coolantHealth,
             intakeHealth, oilHealth, batteryHealth, throttleHealth,
-            loadHealth, fuelHealth, o2Health
+            loadHealth, fuelHealth, o2Health, egtHealth
         ).forEach { health ->
             sensorHealths[health.sensorType] = health
             if (health.status == HealthStatus.CRITICAL) {

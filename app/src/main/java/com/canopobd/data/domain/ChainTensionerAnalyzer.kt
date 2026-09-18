@@ -186,7 +186,7 @@ class ChainTensionerAnalyzer(
             rattleDurationSec <= CRITICAL_RATTLE_SEC -> {
                 val penalty = 25 + ((rattleDurationSec - MAX_COLD_START_RATTLE_SEC) /
                     (CRITICAL_RATTLE_SEC - MAX_COLD_START_RATTLE_SEC) * 25).toInt()
-                (100 - penalty).coerceAtLeast(0) to penalty.coerceAtMost(WEIGHT_RATTLE)
+                (100 - penalty).coerceAtLeast(0) to penalty
             }
             else -> 0 to WEIGHT_RATTLE
         }
@@ -215,7 +215,7 @@ class ChainTensionerAnalyzer(
             }
             else -> {
                 val penalty = 20 + ((idleVariance - WARNING_IDLE_RPM_VARIANCE) / 20.0).toInt()
-                (100 - penalty).coerceAtLeast(0) to penalty.coerceAtMost(WEIGHT_RPM_STABILITY)
+                (100 - penalty).coerceAtLeast(0) to penalty
             }
         }
     }
@@ -236,7 +236,7 @@ class ChainTensionerAnalyzer(
             }
             else -> {
                 val penalty = 20 + ((variance - WARNING_TIMING_VARIANCE) / 3.0).toInt()
-                (100 - penalty).coerceAtLeast(0) to penalty.coerceAtMost(WEIGHT_TIMING_VARIANCE)
+                (100 - penalty).coerceAtLeast(0) to penalty
             }
         }
     }

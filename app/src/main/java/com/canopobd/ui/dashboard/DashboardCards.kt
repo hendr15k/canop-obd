@@ -1524,6 +1524,110 @@ fun M32GearboxCard(
 }
 
 // ============================================================================
+// ENGINE WARMUP CARD — Kaltstartschutz
+// ============================================================================
+@Suppress("LongMethod")
+@Composable
+fun EngineWarmupCard(
+    analysis: com.canopobd.data.domain.EngineWarmupMonitor.WarmupAnalysis,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    EngineWarmupHeader(analysis = analysis, modifier = modifier, onClick = onClick)
+}
+
+@Composable
+private fun EngineWarmupHeader(
+    analysis: com.canopobd.data.domain.EngineWarmupMonitor.WarmupAnalysis,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val colors = LocalAppColors.current
+    val c = healthColor(analysis.healthScore, colors)
+    val isCold = analysis.phase == com.canopobd.data.domain.EngineWarmupMonitor.WarmupPhase.COLD
+    GlassCard(
+        modifier = modifier,
+        onClick = onClick,
+        accentEdge = if (isCold) colors.warning else c,
+        padding = 12.dp
+    ) {
+        EngineWarmupTitleRow(analysis = analysis, statusColor = c)
+        Spacer(Modifier.height(8.dp))
+        EngineWarmupProgressBar(progress = analysis.warmupProgress, statusColor = c)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Max: ${analysis.recommendedMaxRpm} U/min · " +
+                "%.1f bar".format(analysis.recommendedMaxBoostBar),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.textTertiary
+        )
+    }
+}
+
+@Composable
+private fun EngineWarmupTitleRow(
+    analysis: com.canopobd.data.domain.EngineWarmupMonitor.WarmupAnalysis,
+    statusColor: Color
+) {
+    val colors = LocalAppColors.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(AppRadius.sm))
+                .background(statusColor.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Thermostat,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "KALTSTARTSCHUTZ",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textTertiary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = analysis.phase.label,
+                style = GaugeTypography.valueSmall,
+                color = statusColor
+            )
+        }
+        Text(
+            text = "${analysis.healthScore}%",
+            style = MaterialTheme.typography.titleSmall,
+            color = statusColor,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun EngineWarmupProgressBar(progress: Double, statusColor: Color) {
+    val colors = LocalAppColors.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(colors.surfaceRaised)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(progress.toFloat().coerceIn(0f, 1f))
+                .background(statusColor.copy(alpha = 0.8f))
+        )
+    }
+}
+
+// ============================================================================
 // TURBO DETAIL CARD
 // ============================================================================
 @Composable

@@ -42,7 +42,6 @@ class EVAPSystemAnalyzer {
         private const val PURGE_NORMAL_MAX = 50.0
         private const val VAPOR_PRESSURE_NORMAL_MIN = -500.0
         private const val VAPOR_PRESSURE_NORMAL_MAX = 500.0
-        private const val VAPOR_PRESSURE_LEAK_THRESHOLD = -300.0
         private const val VAPOR_PRESSURE_BLOCKED_THRESHOLD = 1500.0
         private const val EVAP_TEMP_MIN = 5.0
         private const val FUEL_LEVEL_MIN_PURGE = 15.0
@@ -164,11 +163,11 @@ class EVAPSystemAnalyzer {
 
     private fun evaluateVaporPressure(pressure: Double, issues: MutableList<EVAPIssue>): Int {
         return when {
-            pressure < VAPOR_PRESSURE_LEAK_THRESHOLD -> {
+            pressure < -LARGE_LEAK_THRESHOLD -> {
                 issues.add(EVAPIssue.LARGE_LEAK)
                 20
             }
-            pressure < VAPOR_PRESSURE_NORMAL_MIN -> {
+            pressure < -SMALL_LEAK_THRESHOLD -> {
                 issues.add(EVAPIssue.SMALL_LEAK)
                 50
             }

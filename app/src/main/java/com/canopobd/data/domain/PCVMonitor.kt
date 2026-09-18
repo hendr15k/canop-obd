@@ -235,10 +235,10 @@ class PCVMonitor(
         }
 
         return when {
+            // Ein PCV-relevanter DTC schliesst "gesund" aus, auch wenn die
+            // uebrigen Teilwerte einen hohen Score ergeben.
+            hasPCVDTC -> PCVHealth.PLUGGED
             score >= 75 -> PCVHealth.HEALTHY
-            hasPCVDTC && score < 40 -> {
-                PCVHealth.PLUGGED
-            }
             score >= 45 -> PCVHealth.PLUGGED
             else -> PCVHealth.LEAKING
         }

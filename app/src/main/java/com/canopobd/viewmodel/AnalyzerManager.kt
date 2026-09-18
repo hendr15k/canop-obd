@@ -38,6 +38,7 @@ class AnalyzerManager {
     val oilHealthPredictor = OilHealthPredictor()
     val sensorValidator = SensorValidator(AstraJ14TurboCalibration.INSTANCE)
     val fuelTrimAnalyzer = FuelTrimAnalyzer()
+    val engineWarmupMonitor = EngineWarmupMonitor()
 
     // --- Emissions Analyzer State ---
     val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
@@ -166,6 +167,14 @@ class AnalyzerManager {
             health = FuelSystemAnalyzer.FuelSystemHealth.UNKNOWN, healthScore = 0,
             detectedIssues = emptyList(), fuelRailPressureDeviation = 0.0,
             trimHealthScore = 0, injectorHealthScore = 0, carbonBuildupRisk = 0,
+            diagnosis = "", recommendation = ""
+        )
+    )
+    val warmupResult = MutableStateFlow(
+        EngineWarmupMonitor.WarmupAnalysis(
+            phase = EngineWarmupMonitor.WarmupPhase.NO_DATA, healthScore = 0,
+            warmupProgress = 0.0, recommendedMaxRpm = 3000,
+            recommendedMaxBoostBar = 0.0, coldViolations = 0,
             diagnosis = "", recommendation = ""
         )
     )
@@ -764,6 +773,21 @@ class AnalyzerManager {
                 )
             }
         } catch (e: Exception) { Log.w(TAG, "Driving analyzers failed", e) }
+
+        try {
+            val warmupBoost = calcBoostBarValues(data)
+            warmupResult.value = engineWarmupMonitor.analyze(
+                EngineWarmupMonitor.WarmupInput(
+                    coolantTemp = data.coolantTemp,
+                    oilTemp = data.oilTempMode22.takeIf { it > 0.0 } ?: data.oilTemp,
+                    rpm = data.rpm,
+                    boostBar = warmupBoost.actualBar,
+                    engineLoad = data.engineLoad,
+                    engineRuntimeSec = data.runTime,
+                    speed = data.speed
+                )
+            )
+        } catch (e: Exception) { Log.w(TAG, "EngineWarmupMonitor failed", e) }
 
         try {
             extendedAnalyzerData.value = ExtendedAnalyzerSummary(
