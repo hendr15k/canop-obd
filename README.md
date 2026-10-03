@@ -9,7 +9,7 @@
   <img src="https://github.com/hendr15k/canop-obd/actions/workflows/build.yml/badge.svg" alt="Build">
   <img src="https://img.shields.io/badge/platform-Android%208.0%2B-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/kotlin-1.9.22-purple" alt="Kotlin">
-  <img src="https://img.shields.io/badge/version-1.8.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.9.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/files-153-orange" alt="Files">
   <img src="https://img.shields.io/badge/lines-78k-red" alt="Lines">
 </p>
@@ -118,8 +118,9 @@ canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert für den
 - **Protokoll-Erkennung** – ISO 15765-4 CAN (11bit/29bit, 250k/500k)
 
 ### Daten & Export
-- **Datenlogging** – CSV-Aufzeichnung aller Sensordaten
-- **GPS-Tracking** – GPX/KML Export
+- **Datenlogging** – Aufzeichnung aller Sensordaten
+- **Export-Formatwahl** – vor dem Teilen wählbar: CSV, JSON, GPX mit OBD-Telemetrie oder Torque-Pro-CSV
+- **GPS-Tracking** – GPX-Export; ohne gültige GPS-Daten bleibt der Track leer statt Nullpunkte zu erfinden
 - **Trip-Computer** – Strecke, Dauer, Verbrauch, Max-Speed
 - **Trip-Historie** – alle Fahrten mit Statistiken
 - **Live-Trend-Graph** – Echtzeit-Verlauf (RPM, Speed, Boost, EGT, etc.)
