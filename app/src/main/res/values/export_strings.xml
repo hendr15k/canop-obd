@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- DataLogDialog Export-Format-Picker (Deutsch / Standard) -->
+    <string name="datalog_export_pick_format">Exportformat wählen</string>
+    <string name="datalog_export_confirm">Teilen</string>
+    <string name="datalog_export_cancel">Abbrechen</string>
+
+    <string name="datalog_export_format_desc_csv">Vollständige Tabelle für Excel mit allen OBD-Werten</string>
+    <string name="datalog_export_format_desc_json">Strukturierte Rohdaten für Auswertung und Skripte</string>
+    <string name="datalog_export_format_desc_gpx">GPS-Track mit OBD-Telemetrie (nur mit gültigem GPS)</string>
+    <string name="datalog_export_format_desc_torque">Kompatibel mit Torque Pro (MPH, °F, lb/min)</string>
+</resources>
