@@ -362,6 +362,7 @@ data class Mode22TurboData(
     val turboOutletTemp: Double = 0.0,
     val engineTorque: Double = 0.0,
     val vgtPosition: Double = 0.0,
+    val knockRetard: Double = 0.0,
     val timestamp: Long = System.currentTimeMillis()
 ) {
     /**

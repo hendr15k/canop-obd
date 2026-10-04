@@ -371,6 +371,159 @@ fun FuelSystemCard(
 }
 
 // ============================================================================
+// IGNITION / THROTTLE / INTAKE CARDS (v1.10.0)
+// ============================================================================
+@Composable
+fun IgnitionCard(
+    analysis: com.canopobd.data.domain.IgnitionAnalyzer.IgnitionAnalysis,
+    colors: AppColors,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val score = analysis.healthScore
+    val scoreColor = healthColor(score, colors)
+    GlassCard(
+        modifier = modifier,
+        onClick = onClick,
+        accentEdge = scoreColor,
+        padding = 12.dp
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgressRing(
+                progress = score / 100f,
+                size = 44.dp,
+                strokeWidth = 4.dp,
+                color = scoreColor,
+                centerText = "$score",
+                centerTextColor = scoreColor
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "ZÜNDUNG",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = analysis.health.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = scoreColor,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Klopfrückn. ${analysis.knockRetardDeg.toInt()}°",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ThrottleCard(
+    analysis: com.canopobd.data.domain.ThrottleAnalyzer.ThrottleAnalysis,
+    colors: AppColors,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val score = analysis.healthScore
+    val scoreColor = healthColor(score, colors)
+    GlassCard(
+        modifier = modifier,
+        onClick = onClick,
+        accentEdge = scoreColor,
+        padding = 12.dp
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgressRing(
+                progress = score / 100f,
+                size = 44.dp,
+                strokeWidth = 4.dp,
+                color = scoreColor,
+                centerText = "$score",
+                centerTextColor = scoreColor
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "DROSSELKLAPPE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = analysis.health.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = scoreColor,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Abw. ${analysis.pedalThrottleDeviation.toInt()} pp",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun IntakeAirCard(
+    analysis: com.canopobd.data.domain.IntakeAirAnalyzer.IntakeAirAnalysis,
+    colors: AppColors,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val score = analysis.healthScore
+    val scoreColor = healthColor(score, colors)
+    GlassCard(
+        modifier = modifier,
+        onClick = onClick,
+        accentEdge = scoreColor,
+        padding = 12.dp
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgressRing(
+                progress = score / 100f,
+                size = 44.dp,
+                strokeWidth = 4.dp,
+                color = scoreColor,
+                centerText = "$score",
+                centerTextColor = scoreColor
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "ANSAUGLUFT",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = analysis.health.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = scoreColor,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Delta ${analysis.intercoolerDeltaC.toInt()} K",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textTertiary
+                )
+            }
+        }
+    }
+}
+
+// ============================================================================
 // KNOWN ISSUES CARD
 // ============================================================================
 @Composable

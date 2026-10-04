@@ -760,6 +760,7 @@ class OBDRepository(
                                 wastegateDuty = mode22Results[Mode22PIDs.WASTEGATE_DUTY] ?: m.wastegateDuty,
                                 turboSpeed = mode22Results[Mode22PIDs.TURBO_SPEED] ?: m.turboSpeed,
                                 engineTorque = mode22Results[Mode22PIDs.ENGINE_TORQUE] ?: m.engineTorque,
+                                knockRetard = mode22Results[Mode22PIDs.KNOCK_RETARD] ?: m.knockRetard,
                                 timestamp = System.currentTimeMillis()
                             )
                             val current = _obdData.value
@@ -768,7 +769,8 @@ class OBDRepository(
                                 boostPressureTargetMode22 = mode22Results[Mode22PIDs.TURBO_BOOST_TARGET] ?: current.boostPressureTargetMode22,
                                 wastegatePositionMode22 = mode22Results[Mode22PIDs.WASTEGATE_DUTY] ?: current.wastegatePositionMode22,
                                 boostPressureActualMode22 = mode22Results[Mode22PIDs.TURBO_BOOST_ACTUAL] ?: current.boostPressureActualMode22,
-                                oilTempMode22 = mode22Results[Mode22PIDs.ENGINE_OIL_TEMP] ?: current.oilTempMode22
+                                oilTempMode22 = mode22Results[Mode22PIDs.ENGINE_OIL_TEMP] ?: current.oilTempMode22,
+                                knockRetardMode22 = mode22Results[Mode22PIDs.KNOCK_RETARD] ?: current.knockRetardMode22
                             )
                         } catch (e: Exception) {
                             Log.w("OBDRepository", "Mode 22 polling failed: ${e.message}")

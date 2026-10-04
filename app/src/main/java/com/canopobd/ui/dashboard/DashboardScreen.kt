@@ -86,7 +86,7 @@ import com.canopobd.data.domain.WindowAction
 import com.canopobd.ui.components.TCMECMCANStatusCard
 import kotlin.math.abs
 
-@Suppress("UNUSED_PARAMETER")
+@Suppress("UNUSED_PARAMETER", "LongParameterList", "LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun DashboardScreen(
     connectionState: OBDConnectionState,
@@ -230,6 +230,9 @@ fun DashboardScreen(
     drivingEfficiencyResult: com.canopobd.data.domain.DrivingEfficiencyScorer.EfficiencyScore,
     fuelSystemResult: com.canopobd.data.domain.FuelSystemAnalyzer.FuelSystemAnalysis,
     warmupResult: com.canopobd.data.domain.EngineWarmupMonitor.WarmupAnalysis,
+    ignitionResult: com.canopobd.data.domain.IgnitionAnalyzer.IgnitionAnalysis,
+    throttleResult: com.canopobd.data.domain.ThrottleAnalyzer.ThrottleAnalysis,
+    intakeAirResult: com.canopobd.data.domain.IntakeAirAnalyzer.IntakeAirAnalysis,
     gearboxResult: com.canopobd.data.domain.M32GearboxMonitor.GearboxAnalysis?,
     chainTensionerResult: com.canopobd.data.domain.ChainTensionerAnalyzer.ChainTensionerAnalysis?,
     coolantResult: com.canopobd.data.domain.CoolantSystemHealth.CoolantAnalysis?,
@@ -502,6 +505,29 @@ fun DashboardScreen(
                         )
                         FuelSystemCard(
                             analysis = fuelSystemResult,
+                            colors = colors,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        IgnitionCard(
+                            analysis = ignitionResult,
+                            colors = colors,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ThrottleCard(
+                            analysis = throttleResult,
+                            colors = colors,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IntakeAirCard(
+                            analysis = intakeAirResult,
                             colors = colors,
                             modifier = Modifier.weight(1f)
                         )

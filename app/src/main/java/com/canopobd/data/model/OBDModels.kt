@@ -438,6 +438,7 @@ data class OBDData(
     val fuelConsumptionInstant: Double = 0.0,
     val fuelConsumptionAverage: Double = 0.0,
     val afrRatioMode22: Double = 0.0,
+    val knockRetardMode22: Double = 0.0,
     val distanceWithMil: Double = 0.0
 )
 

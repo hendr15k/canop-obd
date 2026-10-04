@@ -40,6 +40,9 @@ import com.canopobd.data.domain.DriveStyleAnalyzer
 import com.canopobd.data.domain.DrivingEfficiencyScorer
 import com.canopobd.data.domain.EngineWarmupMonitor
 import com.canopobd.data.domain.FuelSystemAnalyzer
+import com.canopobd.data.domain.IgnitionAnalyzer
+import com.canopobd.data.domain.IntakeAirAnalyzer
+import com.canopobd.data.domain.ThrottleAnalyzer
 import com.canopobd.data.repository.CANRepository
 
 import android.util.Log
@@ -428,6 +431,9 @@ class DashboardViewModel private constructor(
     val drivingEfficiencyResult: StateFlow<DrivingEfficiencyScorer.EfficiencyScore> get() = analyzerManager.drivingEfficiencyResult
     val fuelSystemResult: StateFlow<FuelSystemAnalyzer.FuelSystemAnalysis> get() = analyzerManager.fuelSystemResult
     val warmupResult: StateFlow<EngineWarmupMonitor.WarmupAnalysis> get() = analyzerManager.warmupResult
+    val ignitionResult: StateFlow<IgnitionAnalyzer.IgnitionAnalysis> get() = analyzerManager.ignitionResult
+    val throttleResult: StateFlow<ThrottleAnalyzer.ThrottleAnalysis> get() = analyzerManager.throttleResult
+    val intakeAirResult: StateFlow<IntakeAirAnalyzer.IntakeAirAnalysis> get() = analyzerManager.intakeAirResult
 
     val extendedAnalyzerData: StateFlow<AnalyzerManager.ExtendedAnalyzerSummary> get() = analyzerManager.extendedAnalyzerData
 
@@ -695,6 +701,9 @@ class DashboardViewModel private constructor(
             sensorHealth = sensorHealthSummary.value,
             fuelSystem = fuelSystemResult.value,
             warmup = warmupResult.value,
+            ignition = ignitionResult.value,
+            throttle = throttleResult.value,
+            intakeAir = intakeAirResult.value,
             driveStyle = driveStyleResult.value,
             efficiency = drivingEfficiencyResult.value
         )

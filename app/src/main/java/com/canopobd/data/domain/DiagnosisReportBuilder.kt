@@ -47,6 +47,9 @@ data class AnalyzerSnapshot(
     val sensorHealth: SensorHealthMonitor.SensorHealthSummary? = null,
     val fuelSystem: FuelSystemAnalyzer.FuelSystemAnalysis? = null,
     val warmup: EngineWarmupMonitor.WarmupAnalysis? = null,
+    val ignition: IgnitionAnalyzer.IgnitionAnalysis? = null,
+    val throttle: ThrottleAnalyzer.ThrottleAnalysis? = null,
+    val intakeAir: IntakeAirAnalyzer.IntakeAirAnalysis? = null,
     val driveStyle: DriveStyleAnalyzer.DriveStyleAnalysis? = null,
     val efficiency: DrivingEfficiencyScorer.EfficiencyScore? = null
 )
@@ -174,6 +177,15 @@ object DiagnosisReportBuilder {
         }
         s.warmup?.let {
             out.add(DiagnosisFinding("Kaltstartschutz", it.phase.name, it.healthScore, it.diagnosis))
+        }
+        s.ignition?.let {
+            out.add(DiagnosisFinding("Zuendung", it.health.name, it.healthScore, it.diagnosis))
+        }
+        s.throttle?.let {
+            out.add(DiagnosisFinding("Drosselklappe", it.health.name, it.healthScore, it.diagnosis))
+        }
+        s.intakeAir?.let {
+            out.add(DiagnosisFinding("Ansaugluft", it.health.name, it.healthScore, it.diagnosis))
         }
         s.driveStyle?.let {
             out.add(DiagnosisFinding("Fahrstil", it.driveStyle.name, it.ecoScore, it.feedback))

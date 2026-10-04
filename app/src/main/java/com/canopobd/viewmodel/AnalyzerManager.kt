@@ -39,6 +39,9 @@ class AnalyzerManager {
     val sensorValidator = SensorValidator(AstraJ14TurboCalibration.INSTANCE)
     val fuelTrimAnalyzer = FuelTrimAnalyzer()
     val engineWarmupMonitor = EngineWarmupMonitor()
+    val ignitionAnalyzer = IgnitionAnalyzer()
+    val throttleAnalyzer = ThrottleAnalyzer()
+    val intakeAirAnalyzer = IntakeAirAnalyzer()
 
     // --- Emissions Analyzer State ---
     val batteryHealth = MutableStateFlow(BatteryStatus(0.0, -1, BatteryHealth.GOOD, false))
@@ -175,6 +178,27 @@ class AnalyzerManager {
             phase = EngineWarmupMonitor.WarmupPhase.NO_DATA, healthScore = 0,
             warmupProgress = 0.0, recommendedMaxRpm = 3000,
             recommendedMaxBoostBar = 0.0, coldViolations = 0,
+            diagnosis = "", recommendation = ""
+        )
+    )
+    val ignitionResult = MutableStateFlow(
+        IgnitionAnalyzer.IgnitionAnalysis(
+            health = IgnitionAnalyzer.CombustionHealth.UNKNOWN, healthScore = 0,
+            detectedIssues = emptyList(), knockRetardDeg = 0.0,
+            timingAdvanceDeg = 0.0, diagnosis = "", recommendation = ""
+        )
+    )
+    val throttleResult = MutableStateFlow(
+        ThrottleAnalyzer.ThrottleAnalysis(
+            health = ThrottleAnalyzer.ThrottleHealth.UNKNOWN, healthScore = 0,
+            detectedIssues = emptyList(), pedalThrottleDeviation = 0.0,
+            diagnosis = "", recommendation = ""
+        )
+    )
+    val intakeAirResult = MutableStateFlow(
+        IntakeAirAnalyzer.IntakeAirAnalysis(
+            health = IntakeAirAnalyzer.IntakeHealth.UNKNOWN, healthScore = 0,
+            detectedIssues = emptyList(), intercoolerDeltaC = 0.0,
             diagnosis = "", recommendation = ""
         )
     )
@@ -788,6 +812,45 @@ class AnalyzerManager {
                 )
             )
         } catch (e: Exception) { Log.w(TAG, "EngineWarmupMonitor failed", e) }
+
+        try {
+            ignitionResult.value = ignitionAnalyzer.analyze(
+                IgnitionAnalyzer.IgnitionInput(
+                    timingAdvance = data.timingAdvance,
+                    rpm = data.rpm,
+                    engineLoad = data.engineLoad,
+                    coolantTemp = data.coolantTemp,
+                    knockRetard = data.knockRetardMode22,
+                    activeDTCs = dtcCodes
+                )
+            )
+        } catch (e: Exception) { Log.w(TAG, "IgnitionAnalyzer failed", e) }
+
+        try {
+            throttleResult.value = throttleAnalyzer.analyze(
+                ThrottleAnalyzer.ThrottleInput(
+                    throttle = data.throttle,
+                    acceleratorPedal = data.acceleratorPosD,
+                    rpm = data.rpm,
+                    engineLoad = data.engineLoad,
+                    activeDTCs = dtcCodes
+                )
+            )
+        } catch (e: Exception) { Log.w(TAG, "ThrottleAnalyzer failed", e) }
+
+        try {
+            intakeAirResult.value = intakeAirAnalyzer.analyze(
+                IntakeAirAnalyzer.IntakeAirInput(
+                    mafRate = data.mafRate,
+                    intakeTemp = data.intakeTemp,
+                    chargeAirTemp = data.chargeAirCoolerTemp,
+                    rpm = data.rpm,
+                    engineLoad = data.engineLoad,
+                    boostBar = calcBoostBarValues(data).actualBar,
+                    activeDTCs = dtcCodes
+                )
+            )
+        } catch (e: Exception) { Log.w(TAG, "IntakeAirAnalyzer failed", e) }
 
         try {
             extendedAnalyzerData.value = ExtendedAnalyzerSummary(
