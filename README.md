@@ -9,7 +9,7 @@
   <img src="https://github.com/hendr15k/canop-obd/actions/workflows/build.yml/badge.svg" alt="Build">
   <img src="https://img.shields.io/badge/platform-Android%208.0%2B-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/kotlin-1.9.22-purple" alt="Kotlin">
-  <img src="https://img.shields.io/badge/version-1.9.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.10.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/files-153-orange" alt="Files">
   <img src="https://img.shields.io/badge/lines-78k-red" alt="Lines">
 </p>
@@ -69,6 +69,9 @@ canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert für den
 
 ### Motor-Analyse
 - **Kraftstofftrim-Analyse** – STFT/LTFT mit Mager/Fett-Erkennung
+- **Zündungs-Analyse** – Zündzeitpunkt, Klopfrücknahme (Mode 22), Zündaussetzer-Erkennung (P030x/P032x)
+- **Drosselklappen-Analyse** – Drive-by-Wire-Plausibilität Pedal/Klappe, Klemm- und Leerlauferkennung
+- **Ansaugluft-Analyse** – MAF-Plausibilität, Ladeluftkühler-Bewertung mit Warnstufe, Temperaturprüfung
 - **Steuerketten-Monitor** – Kaltstart-Rattern-Erkennung, Phasenanalyse
 - **Ölzustands-Monitor** – temperaturbasierte Öl-Lebensdauer-Schätzung
 - **PCV-System-Monitor** – Unterdruck- und Ölverbrauchsanalyse
@@ -114,7 +117,7 @@ canop-obd ist eine umfangreiche OBD-II Diagnose-App, speziell optimiert für den
 ### Diagnose
 - **71+ DTCs** – Astra-J-spezifische Fehlercodes mit Beschreibung, Schweregrad, Ursache, Lösung und Kostenschätzung
 - **Freeze Frames** – Sensordaten zum Fehlerzeitpunkt
-- **Diagnosebericht** – Gesamtbewertung, alle DTCs + 22 Systembefunde (Batterie, Turbo, Öl, Kette …) als Text/PDF teilbar
+- **Diagnosebericht** – Gesamtbewertung, alle DTCs + 25 Systembefunde (Batterie, Turbo, Öl, Kette, Zündung, Drosselklappe, Ansaugluft …) als Text/PDF teilbar
 - **Protokoll-Erkennung** – ISO 15765-4 CAN (11bit/29bit, 250k/500k)
 
 ### Daten & Export
